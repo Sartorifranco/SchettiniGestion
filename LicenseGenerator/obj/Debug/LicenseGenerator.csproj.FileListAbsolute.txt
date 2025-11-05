@@ -1,0 +1,10 @@
+C:\sistemaGestion\SchettiniGestion\LicenseGenerator\bin\Debug\LicenseGenerator.exe.config
+C:\sistemaGestion\SchettiniGestion\LicenseGenerator\bin\Debug\LicenseGenerator.exe
+C:\sistemaGestion\SchettiniGestion\LicenseGenerator\bin\Debug\LicenseGenerator.pdb
+C:\sistemaGestion\SchettiniGestion\LicenseGenerator\bin\Debug\Newtonsoft.Json.dll
+C:\sistemaGestion\SchettiniGestion\LicenseGenerator\bin\Debug\Newtonsoft.Json.xml
+C:\sistemaGestion\SchettiniGestion\LicenseGenerator\obj\Debug\LicenseGenerator.csproj.AssemblyReference.cache
+C:\sistemaGestion\SchettiniGestion\LicenseGenerator\obj\Debug\LicenseGenerator.csproj.CoreCompileInputs.cache
+C:\sistemaGestion\SchettiniGestion\LicenseGenerator\obj\Debug\LicenseG.97897944.Up2Date
+C:\sistemaGestion\SchettiniGestion\LicenseGenerator\obj\Debug\LicenseGenerator.exe
+C:\sistemaGestion\SchettiniGestion\LicenseGenerator\obj\Debug\LicenseGenerator.pdb

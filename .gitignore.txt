@@ -1,0 +1,11 @@
+# Archivos de Visual Studio
+*.suo
+*.user
+*.sln.docstates
+
+# Carpetas de compilación
+[Bb]in/
+[Oo]bj/
+
+# Archivos del sistema
+.vs/

@@ -1,0 +1,225 @@
+<!--
+ *
+ * Harpy.NuGet.targets -
+ *
+ * WARNING: This MSBuild file requires MSBuild 4.0 features.
+ *
+ * Written by Joe Mistachkin and David Archer.
+ * Released to the public domain, use at your own risk!
+ *
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+  ******************************************************************************
+  **                        Harpy Package Build Items                         **
+  ******************************************************************************
+  -->
+
+  <ItemGroup>
+    <BadgeCoreFiles Condition="'$(MSBuildThisFileDirectory)' != '' And
+                               HasTrailingSlash('$(MSBuildThisFileDirectory)')"
+                      Include="$(MSBuildThisFileDirectory)**\Badge1.0\**" />
+  </ItemGroup>
+
+  <!--
+  ******************************************************************************
+  -->
+
+  <ItemGroup>
+    <HarpyCoreFiles Condition="'$(MSBuildThisFileDirectory)' != '' And
+                               HasTrailingSlash('$(MSBuildThisFileDirectory)')"
+                      Include="$(MSBuildThisFileDirectory)**\Harpy1.0\Harpy.dll" />
+  </ItemGroup>
+
+  <!--
+  ******************************************************************************
+  -->
+
+  <ItemGroup>
+    <HarpyLibraryFiles Condition="'$(MSBuildThisFileDirectory)' != '' And
+                                  HasTrailingSlash('$(MSBuildThisFileDirectory)')"
+                         Include="$(MSBuildThisFileDirectory)**\Harpy1.0\**"
+                         Exclude="$(MSBuildThisFileDirectory)**\Harpy1.0\Harpy.dll" />
+  </ItemGroup>
+
+  <!--
+  ******************************************************************************
+  **                      Harpy Package Build Properties                      **
+  ******************************************************************************
+  -->
+
+  <PropertyGroup Condition="'$(NoHarpyDefineConstant)' != 'false'">
+    <DefineConstants>$(DefineConstants);HARPY</DefineConstants>
+  </PropertyGroup>
+
+  <!--
+  ******************************************************************************
+  **                       Harpy Package Build Targets                        **
+  ******************************************************************************
+  -->
+
+  <Target Name="CopyBadgeCoreFiles"
+          Condition="'$(CopyBadgeCoreFiles)' != 'false' And
+                     '$(OutDir)' != '' And
+                     HasTrailingSlash('$(OutDir)') And
+                     Exists('$(OutDir)')"
+          Inputs="@(BadgeCoreFiles)"
+          Outputs="@(BadgeCoreFiles -> '$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')">
+    <Copy SourceFiles="@(BadgeCoreFiles)"
+          DestinationFiles="@(BadgeCoreFiles -> '$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <!--
+  ******************************************************************************
+  -->
+
+  <Target Name="CopyHarpyCoreFiles"
+          Condition="'$(CopyHarpyCoreFiles)' != 'false' And
+                     '$(OutDir)' != '' And
+                     HasTrailingSlash('$(OutDir)') And
+                     Exists('$(OutDir)')"
+          Inputs="@(HarpyCoreFiles)"
+          Outputs="@(HarpyCoreFiles -> '$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')">
+    <Copy SourceFiles="@(HarpyCoreFiles)"
+          DestinationFiles="@(HarpyCoreFiles -> '$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <!--
+  ******************************************************************************
+  -->
+
+  <Target Name="CopyHarpyLibraryFiles"
+          Condition="'$(CopyHarpyLibraryFiles)' != 'false' And
+                     '$(OutDir)' != '' And
+                     HasTrailingSlash('$(OutDir)') And
+                     Exists('$(OutDir)')"
+          Inputs="@(HarpyLibraryFiles)"
+          Outputs="@(HarpyLibraryFiles -> '$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')">
+    <Copy SourceFiles="@(HarpyLibraryFiles)"
+          DestinationFiles="@(HarpyLibraryFiles -> '$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <!--
+  ******************************************************************************
+  -->
+
+  <Target Name="CleanBadgeCoreFiles"
+          Condition="'$(CleanBadgeCoreFiles)' != 'false' And
+                     '$(OutDir)' != '' And
+                     HasTrailingSlash('$(OutDir)') And
+                     Exists('$(OutDir)')">
+    <Delete Files="@(BadgeCoreFiles -> '$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <!--
+  ******************************************************************************
+  -->
+
+  <Target Name="CleanHarpyCoreFiles"
+          Condition="'$(CleanHarpyCoreFiles)' != 'false' And
+                     '$(OutDir)' != '' And
+                     HasTrailingSlash('$(OutDir)') And
+                     Exists('$(OutDir)')">
+    <Delete Files="@(HarpyCoreFiles -> '$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <!--
+  ******************************************************************************
+  -->
+
+  <Target Name="CleanHarpyLibraryFiles"
+          Condition="'$(CleanHarpyLibraryFiles)' != 'false' And
+                     '$(OutDir)' != '' And
+                     HasTrailingSlash('$(OutDir)') And
+                     Exists('$(OutDir)')">
+    <Delete Files="@(HarpyLibraryFiles -> '$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <!--
+  ******************************************************************************
+  -->
+
+  <Target Name="CollectBadgeCoreFiles"
+          Condition="'$(CollectBadgeCoreFiles)' != 'false'">
+    <ItemGroup>
+      <FilesForPackagingFromProject Include="@(BadgeCoreFiles)">
+        <DestinationRelativePath>bin\%(RecursiveDir)%(Filename)%(Extension)</DestinationRelativePath>
+      </FilesForPackagingFromProject>
+    </ItemGroup>
+  </Target>
+
+  <!--
+  ******************************************************************************
+  -->
+
+  <Target Name="CollectHarpyCoreFiles"
+          Condition="'$(CollectHarpyCoreFiles)' != 'false'">
+    <ItemGroup>
+      <FilesForPackagingFromProject Include="@(HarpyCoreFiles)">
+        <DestinationRelativePath>bin\%(RecursiveDir)%(Filename)%(Extension)</DestinationRelativePath>
+      </FilesForPackagingFromProject>
+    </ItemGroup>
+  </Target>
+
+  <!--
+  ******************************************************************************
+  -->
+
+  <Target Name="CollectHarpyLibraryFiles"
+          Condition="'$(CollectHarpyLibraryFiles)' != 'false'">
+    <ItemGroup>
+      <FilesForPackagingFromProject Include="@(HarpyLibraryFiles)">
+        <DestinationRelativePath>bin\%(RecursiveDir)%(Filename)%(Extension)</DestinationRelativePath>
+      </FilesForPackagingFromProject>
+    </ItemGroup>
+  </Target>
+
+  <!--
+  ******************************************************************************
+  **                      Harpy Package Build Properties                      **
+  ******************************************************************************
+  -->
+
+  <PropertyGroup>
+    <PostBuildEventDependsOn>
+      $(PostBuildEventDependsOn);
+      CopyBadgeCoreFiles;
+      CopyHarpyCoreFiles;
+      CopyHarpyLibraryFiles;
+    </PostBuildEventDependsOn>
+    <BuildDependsOn>
+      $(BuildDependsOn);
+      CopyBadgeCoreFiles;
+      CopyHarpyCoreFiles;
+      CopyHarpyLibraryFiles;
+    </BuildDependsOn>
+    <CleanDependsOn>
+      $(CleanDependsOn);
+      CleanBadgeCoreFiles;
+      CleanHarpyCoreFiles;
+      CleanHarpyLibraryFiles;
+    </CleanDependsOn>
+  </PropertyGroup>
+
+  <!--
+  ******************************************************************************
+  **         Harpy Package Publish Properties for Visual Studio 20xx          **
+  ******************************************************************************
+  -->
+
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '' Or
+                            '$(VisualStudioVersion)' == '10.0' Or
+                            '$(VisualStudioVersion)' == '11.0' Or
+                            '$(VisualStudioVersion)' == '12.0' Or
+                            '$(VisualStudioVersion)' == '14.0' Or
+                            '$(VisualStudioVersion)' == '15.0' Or
+                            '$(VisualStudioVersion)' == '16.0' Or
+                            '$(VisualStudioVersion)' == '17.0'">
+    <PipelineCollectFilesPhaseDependsOn>
+      CollectBadgeCoreFiles;
+      CollectHarpyCoreFiles;
+      CollectHarpyLibraryFiles;
+      $(PipelineCollectFilesPhaseDependsOn);
+    </PipelineCollectFilesPhaseDependsOn>
+  </PropertyGroup>
+</Project>

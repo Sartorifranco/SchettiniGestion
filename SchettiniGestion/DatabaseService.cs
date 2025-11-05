@@ -281,12 +281,10 @@ namespace SchettiniGestion
 
                     if (clienteID == 0)
                     {
-                        // --- CREAR NUEVO CLIENTE ---
                         sql = "INSERT INTO Clientes (CUIT, RazonSocial, CondicionIVA) VALUES (@cuit, @razon, @iva)";
                     }
                     else
                     {
-                        // --- ACTUALIZAR CLIENTE EXISTENTE ---
                         sql = "UPDATE Clientes SET CUIT = @cuit, RazonSocial = @razon, CondicionIVA = @iva WHERE ClienteID = @id";
                     }
 
@@ -321,7 +319,6 @@ namespace SchettiniGestion
             }
         }
 
-        // --- ¡INICIO DEL CÓDIGO NUEVO (PASO 32)! ---
         public static bool EliminarCliente(int clienteID)
         {
             try
@@ -340,14 +337,115 @@ namespace SchettiniGestion
             }
             catch (Exception ex)
             {
-                // NOTA: Si en el futuro un cliente tiene facturas asociadas,
-                // esto podría fallar (lo cual es bueno, previene borrar datos).
-                // Por ahora, un mensaje de error genérico es suficiente.
                 System.Windows.Forms.MessageBox.Show($"Error al eliminar cliente: {ex.Message}");
                 return false;
             }
         }
-        // --- ¡FIN DEL CÓDIGO NUEVO (PASO 32)! ---
+
+        // --- MÉTODOS DE PRODUCTOS ---
+
+        public static System.Data.DataTable GetProductos()
+        {
+            var dt = new System.Data.DataTable();
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    connection.Open();
+                    string sql = "SELECT ProductoID, Codigo, Descripcion, PrecioVenta, StockActual FROM Productos";
+                    using (var command = new SQLiteCommand(sql, connection))
+                    {
+                        using (var adapter = new SQLiteDataAdapter(command))
+                        {
+                            adapter.Fill(dt);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show($"Error al cargar productos: {ex.Message}");
+            }
+            return dt;
+        }
+
+        public static bool GuardarProducto(int productoID, string codigo, string descripcion, decimal precioVenta, int stockActual)
+        {
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    connection.Open();
+                    string sql = "";
+
+                    if (productoID == 0)
+                    {
+                        sql = @"INSERT INTO Productos (Codigo, Descripcion, PrecioVenta, StockActual) 
+                                VALUES (@codigo, @desc, @precio, @stock)";
+                    }
+                    else
+                    {
+                        sql = @"UPDATE Productos 
+                                SET Codigo = @codigo, Descripcion = @desc, PrecioVenta = @precio, StockActual = @stock
+                                WHERE ProductoID = @id";
+                    }
+
+                    using (var command = new SQLiteCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@codigo", codigo);
+                        command.Parameters.AddWithValue("@desc", descripcion);
+                        command.Parameters.AddWithValue("@precio", (double)precioVenta);
+                        command.Parameters.AddWithValue("@stock", stockActual);
+                        command.Parameters.AddWithValue("@id", productoID);
+
+                        command.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+            }
+            catch (SQLiteException ex)
+            {
+                if (ex.ErrorCode == 19)
+                {
+                    MessageBox.Show("Error: El código de producto ya existe.", "Error al guardar", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else
+                {
+                    MessageBox.Show($"Error de base de datos: {ex.Message}", "Error al guardar", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show($"Error al guardar producto: {ex.Message}");
+                return false;
+            }
+        }
+
+        // --- ¡INICIO DEL CÓDIGO NUEVO (PASO 36)! ---
+        public static bool EliminarProducto(int productoID)
+        {
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    connection.Open();
+                    string sql = "DELETE FROM Productos WHERE ProductoID = @id";
+                    using (var command = new SQLiteCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@id", productoID);
+                        command.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show($"Error al eliminar producto: {ex.Message}");
+                return false;
+            }
+        }
+        // --- ¡FIN DEL CÓDIGO NUEVO (PASO 36)! ---
     }
 }
 

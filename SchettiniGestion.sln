@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36616.10 d17.14
+VisualStudioVersion = 17.14.36616.10
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchettiniGestion", "SchettiniGestion\SchettiniGestion.csproj", "{94A24402-018A-48F9-9893-8348FFE7E7F3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LicenseGenerator", "LicenseGenerator\LicenseGenerator.csproj", "{5758CD2F-16BC-4B94-AA7D-8BD6E138DEF9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchettiniGestion.WPF", "SchettiniGestion.WPF\SchettiniGestion.WPF.csproj", "{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,12 +27,20 @@ Global
 		{94A24402-018A-48F9-9893-8348FFE7E7F3}.Release|x86.Build.0 = Release|x86
 		{5758CD2F-16BC-4B94-AA7D-8BD6E138DEF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5758CD2F-16BC-4B94-AA7D-8BD6E138DEF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5758CD2F-16BC-4B94-AA7D-8BD6E138DEF9}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{5758CD2F-16BC-4B94-AA7D-8BD6E138DEF9}.Debug|x86.Build.0 = Debug|Any CPU
+		{5758CD2F-16BC-4B94-AA7D-8BD6E138DEF9}.Debug|x86.ActiveCfg = Debug|x86
+		{5758CD2F-16BC-4B94-AA7D-8BD6E138DEF9}.Debug|x86.Build.0 = Debug|x86
 		{5758CD2F-16BC-4B94-AA7D-8BD6E138DEF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5758CD2F-16BC-4B94-AA7D-8BD6E138DEF9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5758CD2F-16BC-4B94-AA7D-8BD6E138DEF9}.Release|x86.ActiveCfg = Release|Any CPU
 		{5758CD2F-16BC-4B94-AA7D-8BD6E138DEF9}.Release|x86.Build.0 = Release|Any CPU
+		{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}.Debug|x86.ActiveCfg = Debug|x86
+		{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}.Debug|x86.Build.0 = Debug|x86
+		{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}.Release|x86.ActiveCfg = Release|Any CPU
+		{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

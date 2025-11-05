@@ -1,0 +1,73 @@
+﻿<Window x:Class="SchettiniGestion.WPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SchettiniGestion.WPF"
+        mc:Ignorable="d"
+        Title="SchettiniGestion - Iniciar Sesión" Height="450" Width="400"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="ToolWindow">
+
+    <!-- 
+    Este es el diseño (XAML).
+    Usamos un StackPanel para apilar los controles verticalmente.
+    Los Márgenes (ej: Margin="10,20,10,0") dan espacio para respirar.
+    Los FontSize (ej: FontSize="24") hacen el texto grande y legible.
+    Los MinHeight (ej: MinHeight="44") hacen los botones grandes y táctiles.
+    -->
+
+    <Grid Background="#F0F0F0">
+        <StackPanel VerticalAlignment="Center" Margin="30">
+
+            <!-- Título -->
+            <TextBlock Text="Iniciar Sesión" 
+                       FontSize="32" 
+                       FontWeight="Bold" 
+                       HorizontalAlignment="Center" 
+                       Margin="0,0,0,30"
+                       Foreground="#333"/>
+
+            <!-- Campo de Usuario -->
+            <TextBlock Text="Usuario:" 
+                       FontSize="16" 
+                       Margin="0,0,0,5" 
+                       Foreground="#555"/>
+
+            <TextBox x:Name="txtUsuario" 
+                     FontSize="18" 
+                     Padding="8" 
+                     MinHeight="44"/>
+
+            <!-- Campo de Contraseña -->
+            <TextBlock Text="Contraseña:" 
+                       FontSize="16" 
+                       Margin="0,15,0,5" 
+                       Foreground="#555"/>
+
+            <PasswordBox x:Name="txtPassword" 
+                         FontSize="18" 
+                         Padding="8" 
+                         MinHeight="44"/>
+
+            <!-- Botones -->
+            <Button x:Name="btnIngresar" 
+                    Content="Ingresar" 
+                    FontSize="18" 
+                    FontWeight="Bold"
+                    Margin="0,30,0,0" 
+                    MinHeight="50" 
+                    Background="#007ACC" 
+                    Foreground="White"
+                    Click="btnIngresar_Click"/>
+
+            <Button x:Name="btnSalir" 
+                    Content="Salir" 
+                    FontSize="16" 
+                    Margin="0,10,0,0" 
+                    MinHeight="44"
+                    Click="btnSalir_Click"/>
+
+        </StackPanel>
+    </Grid>
+</Window>

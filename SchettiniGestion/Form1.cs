@@ -97,5 +97,17 @@ namespace SchettiniGestion
             // Mostramos el formulario
             formClientes.Show();
         }
+
+        private void productosToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Creamos una instancia del formulario de productos
+            FormProductos formProductos = new FormProductos();
+
+            // Le decimos que su "Padre" MDI es este formulario (Form1)
+            formProductos.MdiParent = this;
+
+            // Mostramos el formulario
+            formProductos.Show();
+        }
     }
 }

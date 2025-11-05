@@ -1,26 +1,46 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\sistemaGestion\\SchettiniGestion\\",
+  "WorkspaceRootPath": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|c:\\sistemagestion\\schettinigestion\\schettinigestion\\formclientes.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\formclientes.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|c:\\users\\admin\\desktop\\schettinigestion\\schettinigestion\\schettinigestion.wpf\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|c:\\sistemagestion\\schettinigestion\\schettinigestion\\databaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EE333473-C3E2-435A-B2B9-EA85E3B7ABFE}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion\\formproductos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\formproductos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion\\formproductos.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\formproductos.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion\\formproductos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\formproductos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion\\databaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\databaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|C:\\sistemaGestion\\SchettiniGestion\\schettinigestion\\formclientes.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
-      "RelativeMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\formclientes.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+      "AbsoluteMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|C:\\sistemaGestion\\SchettiniGestion\\schettinigestion\\formclientes.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\formclientes.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|c:\\sistemagestion\\schettinigestion\\schettinigestion\\formusuarios.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
-      "RelativeMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\formusuarios.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+      "AbsoluteMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{94A24402-018A-48F9-9893-8348FFE7E7F3}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -30,70 +50,125 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "DatabaseService.cs",
-              "DocumentMoniker": "C:\\sistemaGestion\\SchettiniGestion\\SchettiniGestion\\DatabaseService.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion\\DatabaseService.cs",
-              "ToolTip": "C:\\sistemaGestion\\SchettiniGestion\\SchettiniGestion\\DatabaseService.cs",
-              "RelativeToolTip": "SchettiniGestion\\DatabaseService.cs",
-              "ViewState": "AgIAAEQBAAAAAAAAAAA4wGEBAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T01:17:56.053Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "FormClientes.cs",
-              "DocumentMoniker": "C:\\sistemaGestion\\SchettiniGestion\\SchettiniGestion\\FormClientes.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion\\FormClientes.cs",
-              "ToolTip": "C:\\sistemaGestion\\SchettiniGestion\\SchettiniGestion\\FormClientes.cs",
-              "RelativeToolTip": "SchettiniGestion\\FormClientes.cs",
-              "ViewState": "AgIAAIsAAAAAAAAAAAAmwJwAAAAAAAAAAAAAAA==",
+              "Title": "App.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\App.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\App.xaml.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\App.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\App.xaml.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAkwB0AAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T01:15:02.42Z",
+              "WhenOpened": "2025-11-05T15:08:04.025Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "FormUsuarios.cs [Dise\u00F1o]",
-              "DocumentMoniker": "C:\\sistemaGestion\\SchettiniGestion\\SchettiniGestion\\FormUsuarios.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion\\FormUsuarios.cs",
-              "ToolTip": "C:\\sistemaGestion\\SchettiniGestion\\SchettiniGestion\\FormUsuarios.cs [Dise\u00F1o]",
-              "RelativeToolTip": "SchettiniGestion\\FormUsuarios.cs [Dise\u00F1o]",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T01:12:34.548Z",
-              "EditorCaption": " [Dise\u00F1o]"
+              "DocumentIndex": 1,
+              "Title": "App.xaml",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\App.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\App.xaml",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\App.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\App.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-05T15:07:45.028Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "FormClientes.cs [Dise\u00F1o]",
-              "DocumentMoniker": "C:\\sistemaGestion\\SchettiniGestion\\SchettiniGestion\\FormClientes.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion\\FormClientes.cs",
-              "ToolTip": "C:\\sistemaGestion\\SchettiniGestion\\SchettiniGestion\\FormClientes.cs [Dise\u00F1o]",
-              "RelativeToolTip": "SchettiniGestion\\FormClientes.cs [Dise\u00F1o]",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T01:04:52.422Z",
-              "EditorCaption": " [Dise\u00F1o]"
+              "Title": "MainWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\MainWindow.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\MainWindow.xaml",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\MainWindow.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\MainWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-05T14:59:58.331Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "FormClientes.Designer.cs",
-              "DocumentMoniker": "C:\\sistemaGestion\\SchettiniGestion\\SchettiniGestion\\FormClientes.Designer.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion\\FormClientes.Designer.cs",
-              "ToolTip": "C:\\sistemaGestion\\SchettiniGestion\\SchettiniGestion\\FormClientes.Designer.cs",
-              "RelativeToolTip": "SchettiniGestion\\FormClientes.Designer.cs",
-              "ViewState": "AgIAAIcAAAAAAAAAAAAqwJYAAABJAAAAAAAAAA==",
+              "Title": "MainWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\MainWindow.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\MainWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\MainWindow.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\MainWindow.xaml.cs",
+              "ViewState": "AgIAACMAAAAAAAAAAAAiwEoAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T01:04:20.384Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-05T14:59:57.93Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "FormProductos.Designer.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\FormProductos.Designer.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion\\FormProductos.Designer.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\FormProductos.Designer.cs",
+              "RelativeToolTip": "SchettiniGestion\\FormProductos.Designer.cs",
+              "ViewState": "AgIAACIAAAAAAAAAAAAqwDYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-05T14:36:28.887Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "FormProductos.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\FormProductos.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion\\FormProductos.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\FormProductos.cs",
+              "RelativeToolTip": "SchettiniGestion\\FormProductos.cs",
+              "ViewState": "AgIAAIoAAAAAAAAAAAAiwLEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-05T13:43:08.743Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "DatabaseService.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\DatabaseService.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion\\DatabaseService.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\DatabaseService.cs",
+              "RelativeToolTip": "SchettiniGestion\\DatabaseService.cs",
+              "ViewState": "AgIAADIBAAAAAAAAAADwv0EBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-05T13:42:43.228Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Form1.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\Form1.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion\\Form1.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\Form1.cs",
+              "RelativeToolTip": "SchettiniGestion\\Form1.cs",
+              "ViewState": "AgIAAFIAAAAAAAAAAAAqwGMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-05T13:36:44.123Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Form1.cs [Dise\u00F1o]",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\Form1.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion\\Form1.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\Form1.cs [Dise\u00F1o]",
+              "RelativeToolTip": "SchettiniGestion\\Form1.cs [Dise\u00F1o]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-05T13:36:09.513Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "FormProductos.cs [Dise\u00F1o]",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\FormProductos.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion\\FormProductos.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\FormProductos.cs [Dise\u00F1o]",
+              "RelativeToolTip": "SchettiniGestion\\FormProductos.cs [Dise\u00F1o]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-05T13:25:04.8Z"
             }
           ]
         }

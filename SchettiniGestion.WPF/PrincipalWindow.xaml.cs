@@ -11,6 +11,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Diagnostics; // Para poder llamar a procesos (el teclado)
+using System.IO; // Para manejar rutas de archivos
+
 
 namespace SchettiniGestion.WPF
 {
@@ -39,17 +42,14 @@ namespace SchettiniGestion.WPF
 
         private void clientesMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Creamos una instancia de nuestro NUEVO control de clientes
             ClientesControl controlClientes = new ClientesControl();
-
-            // 2. Lo asignamos al área de contenido
             mainContentArea.Content = controlClientes;
         }
 
         private void productosMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            // Próximo paso: Crear y mostrar el ProductosControl
-            MessageBox.Show("Próximamente: ABM de Productos");
+            ProductosControl controlProductos = new ProductosControl();
+            mainContentArea.Content = controlProductos;
         }
 
         // --- CERRAR LA APLICACIÓN ---
@@ -58,5 +58,27 @@ namespace SchettiniGestion.WPF
         {
             Application.Current.Shutdown();
         }
+
+        // --- ¡INICIO DE LA MODIFICACIÓN (SIMPLIFICACIÓN)! ---
+        private void btnTeclado_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Verificamos si ya está abierto
+                Process[] oskProcesses = Process.GetProcessesByName("osk");
+                if (oskProcesses.Length == 0)
+                {
+                    // Si no está abierto, lo iniciamos.
+                    // Esta es la ruta directa que debe funcionar en todos los Windows.
+                    Process.Start(@"C:\Windows\System32\osk.exe");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Si falla (ej: archivo no encontrado en esa ruta)
+                MessageBox.Show($"No se pudo iniciar el teclado en pantalla: {ex.Message}", "Error de teclado", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        // --- ¡FIN DE LA MODIFICACIÓN (SIMPLIFICACIÓN)! ---
     }
 }

@@ -14,6 +14,10 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 // Importamos la lógica de nuestro otro proyecto
 using SchettiniGestion;
+// --- ¡INICIO DEL CÓDIGO NUEVO! ---
+using System.Diagnostics; // Para el teclado
+using System.IO; // Para el teclado
+// --- ¡FIN DEL CÓDIGO NUEVO! ---
 
 namespace SchettiniGestion.WPF
 {
@@ -67,5 +71,28 @@ namespace SchettiniGestion.WPF
             // Cierra toda la aplicación
             Application.Current.Shutdown();
         }
+
+        // --- ¡INICIO DEL CÓDIGO NUEVO! ---
+        // Lógica simplificada para el Teclado
+        private void btnTeclado_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Verificamos si ya está abierto
+                Process[] oskProcesses = Process.GetProcessesByName("osk");
+                if (oskProcesses.Length == 0)
+                {
+                    // Si no está abierto, lo iniciamos.
+                    // Esta es la ruta directa que debe funcionar en todos los Windows.
+                    Process.Start(@"C:\Windows\System32\osk.exe");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Si falla (ej: archivo no encontrado en esa ruta)
+                MessageBox.Show($"No se pudo iniciar el teclado en pantalla: {ex.Message}", "Error de teclado", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        // --- ¡FIN DEL CÓDIGO NUEVO! ---
     }
 }

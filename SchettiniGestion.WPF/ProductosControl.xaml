@@ -1,0 +1,74 @@
+﻿<UserControl x:Class="SchettiniGestion.WPF.ProductosControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SchettiniGestion.WPF"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800"
+             Background="#F0F0F0"
+             Loaded="ProductosControl_Loaded">
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 1. CAMPOS DE ENTRADA Y BOTONES (Fila 0) -->
+        <Border Grid.Row="0" Background="White" Padding="20" CornerRadius="5" BorderBrush="#CCC" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Fila 0: Código y Descripción -->
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Código:" Style="{StaticResource LabelStyle}"/>
+                <TextBox x:Name="txtCodigo" Grid.Row="1" Grid.Column="0" Style="{StaticResource TextBoxStyle}"/>
+
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="Descripción:" Style="{StaticResource LabelStyle}"/>
+                <TextBox x:Name="txtDescripcion" Grid.Row="1" Grid.Column="1" Style="{StaticResource TextBoxStyle}"/>
+
+                <!-- Fila 1: Precio y Stock (Usando los nuevos controles) -->
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Precio Venta:" Style="{StaticResource LabelStyle}" Margin="0,10,0,0"/>
+                <xctk:DecimalUpDown x:Name="numPrecioVenta" Grid.Row="2" Grid.Column="0" Style="{StaticResource DecimalUpDownStyle}" Margin="93,10,10,0"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="Stock Actual:" Style="{StaticResource LabelStyle}" Margin="0,10,0,0"/>
+                <xctk:IntegerUpDown x:Name="numStockActual" Grid.Row="2" Grid.Column="1" Style="{StaticResource IntegerUpDownStyle}" Margin="92,10,10,0"/>
+
+                <!-- Botones (en la columna 2) -->
+                <StackPanel Grid.Row="0" Grid.Column="2" Grid.RowSpan="3" VerticalAlignment="Top" Margin="20,0,0,0">
+                    <Button x:Name="btnNuevo" Content="Nuevo" Style="{StaticResource ButtonStyle}" Margin="0,5,0,0" Click="btnNuevo_Click"/>
+                    <Button x:Name="btnGuardar" Content="Guardar" Style="{StaticResource ButtonStyle}" Margin="0,10,0,0" Click="btnGuardar_Click"/>
+                    <Button x:Name="btnEliminar" Content="Eliminar" Style="{StaticResource ButtonStyle}" Margin="0,10,0,0" Click="btnEliminar_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 2. GRILLA DE PRODUCTOS (Fila 1) -->
+        <!-- ¡RECUERDA TU CAMBIO DE NOMBRE! -->
+        <DataGrid x:Name="dvgProductos" 
+                  Grid.Row="1" 
+                  Margin="0,15,0,0"
+                  AutoGenerateColumns="False" 
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  SelectionChanged="dvgProductos_SelectionChanged">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="Auto"/>
+                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
+                <DataGridTextColumn Header="Precio Venta" Binding="{Binding PrecioVenta, StringFormat=C2}" Width="Auto"/>
+                <DataGridTextColumn Header="Stock" Binding="{Binding StockActual}" Width="Auto"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </Grid>
+</UserControl>

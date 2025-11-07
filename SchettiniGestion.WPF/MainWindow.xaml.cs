@@ -12,10 +12,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-// --- ¡INICIO DEL CÓDIGO NUEVO! ---
 // Importamos la lógica de nuestro otro proyecto
 using SchettiniGestion;
-// --- ¡FIN DEL CÓDIGO NUEVO! ---
 
 namespace SchettiniGestion.WPF
 {
@@ -28,8 +26,6 @@ namespace SchettiniGestion.WPF
         {
             InitializeComponent();
         }
-
-        // --- ¡INICIO DEL CÓDIGO NUEVO! ---
 
         private void btnIngresar_Click(object sender, RoutedEventArgs e)
         {
@@ -48,13 +44,16 @@ namespace SchettiniGestion.WPF
 
             if (esValido)
             {
+                // --- ¡INICIO DEL CAMBIO! ---
                 // ¡Login exitoso!
-                MessageBox.Show("¡Login exitoso!", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                // Ya no mostramos un MessageBox, abrimos la ventana principal.
 
-                // (Aquí, en el futuro, abriremos la ventana principal de la app)
+                PrincipalWindow ventanaPrincipal = new PrincipalWindow();
+                ventanaPrincipal.Show(); // Muestra la ventana del menú
 
-                // Cerramos la ventana de Login
+                // Cerramos esta ventana de Login
                 this.Close();
+                // --- ¡FIN DEL CAMBIO! ---
             }
             else
             {
@@ -68,7 +67,5 @@ namespace SchettiniGestion.WPF
             // Cierra toda la aplicación
             Application.Current.Shutdown();
         }
-
-        // --- ¡FIN DEL CÓDIGO NUEVO! ---
     }
 }

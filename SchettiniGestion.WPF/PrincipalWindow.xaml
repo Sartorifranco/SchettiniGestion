@@ -1,0 +1,39 @@
+﻿<Window x:Class="SchettiniGestion.WPF.PrincipalWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SchettiniGestion.WPF"
+        mc:Ignorable="d"
+        Title="SchettiniGestion - Menú Principal" Height="600" Width="900"
+        WindowState="Maximized"
+        WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing">
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" FontSize="14" MinHeight="30">
+            <MenuItem Header="_Archivo">
+                <MenuItem x:Name="salirMenuItem" Header="_Salir" Click="salirMenuItem_Click"/>
+            </MenuItem>
+
+            <MenuItem Header="_Administración">
+                <MenuItem x:Name="usuariosMenuItem" Header="_Usuarios" Click="usuariosMenuItem_Click"/>
+            </MenuItem>
+
+            <MenuItem Header="_Gestión">
+                <MenuItem x:Name="clientesMenuItem" Header="_Clientes" Click="clientesMenuItem_Click"/>
+                <MenuItem x:Name="productosMenuItem" Header="_Productos" Click="productosMenuItem_Click"/>
+            </MenuItem>
+        </Menu>
+
+        <ContentControl x:Name="mainContentArea" Background="#E0E0E0">
+            <TextBlock Text="¡Bienvenido a SchettiniGestion!"
+                       FontSize="48"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Foreground="#777"/>
+        </ContentControl>
+
+    </DockPanel>
+</Window>

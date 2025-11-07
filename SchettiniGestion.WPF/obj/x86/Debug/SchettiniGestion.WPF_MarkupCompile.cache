@@ -4,17 +4,17 @@
 winexe
 C#
 .cs
-C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x86\Debug\
+C:\sistemaGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x86\Debug\
 SchettiniGestion.WPF
 none
 false
 DEBUG;TRACE
-C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\App.xaml
-1219584333
+C:\sistemaGestion\SchettiniGestion\SchettiniGestion.WPF\App.xaml
+4556215483
 
-51579654133
-211732643439
-MainWindow.xaml;
+81111941251
+21-1588519051
+ClientesControl.xaml;MainWindow.xaml;PrincipalWindow.xaml;UsuariosControl.xaml;
 
 False
 

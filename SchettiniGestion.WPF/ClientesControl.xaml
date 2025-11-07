@@ -1,0 +1,74 @@
+﻿<UserControl x:Class="SchettiniGestion.WPF.ClientesControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SchettiniGestion.WPF"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800"
+             Background="#F0F0F0"
+             Loaded="ClientesControl_Loaded">
+
+    <!-- 
+    Dividimos la pantalla en 3 filas:
+    1. Auto: Contenido de los campos (se ajusta al contenido)
+    2. *: Grilla (ocupa todo el espacio restante)
+    -->
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 1. CAMPOS DE ENTRADA Y BOTONES (Fila 0) -->
+        <Border Grid.Row="0" Background="White" Padding="20" CornerRadius="5" BorderBrush="#CCC" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Fila 0: CUIT y Razón Social -->
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="CUIT:" Style="{StaticResource LabelStyle}"/>
+                <TextBox x:Name="txtCuit" Grid.Row="1" Grid.Column="0" Style="{StaticResource TextBoxStyle}"/>
+
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="Razón Social:" Style="{StaticResource LabelStyle}"/>
+                <TextBox x:Name="txtRazonSocial" Grid.Row="1" Grid.Column="1" Style="{StaticResource TextBoxStyle}"/>
+
+                <!-- Fila 1: Condición IVA -->
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Condición IVA:" Style="{StaticResource LabelStyle}" Margin="0,10,0,0"/>
+                <ComboBox x:Name="cmbCondicionIVA" Grid.Row="2" Grid.Column="1" Style="{StaticResource ComboBoxStyle}" Margin="10,10,10,0"/>
+
+                <!-- Botones (en la columna 2) -->
+                <StackPanel Grid.Row="0" Grid.Column="2" Grid.RowSpan="3" VerticalAlignment="Top" Margin="20,0,0,0">
+                    <Button x:Name="btnNuevo" Content="Nuevo" Style="{StaticResource ButtonStyle}" Margin="0,5,0,0" Click="btnNuevo_Click"/>
+                    <Button x:Name="btnGuardar" Content="Guardar" Style="{StaticResource ButtonStyle}" Margin="0,10,0,0" Click="btnGuardar_Click"/>
+                    <Button x:Name="btnEliminar" Content="Eliminar" Style="{StaticResource ButtonStyle}" Margin="0,10,0,0" Click="btnEliminar_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 2. GRILLA DE CLIENTES (Fila 1) -->
+        <DataGrid x:Name="dgvClientes" 
+                  Grid.Row="1" 
+                  Margin="0,15,0,0"
+                  AutoGenerateColumns="False" 
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  SelectionChanged="dgvClientes_SelectionChanged">
+            <DataGrid.Columns>
+                <!-- Definimos las columnas manualmente para controlar el título y el formato -->
+                <DataGridTextColumn Header="CUIT" Binding="{Binding CUIT}" Width="Auto"/>
+                <DataGridTextColumn Header="Razón Social" Binding="{Binding RazonSocial}" Width="*"/>
+                <DataGridTextColumn Header="Condición IVA" Binding="{Binding CondicionIVA}" Width="Auto"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </Grid>
+</UserControl>

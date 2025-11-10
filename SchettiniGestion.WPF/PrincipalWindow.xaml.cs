@@ -59,7 +59,6 @@ namespace SchettiniGestion.WPF
             Application.Current.Shutdown();
         }
 
-        // --- ¡INICIO DE LA MODIFICACIÓN (SIMPLIFICACIÓN)! ---
         private void btnTeclado_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -79,6 +78,5 @@ namespace SchettiniGestion.WPF
                 MessageBox.Show($"No se pudo iniciar el teclado en pantalla: {ex.Message}", "Error de teclado", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        // --- ¡FIN DE LA MODIFICACIÓN (SIMPLIFICACIÓN)! ---
     }
 }

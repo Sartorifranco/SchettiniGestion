@@ -14,10 +14,9 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 // Importamos la lógica de nuestro otro proyecto
 using SchettiniGestion;
-// --- ¡INICIO DEL CÓDIGO NUEVO! ---
-using System.Diagnostics; // Para el teclado
-using System.IO; // Para el teclado
-// --- ¡FIN DEL CÓDIGO NUEVO! ---
+// Importamos las clases para el Teclado
+using System.Diagnostics;
+using System.IO;
 
 namespace SchettiniGestion.WPF
 {
@@ -48,16 +47,12 @@ namespace SchettiniGestion.WPF
 
             if (esValido)
             {
-                // --- ¡INICIO DEL CAMBIO! ---
                 // ¡Login exitoso!
-                // Ya no mostramos un MessageBox, abrimos la ventana principal.
-
                 PrincipalWindow ventanaPrincipal = new PrincipalWindow();
                 ventanaPrincipal.Show(); // Muestra la ventana del menú
 
                 // Cerramos esta ventana de Login
                 this.Close();
-                // --- ¡FIN DEL CAMBIO! ---
             }
             else
             {
@@ -72,7 +67,6 @@ namespace SchettiniGestion.WPF
             Application.Current.Shutdown();
         }
 
-        // --- ¡INICIO DEL CÓDIGO NUEVO! ---
         // Lógica simplificada para el Teclado
         private void btnTeclado_Click(object sender, RoutedEventArgs e)
         {
@@ -93,6 +87,5 @@ namespace SchettiniGestion.WPF
                 MessageBox.Show($"No se pudo iniciar el teclado en pantalla: {ex.Message}", "Error de teclado", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        // --- ¡FIN DEL CÓDIGO NUEVO! ---
     }
 }

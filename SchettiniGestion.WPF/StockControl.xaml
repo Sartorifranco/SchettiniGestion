@@ -1,0 +1,105 @@
+﻿<UserControl x:Class="SchettiniGestion.WPF.StockControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SchettiniGestion.WPF"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1000"
+             Background="{StaticResource ModuleBackgroundBrush}"
+             Loaded="StockControl_Loaded">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 1. Título -->
+        <TextBlock Text="Movimientos de Stock" 
+                   Grid.Row="0"
+                   FontSize="28" FontWeight="Bold" 
+                   Margin="20"
+                   Foreground="{StaticResource HeaderForegroundBrush}"/>
+
+        <!-- 2. Panel de Controles (arriba) -->
+        <Border Grid.Row="1" 
+                Background="{StaticResource PanelBackgroundBrush}" 
+                CornerRadius="5" Margin="20,0,20,20" Padding="20"
+                BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Col 0: Buscar Producto (con Popup) -->
+                <StackPanel Margin="0,0,10,0">
+                    <TextBlock Text="Buscar Producto (Código o Descripción):" Style="{StaticResource ModuleLabelStyle}"/>
+                    <TextBox x:Name="txtBuscarProducto" Style="{StaticResource ModuleTextBoxStyle}" 
+                             TextChanged="txtBuscarProducto_TextChanged"
+                             PreviewKeyDown="txtBuscar_PreviewKeyDown"
+                             LostFocus="txtBuscar_LostFocus"/>
+
+                    <!-- Popup de sugerencias -->
+                    <Popup x:Name="popupProducto" PlacementTarget="{Binding ElementName=txtBuscarProducto}" Placement="Bottom" StaysOpen="False">
+                        <Border Background="{StaticResource PanelBackgroundBrush}" BorderBrush="#007ACC" BorderThickness="1" MaxHeight="200" MinWidth="300">
+                            <ListBox x:Name="lstSugerenciasProducto" 
+                                     ItemsSource="{Binding}" 
+                                     DisplayMemberPath="Descripcion" 
+                                     MouseUp="lstSugerenciasProducto_MouseUp"
+                                     PreviewKeyDown="lstSugerencias_PreviewKeyDown"
+                                     Background="{StaticResource PanelBackgroundBrush}"
+                                     Foreground="{StaticResource BodyForegroundBrush}"
+                                     BorderThickness="0"/>
+                        </Border>
+                    </Popup>
+
+                    <!-- Producto seleccionado -->
+                    <TextBlock x:Name="lblProductoSeleccionado" Text="-" Foreground="#CCC" FontSize="16" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                </StackPanel>
+
+                <!-- Col 1: Cantidad -->
+                <StackPanel Grid.Column="1" Margin="10,0,10,0">
+                    <TextBlock Text="Cantidad (ej: 50 o -5):" Style="{StaticResource ModuleLabelStyle}"/>
+                    <xctk:IntegerUpDown x:Name="numCantidad" Style="{StaticResource ModuleIntegerUpDownStyle}" FormatString="N0"/>
+                </StackPanel>
+
+                <!-- Col 2: Tipo de Movimiento -->
+                <StackPanel Grid.Column="2" Margin="10,0,0,0">
+                    <TextBlock Text="Tipo de Movimiento:" Style="{StaticResource ModuleLabelStyle}"/>
+                    <ComboBox x:Name="cmbTipoMovimiento" Style="{StaticResource ModuleComboBoxStyle}"/>
+                </StackPanel>
+
+                <!-- Col 3: Botón -->
+                <Button x:Name="btnGuardarAjuste" Grid.Column="3" Content="💾 Guardar Movimiento" 
+                        Style="{StaticResource ActionButtonStyle}" 
+                        VerticalAlignment="Bottom" Margin="20,0,0,0"
+                        Click="btnGuardarAjuste_Click"/>
+            </Grid>
+        </Border>
+
+        <!-- 3. Grilla (Esta la usaremos en el futuro para ver el HISTORIAL) -->
+        <!-- 
+        <Border Grid.Row="2" 
+                Background="{StaticResource PanelBackgroundBrush}" 
+                CornerRadius="5" Margin="20,0,20,20" Padding="5"
+                BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+            <DataGrid x:Name="dgvHistorial" 
+                      Style="{StaticResource ModuleDataGridStyle}"
+                      AutoGenerateColumns="False">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha}" Width="Auto" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Tipo" Binding="{Binding TipoMovimiento}" Width="Auto" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad}" Width="Auto" IsReadOnly="True" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+        -->
+
+    </Grid>
+</UserControl>

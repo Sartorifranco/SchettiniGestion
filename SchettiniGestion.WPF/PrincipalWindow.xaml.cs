@@ -11,24 +11,20 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using System.Diagnostics; // Para poder llamar a procesos (el teclado)
-using System.IO; // Para manejar rutas de archivos
-
+using System.Diagnostics;
+using System.IO;
 
 namespace SchettiniGestion.WPF
 {
-    /// <summary>
-    /// Lógica de interacción para PrincipalWindow.xaml
-    /// </summary>
     public partial class PrincipalWindow : Window
     {
         public PrincipalWindow()
         {
             InitializeComponent();
+            btnInicio_Click(null, null); // Cargamos la pantalla de "Inicio" por defecto
         }
 
         // --- LÓGICA DEL MENÚ ---
-
         private void salirMenuItem_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
@@ -52,8 +48,41 @@ namespace SchettiniGestion.WPF
             mainContentArea.Content = controlProductos;
         }
 
-        // --- CERRAR LA APLICACIÓN ---
+        private void btnInicio_Click(object sender, RoutedEventArgs e)
+        {
+            mainContentArea.Content = new TextBlock
+            {
+                Text = "¡Bienvenido a SchettiniGestion!",
+                FontSize = 48,
+                FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = new SolidColorBrush(Color.FromRgb(119, 119, 119)) // #777
+            };
+        }
 
+        private void btnFacturacion_Click(object sender, RoutedEventArgs e)
+        {
+            FacturacionControl controlFacturacion = new FacturacionControl();
+            mainContentArea.Content = controlFacturacion;
+        }
+
+        private void btnVentas_Click(object sender, RoutedEventArgs e)
+        {
+            VentasControl controlVentas = new VentasControl();
+            mainContentArea.Content = controlVentas;
+        }
+
+        
+        private void btnStock_Click(object sender, RoutedEventArgs e)
+        {
+            // ¡Ahora carga el control de Ajuste de Stock!
+            StockControl controlStock = new StockControl();
+            mainContentArea.Content = controlStock;
+        }
+        
+
+        
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             Application.Current.Shutdown();
@@ -61,22 +90,7 @@ namespace SchettiniGestion.WPF
 
         private void btnTeclado_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                // Verificamos si ya está abierto
-                Process[] oskProcesses = Process.GetProcessesByName("osk");
-                if (oskProcesses.Length == 0)
-                {
-                    // Si no está abierto, lo iniciamos.
-                    // Esta es la ruta directa que debe funcionar en todos los Windows.
-                    Process.Start(@"C:\Windows\System32\osk.exe");
-                }
-            }
-            catch (Exception ex)
-            {
-                // Si falla (ej: archivo no encontrado en esa ruta)
-                MessageBox.Show($"No se pudo iniciar el teclado en pantalla: {ex.Message}", "Error de teclado", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            KeyboardHelper.ShowOnScreenKeyboard();
         }
     }
 }

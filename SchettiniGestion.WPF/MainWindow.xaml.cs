@@ -12,17 +12,12 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-// Importamos la lógica de nuestro otro proyecto
-using SchettiniGestion;
-// Importamos las clases para el Teclado
-using System.Diagnostics;
+using SchettiniGestion; // Importamos la lógica
+using System.Diagnostics; // <-- ¡AÑADIMOS ESTO!
 using System.IO;
 
 namespace SchettiniGestion.WPF
 {
-    /// <summary>
-    /// Lógica de interacción para MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         public MainWindow()
@@ -33,41 +28,34 @@ namespace SchettiniGestion.WPF
         private void btnIngresar_Click(object sender, RoutedEventArgs e)
         {
             string usuario = txtUsuario.Text;
-            string password = txtPassword.Password; // Se usa .Password en lugar de .Text
+            string password = txtPassword.Password;
 
-            // 1. Validamos campos vacíos
             if (string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(password))
             {
                 MessageBox.Show("Por favor, ingrese usuario y contraseña.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            // 2. ¡Llamamos a nuestro DatabaseService que ya funciona!
             bool esValido = DatabaseService.ValidarUsuario(usuario, password);
 
             if (esValido)
             {
-                // ¡Login exitoso!
                 PrincipalWindow ventanaPrincipal = new PrincipalWindow();
-                ventanaPrincipal.Show(); // Muestra la ventana del menú
-
-                // Cerramos esta ventana de Login
+                ventanaPrincipal.Show();
                 this.Close();
             }
             else
             {
-                // Login fallido
                 MessageBox.Show("Usuario o contraseña incorrectos.", "Error de Login", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void btnSalir_Click(object sender, RoutedEventArgs e)
+        private void btnClose_Click(object sender, RoutedEventArgs e)
         {
-            // Cierra toda la aplicación
             Application.Current.Shutdown();
         }
 
-        // Lógica simplificada para el Teclado
+        // --- ¡ESTA ES LA LÓGICA CORRECTA Y SIMPLE! ---
         private void btnTeclado_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -76,15 +64,29 @@ namespace SchettiniGestion.WPF
                 Process[] oskProcesses = Process.GetProcessesByName("osk");
                 if (oskProcesses.Length == 0)
                 {
-                    // Si no está abierto, lo iniciamos.
-                    // Esta es la ruta directa que debe funcionar en todos los Windows.
-                    Process.Start(@"C:\Windows\System32\osk.exe");
+                    // Como tu app es x64, esto SÍ funciona
+                    Process.Start("osk");
                 }
             }
             catch (Exception ex)
             {
-                // Si falla (ej: archivo no encontrado en esa ruta)
                 MessageBox.Show($"No se pudo iniciar el teclado en pantalla: {ex.Message}", "Error de teclado", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void Input_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                btnIngresar_Click(sender, e);
+            }
+        }
+
+        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                DragMove();
             }
         }
     }

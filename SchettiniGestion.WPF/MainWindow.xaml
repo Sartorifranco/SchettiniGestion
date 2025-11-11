@@ -5,68 +5,78 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SchettiniGestion.WPF"
         mc:Ignorable="d"
-        Title="SchettiniGestion - Iniciar Sesión" Height="480" Width="400"
+        Title="SchettiniGestion - Iniciar Sesión" Height="500" Width="400"
         WindowStartupLocation="CenterScreen"
-        WindowStyle="ToolWindow">
+        WindowStyle="None" 
+        AllowsTransparency="True" 
+        Background="Transparent"
+        ResizeMode="NoResize"
+        MouseDown="Window_MouseDown">
 
-    <Grid Background="#F0F0F0">
-        <StackPanel VerticalAlignment="Center" Margin="30">
+    <!-- Borde principal para sombra y esquinas redondeadas -->
+    <Border Background="#2E333A" CornerRadius="10" BorderBrush="#444" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect ShadowDepth="0" BlurRadius="20" Color="#000" Opacity="0.5"/>
+        </Border.Effect>
 
-            <!-- Título -->
-            <TextBlock Text="Iniciar Sesión" 
-                       FontSize="32" 
-                       FontWeight="Bold" 
-                       HorizontalAlignment="Center" 
-                       Margin="0,0,0,30"
-                       Foreground="#333"/>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-            <!-- Campo de Usuario -->
-            <TextBlock Text="Usuario:" 
-                       FontSize="16" 
-                       Margin="0,0,0,5" 
-                       Foreground="#555"/>
+            <!-- Botón de Cerrar (X) -->
+            <Button x:Name="btnClose" Content="✕" 
+                    Grid.Row="0" HorizontalAlignment="Right" 
+                    VerticalAlignment="Top" Margin="0,10,10,0"
+                    Style="{StaticResource MenuButton}" 
+                    Padding="10,5" MinHeight="0" MinWidth="0" 
+                    FontSize="14" Click="btnClose_Click"/>
 
-            <TextBox x:Name="txtUsuario" 
-                     FontSize="18" 
-                     Padding="8" 
-                     MinHeight="44"/>
+            <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="30">
 
-            <!-- Campo de Contraseña -->
-            <TextBlock Text="Contraseña:" 
-                       FontSize="16" 
-                       Margin="0,15,0,5" 
-                       Foreground="#555"/>
+                <TextBlock Text="INICIAR SESIÓN" 
+                           FontSize="28" 
+                           FontWeight="Bold" 
+                           HorizontalAlignment="Center" 
+                           Margin="0,0,0,30"
+                           Foreground="White"/>
 
-            <PasswordBox x:Name="txtPassword" 
-                         FontSize="18" 
-                         Padding="8" 
-                         MinHeight="44"/>
+                <TextBlock Text="Usuario:" 
+                           FontSize="16" 
+                           Margin="0,0,0,5" 
+                           Foreground="#AAA"/>
 
-            <!-- Botones -->
-            <Button x:Name="btnIngresar" 
-                    Content="Ingresar" 
-                    FontSize="18" 
-                    FontWeight="Bold"
-                    Margin="0,30,0,0" 
-                    MinHeight="50" 
-                    Background="#007ACC" 
-                    Foreground="White"
-                    Click="btnIngresar_Click"/>
+                <!-- Usamos los nuevos estilos oscuros -->
+                <TextBox x:Name="txtUsuario" 
+                         Style="{StaticResource DarkTextBoxStyle}"
+                         KeyDown="Input_KeyDown"/>
 
-            <Button x:Name="btnSalir" 
-                    Content="Salir" 
-                    FontSize="16" 
-                    Margin="0,10,0,0" 
-                    MinHeight="44"
-                    Click="btnSalir_Click"/>
+                <TextBlock Text="Contraseña:" 
+                           FontSize="16" 
+                           Margin="0,15,0,5" 
+                           Foreground="#AAA"/>
 
-            <Button x:Name="btnTeclado" 
-                    Content="⌨️ Teclado" 
-                    FontSize="14" 
-                    Margin="0,15,0,0" 
-                    MinHeight="40"
-                    Click="btnTeclado_Click"/>
+                <PasswordBox x:Name="txtPassword" 
+                             Style="{StaticResource DarkPasswordBoxStyle}"
+                             KeyDown="Input_KeyDown"/>
 
-        </StackPanel>
-    </Grid>
+                <Button x:Name="btnIngresar" 
+                        Content="Ingresar" 
+                        Style="{StaticResource ButtonStyle}"
+                        Margin="0,30,0,0"
+                        Click="btnIngresar_Click" Background="#FFCC1300"/>
+
+                <Button x:Name="btnTeclado" 
+                        Content="⌨️  Teclado" 
+                        Style="{StaticResource MenuButton}"
+                        FontSize="14" 
+                        MinHeight="40"
+                        Margin="0,10,0,0"
+                        HorizontalAlignment="Center"
+                        Click="btnTeclado_Click"/>
+
+            </StackPanel>
+        </Grid>
+    </Border>
 </Window>

@@ -10,11 +10,11 @@ none
 false
 DEBUG;TRACE
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\App.xaml
-9571927565
+13811437129
 
-15-92487386
+20351507611
 26700180862
-ClientesControl.xaml;FacturacionControl.xaml;GestionPermisos.xaml;MainWindow.xaml;PrincipalWindow.xaml;ProductosControl.xaml;StockControl.xaml;UsuariosControl.xaml;VentasControl.xaml;
+ClientesControl.xaml;ComprasControl.xaml;FacturacionControl.xaml;GestionPermisos.xaml;MainWindow.xaml;NumericKeyboardControl.xaml;PreciosControl.xaml;PrincipalWindow.xaml;ProductosControl.xaml;ProveedoresControl.xaml;StockControl.xaml;UsuariosControl.xaml;VentasControl.xaml;
 
 True
 

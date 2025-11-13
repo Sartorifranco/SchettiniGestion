@@ -76,15 +76,34 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
-            // 2. Confirmación
             string tipoMovimiento = cmbTipoMovimiento.SelectedItem.ToString();
+
+            // ===== ¡CORRECCIÓN DE LÓGICA! =====
+            // Si el movimiento es de resta, la cantidad debe ser negativa
+            if (tipoMovimiento.Contains("(Resta)") && cantidad > 0)
+            {
+                cantidad = cantidad * -1;
+            }
+            // Si el movimiento es de suma, la cantidad debe ser positiva
+            if (tipoMovimiento.Contains("(Suma)") && cantidad < 0)
+            {
+                cantidad = cantidad * -1;
+            }
+            if (tipoMovimiento.Contains("Ingreso por Compra") && cantidad < 0)
+            {
+                cantidad = cantidad * -1;
+            }
+            // ===== FIN DE CORRECCIÓN =====
+
+
+            // 2. Confirmación
             int productoID = Convert.ToInt32(_productoSeleccionado["ProductoID"]);
             string nombreProducto = _productoSeleccionado["Descripcion"].ToString();
 
             MessageBoxResult confirmacion = MessageBox.Show(
                 $"¿Está seguro que desea registrar el siguiente movimiento?\n\n" +
                 $"Producto: {nombreProducto}\n" +
-                $"Cantidad: {cantidad}\n" +
+                $"Cantidad: {cantidad}\n" + // Mostrará la cantidad ya con el signo
                 $"Motivo: {tipoMovimiento}",
                 "Confirmar Movimiento",
                 MessageBoxButton.YesNo,
@@ -115,7 +134,12 @@ namespace SchettiniGestion.WPF
         private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (txtBuscarProducto.Text.Length < 2) { popupProducto.IsOpen = false; _productoSeleccionado = null; lblProductoSeleccionado.Text = "Seleccione un producto..."; return; }
-            DataTable productos = DatabaseService.BuscarProductosMultiples(txtBuscarProducto.Text);
+
+            // ===== ¡AQUÍ ESTÁ LA CORRECCIÓN! =====
+            // Usamos el método _ParaCompra que no filtra por stock
+            DataTable productos = DatabaseService.BuscarProductosMultiples_ParaCompra(txtBuscarProducto.Text);
+            // ===== FIN DE LA CORRECCIÓN =====
+
             if (productos.Rows.Count > 0) { lstSugerenciasProducto.ItemsSource = productos.DefaultView; popupProducto.IsOpen = true; }
             else { popupProducto.IsOpen = false; _productoSeleccionado = null; }
         }

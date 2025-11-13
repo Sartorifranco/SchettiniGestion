@@ -125,8 +125,20 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ComprasControl.xaml.cs">
+      <DependentUpon>ComprasControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="GestionPermisos.xaml.cs">
       <DependentUpon>GestionPermisos.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="NumericKeyboardControl.xaml.cs">
+      <DependentUpon>NumericKeyboardControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PreciosControl.xaml.cs">
+      <DependentUpon>PreciosControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ProveedoresControl.xaml.cs">
+      <DependentUpon>ProveedoresControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="StockControl.xaml.cs">
       <DependentUpon>StockControl.xaml</DependentUpon>
@@ -134,9 +146,14 @@
     <Compile Include="VentasControl.xaml.cs">
       <DependentUpon>VentasControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="VisualTreeHelpers.cs" />
     <Page Include="ClientesControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ComprasControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="FacturacionControl.xaml">
       <SubType>Designer</SubType>
@@ -150,6 +167,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="NumericKeyboardControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PreciosControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="PrincipalWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -157,6 +182,10 @@
     <Page Include="ProductosControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ProveedoresControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="StockControl.xaml">
       <SubType>Designer</SubType>
@@ -226,6 +255,9 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

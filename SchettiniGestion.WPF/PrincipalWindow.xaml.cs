@@ -25,15 +25,12 @@ namespace SchettiniGestion.WPF
             btnInicio_Click(null, null); // Cargamos la pantalla de "Inicio" por defecto
         }
 
-        // --- LÓGICA DE PERMISOS (EL CÓDIGO NUEVO) ---
+        // --- LÓGICA DE PERMISOS ---
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             AplicarPermisos();
         }
 
-        /// <summary>
-        /// Comprueba la Licencia Y los Permisos del Rol para ocultar botones.
-        /// </summary>
         private void AplicarPermisos()
         {
             // Ocultamos todo por defecto (excepto Inicio y Salir) y luego mostramos según permiso.
@@ -56,7 +53,6 @@ namespace SchettiniGestion.WPF
             {
                 btnVentas.Visibility = Visibility.Collapsed;
             }
-            // Si no puede ver NINGÚN reporte, ocultamos el título
             if (!puedeVerReportes)
             {
                 headerReportes.Visibility = Visibility.Collapsed;
@@ -65,6 +61,39 @@ namespace SchettiniGestion.WPF
 
             // Sección Gestión
             bool puedeVerGestion = false;
+
+            // ===== INICIO DE CÓDIGO NUEVO (PRECIOS) =====
+            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRECIOS) &&
+                SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRECIOS))
+            {
+                puedeVerGestion = true;
+            }
+            else
+            {
+                btnPrecios.Visibility = Visibility.Collapsed;
+            }
+            // ===== FIN DE CÓDIGO NUEVO =====
+
+            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_COMPRAS) &&
+                SesionUsuario.TienePermiso(DatabaseService.PERMISO_COMPRAS))
+            {
+                puedeVerGestion = true;
+            }
+            else
+            {
+                btnCompras.Visibility = Visibility.Collapsed;
+            }
+
+            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PROVEEDORES) &&
+                SesionUsuario.TienePermiso(DatabaseService.PERMISO_PROVEEDORES))
+            {
+                puedeVerGestion = true;
+            }
+            else
+            {
+                btnProveedores.Visibility = Visibility.Collapsed;
+            }
+
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_STOCK) &&
                 SesionUsuario.TienePermiso(DatabaseService.PERMISO_STOCK))
             {
@@ -94,7 +123,6 @@ namespace SchettiniGestion.WPF
             {
                 btnClientes.Visibility = Visibility.Collapsed;
             }
-            // Si no puede ver NADA de gestión, ocultamos el título
             if (!puedeVerGestion)
             {
                 headerGestion.Visibility = Visibility.Collapsed;
@@ -122,22 +150,20 @@ namespace SchettiniGestion.WPF
             {
                 btnPermisos.Visibility = Visibility.Collapsed;
             }
-            // Si no puede ver NADA de admin, ocultamos el título
             if (!puedeVerAdmin)
             {
                 headerAdministracion.Visibility = Visibility.Collapsed;
             }
         }
 
-        // --- LÓGICA DEL MENÚ (CON GUARDIAS DE DOBLE PERMISO) ---
+        // --- LÓGICA DEL MENÚ ---
         private void salirMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            this.Close(); // Esto disparará el evento Window_Closing
+            this.Close();
         }
 
         private void usuariosMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            // Doble Guardia de seguridad
             if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_USUARIOS) ||
                 !SesionUsuario.TienePermiso(DatabaseService.PERMISO_USUARIOS)) return;
 
@@ -147,7 +173,6 @@ namespace SchettiniGestion.WPF
 
         private void clientesMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            // Doble Guardia de seguridad
             if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CLIENTES) ||
                 !SesionUsuario.TienePermiso(DatabaseService.PERMISO_CLIENTES)) return;
 
@@ -157,7 +182,6 @@ namespace SchettiniGestion.WPF
 
         private void productosMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            // Doble Guardia de seguridad
             if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRODUCTOS) ||
                 !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRODUCTOS)) return;
 
@@ -169,7 +193,7 @@ namespace SchettiniGestion.WPF
         {
             mainContentArea.Content = new TextBlock
             {
-                Text = $"¡Bienvenido, {SesionUsuario.NombreUsuario}!", // ¡Mensaje personalizado!
+                Text = $"¡Bienvenido, {SesionUsuario.NombreUsuario}!",
                 FontSize = 48,
                 FontWeight = FontWeights.Bold,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -180,7 +204,6 @@ namespace SchettiniGestion.WPF
 
         private void btnFacturacion_Click(object sender, RoutedEventArgs e)
         {
-            // Doble Guardia de seguridad
             if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_FACTURACION) ||
                 !SesionUsuario.TienePermiso(DatabaseService.PERMISO_FACTURACION)) return;
 
@@ -188,11 +211,8 @@ namespace SchettiniGestion.WPF
             mainContentArea.Content = controlFacturacion;
         }
 
-
-
         private void btnVentas_Click(object sender, RoutedEventArgs e)
         {
-            // Doble Guardia de seguridad
             if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_VENTAS) ||
                 !SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS)) return;
 
@@ -203,7 +223,6 @@ namespace SchettiniGestion.WPF
 
         private void btnStock_Click(object sender, RoutedEventArgs e)
         {
-            // Doble Guardia de seguridad
             if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_STOCK) ||
                 !SesionUsuario.TienePermiso(DatabaseService.PERMISO_STOCK)) return;
 
@@ -211,10 +230,38 @@ namespace SchettiniGestion.WPF
             mainContentArea.Content = controlStock;
         }
 
+        private void btnProveedores_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PROVEEDORES) ||
+                !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PROVEEDORES)) return;
+
+            ProveedoresControl controlProveedores = new ProveedoresControl();
+            mainContentArea.Content = controlProveedores;
+        }
+
+        private void btnCompras_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_COMPRAS) ||
+                !SesionUsuario.TienePermiso(DatabaseService.PERMISO_COMPRAS)) return;
+
+            ComprasControl controlCompras = new ComprasControl();
+            mainContentArea.Content = controlCompras;
+        }
+
+        // ===== INICIO DE CÓDIGO NUEVO (PRECIOS) =====
+        private void btnPrecios_Click(object sender, RoutedEventArgs e)
+        {
+            // Doble Guardia de seguridad
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRECIOS) ||
+                !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRECIOS)) return;
+
+            PreciosControl controlPrecios = new PreciosControl();
+            mainContentArea.Content = controlPrecios;
+        }
+        // ===== FIN DE CÓDIGO NUEVO =====
 
         private void btnPermisos_Click(object sender, RoutedEventArgs e)
         {
-            // Doble Guardia de seguridad
             if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS) ||
                 !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PERMISOS)) return;
 
@@ -225,9 +272,7 @@ namespace SchettiniGestion.WPF
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            // Limpiamos la sesión antes de cerrar
             SesionUsuario.Cerrar();
-
             Application.Current.Shutdown();
         }
 

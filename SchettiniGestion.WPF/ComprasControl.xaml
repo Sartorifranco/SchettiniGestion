@@ -1,0 +1,136 @@
+﻿<UserControl x:Class="SchettiniGestion.WPF.ComprasControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SchettiniGestion.WPF"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1000"
+             Background="{StaticResource ModuleBackgroundBrush}"
+             Loaded="UserControl_Loaded">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Registro de Compras" FontSize="24" FontWeight="Bold" Foreground="{StaticResource HeaderForegroundBrush}" Margin="0,0,0,20"/>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="400"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" Margin="0,0,10,0">
+                <StackPanel>
+
+                    <TextBlock Text="Proveedor" Style="{StaticResource ModuleLabelStyle}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="txtProveedor" Style="{StaticResource ModuleTextBoxStyle}" IsReadOnly="True" Text="Proveedor Varios"/>
+                        <Button x:Name="btnBuscarProveedor" Grid.Column="1" Content="Buscar" Style="{StaticResource ActionButtonStyle}" Margin="10,0,0,0" Click="btnBuscarProveedor_Click"/>
+                    </Grid>
+
+                    <TextBlock Text="Tipo de Comprobante" Style="{StaticResource ModuleLabelStyle}" Margin="0,15,0,5"/>
+                    <TextBox x:Name="txtTipoComprobante" Style="{StaticResource ModuleTextBoxStyle}" Text="Factura A"/>
+
+                    <Separator Margin="0,20" Background="{StaticResource BorderDarkBrush}"/>
+
+                    <TextBlock Text="Buscar Producto (Código o Nombre)" Style="{StaticResource ModuleLabelStyle}"/>
+
+                    <TextBox x:Name="txtBuscarProducto" Style="{StaticResource ModuleTextBoxStyle}" 
+                             KeyDown="txtBuscarProducto_KeyDown" 
+                             LostFocus="txtBuscarProducto_LostFocus"/>
+
+                    <Popup x:Name="popupProductos" PlacementTarget="{Binding ElementName=txtBuscarProducto}" Placement="Bottom" StaysOpen="False">
+                        <Border Background="{StaticResource PanelBackgroundBrush}" BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1" CornerRadius="3" MinWidth="350">
+                            <ListBox x:Name="lstProductos" MaxHeight="200" SelectionChanged="lstProductos_SelectionChanged" KeyDown="lstProductos_KeyDown">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Descripcion}" Foreground="White" FontSize="14"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                    </Popup>
+
+                    <Border Background="{StaticResource ModuleBackgroundBrush}" CornerRadius="5" Padding="15" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock x:Name="lblProductoSeleccionado" Text="Producto:" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,10"/>
+
+                            <TextBlock Text="Precio de Costo:" Style="{StaticResource ModuleLabelStyle}"/>
+                            <xctk:DecimalUpDown x:Name="numPrecioCosto" Style="{StaticResource ModuleNumericUpDownStyle}" FormatString="C2" Margin="0,0,0,10"/>
+
+                            <TextBlock Text="Cantidad:" Style="{StaticResource ModuleLabelStyle}"/>
+                            <xctk:IntegerUpDown x:Name="numCantidad" Style="{StaticResource ModuleIntegerUpDownStyle}" Minimum="1" Value="1" Margin="0,0,0,15"/>
+
+                            <Button x:Name="btnAgregar" Content="Agregar al Carrito" Style="{StaticResource ActionButtonStyle}" HorizontalAlignment="Stretch" Click="btnAgregar_Click" IsEnabled="False"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" Margin="10,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <DataGrid x:Name="dgvCarrito" Grid.Row="0" Style="{StaticResource ModuleDataGridStyle}" AutoGenerateColumns="False" CanUserDeleteRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" Width="60" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="P. Costo" Binding="{Binding PrecioUnitario, StringFormat=C2}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Subtotal" Binding="{Binding Subtotal, StringFormat=C2}" Width="110" IsReadOnly="True"/>
+                            <DataGridTemplateColumn Width="50">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="X" Style="{StaticResource DeleteButtonStyle}" Padding="5" MinHeight="25" MinWidth="25"
+                                                Click="btnEliminarItem_Click"
+                                                CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <StackPanel Grid.Row="1" Margin="0,20,0,0">
+                        <TextBlock x:Name="lblTotal" Text="TOTAL: $0.00" FontSize="36" FontWeight="Bold" Foreground="White" HorizontalAlignment="Right" Margin="0,0,0,20"/>
+                        <Button x:Name="btnGuardarCompra" Content="Guardar Compra" Style="{StaticResource ActionButtonStyle}" HorizontalAlignment="Stretch" FontSize="18" Padding="15" Click="btnGuardarCompra_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="popupOverlay" Background="#80000000" Visibility="Collapsed" MouseUp="popupOverlay_MouseUp">
+            <Border Background="{StaticResource ModuleBackgroundBrush}" BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1" CornerRadius="5" 
+                    VerticalAlignment="Center" HorizontalAlignment="Center" 
+                    Width="600" MaxHeight="500">
+                <StackPanel Margin="20">
+                    <TextBlock Text="Buscar Proveedor" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+                    <TextBox x:Name="txtBuscarProveedorPopup" Style="{StaticResource ModuleTextBoxStyle}" KeyDown="txtBuscarProveedorPopup_KeyDown"/>
+                    <ListBox x:Name="lstProveedores" MaxHeight="350" Margin="0,10" 
+                             SelectionChanged="lstProveedores_SelectionChanged" 
+                             KeyDown="lstProveedores_KeyDown">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding RazonSocial}" Foreground="White" FontSize="16"/>
+                                    <TextBlock Text="{Binding CUIT}" Foreground="#AAA" FontSize="12"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

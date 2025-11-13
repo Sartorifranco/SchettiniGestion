@@ -6,74 +6,70 @@
              xmlns:local="clr-namespace:SchettiniGestion.WPF"
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              mc:Ignorable="d" 
-             d:DesignHeight="700" d:DesignWidth="1000"
+             d:DesignHeight="600" d:DesignWidth="1000"
+             Background="{StaticResource ModuleBackgroundBrush}"
              Loaded="ProductosControl_Loaded">
 
-    <Grid Background="{StaticResource ModuleBackgroundBrush}">
+    <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 1. Panel de Controles (arriba) -->
-        <Border Grid.Row="0" 
-                Background="{StaticResource PanelBackgroundBrush}" 
-                CornerRadius="5" Margin="20,20,20,10" Padding="20"
-                BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+        <TextBlock Grid.Row="0" Text="Gestión de Productos" FontSize="24" FontWeight="Bold" Foreground="{StaticResource HeaderForegroundBrush}" Margin="0,0,0,20"/>
+
+        <Border Grid.Row="1" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="20">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="1.5*"/>
+                    <ColumnDefinition Width="1*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Fila 0 -->
                 <StackPanel Grid.Column="0" Margin="0,0,10,0">
                     <TextBlock Text="Código:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <TextBox x:Name="txtCodigo" Style="{StaticResource ModuleTextBoxStyle}" MaxLength="50"/>
+                    <TextBox x:Name="txtCodigo" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,10"/>
+
+                    <TextBlock Text="Descripción:" Style="{StaticResource ModuleLabelStyle}"/>
+                    <TextBox x:Name="txtDescripcion" Style="{StaticResource ModuleTextBoxStyle}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Margin="10,0,10,0">
-                    <TextBlock Text="Descripción:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <TextBox x:Name="txtDescripcion" Style="{StaticResource ModuleTextBoxStyle}" MaxLength="150"/>
-                </StackPanel>
+                    <TextBlock Text="Precio de Costo:" Style="{StaticResource ModuleLabelStyle}"/>
+                    <xctk:DecimalUpDown x:Name="numPrecioCosto" Style="{StaticResource ModuleNumericUpDownStyle}" FormatString="C2" Margin="0,0,0,10"/>
 
-                <StackPanel Grid.Column="2" Margin="10,0,10,0">
-                    <TextBlock Text="Precio Venta:" Style="{StaticResource ModuleLabelStyle}"/>
+                    <TextBlock Text="Precio de Venta:" Style="{StaticResource ModuleLabelStyle}"/>
                     <xctk:DecimalUpDown x:Name="numPrecioVenta" Style="{StaticResource ModuleNumericUpDownStyle}" FormatString="C2"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="3" Margin="10,0,0,0">
+                <StackPanel Grid.Column="2" Margin="10,0,0,0">
                     <TextBlock Text="Stock Actual:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <xctk:IntegerUpDown x:Name="numStockActual" Style="{StaticResource ModuleIntegerUpDownStyle}" FormatString="N0"/>
+                    <xctk:IntegerUpDown x:Name="numStock" Style="{StaticResource ModuleIntegerUpDownStyle}"/>
                 </StackPanel>
 
-                <!-- Botones -->
-                <StackPanel Grid.Column="4" Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="20,0,0,0">
-                    <Button x:Name="btnNuevo" Content="➕ Nuevo" Style="{StaticResource ActionButtonStyle}" Click="btnNuevo_Click" Margin="5"/>
-                    <Button x:Name="btnGuardar" Content="💾 Guardar" Style="{StaticResource ActionButtonStyle}" Click="btnGuardar_Click" Margin="5"/>
-                    <Button x:Name="btnEliminar" Content="🗑️ Eliminar" Style="{StaticResource DeleteButtonStyle}" Click="btnEliminar_Click" Margin="5"/>
+                <StackPanel Grid.Column="3" VerticalAlignment="Bottom" Margin="20,0,0,0">
+                    <Button x:Name="btnNuevo" Content="➕ Nuevo" Style="{StaticResource ActionButtonStyle}" Click="btnNuevo_Click" Margin="0,0,0,5"/>
+                    <Button x:Name="btnGuardar" Content="💾 Guardar" Style="{StaticResource ActionButtonStyle}" Click="btnGuardar_Click" Margin="0,0,0,5"/>
+                    <Button x:Name="btnEliminar" Content="❌ Eliminar" Style="{StaticResource DeleteButtonStyle}" Click="btnEliminar_Click" IsEnabled="False"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- 2. Grilla de Datos (abajo) -->
-        <Border Grid.Row="1" 
-                Background="{StaticResource PanelBackgroundBrush}" 
-                CornerRadius="5" Margin="20,0,20,20" Padding="5"
-                BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
-            <DataGrid x:Name="dvgProductos" 
-                      Style="{StaticResource ModuleDataGridStyle}"
-                      SelectionChanged="dvgProductos_SelectionChanged">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="Auto" IsReadOnly="True" />
-                    <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True" />
-                    <DataGridTextColumn Header="Precio Venta" Binding="{Binding PrecioVenta, StringFormat=C2}" Width="Auto" IsReadOnly="True" />
-                    <DataGridTextColumn Header="Stock" Binding="{Binding StockActual}" Width="Auto" IsReadOnly="True" />
-                </DataGrid.Columns>
-            </DataGrid>
-        </Border>
+        <DataGrid x:Name="dgvProductos" Grid.Row="2" 
+                  Style="{StaticResource ModuleDataGridStyle}" 
+                  Margin="0,20,0,0"
+                  AutoGenerateColumns="False" 
+                  SelectionChanged="dgvProductos_SelectionChanged">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding ProductoID}" Width="60" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="150" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="P. Costo" Binding="{Binding PrecioCosto, StringFormat=C2}" Width="120" IsReadOnly="True"/>
+                <DataGridTextColumn Header="P. Venta" Binding="{Binding PrecioVenta, StringFormat=C2}" Width="120" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Stock" Binding="{Binding StockActual}" Width="80" IsReadOnly="True"/>
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
 </UserControl>

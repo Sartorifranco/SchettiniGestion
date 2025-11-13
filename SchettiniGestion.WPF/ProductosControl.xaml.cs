@@ -1,16 +1,11 @@
-﻿using SchettiniGestion; // <-- ¡Nuestro Cerebro!
+﻿using SchettiniGestion; // ¡Importante!
 using System;
-using System.Data; // <-- Para usar DataTable
+using System.Data;
 using System.Windows;
 using System.Windows.Controls;
-// ¡Importamos el Toolkit!
-using Xceed.Wpf.Toolkit;
 
 namespace SchettiniGestion.WPF
 {
-    /// <summary>
-    /// Lógica de interacción para ProductosControl.xaml
-    /// </summary>
     public partial class ProductosControl : UserControl
     {
         private int _productoIDSeleccionado = 0;
@@ -20,130 +15,99 @@ namespace SchettiniGestion.WPF
             InitializeComponent();
         }
 
-        // --- 1. MÉTODOS DE CARGA ---
-
         private void ProductosControl_Loaded(object sender, RoutedEventArgs e)
         {
-            ConfigurarControlesNumericos();
-            CargarProductos();
-            LimpiarCampos();
+            CargarDatos();
         }
 
-        private void ConfigurarControlesNumericos()
-        {
-            // --- ¡ESTA ES LA CORRECCIÓN! ---
-            // Borramos las líneas que daban error (DecimalPlaces y Minimum)
-            // 'FormatString' ya hace el trabajo de formatear.
-
-            // Configuración para el Precio de Venta
-            numPrecioVenta.FormatString = "C2"; // "C2" = Formato Moneda (ej: $1,250.50)
-            numPrecioVenta.AllowSpin = true; // Permite usar las flechitas
-
-            // Configuración para el Stock
-            numStockActual.FormatString = "N0"; // "N0" = Número sin decimales
-            numStockActual.AllowSpin = true;
-        }
-
-        private void CargarProductos()
+        private void CargarDatos()
         {
             try
             {
-                DataTable dt = DatabaseService.GetProductos();
-                dvgProductos.ItemsSource = dt.DefaultView;
+                // GetProductos() ahora trae la columna PrecioCosto
+                dgvProductos.ItemsSource = DatabaseService.GetProductos().DefaultView;
             }
             catch (Exception ex)
             {
-                // Especificamos 'System.Windows' para evitar la ambigüedad
-                System.Windows.MessageBox.Show($"Error al cargar productos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error al cargar productos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-        // --- 2. LÓGICA DE LOS BOTONES ---
-
-        private void btnNuevo_Click(object sender, RoutedEventArgs e)
-        {
-            LimpiarCampos();
-        }
-
-        private void btnGuardar_Click(object sender, RoutedEventArgs e)
-        {
-            // 1. Validar que la descripción no esté vacía
-            if (string.IsNullOrWhiteSpace(txtDescripcion.Text))
-            {
-                System.Windows.MessageBox.Show("La descripción del producto no puede estar vacía.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // 2. Obtener los valores de los campos
-            string codigo = txtCodigo.Text.Trim();
-            string descripcion = txtDescripcion.Text.Trim();
-            decimal precio = numPrecioVenta.Value ?? 0;
-            int stock = numStockActual.Value ?? 0;
-
-            // 3. Llamar al servicio de base de datos para guardar
-            bool exito = DatabaseService.GuardarProducto(_productoIDSeleccionado, codigo, descripcion, precio, stock);
-
-            if (exito)
-            {
-                System.Windows.MessageBox.Show("Producto guardado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                CargarProductos();
-                LimpiarCampos();
-            }
-        }
-
-        private void btnEliminar_Click(object sender, RoutedEventArgs e)
-        {
-            // 1. Validar que haya un producto seleccionado
-            if (_productoIDSeleccionado == 0)
-            {
-                System.Windows.MessageBox.Show("Por favor, seleccione un producto de la grilla para eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // 2. Pedir confirmación
-            MessageBoxResult confirmacion = System.Windows.MessageBox.Show($"¿Está seguro de que desea eliminar el producto '{txtDescripcion.Text}'?",
-                                                      "Confirmar eliminación",
-                                                      MessageBoxButton.YesNo,
-                                                      MessageBoxImage.Warning);
-
-            if (confirmacion == MessageBoxResult.Yes)
-            {
-                // 3. Llamar al servicio para eliminar
-                bool exito = DatabaseService.EliminarProducto(_productoIDSeleccionado);
-
-                if (exito)
-                {
-                    System.Windows.MessageBox.Show("Producto eliminado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                    CargarProductos();
-                    LimpiarCampos();
-                }
-            }
-        }
-
-        // --- 3. MÉTODOS AYUDANTES ---
 
         private void LimpiarCampos()
         {
             _productoIDSeleccionado = 0;
             txtCodigo.Text = "";
             txtDescripcion.Text = "";
+            numPrecioCosto.Value = 0; // ¡AÑADIDO!
             numPrecioVenta.Value = 0;
-            numStockActual.Value = 0;
+            numStock.Value = 0;
 
-            dvgProductos.UnselectAll();
+            btnGuardar.Content = "💾 Guardar";
+            btnEliminar.IsEnabled = false;
+            dgvProductos.SelectedIndex = -1;
+            txtCodigo.Focus();
         }
 
-        private void dvgProductos_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void dgvProductos_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (dvgProductos.SelectedItem is DataRowView filaSeleccionada)
+            if (dgvProductos.SelectedItem is DataRowView drv)
             {
-                _productoIDSeleccionado = Convert.ToInt32(filaSeleccionada["ProductoID"]);
-                txtCodigo.Text = filaSeleccionada["Codigo"].ToString();
-                txtDescripcion.Text = filaSeleccionada["Descripcion"].ToString();
-                numPrecioVenta.Value = Convert.ToDecimal(filaSeleccionada["PrecioVenta"]);
-                numStockActual.Value = Convert.ToInt32(filaSeleccionada["StockActual"]);
+                _productoIDSeleccionado = Convert.ToInt32(drv["ProductoID"]);
+                txtCodigo.Text = drv["Codigo"].ToString();
+                txtDescripcion.Text = drv["Descripcion"].ToString();
+                numPrecioCosto.Value = Convert.ToDecimal(drv["PrecioCosto"]); // ¡AÑADIDO!
+                numPrecioVenta.Value = Convert.ToDecimal(drv["PrecioVenta"]);
+                numStock.Value = Convert.ToInt32(drv["StockActual"]);
+
+                btnGuardar.Content = "Modificar";
+                btnEliminar.IsEnabled = true;
+            }
+        }
+
+        private void btnNuevo_Click(object sender, RoutedEventArgs e)
+        {
+            LimpiarCampos();
+        }
+
+        // ===== ¡AQUÍ ESTÁ LA CORRECCIÓN (LÍNEA 84)! =====
+        private void btnGuardar_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtCodigo.Text) || string.IsNullOrWhiteSpace(txtDescripcion.Text))
+            {
+                MessageBox.Show("El Código y la Descripción son obligatorios.", "Datos Incompletos", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            bool exito = DatabaseService.GuardarProducto(
+                _productoIDSeleccionado,
+                txtCodigo.Text,
+                txtDescripcion.Text,
+                numPrecioCosto.Value ?? 0, // ¡AÑADIDO!
+                numPrecioVenta.Value ?? 0,
+                numStock.Value ?? 0
+            );
+
+            if (exito)
+            {
+                MessageBox.Show("Producto guardado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                CargarDatos();
+                LimpiarCampos();
+            }
+        }
+
+        private void btnEliminar_Click(object sender, RoutedEventArgs e)
+        {
+            if (_productoIDSeleccionado == 0) return;
+
+            if (MessageBox.Show("¿Está seguro de que desea eliminar este producto?", "Confirmar Eliminación", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                bool exito = DatabaseService.EliminarProducto(_productoIDSeleccionado);
+                if (exito)
+                {
+                    MessageBox.Show("Producto eliminado.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CargarDatos();
+                    LimpiarCampos();
+                }
             }
         }
     }

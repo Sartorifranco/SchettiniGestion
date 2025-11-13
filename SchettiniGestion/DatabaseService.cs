@@ -8,7 +8,7 @@ using System.Linq; // ¡Importante para el nuevo método!
 
 namespace SchettiniGestion
 {
-    // ... (Clases FacturaItem, Rol, Permiso) ...
+    // ... (Clases FacturaItem, Rol, Permiso - Sin cambios) ...
     public class FacturaItem
     {
         public int ProductoID { get; set; }
@@ -21,13 +21,11 @@ namespace SchettiniGestion
             get { return Cantidad * PrecioUnitario; }
         }
     }
-
     public class Rol
     {
         public int RolId { get; set; }
         public string Nombre { get; set; }
     }
-
     public class Permiso
     {
         public int PermisoId { get; set; }
@@ -38,6 +36,7 @@ namespace SchettiniGestion
     public static class DatabaseService
     {
         private static string _dbPath;
+        // ... (Constantes de Permisos) ...
         public const string PERMISO_USUARIOS = "ACCESO_USUARIOS";
         public const string PERMISO_CLIENTES = "ACCESO_CLIENTES";
         public const string PERMISO_PRODUCTOS = "ACCESO_PRODUCTOS";
@@ -45,12 +44,15 @@ namespace SchettiniGestion
         public const string PERMISO_FACTURACION = "ACCESO_FACTURACION";
         public const string PERMISO_VENTAS = "ACCESO_VENTAS";
         public const string PERMISO_PERMISOS = "ACCESO_PERMISOS";
+        public const string PERMISO_PROVEEDORES = "ACCESO_PROVEEDORES";
+        public const string PERMISO_COMPRAS = "ACCESO_COMPRAS";
+        public const string PERMISO_PRECIOS = "ACCESO_PRECIOS";
 
         public static void InitializeDatabase()
         {
-            // ... (Todo tu código de InitializeDatabase. Sin cambios aquí) ...
             try
             {
+                // ... (Ruta de la DB - Sin cambios) ...
                 string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 string appFolder = Path.Combine(appDataFolder, "SchettiniGestion_NUEVO");
 
@@ -61,6 +63,7 @@ namespace SchettiniGestion
 
                 _dbPath = Path.Combine(appFolder, "SchettiniGestion.sqlite");
 
+
                 using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
                 {
                     connection.Open();
@@ -68,7 +71,7 @@ namespace SchettiniGestion
                     {
                         try
                         {
-                            // --- Tablas de ABMs (ya existentes) ---
+                            // ... (Tabla Usuarios - Sin cambios) ...
                             string sqlUsuarios = @"
                             CREATE TABLE IF NOT EXISTS Usuarios (
                                 UsuarioID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,7 +89,6 @@ namespace SchettiniGestion
                                 if (!ex.Message.Contains("duplicate column name")) throw;
                             }
                             new SQLiteCommand(sqlUsuarios, connection, transaction).ExecuteNonQuery();
-
                             string adminPassHash = PasswordHasher.HashPassword("12345");
                             string sqlAdmin = @"
                             INSERT OR IGNORE INTO Usuarios (NombreUsuario, PasswordHash, Rol) 
@@ -97,18 +99,27 @@ namespace SchettiniGestion
                                 command.ExecuteNonQuery();
                             }
 
-                            // ... (Resto de tu CREATE TABLE de Clientes, Productos, Facturas, etc.) ...
-
+                            // ... (Tabla Productos - Con PrecioCosto) ...
                             string sqlProductos = @"
                             CREATE TABLE IF NOT EXISTS Productos (
                                 ProductoID INTEGER PRIMARY KEY AUTOINCREMENT,
                                 Codigo TEXT UNIQUE,
                                 Descripcion TEXT NOT NULL,
+                                PrecioCosto REAL DEFAULT 0, 
                                 PrecioVenta REAL NOT NULL,
                                 StockActual INTEGER DEFAULT 0
                             );";
+                            try
+                            {
+                                new SQLiteCommand("ALTER TABLE Productos ADD COLUMN PrecioCosto REAL DEFAULT 0;", connection, transaction).ExecuteNonQuery();
+                            }
+                            catch (SQLiteException ex)
+                            {
+                                if (!ex.Message.Contains("duplicate column name")) throw;
+                            }
                             new SQLiteCommand(sqlProductos, connection, transaction).ExecuteNonQuery();
 
+                            // ... (Tabla Clientes - Sin cambios) ...
                             string sqlClientes = @"
                             CREATE TABLE IF NOT EXISTS Clientes (
                                 ClienteID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -117,12 +128,24 @@ namespace SchettiniGestion
                                 CondicionIVA TEXT
                             );";
                             new SQLiteCommand(sqlClientes, connection, transaction).ExecuteNonQuery();
-
                             string sqlClienteDefault = @"
                             INSERT OR IGNORE INTO Clientes (ClienteID, CUIT, RazonSocial, CondicionIVA) 
                             VALUES (1, '00-00000000-0', 'Consumidor Final', 'Consumidor Final');";
                             new SQLiteCommand(sqlClienteDefault, connection, transaction).ExecuteNonQuery();
 
+                            // ... (Tabla Proveedores - Sin cambios) ...
+                            string sqlProveedores = @"
+                            CREATE TABLE IF NOT EXISTS Proveedores (
+                                ProveedorID INTEGER PRIMARY KEY AUTOINCREMENT,
+                                CUIT TEXT UNIQUE,
+                                RazonSocial TEXT NOT NULL,
+                                Telefono TEXT,
+                                Email TEXT,
+                                Direccion TEXT
+                            );";
+                            new SQLiteCommand(sqlProveedores, connection, transaction).ExecuteNonQuery();
+
+                            // ... (Tablas Facturas, Detalle, MovimientosStock - Sin cambios) ...
                             string sqlFacturas = @"
                             CREATE TABLE IF NOT EXISTS Facturas (
                                 FacturaID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -133,7 +156,6 @@ namespace SchettiniGestion
                                 FOREIGN KEY(ClienteID) REFERENCES Clientes(ClienteID)
                             );";
                             new SQLiteCommand(sqlFacturas, connection, transaction).ExecuteNonQuery();
-
                             string sqlFacturaDetalle = @"
                             CREATE TABLE IF NOT EXISTS FacturaDetalle (
                                 DetalleID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -145,19 +167,51 @@ namespace SchettiniGestion
                                 FOREIGN KEY(ProductoID) REFERENCES Productos(ProductoID)
                             );";
                             new SQLiteCommand(sqlFacturaDetalle, connection, transaction).ExecuteNonQuery();
-
                             string sqlMovimientosStock = @"
                             CREATE TABLE IF NOT EXISTS MovimientosStock (
                                 MovimientoID INTEGER PRIMARY KEY AUTOINCREMENT,
                                 ProductoID INTEGER NOT NULL,
-                                FacturaID INTEGER,
+                                FacturaID INTEGER, 
+                                CompraID INTEGER, 
                                 Fecha TEXT NOT NULL,
                                 TipoMovimiento TEXT NOT NULL,
                                 Cantidad INTEGER NOT NULL,
                                 FOREIGN KEY(ProductoID) REFERENCES Productos(ProductoID),
-                                FOREIGN KEY(FacturaID) REFERENCES Facturas(FacturaID)
+                                FOREIGN KEY(FacturaID) REFERENCES Facturas(FacturaID),
+                                FOREIGN KEY(CompraID) REFERENCES Compras(CompraID) 
                             );";
+                            try
+                            {
+                                new SQLiteCommand("ALTER TABLE MovimientosStock ADD COLUMN CompraID INTEGER REFERENCES Compras(CompraID);", connection, transaction).ExecuteNonQuery();
+                            }
+                            catch (SQLiteException ex)
+                            {
+                                if (!ex.Message.Contains("duplicate column name")) throw;
+                            }
                             new SQLiteCommand(sqlMovimientosStock, connection, transaction).ExecuteNonQuery();
+
+                            // ... (Tablas Compras, CompraDetalle - Sin cambios) ...
+                            string sqlCompras = @"
+                            CREATE TABLE IF NOT EXISTS Compras (
+                                CompraID INTEGER PRIMARY KEY AUTOINCREMENT,
+                                ProveedorID INTEGER NOT NULL,
+                                Fecha TEXT NOT NULL,
+                                Total REAL NOT NULL,
+                                TipoComprobante TEXT,
+                                FOREIGN KEY(ProveedorID) REFERENCES Proveedores(ProveedorID)
+                            );";
+                            new SQLiteCommand(sqlCompras, connection, transaction).ExecuteNonQuery();
+                            string sqlCompraDetalle = @"
+                            CREATE TABLE IF NOT EXISTS CompraDetalle (
+                                DetalleID INTEGER PRIMARY KEY AUTOINCREMENT,
+                                CompraID INTEGER NOT NULL,
+                                ProductoID INTEGER NOT NULL,
+                                Cantidad INTEGER NOT NULL,
+                                PrecioCosto REAL NOT NULL,
+                                FOREIGN KEY(CompraID) REFERENCES Compras(CompraID),
+                                FOREIGN KEY(ProductoID) REFERENCES Productos(ProductoID)
+                            );";
+                            new SQLiteCommand(sqlCompraDetalle, connection, transaction).ExecuteNonQuery();
 
 
                             // --- Tablas de Permisos ---
@@ -172,11 +226,12 @@ namespace SchettiniGestion
                                     FOREIGN KEY(PermisoID) REFERENCES Permisos(PermisoID)
                                 );", connection, transaction).ExecuteNonQuery();
 
-                            // Poblar Roles y Permisos
+                            // Poblar Roles
                             new SQLiteCommand("INSERT OR IGNORE INTO Roles (RolID, NombreRol) VALUES (1, 'Admin');", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand("INSERT OR IGNORE INTO Roles (RolID, NombreRol) VALUES (2, 'Vendedor');", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand("INSERT OR IGNORE INTO Roles (RolID, NombreRol) VALUES (3, 'Cajero');", connection, transaction).ExecuteNonQuery();
 
+                            // Poblar Permisos
                             new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_USUARIOS}');", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_CLIENTES}');", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_PRODUCTOS}');", connection, transaction).ExecuteNonQuery();
@@ -184,6 +239,9 @@ namespace SchettiniGestion
                             new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_FACTURACION}');", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_VENTAS}');", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_PERMISOS}');", connection, transaction).ExecuteNonQuery();
+                            new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_PROVEEDORES}');", connection, transaction).ExecuteNonQuery();
+                            new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_COMPRAS}');", connection, transaction).ExecuteNonQuery();
+                            new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_PRECIOS}');", connection, transaction).ExecuteNonQuery();
 
                             // Asignar Permisos (Admin tiene todo)
                             new SQLiteCommand($"INSERT OR IGNORE INTO Roles_Permisos (RolID, PermisoID) SELECT 1, PermisoID FROM Permisos;", connection, transaction).ExecuteNonQuery();
@@ -199,7 +257,6 @@ namespace SchettiniGestion
                                 SET RolID = (SELECT RolID FROM Roles WHERE NombreRol = Usuarios.Rol) 
                                 WHERE RolID IS NULL AND Rol IS NOT NULL;
                             ", connection, transaction).ExecuteNonQuery();
-
                             new SQLiteCommand("UPDATE Usuarios SET RolID = 2 WHERE RolID IS NULL;", connection, transaction).ExecuteNonQuery();
 
                             transaction.Commit();
@@ -218,7 +275,6 @@ namespace SchettiniGestion
                 Environment.Exit(1);
             }
         }
-
 
         // --- MÉTODOS DE USUARIOS ---
         #region Metodos Usuarios
@@ -243,7 +299,6 @@ namespace SchettiniGestion
             }
             catch (Exception ex) { MessageBox.Show($"Error al validar usuario: {ex.Message}"); return false; }
         }
-
         public static DataTable GetUsuarios()
         {
             var dt = new DataTable();
@@ -265,7 +320,6 @@ namespace SchettiniGestion
             catch (Exception ex) { MessageBox.Show($"Error al cargar usuarios: {ex.Message}"); }
             return dt;
         }
-
         public static List<Rol> GetRoles()
         {
             var listaRoles = new List<Rol>();
@@ -294,8 +348,6 @@ namespace SchettiniGestion
             catch (Exception ex) { MessageBox.Show($"Error al cargar roles: {ex.Message}"); }
             return listaRoles;
         }
-
-
         public static bool GuardarUsuario(int usuarioID, string nombreUsuario, string password, int rolID, string rolTexto)
         {
             string passHash = "";
@@ -335,7 +387,6 @@ namespace SchettiniGestion
                 return false;
             }
         }
-
         public static bool EliminarUsuario(int usuarioID)
         {
             try
@@ -356,8 +407,7 @@ namespace SchettiniGestion
         }
         #endregion
 
-        // ... (Todos tus métodos de Clientes, Productos, Facturación) ...
-        // ... (No hay cambios allí) ...
+        // --- MÉTODOS DE CLIENTES ---
         #region Metodos Clientes
         public static DataTable GetClientes()
         {
@@ -460,6 +510,8 @@ namespace SchettiniGestion
             return dt;
         }
         #endregion
+
+        // --- MÉTODOS DE PRODUCTOS ---
         #region Metodos Productos
         public static DataTable GetProductos()
         {
@@ -469,7 +521,7 @@ namespace SchettiniGestion
                 using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
                 {
                     connection.Open();
-                    string sql = "SELECT ProductoID, Codigo, Descripcion, PrecioVenta, StockActual FROM Productos";
+                    string sql = "SELECT ProductoID, Codigo, Descripcion, PrecioCosto, PrecioVenta, StockActual FROM Productos";
                     using (var command = new SQLiteCommand(sql, connection))
                     {
                         using (var adapter = new SQLiteDataAdapter(command)) { adapter.Fill(dt); }
@@ -479,7 +531,10 @@ namespace SchettiniGestion
             catch (Exception ex) { MessageBox.Show($"Error al cargar productos: {ex.Message}"); }
             return dt;
         }
-        public static bool GuardarProducto(int productoID, string codigo, string descripcion, decimal precioVenta, int stockActual)
+
+        // ¡OJO! Este GuardarProducto es para el ABM de Productos.
+        // Lo actualizamos para incluir PrecioCosto
+        public static bool GuardarProducto(int productoID, string codigo, string descripcion, decimal precioCosto, decimal precioVenta, int stockActual)
         {
             try
             {
@@ -487,12 +542,13 @@ namespace SchettiniGestion
                 {
                     connection.Open();
                     string sql = (productoID == 0)
-                        ? "INSERT INTO Productos (Codigo, Descripcion, PrecioVenta, StockActual) VALUES (@codigo, @desc, @precio, @stock)"
-                        : "UPDATE Productos SET Codigo = @codigo, Descripcion = @desc, PrecioVenta = @precio, StockActual = @stock WHERE ProductoID = @id";
+                        ? "INSERT INTO Productos (Codigo, Descripcion, PrecioCosto, PrecioVenta, StockActual) VALUES (@codigo, @desc, @costo, @precio, @stock)"
+                        : "UPDATE Productos SET Codigo = @codigo, Descripcion = @desc, PrecioCosto = @costo, PrecioVenta = @precio, StockActual = @stock WHERE ProductoID = @id";
                     using (var command = new SQLiteCommand(sql, connection))
                     {
                         command.Parameters.AddWithValue("@codigo", codigo);
                         command.Parameters.AddWithValue("@desc", descripcion);
+                        command.Parameters.AddWithValue("@costo", (double)precioCosto); // ¡NUEVO!
                         command.Parameters.AddWithValue("@precio", (double)precioVenta);
                         command.Parameters.AddWithValue("@stock", stockActual);
                         command.Parameters.AddWithValue("@id", productoID);
@@ -503,6 +559,29 @@ namespace SchettiniGestion
             }
             catch (Exception ex) { MessageBox.Show($"Error al guardar producto: {ex.Message}"); return false; }
         }
+
+        // ¡NUEVO MÉTODO! Para el módulo de Gestión de Precios
+        public static bool ActualizarPreciosProducto(int productoID, decimal precioCosto, decimal precioVenta)
+        {
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    connection.Open();
+                    string sql = "UPDATE Productos SET PrecioCosto = @costo, PrecioVenta = @precio WHERE ProductoID = @id";
+                    using (var command = new SQLiteCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@costo", (double)precioCosto);
+                        command.Parameters.AddWithValue("@precio", (double)precioVenta);
+                        command.Parameters.AddWithValue("@id", productoID);
+                        command.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show($"Error al actualizar precios: {ex.Message}"); return false; }
+        }
+
         public static bool EliminarProducto(int productoID)
         {
             try
@@ -521,6 +600,7 @@ namespace SchettiniGestion
             }
             catch (Exception ex) { MessageBox.Show($"Error al eliminar producto: {ex.Message}"); return false; }
         }
+
         public static DataRow BuscarProducto(string query)
         {
             DataRow row = null;
@@ -529,7 +609,7 @@ namespace SchettiniGestion
                 using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
                 {
                     connection.Open();
-                    string sql = "SELECT * FROM Productos WHERE Codigo = @query OR Descripcion LIKE @likeQuery LIMIT 1";
+                    string sql = "SELECT ProductoID, Codigo, Descripcion, PrecioCosto, PrecioVenta, StockActual FROM Productos WHERE Codigo = @query OR Descripcion LIKE @likeQuery LIMIT 1";
                     var dt = new DataTable();
                     using (var command = new SQLiteCommand(sql, connection))
                     {
@@ -543,7 +623,8 @@ namespace SchettiniGestion
             catch (Exception ex) { MessageBox.Show($"Error al buscar producto: {ex.Message}"); }
             return row;
         }
-        public static DataTable BuscarProductosMultiples(string query)
+
+        public static DataTable BuscarProductosMultiples_ParaVenta(string query)
         {
             var dt = new DataTable();
             try
@@ -551,7 +632,27 @@ namespace SchettiniGestion
                 using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
                 {
                     connection.Open();
-                    string sql = "SELECT ProductoID, Codigo, Descripcion, PrecioVenta, StockActual FROM Productos WHERE (Codigo LIKE @likeQuery OR Descripcion LIKE @likeQuery) AND StockActual > 0 LIMIT 10";
+                    string sql = "SELECT ProductoID, Codigo, Descripcion, PrecioCosto, PrecioVenta, StockActual FROM Productos WHERE (Codigo LIKE @likeQuery OR Descripcion LIKE @likeQuery) AND StockActual > 0 LIMIT 10";
+                    using (var command = new SQLiteCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@likeQuery", $"%{query}%");
+                        using (var adapter = new SQLiteDataAdapter(command)) { adapter.Fill(dt); }
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show($"Error al buscar productos: {ex.Message}"); }
+            return dt;
+        }
+
+        public static DataTable BuscarProductosMultiples_ParaCompra(string query)
+        {
+            var dt = new DataTable();
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    connection.Open();
+                    string sql = "SELECT ProductoID, Codigo, Descripcion, PrecioCosto, PrecioVenta, StockActual FROM Productos WHERE (Codigo LIKE @likeQuery OR Descripcion LIKE @likeQuery) LIMIT 10";
                     using (var command = new SQLiteCommand(sql, connection))
                     {
                         command.Parameters.AddWithValue("@likeQuery", $"%{query}%");
@@ -563,8 +664,9 @@ namespace SchettiniGestion
             return dt;
         }
         #endregion
-        #region Metodos Facturacion y Stock
 
+        // --- MÉTODOS DE FACTURACIÓN Y STOCK ---
+        #region Metodos Facturacion y Stock
         public static bool GuardarFactura(int clienteID, string tipoComprobante, decimal total, List<FacturaItem> items)
         {
             using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
@@ -635,7 +737,6 @@ namespace SchettiniGestion
                 }
             }
         }
-
         public static DataTable GetFacturasPorFecha(DateTime desde, DateTime hasta)
         {
             var dt = new DataTable();
@@ -667,7 +768,6 @@ namespace SchettiniGestion
             catch (Exception ex) { MessageBox.Show($"Error al cargar facturas: {ex.Message}"); }
             return dt;
         }
-
         public static DataTable GetFacturaDetalle(int facturaID)
         {
             var dt = new DataTable();
@@ -697,7 +797,6 @@ namespace SchettiniGestion
             catch (Exception ex) { MessageBox.Show($"Error al cargar detalle de factura: {ex.Message}"); }
             return dt;
         }
-
         public static bool AjustarStock(int productoID, int cantidad, string tipoMovimiento)
         {
             if (cantidad == 0) return false;
@@ -719,8 +818,8 @@ namespace SchettiniGestion
                         }
 
                         string sqlMovimiento = @"
-                            INSERT INTO MovimientosStock (ProductoID, FacturaID, Fecha, TipoMovimiento, Cantidad) 
-                            VALUES (@ProductoID, NULL, @Fecha, @Tipo, @Cantidad)";
+                            INSERT INTO MovimientosStock (ProductoID, FacturaID, CompraID, Fecha, TipoMovimiento, Cantidad) 
+                            VALUES (@ProductoID, NULL, NULL, @Fecha, @Tipo, @Cantidad)";
                         using (var command = new SQLiteCommand(sqlMovimiento, connection, transaction))
                         {
                             command.Parameters.AddWithValue("@ProductoID", productoID);
@@ -744,8 +843,8 @@ namespace SchettiniGestion
         }
         #endregion
 
+        // --- MÉTODOS DE PERMISOS ---
         #region Metodos Permisos
-
         public static List<Permiso> GetPermisos()
         {
             var listaPermisos = new List<Permiso>();
@@ -774,7 +873,6 @@ namespace SchettiniGestion
             catch (Exception ex) { MessageBox.Show($"Error al cargar permisos: {ex.Message}"); }
             return listaPermisos;
         }
-
         public static Dictionary<int, List<int>> GetPermisosPorRol()
         {
             var dict = new Dictionary<int, List<int>>();
@@ -806,7 +904,6 @@ namespace SchettiniGestion
             catch (Exception ex) { MessageBox.Show($"Error al cargar permisos por rol: {ex.Message}"); }
             return dict;
         }
-
         public static void ActualizarPermisosParaRol(int rolId, List<int> permisosIds)
         {
             using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
@@ -847,14 +944,6 @@ namespace SchettiniGestion
                 }
             }
         }
-
-
-        // ===== INICIO DE CÓDIGO NUEVO (SESIÓN) =====
-        /// <summary>
-        /// Busca el RolID y los permisos de un usuario y los carga en la SesionUsuario estática.
-        /// </summary>
-        /// <param name="nombreUsuario">El usuario que inicia sesión.</param>
-        /// <returns>True si tiene éxito, False si el usuario no se encuentra.</returns>
         public static bool CargarSesionUsuario(string nombreUsuario)
         {
             try
@@ -863,7 +952,6 @@ namespace SchettiniGestion
                 {
                     connection.Open();
 
-                    // 1. Obtener el RolID del usuario
                     int rolId = 0;
                     string sqlRol = "SELECT RolID FROM Usuarios WHERE NombreUsuario = @user";
                     using (var cmdRol = new SQLiteCommand(sqlRol, connection))
@@ -872,7 +960,6 @@ namespace SchettiniGestion
                         var result = cmdRol.ExecuteScalar();
                         if (result == null || result == DBNull.Value)
                         {
-                            // Si el usuario no tiene RolID (caso raro), asignarle Vendedor por defecto
                             rolId = 2;
                         }
                         else
@@ -881,7 +968,6 @@ namespace SchettiniGestion
                         }
                     }
 
-                    // 2. Obtener la lista de nombres de permisos para ese RolID
                     var permisos = new List<string>();
                     string sqlPermisos = @"
                         SELECT p.NombrePermiso 
@@ -901,7 +987,6 @@ namespace SchettiniGestion
                         }
                     }
 
-                    // 3. Iniciar la sesión global
                     SesionUsuario.Iniciar(nombreUsuario, rolId, permisos);
                     return true;
                 }
@@ -912,8 +997,170 @@ namespace SchettiniGestion
                 return false;
             }
         }
-        // ===== FIN DE CÓDIGO NUEVO (SESIÓN) =====
+        #endregion
 
+        // --- MÉTODOS DE PROVEEDORES ---
+        #region Metodos Proveedores
+        public static DataTable GetProveedores()
+        {
+            var dt = new DataTable();
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    connection.Open();
+                    string sql = "SELECT ProveedorID, CUIT, RazonSocial, Telefono, Email, Direccion FROM Proveedores";
+                    using (var command = new SQLiteCommand(sql, connection))
+                    {
+                        using (var adapter = new SQLiteDataAdapter(command)) { adapter.Fill(dt); }
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show($"Error al cargar proveedores: {ex.Message}"); }
+            return dt;
+        }
+        public static bool GuardarProveedor(int proveedorID, string cuit, string razonSocial, string telefono, string email, string direccion)
+        {
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    connection.Open();
+                    string sql = (proveedorID == 0)
+                        ? "INSERT INTO Proveedores (CUIT, RazonSocial, Telefono, Email, Direccion) VALUES (@cuit, @razon, @tel, @email, @dir)"
+                        : "UPDATE Proveedores SET CUIT = @cuit, RazonSocial = @razon, Telefono = @tel, Email = @email, Direccion = @dir WHERE ProveedorID = @id";
+
+                    using (var command = new SQLiteCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@cuit", cuit);
+                        command.Parameters.AddWithValue("@razon", razonSocial);
+                        command.Parameters.AddWithValue("@tel", telefono);
+                        command.Parameters.AddWithValue("@email", email);
+                        command.Parameters.AddWithValue("@dir", direccion);
+                        command.Parameters.AddWithValue("@id", proveedorID);
+                        command.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show($"Error al guardar proveedor: {ex.Message}"); return false; }
+        }
+        public static bool EliminarProveedor(int proveedorID)
+        {
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    connection.Open();
+                    string sql = "DELETE FROM Proveedores WHERE ProveedorID = @id";
+                    using (var command = new SQLiteCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@id", proveedorID);
+                        command.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show($"Error al eliminar proveedor: {ex.Message}"); return false; }
+        }
+        public static DataTable BuscarProveedoresMultiples(string query)
+        {
+            var dt = new DataTable();
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    connection.Open();
+                    string sql = "SELECT ProveedorID, CUIT, RazonSocial FROM Proveedores WHERE CUIT LIKE @likeQuery OR RazonSocial LIKE @likeQuery LIMIT 10";
+                    using (var command = new SQLiteCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@likeQuery", $"%{query}%");
+                        using (var adapter = new SQLiteDataAdapter(command)) { adapter.Fill(dt); }
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show($"Error al buscar proveedores: {ex.Message}"); }
+            return dt;
+        }
+        #endregion
+
+        // --- MÉTODOS DE COMPRAS ---
+        #region Metodos Compras
+        public static bool GuardarCompra(int proveedorID, string tipoComprobante, decimal total, List<FacturaItem> items)
+        {
+            using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        string fechaActual = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+                        // 1. Insertar el encabezado
+                        string sqlCompra = "INSERT INTO Compras (ProveedorID, Fecha, Total, TipoComprobante) VALUES (@ProveedorID, @Fecha, @Total, @Tipo)";
+                        using (var command = new SQLiteCommand(sqlCompra, connection, transaction))
+                        {
+                            command.Parameters.AddWithValue("@ProveedorID", proveedorID);
+                            command.Parameters.AddWithValue("@Fecha", fechaActual);
+                            command.Parameters.AddWithValue("@Total", (double)total);
+                            command.Parameters.AddWithValue("@Tipo", tipoComprobante);
+                            command.ExecuteNonQuery();
+                        }
+
+                        long compraID = connection.LastInsertRowId;
+
+                        foreach (var item in items)
+                        {
+                            // 2a. Insertar en CompraDetalle
+                            string sqlDetalle = "INSERT INTO CompraDetalle (CompraID, ProductoID, Cantidad, PrecioCosto) VALUES (@CompraID, @ProductoID, @Cantidad, @PrecioCosto)";
+                            using (var command = new SQLiteCommand(sqlDetalle, connection, transaction))
+                            {
+                                command.Parameters.AddWithValue("@CompraID", compraID);
+                                command.Parameters.AddWithValue("@ProductoID", item.ProductoID);
+                                command.Parameters.AddWithValue("@Cantidad", item.Cantidad);
+                                command.Parameters.AddWithValue("@PrecioCosto", (double)item.PrecioUnitario);
+                                command.ExecuteNonQuery();
+                            }
+
+                            // 2b. AUMENTAR el stock Y ACTUALIZAR PRECIO COSTO
+                            string sqlStock = "UPDATE Productos SET StockActual = StockActual + @Cantidad, PrecioCosto = @PrecioCosto WHERE ProductoID = @ProductoID";
+                            using (var command = new SQLiteCommand(sqlStock, connection, transaction))
+                            {
+                                command.Parameters.AddWithValue("@Cantidad", item.Cantidad);
+                                command.Parameters.AddWithValue("@PrecioCosto", (double)item.PrecioUnitario); // ¡ACTUALIZA EL COSTO!
+                                command.Parameters.AddWithValue("@ProductoID", item.ProductoID);
+                                int rowsAffected = command.ExecuteNonQuery();
+                                if (rowsAffected == 0) throw new Exception($"Error al actualizar stock del producto ID: {item.ProductoID}.");
+                            }
+
+                            // 2c. Registrar el movimiento
+                            string sqlMovimiento = @"
+                                INSERT INTO MovimientosStock (ProductoID, CompraID, Fecha, TipoMovimiento, Cantidad) 
+                                VALUES (@ProductoID, @CompraID, @Fecha, @Tipo, @Cantidad)";
+                            using (var command = new SQLiteCommand(sqlMovimiento, connection, transaction))
+                            {
+                                command.Parameters.AddWithValue("@ProductoID", item.ProductoID);
+                                command.Parameters.AddWithValue("@CompraID", compraID);
+                                command.Parameters.AddWithValue("@Fecha", fechaActual);
+                                command.Parameters.AddWithValue("@Tipo", "Compra");
+                                command.Parameters.AddWithValue("@Cantidad", item.Cantidad);
+                                command.ExecuteNonQuery();
+                            }
+                        }
+
+                        transaction.Commit();
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        MessageBox.Show($"Error al guardar la compra: {ex.Message}");
+                        return false;
+                    }
+                }
+            }
+        }
         #endregion
     }
 }

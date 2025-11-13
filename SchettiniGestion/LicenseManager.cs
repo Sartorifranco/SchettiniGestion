@@ -24,14 +24,14 @@ namespace SchettiniGestion
         {
             try
             {
-                // --- ¡AQUÍ ESTÁ LA CLAVE "PRO" CORREGIDA Y FUNCIONAL! ---
-                string claveLicencia = "eyJDdWl0Q2xpZW50ZSI6IjIwLTExMjIzMzQ0LTUiLCJGZWNoYUV4cGlyYWNpb24iOiIyMDI2LTEyLTMxVDIzOjU5OjU5IiwiTW9kdWxvc1Blcm1pdGlkb3MiOlsiQUNDRVNPX0ZBQ1RVUkFDSU9OIiwiQUNDRVNPX1BST0RVQ1RPUyJdfQ==";
+                // --- ¡AQUÍ ESTÁ LA CLAVE "PRO" FINAL Y ACTUALIZADA! ---
+                // (Incluye ACCESO_PRECIOS)
+                string claveLicencia = "eyJDdWl0Q2xpZW50ZSI6IjIwLTMzNDQ1NTY2LTUiLCJGZWNoYUV4cGlyYWNpb24iOiIyMDI2LTEyLTMxVDIzOjU5OjU5IiwiTW9kdWxvc1Blcm1pdGlkb3MiOlsiQUNDRVNPX0ZBQ1RVUkFDSU9OIiwiQUNDRVNPX1BST0RVQ1RPUyIsIkFDQ0VTT19DTElFTlRFUyIsIkFDQ0VTT19WRU5UQVMiLCJBQ0NFU09fU1RPQ0siLCJBQ0NFU09fVVNVQVJJT1MiLCJBQ0NFU09fUEVSTUlTT1MiLCJBQ0NFU09fUFJPVkVFRE9SRVMiLCJBQ0NFU09fQ09NUFJBUyIsIkFDQ0VTT19QUkVDSU9TIl19";
 
                 // 1. Decodificamos la clave (de Base64 a JSON)
+                // ¡AQUÍ ESTÁ LA LÍNEA 28 CORREGIDA!
                 byte[] bytesLicencia = Convert.FromBase64String(claveLicencia);
                 string jsonLicencia = Encoding.UTF8.GetString(bytesLicencia);
-
-                // (El MessageBox de depuración se ha eliminado)
 
                 // 2. Convertimos el JSON a nuestro objeto C#
                 _licenciaActual = JsonConvert.DeserializeObject<LicenseData>(jsonLicencia);

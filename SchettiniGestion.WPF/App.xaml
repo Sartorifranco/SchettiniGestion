@@ -7,7 +7,6 @@
 
     <Application.Resources>
 
-        <!-- (Estilos del Menú Lateral) -->
         <Style TargetType="Button" x:Key="MenuButton">
             <Setter Property="FontSize" Value="18"/>
             <Setter Property="Foreground" Value="White"/>
@@ -41,10 +40,6 @@
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
 
-        <!-- ================================= -->
-        <!-- ¡INICIO DE LA CORRECCIÓN! -->
-        <!-- (Estilo de Botón Faltante para el Login) -->
-        <!-- ================================= -->
         <Style TargetType="Button" x:Key="ButtonStyle">
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="Bold"/>
@@ -55,9 +50,6 @@
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
-        <!-- ================================= -->
-        <!-- ¡FIN DE LA CORRECCIÓN! -->
-        <!-- ================================= -->
 
         <Style TargetType="TextBox" x:Key="TextBoxStyle">
             <Setter Property="FontSize" Value="14"/>
@@ -219,6 +211,45 @@
                     <Setter Property="Background" Value="#8F0000"/>
                 </Trigger>
             </Style.Triggers>
+        </Style>
+
+        <Style TargetType="Button" x:Key="KeyboardButtonStyle">
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{StaticResource PanelBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderDarkBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+
+            <Setter Property="MinHeight" Value="80"/>
+            <Setter Property="MinWidth" Value="80"/>
+
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+
+            <Setter Property="Focusable" Value="False"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#4A525A"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#5a626a"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="DataGrid" x:Key="ModuleDataGridStyle">

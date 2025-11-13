@@ -11,7 +11,6 @@
         Closing="Window_Closing"
         Background="#F0F0F0"
         Loaded="Window_Loaded">
-    <!-- ===== AÑADIDO ===== -->
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -32,17 +31,18 @@
                 <Button x:Name="btnInicio" Content="🏠  Inicio" Style="{StaticResource MenuButton}" Click="btnInicio_Click"/>
                 <Button x:Name="btnFacturacion" Content="🛒  Facturación" Style="{StaticResource MenuButton}" Click="btnFacturacion_Click"/>
 
-                <!-- ===== AÑADIDO x:Name ===== -->
                 <TextBlock x:Name="headerReportes" Text="Reportes" Style="{StaticResource MenuHeader}"/>
                 <Button x:Name="btnVentas" Content="📈  Ventas" Style="{StaticResource MenuButton}" Click="btnVentas_Click"/>
 
-                <!-- ===== AÑADIDO x:Name ===== -->
                 <TextBlock x:Name="headerGestion" Text="Gestión" Style="{StaticResource MenuHeader}"/>
+
+                <Button x:Name="btnPrecios" Content="💲  Precios" Style="{StaticResource MenuButton}" Click="btnPrecios_Click"/>
+                <Button x:Name="btnCompras" Content="📥  Compras" Style="{StaticResource MenuButton}" Click="btnCompras_Click"/>
+                <Button x:Name="btnProveedores" Content="🚚  Proveedores" Style="{StaticResource MenuButton}" Click="btnProveedores_Click"/>
                 <Button x:Name="btnStock" Content="📊  Stock" Style="{StaticResource MenuButton}" Click="btnStock_Click"/>
                 <Button x:Name="btnProductos" Content="📦  Productos" Style="{StaticResource MenuButton}" Click="productosMenuItem_Click"/>
                 <Button x:Name="btnClientes" Content="👥  Clientes" Style="{StaticResource MenuButton}" Click="clientesMenuItem_Click"/>
 
-                <!-- ===== AÑADIDO x:Name ===== -->
                 <TextBlock x:Name="headerAdministracion" Text="Administración" Style="{StaticResource MenuHeader}"/>
                 <Button x:Name="btnUsuarios" Content="👤  Usuarios" Style="{StaticResource MenuButton}" Click="usuariosMenuItem_Click"/>
                 <Button x:Name="btnPermisos" 
@@ -65,7 +65,6 @@
             </StackPanel>
         </Border>
 
-        <!-- El resto del Grid de contenido no cambia -->
         <Grid Grid.Column="1" Background="{StaticResource ModuleBackgroundBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
@@ -102,7 +101,6 @@
                             Click="btnTeclado_Click"/>
                 </StatusBarItem>
             </StatusBar>
-
         </Grid>
     </Grid>
 </Window>

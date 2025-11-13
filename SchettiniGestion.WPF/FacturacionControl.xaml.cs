@@ -1,98 +1,120 @@
-﻿using System;
+﻿using SchettiniGestion; // Importante
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel; // Para el Carrito
 using System.Data;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using SchettiniGestion; // ¡Importamos la lógica Y la clase FacturaItem!
-using System.Threading.Tasks;
+using System.Threading.Tasks; // Para el LostFocus
 
 namespace SchettiniGestion.WPF
 {
-    // --- ¡LA CLASE 'FacturaItem' SE MUDÓ A DatabaseService.cs! ---
-    // (Esto la hace accesible globalmente)
-
     public partial class FacturacionControl : UserControl
     {
-        private int _clienteIDSeleccionado = 1;
-        private DataRow _productoSeleccionado = null;
-        private List<FacturaItem> _itemsFactura = new List<FacturaItem>();
-        private bool _ignorarPerdidaFoco = false;
+        private ObservableCollection<FacturaItem> CarritoDeVenta;
+        private DataRow _clienteSeleccionado;
+        private DataRow _productoSeleccionado;
+        private bool _ignorarPerdidaFoco = false; // Para los popups
 
         public FacturacionControl()
         {
             InitializeComponent();
+            CarritoDeVenta = new ObservableCollection<FacturaItem>();
+            dgvFactura.ItemsSource = CarritoDeVenta; // Sincronizado con tu XAML
         }
 
-        private void FacturacionControl_Loaded(object sender, RoutedEventArgs e)
+        private void FacturacionControl_Loaded(object sender, RoutedEventArgs e) // Sincronizado
         {
-            IniciarNuevaFactura();
+            CargarClientePorDefecto();
+            LimpiarFormulario();
+            cmbTipoComprobante.SelectedIndex = 0; // Sincronizado
         }
 
-        private void IniciarNuevaFactura()
+        private void CargarClientePorDefecto()
         {
-            _clienteIDSeleccionado = 1;
-            lblClienteSeleccionado.Text = "Consumidor Final";
-            txtBuscarCliente.Clear();
-
-            _productoSeleccionado = null;
-            txtBuscarProducto.Clear();
-            numCantidad.Value = 1;
-
-            _itemsFactura.Clear();
-            cmbTipoComprobante.SelectedIndex = 0;
-            ActualizarGrillaYTotal();
-
-            popupCliente.IsOpen = false;
-            popupProducto.IsOpen = false;
-
-            txtBuscarCliente.Focus();
+            try
+            {
+                _clienteSeleccionado = DatabaseService.BuscarCliente("00-00000000-0");
+                if (_clienteSeleccionado != null)
+                {
+                    lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString(); // Sincronizado
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al cargar cliente por defecto: {ex.Message}");
+            }
         }
 
-        private void ActualizarGrillaYTotal()
-        {
-            dgvFactura.ItemsSource = null;
-            dgvFactura.ItemsSource = _itemsFactura;
-            decimal total = _itemsFactura.Sum(item => item.Subtotal);
-            lblTotal.Text = total.ToString("C2");
-        }
+        // --- 1. LÓGICA DE BÚSQUEDA (CLIENTE Y PRODUCTOS) ---
 
-        // --- BÚSQUEDA PREDICTIVA ---
-        #region LogicaBusquedaPredictiva
-
+        // Este método ahora se dispara con TextChanged, no con un botón
         private void txtBuscarCliente_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (txtBuscarCliente.Text.Length < 2) { popupCliente.IsOpen = false; return; }
-            DataTable clientes = DatabaseService.BuscarClientesMultiples(txtBuscarCliente.Text);
-            if (clientes.Rows.Count > 0) { lstSugerenciasCliente.ItemsSource = clientes.DefaultView; popupCliente.IsOpen = true; }
-            else { popupCliente.IsOpen = false; }
+            if (txtBuscarCliente.Text.Length < 2)
+            {
+                popupCliente.IsOpen = false;
+                return;
+            }
+
+            try
+            {
+                DataTable dt = DatabaseService.BuscarClientesMultiples(txtBuscarCliente.Text);
+                lstSugerenciasCliente.ItemsSource = dt.DefaultView;
+                popupCliente.IsOpen = dt.Rows.Count > 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al buscar clientes: {ex.Message}");
+            }
         }
-        private void lstSugerenciasCliente_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (lstSugerenciasCliente.SelectedItem is DataRowView filaSeleccionada) { SeleccionarCliente(filaSeleccionada); }
-        }
+
         private void SeleccionarCliente(DataRowView filaSeleccionada)
         {
-            _clienteIDSeleccionado = Convert.ToInt32(filaSeleccionada["ClienteID"]);
-            lblClienteSeleccionado.Text = filaSeleccionada["RazonSocial"].ToString();
+            _clienteSeleccionado = filaSeleccionada.Row;
             _ignorarPerdidaFoco = true;
             txtBuscarCliente.Text = filaSeleccionada["RazonSocial"].ToString();
+            lblClienteSeleccionado.Text = filaSeleccionada["RazonSocial"].ToString();
             _ignorarPerdidaFoco = false;
             popupCliente.IsOpen = false;
             txtBuscarProducto.Focus();
         }
+
+        private void lstSugerenciasCliente_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (lstSugerenciasCliente.SelectedItem is DataRowView drv)
+            {
+                SeleccionarCliente(drv);
+            }
+        }
+
+        // --- Búsqueda de Productos ---
+
         private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (txtBuscarProducto.Text.Length < 2) { popupProducto.IsOpen = false; _productoSeleccionado = null; return; }
-            DataTable productos = DatabaseService.BuscarProductosMultiples(txtBuscarProducto.Text);
-            if (productos.Rows.Count > 0) { lstSugerenciasProducto.ItemsSource = productos.DefaultView; popupProducto.IsOpen = true; }
-            else { popupProducto.IsOpen = false; _productoSeleccionado = null; }
+            if (_ignorarPerdidaFoco) return;
+            if (txtBuscarProducto.Text.Length < 2)
+            {
+                popupProducto.IsOpen = false;
+                _productoSeleccionado = null;
+                return;
+            }
+
+            try
+            {
+                // ¡Llamada corregida al método _ParaVenta!
+                DataTable dt = DatabaseService.BuscarProductosMultiples_ParaVenta(txtBuscarProducto.Text);
+                lstSugerenciasProducto.ItemsSource = dt.DefaultView;
+                popupProducto.IsOpen = dt.Rows.Count > 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al buscar productos: {ex.Message}");
+            }
         }
-        private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (lstSugerenciasProducto.SelectedItem is DataRowView filaSeleccionada) { SeleccionarProducto(filaSeleccionada); }
-        }
+
         private void SeleccionarProducto(DataRowView filaSeleccionada)
         {
             _productoSeleccionado = filaSeleccionada.Row;
@@ -102,157 +124,204 @@ namespace SchettiniGestion.WPF
             popupProducto.IsOpen = false;
             numCantidad.Focus();
         }
-        private void txtBuscar_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            ListBox popupList = null;
-            if (sender == txtBuscarCliente && popupCliente.IsOpen) popupList = lstSugerenciasCliente;
-            else if (sender == txtBuscarProducto && popupProducto.IsOpen) popupList = lstSugerenciasProducto;
 
-            if (popupList != null)
+        private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (lstSugerenciasProducto.SelectedItem is DataRowView drv)
             {
-                if (e.Key == Key.Down) { popupList.SelectedIndex = 0; popupList.Focus(); e.Handled = true; }
-                else if (e.Key == Key.Escape) { popupCliente.IsOpen = false; popupProducto.IsOpen = false; e.Handled = true; }
-            }
-            if (e.Key == Key.Enter)
-            {
-                if (sender == txtBuscarCliente) txtBuscarCliente_Enter();
-                if (sender == txtBuscarProducto) txtBuscarProducto_Enter();
+                SeleccionarProducto(drv);
             }
         }
+
+        // --- Manejo de Foco y Teclas en Popups ---
+
+        private async void txtBuscar_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (_ignorarPerdidaFoco) return;
+            // Espera un momento para permitir que el clic en la lista se registre primero
+            await Task.Delay(150);
+            if (!lstSugerenciasCliente.IsFocused && !lstSugerenciasProducto.IsFocused)
+            {
+                popupCliente.IsOpen = false;
+                popupProducto.IsOpen = false;
+            }
+        }
+
+        private void txtBuscar_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Down)
+            {
+                if (popupCliente.IsOpen)
+                {
+                    lstSugerenciasCliente.SelectedIndex = 0;
+                    lstSugerenciasCliente.Focus();
+                    e.Handled = true;
+                }
+                else if (popupProducto.IsOpen)
+                {
+                    lstSugerenciasProducto.SelectedIndex = 0;
+                    lstSugerenciasProducto.Focus();
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.Escape)
+            {
+                popupCliente.IsOpen = false;
+                popupProducto.IsOpen = false;
+                e.Handled = true;
+            }
+        }
+
         private void lstSugerencias_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
-                if (sender == lstSugerenciasCliente && lstSugerenciasCliente.SelectedItem is DataRowView cliente) SeleccionarCliente(cliente);
-                else if (sender == lstSugerenciasProducto && lstSugerenciasProducto.SelectedItem is DataRowView producto) SeleccionarProducto(producto);
-                e.Handled = true;
+                if (sender == lstSugerenciasCliente && lstSugerenciasCliente.SelectedItem is DataRowView cliente)
+                {
+                    SeleccionarCliente(cliente);
+                    e.Handled = true;
+                }
+                else if (sender == lstSugerenciasProducto && lstSugerenciasProducto.SelectedItem is DataRowView producto)
+                {
+                    SeleccionarProducto(producto);
+                    e.Handled = true;
+                }
             }
         }
-        private async void txtBuscar_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (_ignorarPerdidaFoco) return;
-            await Task.Delay(150);
-            if (sender == txtBuscarCliente && !lstSugerenciasCliente.IsFocused) popupCliente.IsOpen = false;
-            if (sender == txtBuscarProducto && !lstSugerenciasProducto.IsFocused) popupProducto.IsOpen = false;
-        }
-        private void txtBuscarCliente_Enter()
-        {
-            if (string.IsNullOrWhiteSpace(txtBuscarCliente.Text)) { _clienteIDSeleccionado = 1; lblClienteSeleccionado.Text = "Consumidor Final"; txtBuscarProducto.Focus(); return; }
-            DataRow cliente = DatabaseService.BuscarCliente(txtBuscarCliente.Text);
-            if (cliente != null) { _clienteIDSeleccionado = Convert.ToInt32(cliente["ClienteID"]); lblClienteSeleccionado.Text = cliente["RazonSocial"].ToString(); txtBuscarProducto.Focus(); }
-            else { System.Windows.MessageBox.Show("Cliente no encontrado.", "Aviso"); _clienteIDSeleccionado = 1; lblClienteSeleccionado.Text = "Consumidor Final"; }
-        }
-        private void txtBuscarProducto_Enter()
-        {
-            if (string.IsNullOrWhiteSpace(txtBuscarProducto.Text)) return;
-            DataRow producto = DatabaseService.BuscarProducto(txtBuscarProducto.Text);
-            if (producto != null) { _productoSeleccionado = producto; numCantidad.Focus(); }
-            else { System.Windows.MessageBox.Show("Producto no encontrado.", "Error"); _productoSeleccionado = null; }
-        }
 
-        #endregion
+        // --- 2. LÓGICA DEL CARRITO ---
 
-        // --- BOTONES DE ACCIÓN ---
-
-        private void btnAgregarProducto_Click(object sender, RoutedEventArgs e)
+        private void btnAgregarProducto_Click(object sender, RoutedEventArgs e) // Sincronizado
         {
             if (_productoSeleccionado == null)
             {
-                System.Windows.MessageBox.Show("Primero debe buscar y seleccionar un producto.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                txtBuscarProducto.Focus();
+                MessageBox.Show("Debe seleccionar un producto de la lista primero.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
+            int productoID = Convert.ToInt32(_productoSeleccionado["ProductoID"]);
             int stockDisponible = Convert.ToInt32(_productoSeleccionado["StockActual"]);
-            int cantidadAgregar = (int)(numCantidad.Value ?? 1);
+            int cantidadDeseada = (int)numCantidad.Value;
 
-            FacturaItem itemExistente = _itemsFactura.FirstOrDefault(item => item.ProductoID == Convert.ToInt32(_productoSeleccionado["ProductoID"]));
+            var itemExistente = CarritoDeVenta.FirstOrDefault(item => item.ProductoID == productoID);
             int cantidadEnCarrito = (itemExistente != null) ? itemExistente.Cantidad : 0;
 
-            if (cantidadAgregar + cantidadEnCarrito > stockDisponible)
+            // Validar Stock
+            if ((cantidadEnCarrito + cantidadDeseada) > stockDisponible)
             {
-                System.Windows.MessageBox.Show($"Stock insuficiente. Stock disponible: {stockDisponible} (ya tiene {cantidadEnCarrito} en el carrito).", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Stock insuficiente. Stock disponible: {stockDisponible} unidades.", "Error de Stock", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (itemExistente != null)
             {
-                itemExistente.Cantidad += cantidadAgregar;
+                itemExistente.Cantidad += cantidadDeseada;
+                dgvFactura.Items.Refresh(); // Sincronizado
             }
             else
             {
-                FacturaItem nuevoItem = new FacturaItem
+                var nuevoItem = new FacturaItem
                 {
-                    ProductoID = Convert.ToInt32(_productoSeleccionado["ProductoID"]),
+                    ProductoID = productoID,
                     Codigo = _productoSeleccionado["Codigo"].ToString(),
                     Descripcion = _productoSeleccionado["Descripcion"].ToString(),
-                    PrecioUnitario = Convert.ToDecimal(_productoSeleccionado["PrecioVenta"]),
-                    Cantidad = cantidadAgregar
+                    Cantidad = cantidadDeseada,
+                    PrecioUnitario = Convert.ToDecimal(_productoSeleccionado["PrecioVenta"])
                 };
-                _itemsFactura.Add(nuevoItem);
+                CarritoDeVenta.Add(nuevoItem);
             }
 
-            ActualizarGrillaYTotal();
-            _productoSeleccionado = null;
-            txtBuscarProducto.Clear();
-            numCantidad.Value = 1;
-            txtBuscarProducto.Focus();
+            LimpiarSeccionProducto();
+            ActualizarTotal();
         }
 
         private void btnEliminarItem_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button botonEliminar && botonEliminar.DataContext is FacturaItem itemParaBorrar)
+            // El CommandParameter no es necesario, podemos obtener la fila del DataGrid
+            if (dgvFactura.SelectedItem is FacturaItem item)
             {
-                _itemsFactura.Remove(itemParaBorrar);
-                ActualizarGrillaYTotal();
+                CarritoDeVenta.Remove(item);
+                ActualizarTotal();
+            }
+            else if (sender is Button btn && btn.DataContext is FacturaItem itemDesdeBoton)
+            {
+                CarritoDeVenta.Remove(itemDesdeBoton);
+                ActualizarTotal();
             }
         }
 
-        private void btnGuardarFactura_Click(object sender, RoutedEventArgs e)
+        private void ActualizarTotal()
         {
-            // 1. Validar que el carrito no esté vacío
-            if (_itemsFactura.Count == 0)
+            decimal total = CarritoDeVenta.Sum(item => item.Subtotal);
+            lblTotal.Text = $"{total:C2}"; // Sincronizado (Formato C2)
+        }
+
+        // --- 3. LÓGICA DE GUARDADO Y LIMPIEZA ---
+
+        private void LimpiarSeccionProducto()
+        {
+            _productoSeleccionado = null;
+            txtBuscarProducto.Text = "";
+            numCantidad.Value = 1;
+            txtBuscarProducto.Focus();
+        }
+
+        private void LimpiarFormulario()
+        {
+            CargarClientePorDefecto();
+            cmbTipoComprobante.SelectedIndex = 0;
+            CarritoDeVenta.Clear();
+            ActualizarTotal();
+            LimpiarSeccionProducto();
+            txtBuscarCliente.Focus();
+        }
+
+        private void btnCancelarFactura_Click(object sender, RoutedEventArgs e) // Sincronizado
+        {
+            if (MessageBox.Show("¿Está seguro de que desea cancelar la venta actual? Se borrarán todos los ítems.", "Confirmar Cancelación", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
-                System.Windows.MessageBox.Show("Debe agregar al menos un producto a la factura.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // 2. Pedir confirmación
-            decimal total = _itemsFactura.Sum(item => item.Subtotal);
-            MessageBoxResult confirmacion = System.Windows.MessageBox.Show($"El total de la factura es: {total.ToString("C2")}\n\n¿Desea confirmar la venta?",
-                                                      "Confirmar Venta",
-                                                      MessageBoxButton.YesNo,
-                                                      MessageBoxImage.Question);
-
-            if (confirmacion == MessageBoxResult.No)
-            {
-                return;
-            }
-
-            // 3. Recolectar datos para la DB
-            int clienteID = _clienteIDSeleccionado;
-            string tipoComprobante = (cmbTipoComprobante.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Ticket";
-
-            // 4. Llamar al servicio de base de datos
-            bool exito = DatabaseService.GuardarFactura(clienteID, tipoComprobante, total, _itemsFactura);
-
-            // 5. Feedback y Reset
-            if (exito)
-            {
-                System.Windows.MessageBox.Show("¡Venta guardada exitosamente!", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                // (Aquí iría la lógica para imprimir el ticket/factura)
-                IniciarNuevaFactura(); // Limpiamos la pantalla para la próxima venta
-            }
-            else
-            {
-                // El DatabaseService ya mostró un error detallado
-                System.Windows.MessageBox.Show("No se pudo guardar la factura. El stock no fue descontado.", "Error Grave", MessageBoxButton.OK, MessageBoxImage.Error);
+                LimpiarFormulario();
             }
         }
 
-        private void btnCancelarFactura_Click(object sender, RoutedEventArgs e)
+        private void btnGuardarFactura_Click(object sender, RoutedEventArgs e) // Sincronizado
         {
-            IniciarNuevaFactura();
+            if (CarritoDeVenta.Count == 0)
+            {
+                MessageBox.Show("Debe agregar al menos un producto a la venta.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (_clienteSeleccionado == null)
+            {
+                MessageBox.Show("Debe seleccionar un cliente.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (MessageBox.Show("¿Está seguro de que desea guardar esta venta? Esta acción descontará stock.", "Confirmar Venta", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No)
+            {
+                return;
+            }
+
+            try
+            {
+                bool exito = DatabaseService.GuardarFactura(
+                    Convert.ToInt32(_clienteSeleccionado["ClienteID"]),
+                    (cmbTipoComprobante.SelectedItem as ComboBoxItem).Content.ToString(), // Sincronizado
+                    CarritoDeVenta.Sum(item => item.Subtotal),
+                    CarritoDeVenta.ToList()
+                );
+
+                if (exito)
+                {
+                    MessageBox.Show("¡Venta guardada exitosamente! El stock ha sido actualizado.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    LimpiarFormulario();
+                    // Aquí iría la lógica de impresión fiscal
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error fatal al guardar la venta: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

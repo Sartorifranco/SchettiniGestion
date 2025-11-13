@@ -102,37 +102,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DatabaseService.cs" />
-    <Compile Include="Form1.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Form1.Designer.cs" />
-    <Compile Include="FormClientes.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="FormClientes.Designer.cs" />
-    <Compile Include="FormLogin.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="FormLogin.Designer.cs" />
-    <Compile Include="FormProductos.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="FormProductos.Designer.cs" />
-    <Compile Include="FormUsuarios.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="FormUsuarios.Designer.cs" />
     <Compile Include="LicenseManager.cs" />
     <Compile Include="PasswordHasher.cs" />
-    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Form1.resx" />
-    <EmbeddedResource Include="FormClientes.resx" />
-    <EmbeddedResource Include="FormLogin.resx" />
-    <EmbeddedResource Include="FormProductos.resx" />
-    <EmbeddedResource Include="FormUsuarios.resx" />
+    <Compile Include="SesionUsuario.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

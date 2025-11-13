@@ -37,6 +37,7 @@ C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bi
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\SchettiniGestion.WPF.csproj.AssemblyReference.cache
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\ClientesControl.g.cs
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\FacturacionControl.g.cs
+C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\GestionPermisos.g.cs
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\MainWindow.g.cs
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\PrincipalWindow.g.cs
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\ProductosControl.g.cs
@@ -49,6 +50,7 @@ C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\ob
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\App.baml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\ClientesControl.baml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\FacturacionControl.baml
+C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\GestionPermisos.baml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\MainWindow.baml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\PrincipalWindow.baml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\ProductosControl.baml

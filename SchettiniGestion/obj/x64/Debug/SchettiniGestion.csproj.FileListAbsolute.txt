@@ -12,12 +12,6 @@ C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion\bin\x6
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion\bin\x64\Debug\Newtonsoft.Json.xml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion\bin\x64\Debug\System.Data.SQLite.xml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion\obj\x64\Debug\SchettiniGestion.csproj.AssemblyReference.cache
-C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion\obj\x64\Debug\SchettiniGestion.Form1.resources
-C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion\obj\x64\Debug\SchettiniGestion.FormClientes.resources
-C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion\obj\x64\Debug\SchettiniGestion.FormLogin.resources
-C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion\obj\x64\Debug\SchettiniGestion.FormProductos.resources
-C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion\obj\x64\Debug\SchettiniGestion.FormUsuarios.resources
-C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion\obj\x64\Debug\SchettiniGestion.csproj.GenerateResource.cache
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion\obj\x64\Debug\SchettiniGestion.csproj.CoreCompileInputs.cache
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion\obj\x64\Debug\Schettin.828F3F7A.Up2Date
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion\obj\x64\Debug\SchettiniGestion.dll

@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using SchettiniGestion; // Importamos la lógica
-using System.Diagnostics; // <-- ¡AÑADIMOS ESTO!
+using System.Diagnostics; // <-- Para el teclado
 using System.IO;
 
 namespace SchettiniGestion.WPF
@@ -36,13 +36,29 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
+            // 1. Validamos la contraseña
             bool esValido = DatabaseService.ValidarUsuario(usuario, password);
 
             if (esValido)
             {
-                PrincipalWindow ventanaPrincipal = new PrincipalWindow();
-                ventanaPrincipal.Show();
-                this.Close();
+                // ===== INICIO DE CÓDIGO NUEVO (SESIÓN) =====
+
+                // 2. Si es válida, cargamos todos sus permisos en la sesión global
+                bool sesionCargada = DatabaseService.CargarSesionUsuario(usuario);
+
+                if (sesionCargada)
+                {
+                    // 3. Si los permisos se cargaron bien, abrimos la app
+                    PrincipalWindow ventanaPrincipal = new PrincipalWindow();
+                    ventanaPrincipal.Show();
+                    this.Close();
+                }
+                else
+                {
+                    // Error raro: el usuario existe pero no se pudieron cargar sus permisos
+                    MessageBox.Show("Error al cargar los permisos del usuario. Contacte al administrador.", "Error de Sesión", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                // ===== FIN DE CÓDIGO NUEVO (SESIÓN) =====
             }
             else
             {
@@ -55,16 +71,13 @@ namespace SchettiniGestion.WPF
             Application.Current.Shutdown();
         }
 
-        // --- ¡ESTA ES LA LÓGICA CORRECTA Y SIMPLE! ---
         private void btnTeclado_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Verificamos si ya está abierto
                 Process[] oskProcesses = Process.GetProcessesByName("osk");
                 if (oskProcesses.Length == 0)
                 {
-                    // Como tu app es x64, esto SÍ funciona
                     Process.Start("osk");
                 }
             }

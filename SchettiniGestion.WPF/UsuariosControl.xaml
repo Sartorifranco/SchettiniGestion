@@ -6,7 +6,8 @@
              xmlns:local="clr-namespace:SchettiniGestion.WPF"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1000"
-             Loaded="UsuariosControl_Loaded">
+             Loaded="UsuariosControl_Loaded"
+             Background="{StaticResource ModuleBackgroundBrush}">
 
     <Grid Background="{StaticResource ModuleBackgroundBrush}">
         <Grid.RowDefinitions>
@@ -30,7 +31,7 @@
                 <!-- Columna 0: Nombre de Usuario -->
                 <StackPanel Margin="0,0,10,0">
                     <TextBlock Text="Nombre de Usuario:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <TextBox x:Name="txtUsuario" Style="{StaticResource ModuleTextBoxStyle}" MaxLength="50"/>
+                    <TextBox x:Name="txtNombreUsuario" Style="{StaticResource ModuleTextBoxStyle}" MaxLength="50"/>
                 </StackPanel>
 
                 <!-- Columna 1: Contraseña -->
@@ -40,10 +41,18 @@
                                  ToolTip="Dejar en blanco para no cambiar"/>
                 </StackPanel>
 
-                <!-- Columna 2: Rol -->
+                <!-- Columna 2: Rol (¡MODIFICADO!) -->
                 <StackPanel Grid.Column="2" Margin="10,0,0,0">
                     <TextBlock Text="Rol:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <ComboBox x:Name="cmbRol" Style="{StaticResource ModuleComboBoxStyle}"/>
+                    <!-- 
+                    ¡CAMBIOS! 
+                    1. Quitamos los <ComboBoxItem> de adentro.
+                    2. Añadimos DisplayMemberPath y SelectedValuePath para conectarlo a la DB.
+                    -->
+                    <ComboBox x:Name="cmbRol" 
+                              Style="{StaticResource ModuleComboBoxStyle}"
+                              DisplayMemberPath="NombreRol"
+                              SelectedValuePath="RolID"/>
                 </StackPanel>
 
                 <!-- Columna 3: Botones -->
@@ -64,8 +73,11 @@
                       Style="{StaticResource ModuleDataGridStyle}"
                       SelectionChanged="dgvUsuarios_SelectionChanged">
                 <DataGrid.Columns>
+                    <!-- ¡CAMBIO! Ahora usamos 'NombreRol' que viene de la DB -->
                     <DataGridTextColumn Header="Nombre de Usuario" Binding="{Binding NombreUsuario}" Width="*" IsReadOnly="True" />
-                    <DataGridTextColumn Header="Rol" Binding="{Binding Rol}" Width="Auto" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Rol" Binding="{Binding NombreRol}" Width="Auto" IsReadOnly="True" />
+                    <!-- ¡NUEVO! Columna oculta para guardar el RolID -->
+                    <DataGridTextColumn Header="RolID" Binding="{Binding RolID}" Visibility="Hidden"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

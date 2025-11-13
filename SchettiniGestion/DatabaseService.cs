@@ -2,12 +2,13 @@
 using System.Data.SQLite;
 using System.IO;
 using System.Windows.Forms; // Usamos MessageBox de Forms (es universal)
-using System.Data;       // ¡Importante para DataTable!
+using System.Data;        // ¡Importante para DataTable!
 using System.Collections.Generic; // ¡Importante para List<T>!
+using System.Linq; // ¡Importante para el nuevo método!
 
 namespace SchettiniGestion
 {
-    // Esta clase debe estar FUERA de DatabaseService
+    // ... (Clases FacturaItem, Rol, Permiso) ...
     public class FacturaItem
     {
         public int ProductoID { get; set; }
@@ -21,24 +22,33 @@ namespace SchettiniGestion
         }
     }
 
+    public class Rol
+    {
+        public int RolId { get; set; }
+        public string Nombre { get; set; }
+    }
+
+    public class Permiso
+    {
+        public int PermisoId { get; set; }
+        public string Nombre { get; set; }
+    }
+
+
     public static class DatabaseService
     {
         private static string _dbPath;
-
-        // --- ¡INICIO DE CÓDIGO NUEVO (FASE DE PERMISOS)! ---
-        // Definimos los nombres de nuestros permisos de forma centralizada
         public const string PERMISO_USUARIOS = "ACCESO_USUARIOS";
         public const string PERMISO_CLIENTES = "ACCESO_CLIENTES";
         public const string PERMISO_PRODUCTOS = "ACCESO_PRODUCTOS";
         public const string PERMISO_STOCK = "ACCESO_STOCK";
         public const string PERMISO_FACTURACION = "ACCESO_FACTURACION";
         public const string PERMISO_VENTAS = "ACCESO_VENTAS";
-        // (Aquí agregaremos "ACCESO_COMPRAS", "ACCESO_PROVEEDORES", etc. en el futuro)
-        // --- ¡FIN DE CÓDIGO NUEVO (FASE DE PERMISOS)! ---
-
+        public const string PERMISO_PERMISOS = "ACCESO_PERMISOS";
 
         public static void InitializeDatabase()
         {
+            // ... (Todo tu código de InitializeDatabase. Sin cambios aquí) ...
             try
             {
                 string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -54,154 +64,152 @@ namespace SchettiniGestion
                 using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
                 {
                     connection.Open();
-
-                    // --- Tablas de ABMs (ya existentes) ---
-                    // NOTA: La tabla Usuarios será modificada en el próximo paso
-                    string sqlUsuarios = @"
-                    CREATE TABLE IF NOT EXISTS Usuarios (
-                        UsuarioID INTEGER PRIMARY KEY AUTOINCREMENT,
-                        NombreUsuario TEXT NOT NULL UNIQUE,
-                        PasswordHash TEXT NOT NULL,
-                        Rol TEXT NOT NULL 
-                    );";
-                    using (var command = new SQLiteCommand(sqlUsuarios, connection)) { command.ExecuteNonQuery(); }
-
-                    string adminPassHash = PasswordHasher.HashPassword("12345");
-                    string sqlAdmin = @"
-                    INSERT OR IGNORE INTO Usuarios (NombreUsuario, PasswordHash, Rol) 
-                    VALUES ('admin', @pass, 'Admin');"; // El Rol de texto 'Admin' es ahora legacy
-                    using (var command = new SQLiteCommand(sqlAdmin, connection))
-                    {
-                        command.Parameters.AddWithValue("@pass", adminPassHash);
-                        command.ExecuteNonQuery();
-                    }
-
-                    string sqlProductos = @"
-                    CREATE TABLE IF NOT EXISTS Productos (
-                        ProductoID INTEGER PRIMARY KEY AUTOINCREMENT,
-                        Codigo TEXT UNIQUE,
-                        Descripcion TEXT NOT NULL,
-                        PrecioVenta REAL NOT NULL,
-                        StockActual INTEGER DEFAULT 0
-                    );";
-                    using (var command = new SQLiteCommand(sqlProductos, connection)) { command.ExecuteNonQuery(); }
-
-                    string sqlClientes = @"
-                    CREATE TABLE IF NOT EXISTS Clientes (
-                        ClienteID INTEGER PRIMARY KEY AUTOINCREMENT,
-                        CUIT TEXT UNIQUE,
-                        RazonSocial TEXT NOT NULL,
-                        CondicionIVA TEXT
-                    );";
-                    using (var command = new SQLiteCommand(sqlClientes, connection)) { command.ExecuteNonQuery(); }
-
-                    string sqlClienteDefault = @"
-                    INSERT OR IGNORE INTO Clientes (ClienteID, CUIT, RazonSocial, CondicionIVA) 
-                    VALUES (1, '00-00000000-0', 'Consumidor Final', 'Consumidor Final');";
-                    using (var command = new SQLiteCommand(sqlClienteDefault, connection)) { command.ExecuteNonQuery(); }
-
-                    // --- Tablas de Facturación (ya existentes) ---
-                    string sqlFacturas = @"
-                    CREATE TABLE IF NOT EXISTS Facturas (
-                        FacturaID INTEGER PRIMARY KEY AUTOINCREMENT,
-                        ClienteID INTEGER NOT NULL,
-                        Fecha TEXT NOT NULL,
-                        Total REAL NOT NULL,
-                        TipoComprobante TEXT,
-                        FOREIGN KEY(ClienteID) REFERENCES Clientes(ClienteID)
-                    );";
-                    using (var command = new SQLiteCommand(sqlFacturas, connection)) { command.ExecuteNonQuery(); }
-
-                    string sqlFacturaDetalle = @"
-                    CREATE TABLE IF NOT EXISTS FacturaDetalle (
-                        DetalleID INTEGER PRIMARY KEY AUTOINCREMENT,
-                        FacturaID INTEGER NOT NULL,
-                        ProductoID INTEGER NOT NULL,
-                        Cantidad INTEGER NOT NULL,
-                        PrecioUnitario REAL NOT NULL,
-                        FOREIGN KEY(FacturaID) REFERENCES Facturas(FacturaID),
-                        FOREIGN KEY(ProductoID) REFERENCES Productos(ProductoID)
-                    );";
-                    using (var command = new SQLiteCommand(sqlFacturaDetalle, connection)) { command.ExecuteNonQuery(); }
-
-                    string sqlMovimientosStock = @"
-                    CREATE TABLE IF NOT EXISTS MovimientosStock (
-                        MovimientoID INTEGER PRIMARY KEY AUTOINCREMENT,
-                        ProductoID INTEGER NOT NULL,
-                        FacturaID INTEGER,
-                        Fecha TEXT NOT NULL,
-                        TipoMovimiento TEXT NOT NULL,
-                        Cantidad INTEGER NOT NULL,
-                        FOREIGN KEY(ProductoID) REFERENCES Productos(ProductoID),
-                        FOREIGN KEY(FacturaID) REFERENCES Facturas(FacturaID)
-                    );";
-                    using (var command = new SQLiteCommand(sqlMovimientosStock, connection)) { command.ExecuteNonQuery(); }
-
-
-                    // --- ¡INICIO DE CÓDIGO NUEVO (FASE DE PERMISOS)! ---
-
-                    // 1. Crear Tabla de Roles
-                    string sqlRoles = @"
-                    CREATE TABLE IF NOT EXISTS Roles (
-                        RolID INTEGER PRIMARY KEY AUTOINCREMENT,
-                        NombreRol TEXT NOT NULL UNIQUE
-                    );";
-                    using (var command = new SQLiteCommand(sqlRoles, connection)) { command.ExecuteNonQuery(); }
-
-                    // 2. Crear Tabla de Permisos
-                    string sqlPermisos = @"
-                    CREATE TABLE IF NOT EXISTS Permisos (
-                        PermisoID INTEGER PRIMARY KEY AUTOINCREMENT,
-                        NombrePermiso TEXT NOT NULL UNIQUE
-                    );";
-                    using (var command = new SQLiteCommand(sqlPermisos, connection)) { command.ExecuteNonQuery(); }
-
-                    // 3. Crear Tabla de Unión Roles_Permisos
-                    string sqlRolesPermisos = @"
-                    CREATE TABLE IF NOT EXISTS Roles_Permisos (
-                        RolID INTEGER NOT NULL,
-                        PermisoID INTEGER NOT NULL,
-                        PRIMARY KEY (RolID, PermisoID),
-                        FOREIGN KEY(RolID) REFERENCES Roles(RolID),
-                        FOREIGN KEY(PermisoID) REFERENCES Permisos(PermisoID)
-                    );";
-                    using (var command = new SQLiteCommand(sqlRolesPermisos, connection)) { command.ExecuteNonQuery(); }
-
-                    // 4. Poblar Roles y Permisos por defecto
                     using (var transaction = connection.BeginTransaction())
                     {
                         try
                         {
-                            // Insertar Roles
+                            // --- Tablas de ABMs (ya existentes) ---
+                            string sqlUsuarios = @"
+                            CREATE TABLE IF NOT EXISTS Usuarios (
+                                UsuarioID INTEGER PRIMARY KEY AUTOINCREMENT,
+                                NombreUsuario TEXT NOT NULL UNIQUE,
+                                PasswordHash TEXT NOT NULL,
+                                Rol TEXT, 
+                                RolID INTEGER REFERENCES Roles(RolID)
+                            );";
+                            try
+                            {
+                                new SQLiteCommand("ALTER TABLE Usuarios ADD COLUMN RolID INTEGER REFERENCES Roles(RolID);", connection, transaction).ExecuteNonQuery();
+                            }
+                            catch (SQLiteException ex)
+                            {
+                                if (!ex.Message.Contains("duplicate column name")) throw;
+                            }
+                            new SQLiteCommand(sqlUsuarios, connection, transaction).ExecuteNonQuery();
+
+                            string adminPassHash = PasswordHasher.HashPassword("12345");
+                            string sqlAdmin = @"
+                            INSERT OR IGNORE INTO Usuarios (NombreUsuario, PasswordHash, Rol) 
+                            VALUES ('admin', @pass, 'Admin');";
+                            using (var command = new SQLiteCommand(sqlAdmin, connection, transaction))
+                            {
+                                command.Parameters.AddWithValue("@pass", adminPassHash);
+                                command.ExecuteNonQuery();
+                            }
+
+                            // ... (Resto de tu CREATE TABLE de Clientes, Productos, Facturas, etc.) ...
+
+                            string sqlProductos = @"
+                            CREATE TABLE IF NOT EXISTS Productos (
+                                ProductoID INTEGER PRIMARY KEY AUTOINCREMENT,
+                                Codigo TEXT UNIQUE,
+                                Descripcion TEXT NOT NULL,
+                                PrecioVenta REAL NOT NULL,
+                                StockActual INTEGER DEFAULT 0
+                            );";
+                            new SQLiteCommand(sqlProductos, connection, transaction).ExecuteNonQuery();
+
+                            string sqlClientes = @"
+                            CREATE TABLE IF NOT EXISTS Clientes (
+                                ClienteID INTEGER PRIMARY KEY AUTOINCREMENT,
+                                CUIT TEXT UNIQUE,
+                                RazonSocial TEXT NOT NULL,
+                                CondicionIVA TEXT
+                            );";
+                            new SQLiteCommand(sqlClientes, connection, transaction).ExecuteNonQuery();
+
+                            string sqlClienteDefault = @"
+                            INSERT OR IGNORE INTO Clientes (ClienteID, CUIT, RazonSocial, CondicionIVA) 
+                            VALUES (1, '00-00000000-0', 'Consumidor Final', 'Consumidor Final');";
+                            new SQLiteCommand(sqlClienteDefault, connection, transaction).ExecuteNonQuery();
+
+                            string sqlFacturas = @"
+                            CREATE TABLE IF NOT EXISTS Facturas (
+                                FacturaID INTEGER PRIMARY KEY AUTOINCREMENT,
+                                ClienteID INTEGER NOT NULL,
+                                Fecha TEXT NOT NULL,
+                                Total REAL NOT NULL,
+                                TipoComprobante TEXT,
+                                FOREIGN KEY(ClienteID) REFERENCES Clientes(ClienteID)
+                            );";
+                            new SQLiteCommand(sqlFacturas, connection, transaction).ExecuteNonQuery();
+
+                            string sqlFacturaDetalle = @"
+                            CREATE TABLE IF NOT EXISTS FacturaDetalle (
+                                DetalleID INTEGER PRIMARY KEY AUTOINCREMENT,
+                                FacturaID INTEGER NOT NULL,
+                                ProductoID INTEGER NOT NULL,
+                                Cantidad INTEGER NOT NULL,
+                                PrecioUnitario REAL NOT NULL,
+                                FOREIGN KEY(FacturaID) REFERENCES Facturas(FacturaID),
+                                FOREIGN KEY(ProductoID) REFERENCES Productos(ProductoID)
+                            );";
+                            new SQLiteCommand(sqlFacturaDetalle, connection, transaction).ExecuteNonQuery();
+
+                            string sqlMovimientosStock = @"
+                            CREATE TABLE IF NOT EXISTS MovimientosStock (
+                                MovimientoID INTEGER PRIMARY KEY AUTOINCREMENT,
+                                ProductoID INTEGER NOT NULL,
+                                FacturaID INTEGER,
+                                Fecha TEXT NOT NULL,
+                                TipoMovimiento TEXT NOT NULL,
+                                Cantidad INTEGER NOT NULL,
+                                FOREIGN KEY(ProductoID) REFERENCES Productos(ProductoID),
+                                FOREIGN KEY(FacturaID) REFERENCES Facturas(FacturaID)
+                            );";
+                            new SQLiteCommand(sqlMovimientosStock, connection, transaction).ExecuteNonQuery();
+
+
+                            // --- Tablas de Permisos ---
+                            new SQLiteCommand("CREATE TABLE IF NOT EXISTS Roles (RolID INTEGER PRIMARY KEY AUTOINCREMENT, NombreRol TEXT NOT NULL UNIQUE);", connection, transaction).ExecuteNonQuery();
+                            new SQLiteCommand("CREATE TABLE IF NOT EXISTS Permisos (PermisoID INTEGER PRIMARY KEY AUTOINCREMENT, NombrePermiso TEXT NOT NULL UNIQUE);", connection, transaction).ExecuteNonQuery();
+                            new SQLiteCommand(@"
+                                CREATE TABLE IF NOT EXISTS Roles_Permisos (
+                                    RolID INTEGER NOT NULL,
+                                    PermisoID INTEGER NOT NULL,
+                                    PRIMARY KEY (RolID, PermisoID),
+                                    FOREIGN KEY(RolID) REFERENCES Roles(RolID),
+                                    FOREIGN KEY(PermisoID) REFERENCES Permisos(PermisoID)
+                                );", connection, transaction).ExecuteNonQuery();
+
+                            // Poblar Roles y Permisos
                             new SQLiteCommand("INSERT OR IGNORE INTO Roles (RolID, NombreRol) VALUES (1, 'Admin');", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand("INSERT OR IGNORE INTO Roles (RolID, NombreRol) VALUES (2, 'Vendedor');", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand("INSERT OR IGNORE INTO Roles (RolID, NombreRol) VALUES (3, 'Cajero');", connection, transaction).ExecuteNonQuery();
 
-                            // Insertar todos los Permisos
                             new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_USUARIOS}');", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_CLIENTES}');", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_PRODUCTOS}');", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_STOCK}');", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_FACTURACION}');", connection, transaction).ExecuteNonQuery();
-                            new SQLiteCommand($"INSERT OR IGGE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_VENTAS}');", connection, transaction).ExecuteNonQuery();
+                            new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_VENTAS}');", connection, transaction).ExecuteNonQuery();
+                            new SQLiteCommand($"INSERT OR IGNORE INTO Permisos (NombrePermiso) VALUES ('{PERMISO_PERMISOS}');", connection, transaction).ExecuteNonQuery();
 
-                            // Asignar Permisos a Roles (Admin tiene todo)
+                            // Asignar Permisos (Admin tiene todo)
                             new SQLiteCommand($"INSERT OR IGNORE INTO Roles_Permisos (RolID, PermisoID) SELECT 1, PermisoID FROM Permisos;", connection, transaction).ExecuteNonQuery();
 
-                            // Asignar Permisos a Vendedor (ej: Facturación, Clientes y Ventas)
+                            // Asignar Permisos a Vendedor
                             new SQLiteCommand($"INSERT OR IGNORE INTO Roles_Permisos (RolID, PermisoID) SELECT 2, PermisoID FROM Permisos WHERE NombrePermiso = '{PERMISO_FACTURACION}';", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand($"INSERT OR IGNORE INTO Roles_Permisos (RolID, PermisoID) SELECT 2, PermisoID FROM Permisos WHERE NombrePermiso = '{PERMISO_CLIENTES}';", connection, transaction).ExecuteNonQuery();
                             new SQLiteCommand($"INSERT OR IGNORE INTO Roles_Permisos (RolID, PermisoID) SELECT 2, PermisoID FROM Permisos WHERE NombrePermiso = '{PERMISO_VENTAS}';", connection, transaction).ExecuteNonQuery();
+
+                            // Migrar Usuarios Viejos
+                            new SQLiteCommand(@"
+                                UPDATE Usuarios 
+                                SET RolID = (SELECT RolID FROM Roles WHERE NombreRol = Usuarios.Rol) 
+                                WHERE RolID IS NULL AND Rol IS NOT NULL;
+                            ", connection, transaction).ExecuteNonQuery();
+
+                            new SQLiteCommand("UPDATE Usuarios SET RolID = 2 WHERE RolID IS NULL;", connection, transaction).ExecuteNonQuery();
 
                             transaction.Commit();
                         }
                         catch (Exception)
                         {
                             transaction.Rollback();
-                            throw; // Relanzamos la excepción si algo falla
+                            throw;
                         }
                     }
-                    // --- ¡FIN DE CÓDIGO NUEVO (FASE DE PERMISOS)! ---
                 }
             }
             catch (Exception ex)
@@ -211,7 +219,8 @@ namespace SchettiniGestion
             }
         }
 
-        // --- MÉTODOS DE USUARIOS (Sin cambios... AÚN) ---
+
+        // --- MÉTODOS DE USUARIOS ---
         #region Metodos Usuarios
         public static bool ValidarUsuario(string nombreUsuario, string password)
         {
@@ -234,6 +243,7 @@ namespace SchettiniGestion
             }
             catch (Exception ex) { MessageBox.Show($"Error al validar usuario: {ex.Message}"); return false; }
         }
+
         public static DataTable GetUsuarios()
         {
             var dt = new DataTable();
@@ -242,7 +252,10 @@ namespace SchettiniGestion
                 using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
                 {
                     connection.Open();
-                    string sql = "SELECT UsuarioID, NombreUsuario, Rol FROM Usuarios";
+                    string sql = @"
+                        SELECT u.UsuarioID, u.NombreUsuario, r.NombreRol, u.RolID 
+                        FROM Usuarios u
+                        LEFT JOIN Roles r ON u.RolID = r.RolID";
                     using (var command = new SQLiteCommand(sql, connection))
                     {
                         using (var adapter = new SQLiteDataAdapter(command)) { adapter.Fill(dt); }
@@ -252,7 +265,38 @@ namespace SchettiniGestion
             catch (Exception ex) { MessageBox.Show($"Error al cargar usuarios: {ex.Message}"); }
             return dt;
         }
-        public static bool GuardarUsuario(int usuarioID, string nombreUsuario, string password, string rol)
+
+        public static List<Rol> GetRoles()
+        {
+            var listaRoles = new List<Rol>();
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    connection.Open();
+                    string sql = "SELECT RolID, NombreRol FROM Roles ORDER BY NombreRol";
+                    using (var command = new SQLiteCommand(sql, connection))
+                    {
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                listaRoles.Add(new Rol
+                                {
+                                    RolId = Convert.ToInt32(reader["RolID"]),
+                                    Nombre = reader["NombreRol"].ToString()
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show($"Error al cargar roles: {ex.Message}"); }
+            return listaRoles;
+        }
+
+
+        public static bool GuardarUsuario(int usuarioID, string nombreUsuario, string password, int rolID, string rolTexto)
         {
             string passHash = "";
             if (!string.IsNullOrEmpty(password)) passHash = PasswordHasher.HashPassword(password);
@@ -265,18 +309,19 @@ namespace SchettiniGestion
                     if (usuarioID == 0)
                     {
                         if (string.IsNullOrEmpty(passHash)) { MessageBox.Show("Contraseña obligatoria.", "Error"); return false; }
-                        sql = "INSERT INTO Usuarios (NombreUsuario, PasswordHash, Rol) VALUES (@user, @pass, @rol)";
+                        sql = "INSERT INTO Usuarios (NombreUsuario, PasswordHash, RolID, Rol) VALUES (@user, @pass, @rolID, @rolTexto)";
                     }
                     else
                     {
                         sql = string.IsNullOrEmpty(passHash)
-                            ? "UPDATE Usuarios SET NombreUsuario = @user, Rol = @rol WHERE UsuarioID = @id"
-                            : "UPDATE Usuarios SET NombreUsuario = @user, PasswordHash = @pass, Rol = @rol WHERE UsuarioID = @id";
+                            ? "UPDATE Usuarios SET NombreUsuario = @user, RolID = @rolID, Rol = @rolTexto WHERE UsuarioID = @id"
+                            : "UPDATE Usuarios SET NombreUsuario = @user, PasswordHash = @pass, RolID = @rolID, Rol = @rolTexto WHERE UsuarioID = @id";
                     }
                     using (var command = new SQLiteCommand(sql, connection))
                     {
                         command.Parameters.AddWithValue("@user", nombreUsuario);
-                        command.Parameters.AddWithValue("@rol", rol);
+                        command.Parameters.AddWithValue("@rolID", rolID);
+                        command.Parameters.AddWithValue("@rolTexto", rolTexto);
                         command.Parameters.AddWithValue("@id", usuarioID);
                         if (sql.Contains("@pass")) command.Parameters.AddWithValue("@pass", passHash);
                         command.ExecuteNonQuery();
@@ -284,8 +329,13 @@ namespace SchettiniGestion
                     }
                 }
             }
-            catch (Exception ex) { MessageBox.Show($"Error al guardar usuario: {ex.Message}"); return false; }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al guardar usuario: {ex.Message}", "Error de Base de Datos", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
         }
+
         public static bool EliminarUsuario(int usuarioID)
         {
             try
@@ -306,7 +356,8 @@ namespace SchettiniGestion
         }
         #endregion
 
-        // --- MÉTODOS DE CLIENTES (Sin cambios) ---
+        // ... (Todos tus métodos de Clientes, Productos, Facturación) ...
+        // ... (No hay cambios allí) ...
         #region Metodos Clientes
         public static DataTable GetClientes()
         {
@@ -409,8 +460,6 @@ namespace SchettiniGestion
             return dt;
         }
         #endregion
-
-        // --- MÉTODOS DE PRODUCTOS (Sin cambios) ---
         #region Metodos Productos
         public static DataTable GetProductos()
         {
@@ -464,10 +513,7 @@ namespace SchettiniGestion
                     string sql = "DELETE FROM Productos WHERE ProductoID = @id";
                     using (var command = new SQLiteCommand(sql, connection))
                     {
-                        // --- ¡ESTA ES LA LÍNEA CORREGIDA! ---
-                        // Cambiamos 'clienteID' por 'productoID'
                         command.Parameters.AddWithValue("@id", productoID);
-                        // --- ¡FIN DE LA CORRECCIÓN! ---
                         command.ExecuteNonQuery();
                         return true;
                     }
@@ -517,8 +563,6 @@ namespace SchettiniGestion
             return dt;
         }
         #endregion
-
-        // --- MÉTODOS DE FACTURACIÓN Y STOCK (Modificados) ---
         #region Metodos Facturacion y Stock
 
         public static bool GuardarFactura(int clienteID, string tipoComprobante, decimal total, List<FacturaItem> items)
@@ -532,7 +576,6 @@ namespace SchettiniGestion
                     {
                         string fechaActual = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-                        // 1. Insertar el encabezado
                         string sqlFactura = "INSERT INTO Facturas (ClienteID, Fecha, Total, TipoComprobante) VALUES (@ClienteID, @Fecha, @Total, @Tipo)";
                         using (var command = new SQLiteCommand(sqlFactura, connection, transaction))
                         {
@@ -545,7 +588,6 @@ namespace SchettiniGestion
 
                         long facturaID = connection.LastInsertRowId;
 
-                        // 2. Insertar detalle, actualizar stock y registrar movimiento
                         foreach (var item in items)
                         {
                             string sqlDetalle = "INSERT INTO FacturaDetalle (FacturaID, ProductoID, Cantidad, PrecioUnitario) VALUES (@FacturaID, @ProductoID, @Cantidad, @Precio)";
@@ -567,7 +609,6 @@ namespace SchettiniGestion
                                 if (rowsAffected == 0) throw new Exception($"Error al actualizar stock del producto ID: {item.ProductoID}.");
                             }
 
-                            // 3. ¡MODIFICADO! Registrar el movimiento de stock (salida)
                             string sqlMovimiento = @"
                                 INSERT INTO MovimientosStock (ProductoID, FacturaID, Fecha, TipoMovimiento, Cantidad) 
                                 VALUES (@ProductoID, @FacturaID, @Fecha, @Tipo, @Cantidad)";
@@ -576,8 +617,8 @@ namespace SchettiniGestion
                                 command.Parameters.AddWithValue("@ProductoID", item.ProductoID);
                                 command.Parameters.AddWithValue("@FacturaID", facturaID);
                                 command.Parameters.AddWithValue("@Fecha", fechaActual);
-                                command.Parameters.AddWithValue("@Tipo", "Venta"); // Motivo
-                                command.Parameters.AddWithValue("@Cantidad", item.Cantidad * -1); // Guardamos la salida como un número negativo
+                                command.Parameters.AddWithValue("@Tipo", "Venta");
+                                command.Parameters.AddWithValue("@Cantidad", item.Cantidad * -1);
                                 command.ExecuteNonQuery();
                             }
                         }
@@ -668,7 +709,6 @@ namespace SchettiniGestion
                 {
                     try
                     {
-                        // 1. Actualizar el stock
                         string sqlStock = "UPDATE Productos SET StockActual = StockActual + @Cantidad WHERE ProductoID = @ProductoID";
                         using (var command = new SQLiteCommand(sqlStock, connection, transaction))
                         {
@@ -678,7 +718,6 @@ namespace SchettiniGestion
                             if (rowsAffected == 0) throw new Exception($"Producto ID {productoID} no encontrado.");
                         }
 
-                        // 2. Registrar el movimiento
                         string sqlMovimiento = @"
                             INSERT INTO MovimientosStock (ProductoID, FacturaID, Fecha, TipoMovimiento, Cantidad) 
                             VALUES (@ProductoID, NULL, @Fecha, @Tipo, @Cantidad)";
@@ -703,6 +742,178 @@ namespace SchettiniGestion
                 }
             }
         }
+        #endregion
+
+        #region Metodos Permisos
+
+        public static List<Permiso> GetPermisos()
+        {
+            var listaPermisos = new List<Permiso>();
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    connection.Open();
+                    string sql = "SELECT PermisoID, NombrePermiso FROM Permisos ORDER BY NombrePermiso";
+                    using (var command = new SQLiteCommand(sql, connection))
+                    {
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                listaPermisos.Add(new Permiso
+                                {
+                                    PermisoId = Convert.ToInt32(reader["PermisoID"]),
+                                    Nombre = reader["NombrePermiso"].ToString()
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show($"Error al cargar permisos: {ex.Message}"); }
+            return listaPermisos;
+        }
+
+        public static Dictionary<int, List<int>> GetPermisosPorRol()
+        {
+            var dict = new Dictionary<int, List<int>>();
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    connection.Open();
+                    string sql = "SELECT RolID, PermisoID FROM Roles_Permisos";
+                    using (var command = new SQLiteCommand(sql, connection))
+                    {
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                int rolId = Convert.ToInt32(reader["RolID"]);
+                                int permisoId = Convert.ToInt32(reader["PermisoID"]);
+
+                                if (!dict.ContainsKey(rolId))
+                                {
+                                    dict[rolId] = new List<int>();
+                                }
+                                dict[rolId].Add(permisoId);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show($"Error al cargar permisos por rol: {ex.Message}"); }
+            return dict;
+        }
+
+        public static void ActualizarPermisosParaRol(int rolId, List<int> permisosIds)
+        {
+            using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        string sqlDelete = "DELETE FROM Roles_Permisos WHERE RolID = @RolID";
+                        using (var command = new SQLiteCommand(sqlDelete, connection, transaction))
+                        {
+                            command.Parameters.AddWithValue("@RolID", rolId);
+                            command.ExecuteNonQuery();
+                        }
+
+                        if (permisosIds != null)
+                        {
+                            string sqlInsert = "INSERT INTO Roles_Permisos (RolID, PermisoID) VALUES (@RolID, @PermisoID)";
+                            foreach (int permisoId in permisosIds)
+                            {
+                                using (var command = new SQLiteCommand(sqlInsert, connection, transaction))
+                                {
+                                    command.Parameters.AddWithValue("@RolID", rolId);
+                                    command.Parameters.AddWithValue("@PermisoID", permisoId);
+                                    command.ExecuteNonQuery();
+                                }
+                            }
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+
+        // ===== INICIO DE CÓDIGO NUEVO (SESIÓN) =====
+        /// <summary>
+        /// Busca el RolID y los permisos de un usuario y los carga en la SesionUsuario estática.
+        /// </summary>
+        /// <param name="nombreUsuario">El usuario que inicia sesión.</param>
+        /// <returns>True si tiene éxito, False si el usuario no se encuentra.</returns>
+        public static bool CargarSesionUsuario(string nombreUsuario)
+        {
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    connection.Open();
+
+                    // 1. Obtener el RolID del usuario
+                    int rolId = 0;
+                    string sqlRol = "SELECT RolID FROM Usuarios WHERE NombreUsuario = @user";
+                    using (var cmdRol = new SQLiteCommand(sqlRol, connection))
+                    {
+                        cmdRol.Parameters.AddWithValue("@user", nombreUsuario);
+                        var result = cmdRol.ExecuteScalar();
+                        if (result == null || result == DBNull.Value)
+                        {
+                            // Si el usuario no tiene RolID (caso raro), asignarle Vendedor por defecto
+                            rolId = 2;
+                        }
+                        else
+                        {
+                            rolId = Convert.ToInt32(result);
+                        }
+                    }
+
+                    // 2. Obtener la lista de nombres de permisos para ese RolID
+                    var permisos = new List<string>();
+                    string sqlPermisos = @"
+                        SELECT p.NombrePermiso 
+                        FROM Roles_Permisos rp
+                        JOIN Permisos p ON rp.PermisoID = p.PermisoID
+                        WHERE rp.RolID = @rolID";
+
+                    using (var cmdPermisos = new SQLiteCommand(sqlPermisos, connection))
+                    {
+                        cmdPermisos.Parameters.AddWithValue("@rolID", rolId);
+                        using (var reader = cmdPermisos.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                permisos.Add(reader["NombrePermiso"].ToString());
+                            }
+                        }
+                    }
+
+                    // 3. Iniciar la sesión global
+                    SesionUsuario.Iniciar(nombreUsuario, rolId, permisos);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error fatal al cargar permisos de usuario: {ex.Message}");
+                return false;
+            }
+        }
+        // ===== FIN DE CÓDIGO NUEVO (SESIÓN) =====
+
         #endregion
     }
 }

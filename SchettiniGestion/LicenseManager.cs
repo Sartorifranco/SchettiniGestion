@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Windows.Forms;
+using System.Windows.Forms; // ¡IMPORTANTE para que funcione MessageBox!
 using Newtonsoft.Json; // <-- ¡LA LIBRERÍA QUE INSTALAMOS!
 
 namespace SchettiniGestion
 {
     public static class LicenseManager
     {
+        // 1. Clase interna para los datos de la licencia
         public class LicenseData
         {
             public string CuitCliente { get; set; }
@@ -15,22 +16,22 @@ namespace SchettiniGestion
             public List<string> ModulosPermitidos { get; set; } = new List<string>();
         }
 
+        // 2. Variable para guardar la licencia
         private static LicenseData _licenciaActual;
 
-        // --- FUNCIÓN NUEVA: PARA CARGAR LA LICENCIA ---
+        // 3. Método para cargar la licencia
         private static bool CargarLicencia()
         {
             try
             {
-                // --- ACÁ PEGAMOS LA CLAVE DEL CLIENTE ---
-                // (En el futuro, la leeremos del Registro de Windows,
-                // pero por ahora, la pegamos acá para probar)
-                string claveLicencia = "eyJDdWl0Q2xpZW50ZSI6IjMwLTcxMTIzNDU2LTEiLCJGZWNoYUV4cGlyYWNpb24iOiIyMDI2LTEwLTI0VDAwOjAwOjAwIiwiTW9kdWxvblBlcm1pdGlkb3MiOlsiRkFDVFVSQUNJT04iLCJTVE9DSyJdfQ==";
-
+                // --- ¡AQUÍ ESTÁ LA CLAVE "PRO" CORREGIDA Y FUNCIONAL! ---
+                string claveLicencia = "eyJDdWl0Q2xpZW50ZSI6IjIwLTExMjIzMzQ0LTUiLCJGZWNoYUV4cGlyYWNpb24iOiIyMDI2LTEyLTMxVDIzOjU5OjU5IiwiTW9kdWxvc1Blcm1pdGlkb3MiOlsiQUNDRVNPX0ZBQ1RVUkFDSU9OIiwiQUNDRVNPX1BST0RVQ1RPUyJdfQ==";
 
                 // 1. Decodificamos la clave (de Base64 a JSON)
                 byte[] bytesLicencia = Convert.FromBase64String(claveLicencia);
                 string jsonLicencia = Encoding.UTF8.GetString(bytesLicencia);
+
+                // (El MessageBox de depuración se ha eliminado)
 
                 // 2. Convertimos el JSON a nuestro objeto C#
                 _licenciaActual = JsonConvert.DeserializeObject<LicenseData>(jsonLicencia);
@@ -52,14 +53,12 @@ namespace SchettiniGestion
             }
         }
 
-        // --- FUNCIÓN MODIFICADA: ValidarLicencia ---
+        // 4. Método para validar (sin cambios)
         public static bool ValidarLicencia()
         {
             // 1. Intentamos cargar la licencia desde la clave.
             if (!CargarLicencia())
             {
-                // Si CargarLicencia devuelve false, es porque falló
-                // y ya mostró un error. Salimos.
                 return false;
             }
 
@@ -82,7 +81,7 @@ namespace SchettiniGestion
         }
 
 
-        // --- Esta función queda igual ---
+        // 5. Método para chequear módulos (limpio)
         public static bool IsModuleEnabled(string moduleName)
         {
             if (_licenciaActual == null)
@@ -90,7 +89,13 @@ namespace SchettiniGestion
                 return false;
             }
 
+            if (_licenciaActual.ModulosPermitidos == null)
+            {
+                return false;
+            }
+
             return _licenciaActual.ModulosPermitidos.Contains(moduleName.ToUpper());
         }
-    }
-}
+
+    } // <-- ¡AQUÍ TERMINA LA CLASE LICENSEMANAGER!
+} // <-- ¡AQUÍ TERMINA EL NAMESPACE!

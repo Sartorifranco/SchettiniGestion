@@ -9,7 +9,9 @@
         WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
         Closing="Window_Closing"
-        Background="#F0F0F0">
+        Background="#F0F0F0"
+        Loaded="Window_Loaded">
+    <!-- ===== AÑADIDO ===== -->
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -17,7 +19,6 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Columna 0: Barra Lateral -->
         <Border Grid.Column="0" Background="#2E333A" RenderTransformOrigin="0.509,0.498">
             <StackPanel Width="220">
 
@@ -27,23 +28,27 @@
                            FontWeight="Bold" 
                            HorizontalAlignment="Center" 
                            Margin="0,20,0,20"/>
-
                 <Separator Background="#444"/>
-
                 <Button x:Name="btnInicio" Content="🏠  Inicio" Style="{StaticResource MenuButton}" Click="btnInicio_Click"/>
                 <Button x:Name="btnFacturacion" Content="🛒  Facturación" Style="{StaticResource MenuButton}" Click="btnFacturacion_Click"/>
-                <TextBlock Text="Reportes" Style="{StaticResource MenuHeader}"/>
+
+                <!-- ===== AÑADIDO x:Name ===== -->
+                <TextBlock x:Name="headerReportes" Text="Reportes" Style="{StaticResource MenuHeader}"/>
                 <Button x:Name="btnVentas" Content="📈  Ventas" Style="{StaticResource MenuButton}" Click="btnVentas_Click"/>
 
-                <TextBlock Text="Gestión" Style="{StaticResource MenuHeader}"/>
-                <!-- ¡INICIO DE CÓDIGO NUEVO! -->
+                <!-- ===== AÑADIDO x:Name ===== -->
+                <TextBlock x:Name="headerGestion" Text="Gestión" Style="{StaticResource MenuHeader}"/>
                 <Button x:Name="btnStock" Content="📊  Stock" Style="{StaticResource MenuButton}" Click="btnStock_Click"/>
-                <!-- ¡FIN DE CÓDIGO NUEVO! -->
                 <Button x:Name="btnProductos" Content="📦  Productos" Style="{StaticResource MenuButton}" Click="productosMenuItem_Click"/>
                 <Button x:Name="btnClientes" Content="👥  Clientes" Style="{StaticResource MenuButton}" Click="clientesMenuItem_Click"/>
 
-                <TextBlock Text="Administración" Style="{StaticResource MenuHeader}"/>
+                <!-- ===== AÑADIDO x:Name ===== -->
+                <TextBlock x:Name="headerAdministracion" Text="Administración" Style="{StaticResource MenuHeader}"/>
                 <Button x:Name="btnUsuarios" Content="👤  Usuarios" Style="{StaticResource MenuButton}" Click="usuariosMenuItem_Click"/>
+                <Button x:Name="btnPermisos" 
+                        Content="⚙️  Permisos" 
+                        Style="{StaticResource MenuButton}" 
+                        Click="btnPermisos_Click"/>
 
                 <Button x:Name="btnSalir" Content="🚪  Salir" Margin="0,50,0,20" Click="salirMenuItem_Click">
                     <Button.Style>
@@ -60,11 +65,23 @@
             </StackPanel>
         </Border>
 
-        <!-- Columna 1: Área de Contenido -->
-        <DockPanel Grid.Column="1" Background="{StaticResource ModuleBackgroundBrush}">
+        <!-- El resto del Grid de contenido no cambia -->
+        <Grid Grid.Column="1" Background="{StaticResource ModuleBackgroundBrush}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-            <!-- Barra de estado con Teclado -->
-            <StatusBar DockPanel.Dock="Bottom" Background="#EEEEEE" MinHeight="30">
+            <ContentControl x:Name="mainContentArea" Grid.Row="0">
+                <TextBlock Text="¡Bienvenido a SchettiniGestion!"
+                           FontSize="48"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource BodyForegroundBrush}"/>
+            </ContentControl>
+
+            <StatusBar Grid.Row="1" Background="#EEEEEE" MinHeight="30">
                 <StatusBar.ItemsPanel>
                     <ItemsPanelTemplate>
                         <Grid>
@@ -86,16 +103,6 @@
                 </StatusBarItem>
             </StatusBar>
 
-            <!-- Contenido Principal -->
-            <ContentControl x:Name="mainContentArea">
-                <TextBlock Text="¡Bienvenido a SchettiniGestion!"
-                           FontSize="48"
-                           FontWeight="Bold"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Foreground="{StaticResource BodyForegroundBrush}"/>
-            </ContentControl>
-
-        </DockPanel>
+        </Grid>
     </Grid>
 </Window>

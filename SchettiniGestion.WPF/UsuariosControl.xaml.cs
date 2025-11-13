@@ -3,6 +3,7 @@ using System;
 using System.Data; // <-- Para usar DataTable
 using System.Windows;
 using System.Windows.Controls;
+using System.Collections.Generic; // <-- ¡Importante para List<Rol>!
 
 namespace SchettiniGestion.WPF
 {
@@ -11,7 +12,6 @@ namespace SchettiniGestion.WPF
     /// </summary>
     public partial class UsuariosControl : UserControl
     {
-        // Guardaremos el ID del usuario que seleccionemos en la grilla
         private int _usuarioIDSeleccionado = 0;
 
         public UsuariosControl()
@@ -19,34 +19,36 @@ namespace SchettiniGestion.WPF
             InitializeComponent();
         }
 
-        // --- 1. MÉTODOS DE CARGA ---
+        // --- 1. MÉTODOS DE CARGA (MODIFICADOS) ---
 
-        // Este evento se dispara cuando el control se carga en la pantalla
-        // --- ¡INICIO DE LA CORRECCIÓN! ---
-        // Renombramos el método para que coincida con el XAML
         private void UsuariosControl_Loaded(object sender, RoutedEventArgs e)
-        // --- ¡FIN DE LA CORRECCIÓN! ---
         {
-            CargarRoles();
+            CargarRoles(); // ¡Llama al nuevo método!
             CargarUsuarios();
             LimpiarCampos();
         }
 
+        // Método de Carga de Roles (corregido para usar List<Rol>)
         private void CargarRoles()
         {
-            cmbRol.Items.Clear();
-            cmbRol.Items.Add("Admin");
-            cmbRol.Items.Add("Vendedor");
-            cmbRol.SelectedIndex = 1; // Default "Vendedor"
+            try
+            {
+                List<Rol> listaRoles = DatabaseService.GetRoles();
+                cmbRol.ItemsSource = listaRoles;
+                cmbRol.DisplayMemberPath = "Nombre";
+                cmbRol.SelectedValuePath = "RolId";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al cargar roles: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void CargarUsuarios()
         {
             try
             {
-                // Obtenemos los datos de la lógica de negocio
                 DataTable dt = DatabaseService.GetUsuarios();
-                // Asignamos los datos a la grilla de WPF
                 dgvUsuarios.ItemsSource = dt.DefaultView;
             }
             catch (Exception ex)
@@ -55,106 +57,102 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        // --- 2. LÓGICA DE LOS BOTONES ---
+        // --- 2. LÓGICA DE LOS BOTONES (MODIFICADA) ---
 
         private void btnNuevo_Click(object sender, RoutedEventArgs e)
         {
             LimpiarCampos();
         }
 
+        // --- ¡INICIO DE CÓDIGO MODIFICADO (ERROR NOT NULL)! ---
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Validar que el nombre de usuario no esté vacío
-            if (string.IsNullOrWhiteSpace(txtUsuario.Text))
+            if (string.IsNullOrWhiteSpace(txtNombreUsuario.Text))
             {
                 MessageBox.Show("El nombre de usuario no puede estar vacío.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
+            if (cmbRol.SelectedItem == null)
+            {
+                MessageBox.Show("Debe seleccionar un rol para el usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
-            // 2. Obtener los valores de los campos
-            string usuario = txtUsuario.Text.Trim();
-            string password = txtPassword.Password; // Se usa .Password en WPF
-            string rol = cmbRol.Text;
+            string usuario = txtNombreUsuario.Text.Trim();
+            string password = txtPassword.Password;
 
-            // 3. Llamar al servicio de base de datos para guardar
-            // _usuarioIDSeleccionado es 0 si es nuevo, o > 0 si estamos editando
-            bool exito = DatabaseService.GuardarUsuario(_usuarioIDSeleccionado, usuario, password, rol);
+            // Obtenemos el ID del rol (ej: 1, 2)
+            int rolID = (int)cmbRol.SelectedValue;
+
+            // ¡NUEVO! Obtenemos también el TEXTO del rol (ej: "Admin")
+            string rolTexto = (cmbRol.SelectedItem as Rol).Nombre;
+
+            // Llamamos al servicio de base de datos (¡el método modificado!)
+            bool exito = DatabaseService.GuardarUsuario(_usuarioIDSeleccionado, usuario, password, rolID, rolTexto);
 
             if (exito)
             {
                 MessageBox.Show("Usuario guardado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                // 4. Recargar la grilla y limpiar los campos
                 CargarUsuarios();
                 LimpiarCampos();
             }
         }
+        // --- ¡FIN DE CÓDIGO MODIFICADO (ERROR NOT NULL)! ---
 
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Validar que haya un usuario seleccionado
             if (_usuarioIDSeleccionado == 0)
             {
                 MessageBox.Show("Por favor, seleccione un usuario de la grilla para eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            // 2. Validar que no se intente borrar al admin principal
-            if (txtUsuario.Text.ToLower() == "admin")
+            if (txtNombreUsuario.Text.ToLower() == "admin")
             {
                 MessageBox.Show("No se puede eliminar al usuario 'admin' principal.", "Acción no permitida", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            // 3. Pedir confirmación
-            MessageBoxResult confirmacion = MessageBox.Show($"¿Está seguro de que desea eliminar al usuario '{txtUsuario.Text}'?",
-                                                      "Confirmar eliminación",
-                                                      MessageBoxButton.YesNo,
-                                                      MessageBoxImage.Warning);
+            MessageBoxResult confirmacion = MessageBox.Show($"¿Está seguro de que desea eliminar al usuario '{txtNombreUsuario.Text}'?",
+                                                  "Confirmar eliminación",
+                                                  MessageBoxButton.YesNo,
+                                                  MessageBoxImage.Warning);
 
             if (confirmacion == MessageBoxResult.Yes)
             {
-                // 4. Llamar al servicio para eliminar
                 bool exito = DatabaseService.EliminarUsuario(_usuarioIDSeleccionado);
 
                 if (exito)
                 {
                     MessageBox.Show("Usuario eliminado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                    // 5. Recargar y limpiar
                     CargarUsuarios();
                     LimpiarCampos();
                 }
             }
         }
 
-        // --- 3. MÉTODOS AYUDANTES ---
+        // --- 3. MÉTODOS AYUDANTES (MODIFICADOS) ---
 
         private void LimpiarCampos()
         {
-            _usuarioIDSeleccionado = 0; // Esto es CLAVE. Indica que es un "Nuevo" usuario
-            txtUsuario.Text = "";
+            _usuarioIDSeleccionado = 0;
+            txtNombreUsuario.Text = "";
             txtPassword.Password = "";
-            cmbRol.SelectedIndex = 1; // Volver a "Vendedor"
-
-            // Quitar la selección de la grilla
+            cmbRol.SelectedIndex = -1;
             dgvUsuarios.UnselectAll();
         }
 
+
         private void dgvUsuarios_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Verificamos que haya un ítem seleccionado
             if (dgvUsuarios.SelectedItem is DataRowView filaSeleccionada)
             {
-                // --- 1. Guardamos el ID del usuario ---
-                // Leemos el valor de la fila
                 _usuarioIDSeleccionado = Convert.ToInt32(filaSeleccionada["UsuarioID"]);
+                txtNombreUsuario.Text = filaSeleccionada["NombreUsuario"].ToString();
 
-                // --- 2. Cargamos los datos en los campos de texto ---
-                txtUsuario.Text = filaSeleccionada["NombreUsuario"].ToString();
-                cmbRol.Text = filaSeleccionada["Rol"].ToString();
+                // Asignamos el RolID (ej: 1) al ComboBox
+                cmbRol.SelectedValue = filaSeleccionada["RolID"];
 
-                // --- 3. Limpiamos el campo de contraseña ---
                 txtPassword.Password = "";
             }
         }

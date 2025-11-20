@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input; // Este Input es de WPF, está bien
+using System.Windows.Input;
 
 namespace SchettiniGestion.WPF
 {
     public partial class NumericKeyboardControl : UserControl
     {
-        // El evento ahora envía un simple string con el botón presionado.
         public event EventHandler<string> KeyPressed;
 
         public NumericKeyboardControl()
@@ -20,20 +19,31 @@ namespace SchettiniGestion.WPF
             Button button = sender as Button;
             if (button != null)
             {
-                // Dispara el evento con el contenido literal del botón (ej: "7", "8", ".")
-                KeyPressed?.Invoke(this, button.Content.ToString());
+                string numero = button.Content.ToString();
+
+                // --- DEBUG ---
+                // MessageBox.Show($"TECLADO: Click en {numero}", "Debug Teclado"); 
+                // --- FIN DEBUG ---
+
+                KeyPressed?.Invoke(this, numero);
             }
         }
 
         private void BackspaceButton_Click(object sender, RoutedEventArgs e)
         {
-            // Dispara el evento con la palabra clave "Back"
+            // --- DEBUG ---
+            // MessageBox.Show("TECLADO: Click en Borrar", "Debug Teclado");
+            // --- FIN DEBUG ---
+
             KeyPressed?.Invoke(this, "Back");
         }
 
         private void EnterButton_Click(object sender, RoutedEventArgs e)
         {
-            // Dispara el evento con la palabra clave "Enter"
+            // --- DEBUG ---
+            // MessageBox.Show("TECLADO: Click en Enter", "Debug Teclado");
+            // --- FIN DEBUG ---
+
             KeyPressed?.Invoke(this, "Enter");
         }
     }

@@ -1,0 +1,118 @@
+﻿<UserControl x:Class="SchettiniGestion.WPF.CajaControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SchettiniGestion.WPF"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1200"
+             Background="{StaticResource ModuleBackgroundBrush}"
+             Loaded="CajaControl_Loaded">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Control de Caja y Movimientos" FontSize="24" FontWeight="Bold" Foreground="{StaticResource HeaderForegroundBrush}" Margin="0,0,0,20"/>
+
+        <Grid Grid.Row="1" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="10" Padding="20" Margin="0,0,20,0" BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="💰" FontSize="40" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                    <StackPanel>
+                        <TextBlock Text="SALDO EN CAJA" FontSize="14" FontWeight="SemiBold" Foreground="#AAA"/>
+                        <TextBlock x:Name="lblSaldo" Text="$ 0,00" FontSize="40" FontWeight="Bold" Foreground="#4CAF50"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+
+                <Button x:Name="btnIngreso" Click="btnIngreso_Click" Margin="0,0,10,0" Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate>
+                            <Border Background="#2E7D32" CornerRadius="5" Padding="20,10" MinWidth="150">
+                                <StackPanel>
+                                    <TextBlock Text="⬆ INGRESAR" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Dinero / Ajuste" Foreground="#A5D6A7" FontSize="12" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Button x:Name="btnEgreso" Click="btnEgreso_Click" Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate>
+                            <Border Background="#C62828" CornerRadius="5" Padding="20,10" MinWidth="150">
+                                <StackPanel>
+                                    <TextBlock Text="⬇ RETIRAR" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Gasto / Retiro" Foreground="#EF9A9A" FontSize="12" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="2" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="10" BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Movimientos del Día" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,10"/>
+
+                <DataGrid x:Name="dgvMovimientos" Style="{StaticResource ModuleDataGridStyle}" AutoGenerateColumns="False" IsReadOnly="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="ID" Binding="{Binding CajaID}" Width="60"/>
+                        <DataGridTextColumn Header="Hora" Binding="{Binding Fecha, StringFormat={}{0:HH:mm}}" Width="80"/>
+                        <DataGridTextColumn Header="Concepto" Binding="{Binding Concepto}" Width="*"/>
+                        <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="100"/>
+                        <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat=C2}" Width="120" FontWeight="Bold"/>
+                        <DataGridTextColumn Header="Usuario" Binding="{Binding Usuario}" Width="120"/>
+                    </DataGrid.Columns>
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                        </Style>
+                    </DataGrid.RowStyle>
+                </DataGrid>
+            </DockPanel>
+        </Border>
+
+        <Grid x:Name="popupMovimiento" Visibility="Collapsed" Background="#AA000000">
+            <Border Background="{StaticResource ModuleBackgroundBrush}" Width="400" Height="350" CornerRadius="10" BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock x:Name="lblPopupTitulo" Text="Registrar Movimiento" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+
+                    <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                        <TextBlock Text="Monto:" Style="{StaticResource ModuleLabelStyle}"/>
+                        <xctk:DecimalUpDown x:Name="numMontoManual" Style="{StaticResource ModuleNumericUpDownStyle}" FormatString="C2" Margin="0,0,0,20" FontSize="18"/>
+
+                        <TextBlock Text="Concepto / Motivo:" Style="{StaticResource ModuleLabelStyle}"/>
+                        <TextBox x:Name="txtConceptoManual" Style="{StaticResource ModuleTextBoxStyle}" Height="80" TextWrapping="Wrap" AcceptsReturn="True"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancelar" Style="{StaticResource DeleteButtonStyle}" Width="100" Margin="0,0,10,0" Click="btnCancelarPopup_Click"/>
+                        <Button Content="Guardar" Style="{StaticResource ActionButtonStyle}" Width="100" Click="btnGuardarMovimiento_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+    </Grid>
+</UserControl>

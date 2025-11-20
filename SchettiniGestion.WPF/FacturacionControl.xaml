@@ -9,7 +9,6 @@
              d:DesignHeight="700" d:DesignWidth="1200"
              Background="{StaticResource ModuleBackgroundBrush}"
              Loaded="FacturacionControl_Loaded">
-    <!-- ¡NUEVO EVENTO! -->
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -17,9 +16,6 @@
             <ColumnDefinition Width="1*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ================================== -->
-        <!-- COLUMNA 0: DETALLE DE FACTURA      -->
-        <!-- ================================== -->
         <DockPanel Grid.Column="0" Margin="10,0,5,10">
 
             <Border DockPanel.Dock="Top" 
@@ -27,12 +23,18 @@
                     CornerRadius="5,5,0,0" Margin="10,10,10,0" Padding="15"
                     BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1,1,1,0">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Tipo de Comprobante:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <ComboBox x:Name="cmbTipoComprobante" Style="{StaticResource ModuleComboBoxStyle}" Width="250" Margin="0">
+                    <TextBlock Text="Comprobante:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <ComboBox x:Name="cmbTipoComprobante" Style="{StaticResource ModuleComboBoxStyle}" Width="150" Margin="0,0,20,0">
                         <ComboBoxItem Content="Factura B"/>
                         <ComboBoxItem Content="Factura A"/>
                         <ComboBoxItem Content="Ticket"/>
                         <ComboBoxItem Content="Recibo X"/>
+                    </ComboBox>
+
+                    <TextBlock Text="Condición:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <ComboBox x:Name="cmbCondicionVenta" Style="{StaticResource ModuleComboBoxStyle}" Width="180">
+                        <ComboBoxItem Content="Contado" IsSelected="True"/>
+                        <ComboBoxItem Content="Cuenta Corriente"/>
                     </ComboBox>
                 </StackPanel>
             </Border>
@@ -67,9 +69,6 @@
             </Border>
         </DockPanel>
 
-        <!-- ================================== -->
-        <!-- COLUMNA 1: PANEL DE ACCIONES       -->
-        <!-- ================================== -->
         <Border Grid.Column="1" Background="{StaticResource PanelBackgroundBrush}" 
                 CornerRadius="5" Margin="5,10,10,10" Padding="15"
                 BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
@@ -93,19 +92,14 @@
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Top">
-
-                 
                     <Border Background="{StaticResource ModuleBackgroundBrush}" CornerRadius="3" Padding="10" Margin="0,0,0,10">
                         <StackPanel>
                             <TextBlock Text="1. Buscar Cliente (por CUIT o Razón Social)" Style="{StaticResource ModuleLabelStyle}" Margin="0,0,0,5"/>
-
-                            <!-- Cambiamos KeyDown por TextChanged y agregamos PreviewKeyDown -->
                             <TextBox x:Name="txtBuscarCliente" Style="{StaticResource ModuleTextBoxStyle}" 
                                      TextChanged="txtBuscarCliente_TextChanged"
                                      PreviewKeyDown="txtBuscar_PreviewKeyDown"
                                      LostFocus="txtBuscar_LostFocus"/>
 
-                            <!-- ¡NUEVO! Popup de sugerencias -->
                             <Popup x:Name="popupCliente" PlacementTarget="{Binding ElementName=txtBuscarCliente}" Placement="Bottom" StaysOpen="False">
                                 <Border Background="{StaticResource PanelBackgroundBrush}" BorderBrush="#007ACC" BorderThickness="1" MaxHeight="200">
                                     <ListBox x:Name="lstSugerenciasCliente" 
@@ -118,23 +112,18 @@
                                              BorderThickness="0"/>
                                 </Border>
                             </Popup>
-
                             <TextBlock x:Name="lblClienteSeleccionado" Text="Consumidor Final" Foreground="White" FontSize="16" FontWeight="SemiBold" Margin="0,5,0,0"/>
                         </StackPanel>
                     </Border>
 
-               
                     <Border Background="{StaticResource ModuleBackgroundBrush}" CornerRadius="3" Padding="10">
                         <StackPanel>
                             <TextBlock Text="2. Buscar Producto (por Código o Descripción)" Style="{StaticResource ModuleLabelStyle}" Margin="0,0,0,5"/>
-
-                            <!-- Cambiamos KeyDown por TextChanged y agregamos PreviewKeyDown -->
                             <TextBox x:Name="txtBuscarProducto" Style="{StaticResource ModuleTextBoxStyle}" 
                                      TextChanged="txtBuscarProducto_TextChanged"
                                      PreviewKeyDown="txtBuscar_PreviewKeyDown"
                                      LostFocus="txtBuscar_LostFocus"/>
 
-                            <!-- ¡NUEVO! Popup de sugerencias -->
                             <Popup x:Name="popupProducto" PlacementTarget="{Binding ElementName=txtBuscarProducto}" Placement="Bottom" StaysOpen="False">
                                 <Border Background="{StaticResource PanelBackgroundBrush}" BorderBrush="#007ACC" BorderThickness="1" MaxHeight="200">
                                     <ListBox x:Name="lstSugerenciasProducto" 
@@ -167,11 +156,8 @@
                             </Grid>
                         </StackPanel>
                     </Border>
-
                 </StackPanel>
-
             </DockPanel>
         </Border>
-
     </Grid>
 </UserControl>

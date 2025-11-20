@@ -22,9 +22,11 @@
         <Border Grid.Row="1" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" MinWidth="600">
             <StackPanel>
                 <TextBlock Text="Buscar Producto (Código o Nombre)" Style="{StaticResource ModuleLabelStyle}"/>
+
                 <TextBox x:Name="txtBuscarProducto" Style="{StaticResource ModuleTextBoxStyle}" 
                          KeyDown="txtBuscarProducto_KeyDown"
-                         LostFocus="txtBuscarProducto_LostFocus"/>
+                         LostFocus="txtBuscarProducto_LostFocus"
+                         GotFocus="NumericInput_GotFocus"/>
 
                 <Popup x:Name="popupProducto" PlacementTarget="{Binding ElementName=txtBuscarProducto}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True">
                     <Border Background="{StaticResource PanelBackgroundBrush}" BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1" CornerRadius="3" MinWidth="500">
@@ -61,11 +63,11 @@
                         <StackPanel Grid.Column="0" Margin="0,0,15,0">
                             <TextBlock Text="Precio de Costo:" Style="{StaticResource ModuleLabelStyle}"/>
                             <xctk:DecimalUpDown x:Name="numPrecioCosto" Style="{StaticResource ModuleNumericUpDownStyle}" FormatString="C2" Margin="0,0,0,20"
-                                                GotFocus="NumericInput_GotFocus" LostFocus="NumericInput_LostFocus"/>
+                                                GotFocus="NumericInput_GotFocus"/>
 
                             <TextBlock Text="Precio de Venta:" Style="{StaticResource ModuleLabelStyle}"/>
                             <xctk:DecimalUpDown x:Name="numPrecioVenta" Style="{StaticResource ModuleNumericUpDownStyle}" FormatString="C2"
-                                                GotFocus="NumericInput_GotFocus" LostFocus="NumericInput_LostFocus"/>
+                                                GotFocus="NumericInput_GotFocus"/>
                         </StackPanel>
 
                         <Border Grid.Column="1" Background="{StaticResource ModuleBackgroundBrush}" CornerRadius="5" Padding="15" Margin="15,0,0,0">
@@ -78,7 +80,7 @@
                                     </Grid.ColumnDefinitions>
 
                                     <xctk:DecimalUpDown x:Name="numPorcentaje" Style="{StaticResource ModuleNumericUpDownStyle}" Minimum="0"
-                                                        GotFocus="NumericInput_GotFocus" LostFocus="NumericInput_LostFocus"/>
+                                                        GotFocus="NumericInput_GotFocus"/>
 
                                     <Button x:Name="btnAplicarPorcentaje" Grid.Column="1" Content="Aplicar" 
                                             Style="{StaticResource ActionButtonStyle}" Margin="10,0,0,0"
@@ -99,9 +101,7 @@
             <Border Grid.Column="1" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" VerticalAlignment="Top" HorizontalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="Teclado Numérico" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,20" HorizontalAlignment="Center"/>
-
                     <local:NumericKeyboardControl x:Name="numericKeyboard" KeyPressed="OnNumericKeyPressed"/>
-
                 </StackPanel>
             </Border>
         </Grid>

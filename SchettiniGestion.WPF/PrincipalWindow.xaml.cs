@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Diagnostics;
 using System.IO;
-using SchettiniGestion; // ¡Importamos nuestra lógica!
+using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
 {
@@ -22,10 +22,9 @@ namespace SchettiniGestion.WPF
         public PrincipalWindow()
         {
             InitializeComponent();
-            btnInicio_Click(null, null); // Cargamos la pantalla de "Inicio" por defecto
+            btnInicio_Click(null, null);
         }
 
-        // --- LÓGICA DE PERMISOS ---
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             AplicarPermisos();
@@ -33,16 +32,14 @@ namespace SchettiniGestion.WPF
 
         private void AplicarPermisos()
         {
-            // Ocultamos todo por defecto (excepto Inicio y Salir) y luego mostramos según permiso.
-
-            // Sección Facturación
+            // Facturación
             if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_FACTURACION) ||
                 !SesionUsuario.TienePermiso(DatabaseService.PERMISO_FACTURACION))
             {
                 btnFacturacion.Visibility = Visibility.Collapsed;
             }
 
-            // Sección Reportes
+            // Reportes (Ventas y Presupuestos)
             bool puedeVerReportes = false;
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_VENTAS) &&
                 SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS))
@@ -53,140 +50,123 @@ namespace SchettiniGestion.WPF
             {
                 btnVentas.Visibility = Visibility.Collapsed;
             }
-            if (!puedeVerReportes)
+
+            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRESUPUESTOS) &&
+                SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRESUPUESTOS))
             {
-                headerReportes.Visibility = Visibility.Collapsed;
+                puedeVerReportes = true;
+            }
+            else
+            {
+                btnPresupuestos.Visibility = Visibility.Collapsed;
             }
 
+            if (!puedeVerReportes) headerReportes.Visibility = Visibility.Collapsed;
 
-            // Sección Gestión
+
+            // Gestión (Caja, Precios, Compras, etc.)
             bool puedeVerGestion = false;
 
-            // ===== INICIO DE CÓDIGO NUEVO (PRECIOS) =====
+            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA) &&
+                SesionUsuario.TienePermiso(DatabaseService.PERMISO_CAJA))
+            {
+                puedeVerGestion = true;
+            }
+            else { btnCaja.Visibility = Visibility.Collapsed; }
+
+            // ===== CÓDIGO NUEVO (CUENTAS CORRIENTES) =====
+            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CUENTASCORRIENTES) &&
+                SesionUsuario.TienePermiso(DatabaseService.PERMISO_CUENTASCORRIENTES))
+            {
+                puedeVerGestion = true;
+                btnCtaCte.Visibility = Visibility.Visible;
+            }
+            else { btnCtaCte.Visibility = Visibility.Collapsed; }
+            // ============================================
+
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRECIOS) &&
                 SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRECIOS))
             {
                 puedeVerGestion = true;
             }
-            else
-            {
-                btnPrecios.Visibility = Visibility.Collapsed;
-            }
-            // ===== FIN DE CÓDIGO NUEVO =====
+            else { btnPrecios.Visibility = Visibility.Collapsed; }
 
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_COMPRAS) &&
                 SesionUsuario.TienePermiso(DatabaseService.PERMISO_COMPRAS))
             {
                 puedeVerGestion = true;
             }
-            else
-            {
-                btnCompras.Visibility = Visibility.Collapsed;
-            }
+            else { btnCompras.Visibility = Visibility.Collapsed; }
 
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PROVEEDORES) &&
                 SesionUsuario.TienePermiso(DatabaseService.PERMISO_PROVEEDORES))
             {
                 puedeVerGestion = true;
             }
-            else
-            {
-                btnProveedores.Visibility = Visibility.Collapsed;
-            }
+            else { btnProveedores.Visibility = Visibility.Collapsed; }
 
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_STOCK) &&
                 SesionUsuario.TienePermiso(DatabaseService.PERMISO_STOCK))
             {
                 puedeVerGestion = true;
             }
-            else
-            {
-                btnStock.Visibility = Visibility.Collapsed;
-            }
+            else { btnStock.Visibility = Visibility.Collapsed; }
 
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRODUCTOS) &&
                 SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRODUCTOS))
             {
                 puedeVerGestion = true;
             }
-            else
-            {
-                btnProductos.Visibility = Visibility.Collapsed;
-            }
+            else { btnProductos.Visibility = Visibility.Collapsed; }
 
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CLIENTES) &&
                 SesionUsuario.TienePermiso(DatabaseService.PERMISO_CLIENTES))
             {
                 puedeVerGestion = true;
             }
-            else
-            {
-                btnClientes.Visibility = Visibility.Collapsed;
-            }
-            if (!puedeVerGestion)
-            {
-                headerGestion.Visibility = Visibility.Collapsed;
-            }
+            else { btnClientes.Visibility = Visibility.Collapsed; }
+
+            if (!puedeVerGestion) headerGestion.Visibility = Visibility.Collapsed;
 
 
-            // Sección Administración
+            // Administración
             bool puedeVerAdmin = false;
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_USUARIOS) &&
                 SesionUsuario.TienePermiso(DatabaseService.PERMISO_USUARIOS))
             {
                 puedeVerAdmin = true;
             }
-            else
-            {
-                btnUsuarios.Visibility = Visibility.Collapsed;
-            }
+            else { btnUsuarios.Visibility = Visibility.Collapsed; }
 
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS) &&
                 SesionUsuario.TienePermiso(DatabaseService.PERMISO_PERMISOS))
             {
                 puedeVerAdmin = true;
             }
-            else
-            {
-                btnPermisos.Visibility = Visibility.Collapsed;
-            }
-            if (!puedeVerAdmin)
-            {
-                headerAdministracion.Visibility = Visibility.Collapsed;
-            }
+            else { btnPermisos.Visibility = Visibility.Collapsed; }
+
+            if (!puedeVerAdmin) headerAdministracion.Visibility = Visibility.Collapsed;
         }
 
-        // --- LÓGICA DEL MENÚ ---
-        private void salirMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
-        }
+        // --- CLICS ---
+        private void salirMenuItem_Click(object sender, RoutedEventArgs e) { this.Close(); }
 
         private void usuariosMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_USUARIOS) ||
-                !SesionUsuario.TienePermiso(DatabaseService.PERMISO_USUARIOS)) return;
-
-            UsuariosControl controlUsuarios = new UsuariosControl();
-            mainContentArea.Content = controlUsuarios;
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_USUARIOS) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_USUARIOS)) return;
+            mainContentArea.Content = new UsuariosControl();
         }
 
         private void clientesMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CLIENTES) ||
-                !SesionUsuario.TienePermiso(DatabaseService.PERMISO_CLIENTES)) return;
-
-            ClientesControl controlClientes = new ClientesControl();
-            mainContentArea.Content = controlClientes;
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CLIENTES) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_CLIENTES)) return;
+            mainContentArea.Content = new ClientesControl();
         }
 
         private void productosMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRODUCTOS) ||
-                !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRODUCTOS)) return;
-
-            ProductosControl controlProductos = new ProductosControl();
-            mainContentArea.Content = controlProductos;
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRODUCTOS) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRODUCTOS)) return;
+            mainContentArea.Content = new ProductosControl();
         }
 
         private void btnInicio_Click(object sender, RoutedEventArgs e)
@@ -204,71 +184,72 @@ namespace SchettiniGestion.WPF
 
         private void btnFacturacion_Click(object sender, RoutedEventArgs e)
         {
-            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_FACTURACION) ||
-                !SesionUsuario.TienePermiso(DatabaseService.PERMISO_FACTURACION)) return;
-
-            FacturacionControl controlFacturacion = new FacturacionControl();
-            mainContentArea.Content = controlFacturacion;
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_FACTURACION) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_FACTURACION)) return;
+            mainContentArea.Content = new FacturacionControl();
         }
 
         private void btnVentas_Click(object sender, RoutedEventArgs e)
         {
-            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_VENTAS) ||
-                !SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS)) return;
-
-            VentasControl controlVentas = new VentasControl();
-            mainContentArea.Content = controlVentas;
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_VENTAS) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS)) return;
+            mainContentArea.Content = new VentasControl();
         }
 
+        private void btnPresupuestos_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRESUPUESTOS) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRESUPUESTOS)) return;
+            mainContentArea.Content = new PresupuestosControl();
+        }
+
+        private void btnReportePresupuestos_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRESUPUESTOS) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRESUPUESTOS)) return;
+            ReportePresupuestosControl control = new ReportePresupuestosControl();
+            mainContentArea.Content = control;
+        }
 
         private void btnStock_Click(object sender, RoutedEventArgs e)
         {
-            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_STOCK) ||
-                !SesionUsuario.TienePermiso(DatabaseService.PERMISO_STOCK)) return;
-
-            StockControl controlStock = new StockControl();
-            mainContentArea.Content = controlStock;
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_STOCK) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_STOCK)) return;
+            mainContentArea.Content = new StockControl();
         }
 
         private void btnProveedores_Click(object sender, RoutedEventArgs e)
         {
-            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PROVEEDORES) ||
-                !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PROVEEDORES)) return;
-
-            ProveedoresControl controlProveedores = new ProveedoresControl();
-            mainContentArea.Content = controlProveedores;
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PROVEEDORES) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PROVEEDORES)) return;
+            mainContentArea.Content = new ProveedoresControl();
         }
 
         private void btnCompras_Click(object sender, RoutedEventArgs e)
         {
-            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_COMPRAS) ||
-                !SesionUsuario.TienePermiso(DatabaseService.PERMISO_COMPRAS)) return;
-
-            ComprasControl controlCompras = new ComprasControl();
-            mainContentArea.Content = controlCompras;
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_COMPRAS) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_COMPRAS)) return;
+            mainContentArea.Content = new ComprasControl();
         }
 
-        // ===== INICIO DE CÓDIGO NUEVO (PRECIOS) =====
         private void btnPrecios_Click(object sender, RoutedEventArgs e)
         {
-            // Doble Guardia de seguridad
-            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRECIOS) ||
-                !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRECIOS)) return;
-
-            PreciosControl controlPrecios = new PreciosControl();
-            mainContentArea.Content = controlPrecios;
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRECIOS) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRECIOS)) return;
+            mainContentArea.Content = new PreciosControl();
         }
-        // ===== FIN DE CÓDIGO NUEVO =====
+
+        private void btnCaja_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_CAJA)) return;
+            mainContentArea.Content = new CajaControl();
+        }
+
+        // ===== CÓDIGO NUEVO (CUENTAS CORRIENTES) =====
+        private void btnCtaCte_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CUENTASCORRIENTES) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_CUENTASCORRIENTES)) return;
+            mainContentArea.Content = new CuentasCorrientesControl();
+        }
+        // ============================================
 
         private void btnPermisos_Click(object sender, RoutedEventArgs e)
         {
-            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS) ||
-                !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PERMISOS)) return;
-
-            GestionPermisos controlPermisos = new GestionPermisos();
-            mainContentArea.Content = controlPermisos;
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PERMISOS)) return;
+            mainContentArea.Content = new GestionPermisos();
         }
-
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {

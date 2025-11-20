@@ -40,17 +40,28 @@
                     <TextBlock Text="Tipo de Comprobante" Style="{StaticResource ModuleLabelStyle}" Margin="0,15,0,5"/>
                     <TextBox x:Name="txtTipoComprobante" Style="{StaticResource ModuleTextBoxStyle}" Text="Factura A"/>
 
+                    <TextBlock Text="Condición de Compra" Style="{StaticResource ModuleLabelStyle}" Margin="0,15,0,5"/>
+                    <ComboBox x:Name="cmbCondicionCompra" Style="{StaticResource ModuleComboBoxStyle}">
+                        <ComboBoxItem Content="Contado" IsSelected="True"/>
+                        <ComboBoxItem Content="Cuenta Corriente"/>
+                    </ComboBox>
+
                     <Separator Margin="0,20" Background="{StaticResource BorderDarkBrush}"/>
 
                     <TextBlock Text="Buscar Producto (Código o Nombre)" Style="{StaticResource ModuleLabelStyle}"/>
-
                     <TextBox x:Name="txtBuscarProducto" Style="{StaticResource ModuleTextBoxStyle}" 
-                             KeyDown="txtBuscarProducto_KeyDown" 
+                             TextChanged="txtBuscarProducto_TextChanged"
+                             PreviewKeyDown="txtBuscar_PreviewKeyDown"
                              LostFocus="txtBuscarProducto_LostFocus"/>
 
                     <Popup x:Name="popupProductos" PlacementTarget="{Binding ElementName=txtBuscarProducto}" Placement="Bottom" StaysOpen="False">
                         <Border Background="{StaticResource PanelBackgroundBrush}" BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1" CornerRadius="3" MinWidth="350">
-                            <ListBox x:Name="lstProductos" MaxHeight="200" SelectionChanged="lstProductos_SelectionChanged" KeyDown="lstProductos_KeyDown">
+                            <ListBox x:Name="lstSugerenciasProducto" MaxHeight="200" 
+                                     MouseUp="lstSugerenciasProducto_MouseUp" 
+                                     PreviewKeyDown="lstSugerencias_PreviewKeyDown"
+                                     Background="{StaticResource PanelBackgroundBrush}"
+                                     Foreground="{StaticResource BodyForegroundBrush}"
+                                     BorderThickness="0">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Descripcion}" Foreground="White" FontSize="14"/>
@@ -83,7 +94,10 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <DataGrid x:Name="dgvCarrito" Grid.Row="0" Style="{StaticResource ModuleDataGridStyle}" AutoGenerateColumns="False" CanUserDeleteRows="False">
+                    <DataGrid x:Name="dgvCarrito" Grid.Row="0" 
+                              Style="{StaticResource ModuleDataGridStyle}" 
+                              AutoGenerateColumns="False" 
+                              CanUserDeleteRows="False">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="100" IsReadOnly="True"/>
                             <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True"/>
@@ -117,9 +131,7 @@
                 <StackPanel Margin="20">
                     <TextBlock Text="Buscar Proveedor" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
                     <TextBox x:Name="txtBuscarProveedorPopup" Style="{StaticResource ModuleTextBoxStyle}" KeyDown="txtBuscarProveedorPopup_KeyDown"/>
-                    <ListBox x:Name="lstProveedores" MaxHeight="350" Margin="0,10" 
-                             SelectionChanged="lstProveedores_SelectionChanged" 
-                             KeyDown="lstProveedores_KeyDown">
+                    <ListBox x:Name="lstProveedores" MaxHeight="350" Margin="0,10" SelectionChanged="lstProveedores_SelectionChanged" KeyDown="lstProveedores_KeyDown">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel>
@@ -132,5 +144,6 @@
                 </StackPanel>
             </Border>
         </Grid>
+
     </Grid>
 </UserControl>

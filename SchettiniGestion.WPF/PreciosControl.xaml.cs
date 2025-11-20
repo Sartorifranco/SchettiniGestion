@@ -7,7 +7,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using Xceed.Wpf.Toolkit;
 using System.Globalization; // Para el separador decimal
-// ¡¡YA NO NECESITAMOS SYSTEM.WINDOWS.FORMS!!
 
 namespace SchettiniGestion.WPF
 {
@@ -80,7 +79,6 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                // Usamos el MessageBox de WPF
                 System.Windows.MessageBox.Show($"Error al buscar productos: {ex.Message}");
             }
         }
@@ -206,30 +204,43 @@ namespace SchettiniGestion.WPF
         }
         #endregion
 
-        // ===== INICIO DE CÓDIGO 100% CORREGIDO (TECLADO) =====
+        // ===== INICIO DE CÓDIGO DE TECLADO 100% FUNCIONAL =====
 
-        // Evento que se dispara cuando el teclado numérico es presionado
         private void OnNumericKeyPressed(object sender, string key)
         {
+            // 1. Si no hay campo seleccionado, avisar o salir.
             if (_activeNumericControl == null) return;
+
+            // 2. Recuperar el foco visual para que el usuario vea el cursor
             _activeNumericControl.Focus();
 
-            // ¡LA MAGIA! Usamos nuestro Helper para encontrar el TextBox INTERNO
-            TextBox activeTextBox = VisualTreeHelpers.FindChild<TextBox>(_activeNumericControl);
-            if (activeTextBox == null) return; // No se encontró el textbox interno
+            // 3. Buscar la caja de texto interna usando nuestra "llave maestra"
+            TextBox activeTextBox = null;
 
-            // Lógica de manipulación de texto
-            int caretIndex = activeTextBox.CaretIndex;
-            int selectionLength = activeTextBox.SelectionLength;
-
-            // Si hay texto seleccionado, se reemplaza
-            if (selectionLength > 0)
+            // Si es el buscador (que es un TextBox normal)
+            if (_activeNumericControl is TextBox tb)
             {
-                activeTextBox.Text = activeTextBox.Text.Remove(activeTextBox.SelectionStart, selectionLength);
+                activeTextBox = tb;
+            }
+            // Si es un control numérico (DecimalUpDown/IntegerUpDown)
+            else
+            {
+                activeTextBox = VisualTreeHelpers.FindChild<TextBox>(_activeNumericControl);
+            }
+
+            if (activeTextBox == null) return;
+
+            // 4. Escribir en la caja de texto
+            int caretIndex = activeTextBox.CaretIndex;
+
+            // Si hay texto seleccionado (ej: al hacer foco), lo borramos primero
+            if (activeTextBox.SelectionLength > 0)
+            {
+                activeTextBox.Text = activeTextBox.Text.Remove(activeTextBox.SelectionStart, activeTextBox.SelectionLength);
                 caretIndex = activeTextBox.SelectionStart;
             }
 
-            if (key == "Back" || key == "⬅") // Tecla de Borrar
+            if (key == "Back" || key == "⬅")
             {
                 if (caretIndex > 0)
                 {
@@ -237,11 +248,11 @@ namespace SchettiniGestion.WPF
                     activeTextBox.CaretIndex = caretIndex - 1;
                 }
             }
-            else if (key == "Enter") // Tecla Enter
+            else if (key == "Enter")
             {
                 _activeNumericControl.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
             }
-            else if (key == ".") // Tecla de Punto/Coma
+            else if (key == ".")
             {
                 string separator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
                 if (!activeTextBox.Text.Contains(separator))
@@ -250,28 +261,28 @@ namespace SchettiniGestion.WPF
                     activeTextBox.CaretIndex = caretIndex + separator.Length;
                 }
             }
-            else // Teclas numéricas ("0" a "9")
+            else // Números normales
             {
                 activeTextBox.Text = activeTextBox.Text.Insert(caretIndex, key);
                 activeTextBox.CaretIndex = caretIndex + key.Length;
             }
         }
 
-        // Evento para registrar qué campo numérico está activo
+        // Este evento le dice al sistema: "El usuario hizo clic en este campo numérico"
         private void NumericInput_GotFocus(object sender, RoutedEventArgs e)
         {
             _activeNumericControl = sender as Control;
         }
 
-        // Evento para desregistrar el campo cuando se pierde el foco
-        private async void NumericInput_LostFocus(object sender, RoutedEventArgs e)
+        // Este evento le dice al sistema: "El usuario hizo clic en el buscador, ya no escribas números"
+        private void txtBuscarProducto_GotFocus(object sender, RoutedEventArgs e)
         {
-            await Task.Delay(150);
-            if (!numericKeyboard.IsKeyboardFocusWithin)
-            {
-                _activeNumericControl = null;
-            }
+            // Para que el teclado funcione en el buscador también:
+            _activeNumericControl = sender as Control;
+            // Si NO quieres que funcione en el buscador, cambia la línea anterior por:
+            // _activeNumericControl = null;
         }
+
         // ===== FIN DE CÓDIGO MODIFICADO =====
     }
 }

@@ -125,8 +125,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CajaControl.xaml.cs">
+      <DependentUpon>CajaControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ComprasControl.xaml.cs">
       <DependentUpon>ComprasControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="CuentasCorrientesControl.xaml.cs">
+      <DependentUpon>CuentasCorrientesControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="GestionPermisos.xaml.cs">
       <DependentUpon>GestionPermisos.xaml</DependentUpon>
@@ -137,8 +143,14 @@
     <Compile Include="PreciosControl.xaml.cs">
       <DependentUpon>PreciosControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="PresupuestosControl.xaml.cs">
+      <DependentUpon>PresupuestosControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ProveedoresControl.xaml.cs">
       <DependentUpon>ProveedoresControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ReportePresupuestosControl.xaml.cs">
+      <DependentUpon>ReportePresupuestosControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="StockControl.xaml.cs">
       <DependentUpon>StockControl.xaml</DependentUpon>
@@ -147,11 +159,19 @@
       <DependentUpon>VentasControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="VisualTreeHelpers.cs" />
+    <Page Include="CajaControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="ClientesControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="ComprasControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CuentasCorrientesControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -175,6 +195,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="PresupuestosControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="PrincipalWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -184,6 +208,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="ProveedoresControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ReportePresupuestosControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

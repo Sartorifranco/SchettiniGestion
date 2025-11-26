@@ -5,38 +5,35 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-// --- ¡INICIO DEL CÓDIGO NUEVO! ---
-// Importamos la lógica de nuestro otro proyecto
+// Importamos la lógica de nuestro proyecto
 using SchettiniGestion;
-// --- ¡FIN DEL CÓDIGO NUEVO! ---
 
 namespace SchettiniGestion.WPF
 {
-    /// <summary>
-    /// Lógica de interacción para App.xaml
-    /// </summary>
     public partial class App : Application
     {
-        // --- ¡INICIO DEL CÓDIGO NUEVO! ---
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
-            // ¡Validamos la licencia y preparamos la base de datos!
-            // Esto es exactamente lo mismo que hacíamos en el Program.cs
-            // del proyecto viejo.
+            // 1. ¡CRÍTICO! Configurar licencia de Excel (EPPlus)
+            // Si no pones esta línea, la App se cierra al intentar usar funciones de Excel.
+            OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+
+            // 2. Validar Licencia del Sistema
             bool licenciaValida = LicenseManager.ValidarLicencia();
+
             if (licenciaValida)
             {
+                // 3. Inicializar y Actualizar Base de Datos
+                // Esto ejecutará los "ALTER TABLE" para agregar las columnas nuevas (Código de Barras, etc.)
                 DatabaseService.InitializeDatabase();
             }
             else
             {
-                // Si la licencia no es válida, cerramos la app.
                 MessageBox.Show("Error de licencia. La aplicación se cerrará.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Application.Current.Shutdown();
             }
         }
-        // --- ¡FIN DEL CÓDIGO NUEVO! ---
     }
 }

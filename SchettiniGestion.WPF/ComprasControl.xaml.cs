@@ -1,6 +1,5 @@
 ﻿using SchettiniGestion;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Linq;
@@ -30,7 +29,7 @@ namespace SchettiniGestion.WPF
             LimpiarFormulario();
         }
 
-        // --- 1. LÓGICA DE BÚSQUEDA (PROVEEDOR) ---
+        // --- BÚSQUEDA DE PROVEEDOR ---
         private void btnBuscarProveedor_Click(object sender, RoutedEventArgs e)
         {
             popupOverlay.Visibility = Visibility.Visible;
@@ -52,13 +51,9 @@ namespace SchettiniGestion.WPF
                 {
                     DataTable dt = DatabaseService.BuscarProveedoresMultiples(txtBuscarProveedorPopup.Text);
                     lstProveedores.ItemsSource = dt.DefaultView;
-                    if (dt.Rows.Count > 0)
-                    {
-                        lstProveedores.SelectedIndex = 0;
-                        lstProveedores.Focus();
-                    }
+                    if (dt.Rows.Count > 0) { lstProveedores.SelectedIndex = 0; lstProveedores.Focus(); }
                 }
-                catch (Exception ex) { MessageBox.Show($"Error al buscar: {ex.Message}"); }
+                catch { }
             }
         }
 
@@ -76,9 +71,7 @@ namespace SchettiniGestion.WPF
         private void lstProveedores_SelectionChanged(object sender, SelectionChangedEventArgs e) { SeleccionarProveedor(); }
         private void lstProveedores_KeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Enter) SeleccionarProveedor(); }
 
-
-        // --- 2. LÓGICA DE BÚSQUEDA (PRODUCTO) ---
-
+        // --- BÚSQUEDA DE PRODUCTO ---
         private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (_ignorarPerdidaFoco) return;
@@ -93,9 +86,9 @@ namespace SchettiniGestion.WPF
             catch { }
         }
 
-        private void SeleccionarProducto(DataRow drv)
+        private void SeleccionarProducto(DataRowView row)
         {
-            _productoSeleccionado = drv;
+            _productoSeleccionado = row.Row;
             _ignorarPerdidaFoco = true;
             lblProductoSeleccionado.Text = _productoSeleccionado["Descripcion"].ToString();
             txtBuscarProducto.Text = _productoSeleccionado["Descripcion"].ToString();
@@ -107,24 +100,12 @@ namespace SchettiniGestion.WPF
             numPrecioCosto.Focus();
         }
 
-        // Eventos para la lista de sugerencias (Nombres corregidos)
-        private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (lstSugerenciasProducto.SelectedItem is DataRowView drv) SeleccionarProducto(drv.Row);
-        }
-
-        private void lstSugerencias_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter && lstSugerenciasProducto.SelectedItem is DataRowView drv) SeleccionarProducto(drv.Row);
-        }
+        private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e) { if (lstSugerenciasProducto.SelectedItem is DataRowView drv) SeleccionarProducto(drv); }
+        private void lstSugerencias_PreviewKeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Enter && lstSugerenciasProducto.SelectedItem is DataRowView drv) SeleccionarProducto(drv); }
 
         private void txtBuscar_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Down && popupProductos.IsOpen)
-            {
-                lstSugerenciasProducto.SelectedIndex = 0;
-                lstSugerenciasProducto.Focus();
-            }
+            if (e.Key == Key.Down && popupProductos.IsOpen) { lstSugerenciasProducto.SelectedIndex = 0; lstSugerenciasProducto.Focus(); }
             else if (e.Key == Key.Escape) popupProductos.IsOpen = false;
         }
 
@@ -134,25 +115,25 @@ namespace SchettiniGestion.WPF
             if (!lstSugerenciasProducto.IsFocused) popupProductos.IsOpen = false;
         }
 
-        // --- 3. CARRITO ---
+        // --- CARRITO ---
         private void btnAgregar_Click(object sender, RoutedEventArgs e)
         {
             if (_productoSeleccionado == null) return;
 
-            int productoID = Convert.ToInt32(_productoSeleccionado["ProductoID"]);
-            var itemExistente = CarritoDeCompra.FirstOrDefault(item => item.ProductoID == productoID);
+            int id = Convert.ToInt32(_productoSeleccionado["ProductoID"]);
+            var item = CarritoDeCompra.FirstOrDefault(x => x.ProductoID == id);
 
-            if (itemExistente != null)
+            if (item != null)
             {
-                itemExistente.Cantidad += (int)numCantidad.Value;
-                itemExistente.PrecioUnitario = (decimal)numPrecioCosto.Value;
+                item.Cantidad += (int)numCantidad.Value;
+                item.PrecioUnitario = (decimal)numPrecioCosto.Value; // Actualizamos costo
                 dgvCarrito.Items.Refresh();
             }
             else
             {
                 CarritoDeCompra.Add(new FacturaItem
                 {
-                    ProductoID = productoID,
+                    ProductoID = id,
                     Codigo = _productoSeleccionado["Codigo"].ToString(),
                     Descripcion = _productoSeleccionado["Descripcion"].ToString(),
                     Cantidad = (int)numCantidad.Value,
@@ -173,15 +154,15 @@ namespace SchettiniGestion.WPF
             if ((sender as Button)?.CommandParameter is FacturaItem item) { CarritoDeCompra.Remove(item); ActualizarTotal(); }
         }
 
-        private void ActualizarTotal() { lblTotal.Text = $"TOTAL: {CarritoDeCompra.Sum(item => item.Subtotal):C2}"; }
+        private void ActualizarTotal() { lblTotal.Text = $"TOTAL: {CarritoDeCompra.Sum(x => x.Subtotal):C2}"; }
 
-        // --- 4. GUARDAR ---
+        // --- GUARDAR ---
         private void LimpiarFormulario()
         {
             _proveedorSeleccionado = null;
             txtProveedor.Text = "Proveedor Varios";
             txtTipoComprobante.Text = "Factura A";
-            cmbCondicionCompra.SelectedIndex = 0; // Reset a Contado
+            cmbCondicionCompra.SelectedIndex = 0;
             CarritoDeCompra.Clear();
             ActualizarTotal();
             btnBuscarProveedor.Focus();
@@ -189,30 +170,27 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardarCompra_Click(object sender, RoutedEventArgs e)
         {
-            if (CarritoDeCompra.Count == 0) { MessageBox.Show("Debe agregar al menos un producto.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            if (_proveedorSeleccionado == null) { MessageBox.Show("Seleccione un proveedor.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-
-            if (MessageBox.Show("¿Confirmar compra?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.No) return;
+            if (CarritoDeCompra.Count == 0) { MessageBox.Show("Agregue productos."); return; }
+            if (_proveedorSeleccionado == null) { MessageBox.Show("Seleccione proveedor."); return; }
 
             try
             {
                 string condicion = (cmbCondicionCompra.SelectedItem as ComboBoxItem).Content.ToString();
-
                 bool exito = DatabaseService.GuardarCompra(
                     Convert.ToInt32(_proveedorSeleccionado["ProveedorID"]),
                     txtTipoComprobante.Text,
-                    CarritoDeCompra.Sum(item => item.Subtotal),
+                    CarritoDeCompra.Sum(x => x.Subtotal),
                     CarritoDeCompra.ToList(),
                     condicion
                 );
 
                 if (exito)
                 {
-                    MessageBox.Show("¡Compra guardada exitosamente!", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Compra guardada.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                     LimpiarFormulario();
                 }
             }
-            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
         }
     }
 }

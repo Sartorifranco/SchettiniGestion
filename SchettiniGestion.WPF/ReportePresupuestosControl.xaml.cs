@@ -90,14 +90,32 @@ namespace SchettiniGestion.WPF
 
         private void btnImprimir_Click(object sender, RoutedEventArgs e)
         {
-            if (dgvPresupuestos.SelectedItem == null)
+            if (dgvPresupuestos.SelectedItem is DataRowView row)
             {
-                MessageBox.Show("Seleccione un presupuesto para imprimir.");
-                return;
-            }
+                // 1. Recuperar datos del presupuesto seleccionado
+                int id = Convert.ToInt32(row["PresupuestoID"]);
+                string cliente = row["RazonSocial"].ToString();
+                DateTime fecha = Convert.ToDateTime(row["Fecha"]);
+                decimal total = Convert.ToDecimal(row["Total"]);
 
-            // AQUÍ IRÁ LA LÓGICA DE IMPRESIÓN EN EL FUTURO
-            MessageBox.Show("Funcionalidad de impresión pendiente de configurar (Drivers Fiscales/No Fiscales).", "Próximamente", MessageBoxButton.OK, MessageBoxImage.Information);
+                // 2. Recuperar los productos de la base de datos
+                // (Usamos el mismo método que ya usamos para mostrar el detalle en pantalla)
+                DataTable items = DatabaseService.GetPresupuestoDetalle(id);
+
+                if (items.Rows.Count > 0)
+                {
+                    // 3. ¡Llamar al Motor de Impresión!
+                    PrintService.ImprimirPresupuesto(id, cliente, fecha, items, total);
+                }
+                else
+                {
+                    MessageBox.Show("El presupuesto está vacío.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Seleccione un presupuesto de la lista para imprimir.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
     }
 }

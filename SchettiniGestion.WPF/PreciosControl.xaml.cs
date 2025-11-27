@@ -6,7 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Xceed.Wpf.Toolkit;
-using System.Globalization; // Para el separador decimal
+// NO incluimos 'using System.Windows.Forms;' al inicio para evitar conflictos con 'MessageBox'
 
 namespace SchettiniGestion.WPF
 {
@@ -14,7 +14,7 @@ namespace SchettiniGestion.WPF
     {
         private DataRow _productoSeleccionado;
         private bool _ignorarPerdidaFoco = false;
-        private Control _activeNumericControl = null;
+        private Control _activeNumericControl = null; // Rastrea qué campo numérico está activo
 
         public PreciosControl()
         {
@@ -41,7 +41,7 @@ namespace SchettiniGestion.WPF
         }
 
         // --- 1. LÓGICA DE BÚSQUEDA DE PRODUCTO ---
-        #region LogicaBusqueda
+
         private void BuscarProducto(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
@@ -79,6 +79,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
+                // Usamos System.Windows.MessageBox explícitamente
                 System.Windows.MessageBox.Show($"Error al buscar productos: {ex.Message}");
             }
         }
@@ -143,10 +144,9 @@ namespace SchettiniGestion.WPF
                 SeleccionarProducto(drv.Row);
             }
         }
-        #endregion
 
         // --- 2. LÓGICA DE CÁLCULO Y GUARDADO ---
-        #region LogicaCalculoGuardado
+
         private void btnAplicarPorcentaje_Click(object sender, RoutedEventArgs e)
         {
             decimal costo = numPrecioCosto.Value ?? 0;
@@ -202,87 +202,51 @@ namespace SchettiniGestion.WPF
                 System.Windows.MessageBox.Show($"Error al guardar los precios: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        #endregion
 
-        // ===== INICIO DE CÓDIGO DE TECLADO 100% FUNCIONAL =====
+        // --- 3. LÓGICA DEL TECLADO NUMÉRICO ---
 
-        private void OnNumericKeyPressed(object sender, string key)
+        private void numericKeyboard_KeyPressed(object sender, KeyEventArgs e)
         {
-            // 1. Si no hay campo seleccionado, avisar o salir.
             if (_activeNumericControl == null) return;
 
-            // 2. Recuperar el foco visual para que el usuario vea el cursor
+            // Asegura que el control tenga el foco antes de enviar la tecla
             _activeNumericControl.Focus();
 
-            // 3. Buscar la caja de texto interna usando nuestra "llave maestra"
-            TextBox activeTextBox = null;
-
-            // Si es el buscador (que es un TextBox normal)
-            if (_activeNumericControl is TextBox tb)
+            // Usamos la ruta completa para SendKeys para evitar ambigüedades
+            // y asegurarnos de usar la versión de Windows Forms que funciona globalmente
+            if (e.Key == Key.Back)
             {
-                activeTextBox = tb;
+                System.Windows.Forms.SendKeys.SendWait("{BACKSPACE}");
             }
-            // Si es un control numérico (DecimalUpDown/IntegerUpDown)
-            else
+            else if (e.Key == Key.Enter)
             {
-                activeTextBox = VisualTreeHelpers.FindChild<TextBox>(_activeNumericControl);
+                System.Windows.Forms.SendKeys.SendWait("{ENTER}");
             }
-
-            if (activeTextBox == null) return;
-
-            // 4. Escribir en la caja de texto
-            int caretIndex = activeTextBox.CaretIndex;
-
-            // Si hay texto seleccionado (ej: al hacer foco), lo borramos primero
-            if (activeTextBox.SelectionLength > 0)
+            else if (e.Key == Key.Decimal)
             {
-                activeTextBox.Text = activeTextBox.Text.Remove(activeTextBox.SelectionStart, activeTextBox.SelectionLength);
-                caretIndex = activeTextBox.SelectionStart;
+                // Envía el separador decimal correcto según la configuración regional
+                System.Windows.Forms.SendKeys.SendWait(System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
             }
-
-            if (key == "Back" || key == "⬅")
+            else if (e.Key >= Key.D0 && e.Key <= Key.D9)
             {
-                if (caretIndex > 0)
-                {
-                    activeTextBox.Text = activeTextBox.Text.Remove(caretIndex - 1, 1);
-                    activeTextBox.CaretIndex = caretIndex - 1;
-                }
-            }
-            else if (key == "Enter")
-            {
-                _activeNumericControl.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
-            }
-            else if (key == ".")
-            {
-                string separator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
-                if (!activeTextBox.Text.Contains(separator))
-                {
-                    activeTextBox.Text = activeTextBox.Text.Insert(caretIndex, separator);
-                    activeTextBox.CaretIndex = caretIndex + separator.Length;
-                }
-            }
-            else // Números normales
-            {
-                activeTextBox.Text = activeTextBox.Text.Insert(caretIndex, key);
-                activeTextBox.CaretIndex = caretIndex + key.Length;
+                // Envía el número (eliminando la 'D' del nombre de la tecla, ej: D7 -> 7)
+                System.Windows.Forms.SendKeys.SendWait(e.Key.ToString().Replace("D", ""));
             }
         }
 
-        // Este evento le dice al sistema: "El usuario hizo clic en este campo numérico"
         private void NumericInput_GotFocus(object sender, RoutedEventArgs e)
         {
             _activeNumericControl = sender as Control;
         }
 
-        // Este evento le dice al sistema: "El usuario hizo clic en el buscador, ya no escribas números"
-        private void txtBuscarProducto_GotFocus(object sender, RoutedEventArgs e)
+        private async void NumericInput_LostFocus(object sender, RoutedEventArgs e)
         {
-            // Para que el teclado funcione en el buscador también:
-            _activeNumericControl = sender as Control;
-            // Si NO quieres que funcione en el buscador, cambia la línea anterior por:
-            // _activeNumericControl = null;
+            await Task.Delay(150);
+            // Si el foco se fue al teclado, no lo perdemos. Si se fue a otro lado, sí.
+            if (!numericKeyboard.IsKeyboardFocusWithin)
+            {
+                _activeNumericControl = null;
+            }
         }
-
-        // ===== FIN DE CÓDIGO MODIFICADO =====
     }
 }

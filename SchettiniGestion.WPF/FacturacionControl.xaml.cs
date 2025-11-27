@@ -16,8 +16,6 @@ namespace SchettiniGestion.WPF
         private DataRow _clienteSeleccionado;
         private DataRow _productoSeleccionado;
         private bool _ignorarPerdidaFoco = false;
-
-        // Variable para evitar recálculos innecesarios al cargar el combo
         private bool _cargandoListas = false;
 
         public FacturacionControl()
@@ -34,18 +32,17 @@ namespace SchettiniGestion.WPF
             LimpiarFormulario();
         }
 
+        // --- CARGA Y CONFIGURACIÓN ---
         private void CargarListasPrecios()
         {
             try
             {
                 _cargandoListas = true;
                 DataTable dt = DatabaseService.GetListasPrecios();
-                cmbListaPrecios.ItemsSource = dt.DefaultView;
-
-                // Seleccionar la lista base (ID 1) por defecto si existe
-                if (dt.Rows.Count > 0)
+                if (this.FindName("cmbListaPrecios") != null)
                 {
-                    cmbListaPrecios.SelectedValue = 1;
+                    cmbListaPrecios.ItemsSource = dt.DefaultView;
+                    if (dt.Rows.Count > 0) cmbListaPrecios.SelectedValue = 1;
                 }
                 _cargandoListas = false;
             }
@@ -60,10 +57,10 @@ namespace SchettiniGestion.WPF
                 if (_clienteSeleccionado != null)
                     lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            catch { }
         }
 
-        // --- EVENTO DE CAMBIO DE LISTA ---
+        // --- LISTAS DE PRECIOS ---
         private void cmbListaPrecios_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_cargandoListas) return;
@@ -72,28 +69,24 @@ namespace SchettiniGestion.WPF
 
         private decimal ObtenerPorcentajeLista()
         {
-            if (cmbListaPrecios.SelectedItem is DataRowView row)
+            if (this.FindName("cmbListaPrecios") != null && cmbListaPrecios.SelectedItem is DataRowView row)
             {
                 return Convert.ToDecimal(row["Porcentaje"]);
             }
-            return 0; // Si no hay lista, 0%
+            return 0;
         }
 
         private void RecalcularCarritoConNuevaLista()
         {
             decimal porcentaje = ObtenerPorcentajeLista();
-
             if (CarritoDeVenta.Count > 0)
             {
                 foreach (var item in CarritoDeVenta)
                 {
-                    // Buscamos el precio base original en la BD para no acumular porcentajes
-                    // (Ej: Si paso de +10% a +20%, no quiero hacer +10%+20%, sino Base + 20%)
                     DataRow prod = DatabaseService.BuscarProducto(item.Codigo);
                     if (prod != null)
                     {
                         decimal precioBase = Convert.ToDecimal(prod["PrecioVenta"]);
-                        // Aplicamos el nuevo porcentaje
                         item.PrecioUnitario = precioBase * (1 + (porcentaje / 100));
                     }
                 }
@@ -192,11 +185,9 @@ namespace SchettiniGestion.WPF
 
             if ((enCarro + cant) > stock) { MessageBox.Show("Stock insuficiente."); return; }
 
-            // ===== APLICAR LISTA DE PRECIOS AL AGREGAR =====
             decimal precioBase = Convert.ToDecimal(_productoSeleccionado["PrecioVenta"]);
             decimal porcentaje = ObtenerPorcentajeLista();
             decimal precioFinal = precioBase * (1 + (porcentaje / 100));
-            // ===============================================
 
             if (item != null) item.Cantidad += cant;
             else
@@ -207,7 +198,7 @@ namespace SchettiniGestion.WPF
                     Codigo = _productoSeleccionado["Codigo"].ToString(),
                     Descripcion = _productoSeleccionado["Descripcion"].ToString(),
                     Cantidad = cant,
-                    PrecioUnitario = precioFinal // Precio con aumento/descuento aplicado
+                    PrecioUnitario = precioFinal
                 });
             }
             dgvFactura.Items.Refresh();
@@ -223,14 +214,25 @@ namespace SchettiniGestion.WPF
         private void ActualizarTotal() { lblTotal.Text = $"{CarritoDeVenta.Sum(x => x.Subtotal):C2}"; }
 
         private void LimpiarProducto() { _productoSeleccionado = null; txtBuscarProducto.Text = ""; numCantidad.Value = 1; txtBuscarProducto.Focus(); }
-        private void LimpiarFormulario() { CargarClientePorDefecto(); cmbTipoComprobante.SelectedIndex = 0; cmbCondicionVenta.SelectedIndex = 0; CarritoDeVenta.Clear(); ActualizarTotal(); LimpiarProducto(); txtBuscarCliente.Focus(); }
+
+        private void LimpiarFormulario()
+        {
+            CargarClientePorDefecto();
+            cmbTipoComprobante.SelectedIndex = 0;
+            cmbCondicionVenta.SelectedIndex = 0;
+            if (cmbListaPrecios.Items.Count > 0) cmbListaPrecios.SelectedValue = 1;
+            CarritoDeVenta.Clear();
+            ActualizarTotal();
+            LimpiarProducto();
+            txtBuscarCliente.Focus();
+        }
 
         private void btnCancelarFactura_Click(object sender, RoutedEventArgs e)
         {
             if (MessageBox.Show("¿Cancelar venta?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes) LimpiarFormulario();
         }
 
-        // --- GUARDAR ---
+        // --- GUARDAR E IMPRIMIR (ACTUALIZADO) ---
         private void btnGuardarFactura_Click(object sender, RoutedEventArgs e)
         {
             if (CarritoDeVenta.Count == 0) { MessageBox.Show("Agregue productos."); return; }
@@ -241,18 +243,39 @@ namespace SchettiniGestion.WPF
                 try
                 {
                     string condicion = (cmbCondicionVenta.SelectedItem as ComboBoxItem).Content.ToString();
+                    string tipoComp = (cmbTipoComprobante.SelectedItem as ComboBoxItem).Content.ToString();
+                    decimal totalVenta = CarritoDeVenta.Sum(i => i.Subtotal);
+                    int clienteID = Convert.ToInt32(_clienteSeleccionado["ClienteID"]);
+                    string clienteNombre = _clienteSeleccionado["RazonSocial"].ToString();
 
                     bool exito = DatabaseService.GuardarFactura(
-                        Convert.ToInt32(_clienteSeleccionado["ClienteID"]),
-                        (cmbTipoComprobante.SelectedItem as ComboBoxItem).Content.ToString(),
-                        CarritoDeVenta.Sum(i => i.Subtotal),
+                        clienteID,
+                        tipoComp,
+                        totalVenta,
                         CarritoDeVenta.ToList(),
                         condicion
                     );
 
                     if (exito)
                     {
-                        MessageBox.Show("Venta guardada exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                        // PREGUNTA DE IMPRESIÓN
+                        if (MessageBox.Show("Venta guardada. ¿Desea imprimir ticket?", "Imprimir", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                        {
+                            // Convertir Carrito a DataTable para el reporte
+                            DataTable dtItems = new DataTable();
+                            dtItems.Columns.Add("Descripcion");
+                            dtItems.Columns.Add("Cantidad");
+                            dtItems.Columns.Add("Subtotal");
+
+                            foreach (var item in CarritoDeVenta)
+                            {
+                                dtItems.Rows.Add(item.Descripcion, item.Cantidad, item.Subtotal);
+                            }
+
+                            // Imprimir (Pasamos 0 como ID porque la BD no lo devuelve aún, pero sirve para ticket X)
+                            PrintService.ImprimirTicketVenta(tipoComp, 0, clienteNombre, DateTime.Now, dtItems, totalVenta, condicion);
+                        }
+
                         LimpiarFormulario();
                     }
                 }

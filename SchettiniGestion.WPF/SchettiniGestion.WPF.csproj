@@ -115,6 +115,7 @@
     <Reference Include="System.Data.SQLite.Linq, Version=1.0.119.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Data.SQLite.Linq.1.0.119.0\lib\net46\System.Data.SQLite.Linq.dll</HintPath>
     </Reference>
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
     </Reference>
@@ -129,6 +130,7 @@
     <Reference Include="System.Security.Cryptography.Xml, Version=8.0.0.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Security.Cryptography.Xml.8.0.2\lib\net462\System.Security.Cryptography.Xml.dll</HintPath>
     </Reference>
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -164,6 +166,9 @@
     <Compile Include="ComprasControl.xaml.cs">
       <DependentUpon>ComprasControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ConfirguracionControl.xaml.cs">
+      <DependentUpon>ConfirguracionControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CuentasCorrientesControl.xaml.cs">
       <DependentUpon>CuentasCorrientesControl.xaml</DependentUpon>
     </Compile>
@@ -189,6 +194,9 @@
     <Compile Include="ReportePresupuestosControl.xaml.cs">
       <DependentUpon>ReportePresupuestosControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ReportesControl.xaml.cs">
+      <DependentUpon>ReportesControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="StockControl.xaml.cs">
       <DependentUpon>StockControl.xaml</DependentUpon>
     </Compile>
@@ -205,6 +213,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="ComprasControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ConfirguracionControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -253,6 +265,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ReportePresupuestosControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ReportesControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

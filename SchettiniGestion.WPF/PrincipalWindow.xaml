@@ -19,7 +19,6 @@
         </Grid.ColumnDefinitions>
 
         <Border Grid.Column="0" Background="#2E333A" RenderTransformOrigin="0.509,0.498">
-
             <ScrollViewer VerticalScrollBarVisibility="Auto" 
                           HorizontalScrollBarVisibility="Disabled"
                           PanningMode="VerticalOnly"
@@ -28,11 +27,8 @@
                 <StackPanel Width="230" Margin="0,0,0,20">
 
                     <TextBlock Text="SCHETTINI GESTIÓN" 
-                               Foreground="White" 
-                               FontSize="18" 
-                               FontWeight="Bold" 
-                               HorizontalAlignment="Center" 
-                               Margin="0,20,0,20"/>
+                               Foreground="White" FontSize="18" FontWeight="Bold" 
+                               HorizontalAlignment="Center" Margin="0,20,0,20"/>
                     <Separator Background="#444" Margin="0,0,0,10"/>
 
                     <Button x:Name="btnInicio" Content="🏠  Inicio" Style="{StaticResource MenuButton}" Click="btnInicio_Click"/>
@@ -40,6 +36,7 @@
 
                     <TextBlock x:Name="headerReportes" Text="Operaciones" Style="{StaticResource MenuHeader}"/>
                     <Button x:Name="btnVentas" Content="📈  Ventas Realizadas" Style="{StaticResource MenuButton}" Click="btnVentas_Click"/>
+                    <Button x:Name="btnReportesAvanzados" Content="📊  Reportes y Excel" Style="{StaticResource MenuButton}" Click="btnReportesAvanzados_Click"/>
 
                     <Button x:Name="btnPresupuestos" Content="📄  Nuevo Presupuesto" Style="{StaticResource MenuButton}" Click="btnPresupuestos_Click"/>
                     <Button x:Name="btnReportePresupuestos" Content="📋  Hist. Presupuestos" Style="{StaticResource MenuButton}" Click="btnReportePresupuestos_Click" Margin="20,0,0,0" FontSize="15"/>
@@ -62,6 +59,7 @@
                     <Button x:Name="btnUsuarios" Content="👤  Usuarios" Style="{StaticResource MenuButton}" Click="usuariosMenuItem_Click"/>
                     <Button x:Name="btnPermisos" Content="⚙️  Permisos" Style="{StaticResource MenuButton}" Click="btnPermisos_Click"/>
 
+                    <Button x:Name="btnConfiguracion" Content="⚙️  Configuración" Style="{StaticResource MenuButton}" Click="btnConfiguracion_Click"/>
                     <Button x:Name="btnSalir" Content="🚪  Salir" Margin="0,30,0,20" Click="salirMenuItem_Click">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource MenuButton}">
@@ -86,8 +84,10 @@
 
             <ContentControl x:Name="mainContentArea" Grid.Row="0">
                 <TextBlock Text="¡Bienvenido a SchettiniGestion!"
-                           FontSize="48" FontWeight="Bold"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           FontSize="48"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
                            Foreground="{StaticResource BodyForegroundBrush}"/>
             </ContentControl>
 

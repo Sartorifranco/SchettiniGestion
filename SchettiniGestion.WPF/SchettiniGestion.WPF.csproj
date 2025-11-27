@@ -170,6 +170,9 @@
     <Compile Include="GestionPermisos.xaml.cs">
       <DependentUpon>GestionPermisos.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ListasPreciosControl.xaml.cs">
+      <DependentUpon>ListasPreciosControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="NumericKeyboardControl.xaml.cs">
       <DependentUpon>NumericKeyboardControl.xaml</DependentUpon>
     </Compile>
@@ -214,6 +217,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="GestionPermisos.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ListasPreciosControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

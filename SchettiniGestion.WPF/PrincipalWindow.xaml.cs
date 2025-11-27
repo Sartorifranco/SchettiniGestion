@@ -74,22 +74,22 @@ namespace SchettiniGestion.WPF
             }
             else { btnCaja.Visibility = Visibility.Collapsed; }
 
-            // ===== CÓDIGO NUEVO (CUENTAS CORRIENTES) =====
-            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CUENTASCORRIENTES) &&
-                SesionUsuario.TienePermiso(DatabaseService.PERMISO_CUENTASCORRIENTES))
-            {
-                puedeVerGestion = true;
-                btnCtaCte.Visibility = Visibility.Visible;
-            }
-            else { btnCtaCte.Visibility = Visibility.Collapsed; }
-            // ============================================
-
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRECIOS) &&
                 SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRECIOS))
             {
                 puedeVerGestion = true;
             }
             else { btnPrecios.Visibility = Visibility.Collapsed; }
+
+            // ===== CÓDIGO NUEVO (LISTAS DE PRECIOS) =====
+            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_LISTASPRECIOS) &&
+                SesionUsuario.TienePermiso(DatabaseService.PERMISO_LISTASPRECIOS))
+            {
+                puedeVerGestion = true;
+                btnListasPrecios.Visibility = Visibility.Visible;
+            }
+            else { btnListasPrecios.Visibility = Visibility.Collapsed; }
+            // ===========================================
 
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_COMPRAS) &&
                 SesionUsuario.TienePermiso(DatabaseService.PERMISO_COMPRAS))
@@ -125,6 +125,16 @@ namespace SchettiniGestion.WPF
                 puedeVerGestion = true;
             }
             else { btnClientes.Visibility = Visibility.Collapsed; }
+
+            // Cuentas Corrientes
+            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CUENTASCORRIENTES) &&
+                SesionUsuario.TienePermiso(DatabaseService.PERMISO_CUENTASCORRIENTES))
+            {
+                puedeVerGestion = true;
+                btnCtaCte.Visibility = Visibility.Visible;
+            }
+            else { btnCtaCte.Visibility = Visibility.Collapsed; }
+
 
             if (!puedeVerGestion) headerGestion.Visibility = Visibility.Collapsed;
 
@@ -231,19 +241,25 @@ namespace SchettiniGestion.WPF
             mainContentArea.Content = new PreciosControl();
         }
 
+        // ===== CÓDIGO NUEVO (LISTAS DE PRECIOS) =====
+        private void btnListasPrecios_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_LISTASPRECIOS) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_LISTASPRECIOS)) return;
+            mainContentArea.Content = new ListasPreciosControl();
+        }
+        // ===========================================
+
         private void btnCaja_Click(object sender, RoutedEventArgs e)
         {
             if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_CAJA)) return;
             mainContentArea.Content = new CajaControl();
         }
 
-        // ===== CÓDIGO NUEVO (CUENTAS CORRIENTES) =====
         private void btnCtaCte_Click(object sender, RoutedEventArgs e)
         {
             if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CUENTASCORRIENTES) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_CUENTASCORRIENTES)) return;
             mainContentArea.Content = new CuentasCorrientesControl();
         }
-        // ============================================
 
         private void btnPermisos_Click(object sender, RoutedEventArgs e)
         {

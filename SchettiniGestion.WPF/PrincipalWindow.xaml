@@ -49,6 +49,7 @@
                     <Button x:Name="btnCaja" Content="💰  Caja" Style="{StaticResource MenuButton}" Click="btnCaja_Click"/>
                     <Button x:Name="btnCtaCte" Content="📒  Cta. Corriente" Style="{StaticResource MenuButton}" Click="btnCtaCte_Click"/>
                     <Button x:Name="btnPrecios" Content="💲  Precios" Style="{StaticResource MenuButton}" Click="btnPrecios_Click"/>
+                    <Button x:Name="btnListasPrecios" Content="🏷️  Listas de Precios" Style="{StaticResource MenuButton}" Click="btnListasPrecios_Click"/>
                     <Button x:Name="btnCompras" Content="📥  Compras" Style="{StaticResource MenuButton}" Click="btnCompras_Click"/>
                     <Button x:Name="btnStock" Content="📊  Stock" Style="{StaticResource MenuButton}" Click="btnStock_Click"/>
 

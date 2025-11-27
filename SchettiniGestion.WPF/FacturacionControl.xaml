@@ -22,21 +22,32 @@
                     Background="{StaticResource PanelBackgroundBrush}" 
                     CornerRadius="5,5,0,0" Margin="10,10,10,0" Padding="15"
                     BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1,1,1,0">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Comprobante:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <ComboBox x:Name="cmbTipoComprobante" Style="{StaticResource ModuleComboBoxStyle}" Width="150" Margin="0,0,20,0">
-                        <ComboBoxItem Content="Factura B"/>
-                        <ComboBoxItem Content="Factura A"/>
-                        <ComboBoxItem Content="Ticket"/>
-                        <ComboBoxItem Content="Recibo X"/>
-                    </ComboBox>
+                <WrapPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,20,5">
+                        <TextBlock Text="Comprobante:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <ComboBox x:Name="cmbTipoComprobante" Style="{StaticResource ModuleComboBoxStyle}" Width="140">
+                            <ComboBoxItem Content="Factura B"/>
+                            <ComboBoxItem Content="Factura A"/>
+                            <ComboBoxItem Content="Ticket"/>
+                            <ComboBoxItem Content="Recibo X"/>
+                        </ComboBox>
+                    </StackPanel>
 
-                    <TextBlock Text="Condición:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <ComboBox x:Name="cmbCondicionVenta" Style="{StaticResource ModuleComboBoxStyle}" Width="180">
-                        <ComboBoxItem Content="Contado" IsSelected="True"/>
-                        <ComboBoxItem Content="Cuenta Corriente"/>
-                    </ComboBox>
-                </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,20,5">
+                        <TextBlock Text="Condición:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <ComboBox x:Name="cmbCondicionVenta" Style="{StaticResource ModuleComboBoxStyle}" Width="140">
+                            <ComboBoxItem Content="Contado" IsSelected="True"/>
+                            <ComboBoxItem Content="Cuenta Corriente"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <TextBlock Text="Lista:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <ComboBox x:Name="cmbListaPrecios" Style="{StaticResource ModuleComboBoxStyle}" Width="160"
+                                  DisplayMemberPath="Nombre" SelectedValuePath="ListaID"
+                                  SelectionChanged="cmbListaPrecios_SelectionChanged"/>
+                    </StackPanel>
+                </WrapPanel>
             </Border>
 
             <Border Background="{StaticResource PanelBackgroundBrush}" 

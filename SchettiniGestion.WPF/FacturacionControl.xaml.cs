@@ -17,6 +17,9 @@ namespace SchettiniGestion.WPF
         private DataRow _productoSeleccionado;
         private bool _ignorarPerdidaFoco = false;
 
+        // Variable para evitar recálculos innecesarios al cargar el combo
+        private bool _cargandoListas = false;
+
         public FacturacionControl()
         {
             InitializeComponent();
@@ -26,8 +29,27 @@ namespace SchettiniGestion.WPF
 
         private void FacturacionControl_Loaded(object sender, RoutedEventArgs e)
         {
+            CargarListasPrecios();
             CargarClientePorDefecto();
             LimpiarFormulario();
+        }
+
+        private void CargarListasPrecios()
+        {
+            try
+            {
+                _cargandoListas = true;
+                DataTable dt = DatabaseService.GetListasPrecios();
+                cmbListaPrecios.ItemsSource = dt.DefaultView;
+
+                // Seleccionar la lista base (ID 1) por defecto si existe
+                if (dt.Rows.Count > 0)
+                {
+                    cmbListaPrecios.SelectedValue = 1;
+                }
+                _cargandoListas = false;
+            }
+            catch { }
         }
 
         private void CargarClientePorDefecto()
@@ -39,6 +61,45 @@ namespace SchettiniGestion.WPF
                     lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message); }
+        }
+
+        // --- EVENTO DE CAMBIO DE LISTA ---
+        private void cmbListaPrecios_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_cargandoListas) return;
+            RecalcularCarritoConNuevaLista();
+        }
+
+        private decimal ObtenerPorcentajeLista()
+        {
+            if (cmbListaPrecios.SelectedItem is DataRowView row)
+            {
+                return Convert.ToDecimal(row["Porcentaje"]);
+            }
+            return 0; // Si no hay lista, 0%
+        }
+
+        private void RecalcularCarritoConNuevaLista()
+        {
+            decimal porcentaje = ObtenerPorcentajeLista();
+
+            if (CarritoDeVenta.Count > 0)
+            {
+                foreach (var item in CarritoDeVenta)
+                {
+                    // Buscamos el precio base original en la BD para no acumular porcentajes
+                    // (Ej: Si paso de +10% a +20%, no quiero hacer +10%+20%, sino Base + 20%)
+                    DataRow prod = DatabaseService.BuscarProducto(item.Codigo);
+                    if (prod != null)
+                    {
+                        decimal precioBase = Convert.ToDecimal(prod["PrecioVenta"]);
+                        // Aplicamos el nuevo porcentaje
+                        item.PrecioUnitario = precioBase * (1 + (porcentaje / 100));
+                    }
+                }
+                dgvFactura.Items.Refresh();
+                ActualizarTotal();
+            }
         }
 
         // --- BÚSQUEDA ---
@@ -131,6 +192,12 @@ namespace SchettiniGestion.WPF
 
             if ((enCarro + cant) > stock) { MessageBox.Show("Stock insuficiente."); return; }
 
+            // ===== APLICAR LISTA DE PRECIOS AL AGREGAR =====
+            decimal precioBase = Convert.ToDecimal(_productoSeleccionado["PrecioVenta"]);
+            decimal porcentaje = ObtenerPorcentajeLista();
+            decimal precioFinal = precioBase * (1 + (porcentaje / 100));
+            // ===============================================
+
             if (item != null) item.Cantidad += cant;
             else
             {
@@ -140,7 +207,7 @@ namespace SchettiniGestion.WPF
                     Codigo = _productoSeleccionado["Codigo"].ToString(),
                     Descripcion = _productoSeleccionado["Descripcion"].ToString(),
                     Cantidad = cant,
-                    PrecioUnitario = Convert.ToDecimal(_productoSeleccionado["PrecioVenta"])
+                    PrecioUnitario = precioFinal // Precio con aumento/descuento aplicado
                 });
             }
             dgvFactura.Items.Refresh();
@@ -173,7 +240,6 @@ namespace SchettiniGestion.WPF
             {
                 try
                 {
-                    // ===== CORRECCIÓN: Pasar la condición de venta =====
                     string condicion = (cmbCondicionVenta.SelectedItem as ComboBoxItem).Content.ToString();
 
                     bool exito = DatabaseService.GuardarFactura(

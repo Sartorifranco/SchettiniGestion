@@ -4,17 +4,17 @@
 winexe
 C#
 .cs
-C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\
+C:\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\
 SchettiniGestion.WPF
 none
 false
 DEBUG;TRACE
-C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\App.xaml
-17584735154
+C:\SchettiniGestion\SchettiniGestion.WPF\App.xaml
+18-1397869132
 
-25-1022312442
-40-396615362
-CajaControl.xaml;ClientesControl.xaml;ComprasControl.xaml;CuentasCorrientesControl.xaml;FacturacionControl.xaml;GestionPermisos.xaml;MainWindow.xaml;NumericKeyboardControl.xaml;PreciosControl.xaml;PresupuestosControl.xaml;PrincipalWindow.xaml;ProductosControl.xaml;ProveedoresControl.xaml;ReportePresupuestosControl.xaml;StockControl.xaml;UsuariosControl.xaml;VentasControl.xaml;
+26845295692
+40-696903670
+CajaControl.xaml;ClientesControl.xaml;ComprasControl.xaml;CuentasCorrientesControl.xaml;FacturacionControl.xaml;GestionPermisos.xaml;ListasPreciosControl.xaml;MainWindow.xaml;NumericKeyboardControl.xaml;PreciosControl.xaml;PresupuestosControl.xaml;PrincipalWindow.xaml;ProductosControl.xaml;ProveedoresControl.xaml;ReportePresupuestosControl.xaml;StockControl.xaml;UsuariosControl.xaml;VentasControl.xaml;
 
 True
 

@@ -40,7 +40,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al cargar roles: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Error al cargar roles: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -53,7 +53,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al cargar usuarios: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Error al cargar usuarios: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -69,12 +69,12 @@ namespace SchettiniGestion.WPF
         {
             if (string.IsNullOrWhiteSpace(txtNombreUsuario.Text))
             {
-                MessageBox.Show("El nombre de usuario no puede estar vacío.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("El nombre de usuario no puede estar vacío.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (cmbRol.SelectedItem == null)
             {
-                MessageBox.Show("Debe seleccionar un rol para el usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Debe seleccionar un rol para el usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -92,7 +92,7 @@ namespace SchettiniGestion.WPF
 
             if (exito)
             {
-                MessageBox.Show("Usuario guardado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                CustomMessageBox.Show("Usuario guardado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 CargarUsuarios();
                 LimpiarCampos();
             }
@@ -103,17 +103,17 @@ namespace SchettiniGestion.WPF
         {
             if (_usuarioIDSeleccionado == 0)
             {
-                MessageBox.Show("Por favor, seleccione un usuario de la grilla para eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Por favor, seleccione un usuario de la grilla para eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (txtNombreUsuario.Text.ToLower() == "admin")
             {
-                MessageBox.Show("No se puede eliminar al usuario 'admin' principal.", "Acción no permitida", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show("No se puede eliminar al usuario 'admin' principal.", "Acción no permitida", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            MessageBoxResult confirmacion = MessageBox.Show($"¿Está seguro de que desea eliminar al usuario '{txtNombreUsuario.Text}'?",
+            MessageBoxResult confirmacion = CustomMessageBox.Show($"¿Está seguro de que desea eliminar al usuario '{txtNombreUsuario.Text}'?",
                                                   "Confirmar eliminación",
                                                   MessageBoxButton.YesNo,
                                                   MessageBoxImage.Warning);
@@ -124,7 +124,7 @@ namespace SchettiniGestion.WPF
 
                 if (exito)
                 {
-                    MessageBox.Show("Usuario eliminado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CustomMessageBox.Show("Usuario eliminado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                     CargarUsuarios();
                     LimpiarCampos();
                 }

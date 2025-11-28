@@ -43,7 +43,7 @@ namespace SchettiniGestion.WPF
             catch (Exception ex)
             {
                 // Si esto falla, ya es un problema del SO
-                MessageBox.Show($"No se pudo iniciar el teclado.\n\nError: {ex.Message}",
+                CustomMessageBox.Show($"No se pudo iniciar el teclado.\n\nError: {ex.Message}",
                     "Error de teclado", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

@@ -43,7 +43,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al cargar datos de permisos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Error al cargar datos de permisos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -122,11 +122,11 @@ namespace SchettiniGestion.WPF
                 // 4. Actualizar nuestro "caché" local para que la próxima selección sea correcta
                 permisosPorRol[rolSeleccionado.RolId] = nuevosPermisosParaEsteRol;
 
-                MessageBox.Show("Permisos actualizados correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                CustomMessageBox.Show("Permisos actualizados correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al guardar los permisos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Error al guardar los permisos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

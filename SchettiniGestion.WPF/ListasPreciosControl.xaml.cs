@@ -37,11 +37,11 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtNombreLista.Text)) { MessageBox.Show("Ingrese un nombre."); return; }
+            if (string.IsNullOrWhiteSpace(txtNombreLista.Text)) { CustomMessageBox.Show("Ingrese un nombre."); return; }
 
             if (DatabaseService.GuardarListaPrecio(_listaID, txtNombreLista.Text, numPorcentaje.Value ?? 0))
             {
-                MessageBox.Show("Guardado.");
+                CustomMessageBox.Show("Guardado.");
                 CargarListas();
                 Limpiar();
             }
@@ -63,7 +63,7 @@ namespace SchettiniGestion.WPF
             if (dgvListas.SelectedItem is DataRowView row)
             {
                 int id = Convert.ToInt32(row["ListaID"]);
-                if (MessageBox.Show("¿Eliminar esta lista?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                if (CustomMessageBox.Show("¿Eliminar esta lista?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                 {
                     if (DatabaseService.EliminarListaPrecio(id))
                     {

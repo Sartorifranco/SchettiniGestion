@@ -29,7 +29,7 @@ namespace SchettiniGestion.WPF
             // Validamos las fechas
             if (dpDesde.SelectedDate == null || dpHasta.SelectedDate == null)
             {
-                MessageBox.Show("Por favor, seleccione un rango de fechas.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Por favor, seleccione un rango de fechas.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -38,7 +38,7 @@ namespace SchettiniGestion.WPF
 
             if (fechaHasta < fechaDesde)
             {
-                MessageBox.Show("La 'Fecha Hasta' no puede ser anterior a la 'Fecha Desde'.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("La 'Fecha Hasta' no puede ser anterior a la 'Fecha Desde'.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 

@@ -42,7 +42,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al cargar historial: {ex.Message}");
+                CustomMessageBox.Show($"Error al cargar historial: {ex.Message}");
             }
         }
 
@@ -64,7 +64,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al cargar detalle: {ex.Message}");
+                CustomMessageBox.Show($"Error al cargar detalle: {ex.Message}");
             }
         }
 
@@ -72,19 +72,19 @@ namespace SchettiniGestion.WPF
         {
             if (dgvPresupuestos.SelectedItem is DataRowView row)
             {
-                if (MessageBox.Show("¿Eliminar este presupuesto permanentemente?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                if (CustomMessageBox.Show("¿Eliminar este presupuesto permanentemente?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                 {
                     int id = Convert.ToInt32(row["PresupuestoID"]);
                     if (DatabaseService.EliminarPresupuesto(id))
                     {
-                        MessageBox.Show("Eliminado correctamente.");
+                        CustomMessageBox.Show("Eliminado correctamente.");
                         CargarPresupuestos(); // Recargar lista
                     }
                 }
             }
             else
             {
-                MessageBox.Show("Seleccione un presupuesto para eliminar.");
+                CustomMessageBox.Show("Seleccione un presupuesto para eliminar.");
             }
         }
 
@@ -109,12 +109,12 @@ namespace SchettiniGestion.WPF
                 }
                 else
                 {
-                    MessageBox.Show("El presupuesto está vacío.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    CustomMessageBox.Show("El presupuesto está vacío.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             else
             {
-                MessageBox.Show("Seleccione un presupuesto de la lista para imprimir.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Seleccione un presupuesto de la lista para imprimir.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
     }

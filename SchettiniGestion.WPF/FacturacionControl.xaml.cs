@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Threading.Tasks;
+using System.Collections.Generic; // Necesario para List<>
 
 namespace SchettiniGestion.WPF
 {
@@ -32,7 +33,7 @@ namespace SchettiniGestion.WPF
             LimpiarFormulario();
         }
 
-        // --- CARGA Y CONFIGURACIÓN ---
+        // --- CARGAS INICIALES ---
         private void CargarListasPrecios()
         {
             try
@@ -70,9 +71,7 @@ namespace SchettiniGestion.WPF
         private decimal ObtenerPorcentajeLista()
         {
             if (this.FindName("cmbListaPrecios") != null && cmbListaPrecios.SelectedItem is DataRowView row)
-            {
                 return Convert.ToDecimal(row["Porcentaje"]);
-            }
             return 0;
         }
 
@@ -95,7 +94,7 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        // --- BÚSQUEDA ---
+        // --- BUSCADOR CLIENTE ---
         private void txtBuscarCliente_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (txtBuscarCliente.Text.Length < 2) { popupCliente.IsOpen = false; return; }
@@ -119,6 +118,7 @@ namespace SchettiniGestion.WPF
             txtBuscarProducto.Focus();
         }
 
+        // --- BUSCADOR PRODUCTO ---
         private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (_ignorarPerdidaFoco) return;
@@ -142,6 +142,7 @@ namespace SchettiniGestion.WPF
             numCantidad.Focus();
         }
 
+        // --- EVENTOS UI ---
         private void lstSugerenciasCliente_MouseUp(object sender, MouseButtonEventArgs e) { if (lstSugerenciasCliente.SelectedItem is DataRowView r) SeleccionarCliente(r); }
         private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e) { if (lstSugerenciasProducto.SelectedItem is DataRowView r) SeleccionarProducto(r); }
 
@@ -174,7 +175,7 @@ namespace SchettiniGestion.WPF
         // --- CARRITO ---
         private void btnAgregarProducto_Click(object sender, RoutedEventArgs e)
         {
-            if (_productoSeleccionado == null) { MessageBox.Show("Seleccione un producto."); return; }
+            if (_productoSeleccionado == null) { CustomMessageBox.Show("Seleccione producto."); return; }
 
             int id = Convert.ToInt32(_productoSeleccionado["ProductoID"]);
             int stock = Convert.ToInt32(_productoSeleccionado["StockActual"]);
@@ -183,7 +184,7 @@ namespace SchettiniGestion.WPF
             var item = CarritoDeVenta.FirstOrDefault(x => x.ProductoID == id);
             int enCarro = (item != null) ? item.Cantidad : 0;
 
-            if ((enCarro + cant) > stock) { MessageBox.Show("Stock insuficiente."); return; }
+            if ((enCarro + cant) > stock) { CustomMessageBox.Show("Stock insuficiente."); return; }
 
             decimal precioBase = Convert.ToDecimal(_productoSeleccionado["PrecioVenta"]);
             decimal porcentaje = ObtenerPorcentajeLista();
@@ -220,7 +221,7 @@ namespace SchettiniGestion.WPF
             CargarClientePorDefecto();
             cmbTipoComprobante.SelectedIndex = 0;
             cmbCondicionVenta.SelectedIndex = 0;
-            if (cmbListaPrecios.Items.Count > 0) cmbListaPrecios.SelectedValue = 1;
+            if (this.FindName("cmbListaPrecios") != null && cmbListaPrecios.Items.Count > 0) cmbListaPrecios.SelectedValue = 1;
             CarritoDeVenta.Clear();
             ActualizarTotal();
             LimpiarProducto();
@@ -229,57 +230,87 @@ namespace SchettiniGestion.WPF
 
         private void btnCancelarFactura_Click(object sender, RoutedEventArgs e)
         {
-            if (MessageBox.Show("¿Cancelar venta?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes) LimpiarFormulario();
+            if (CustomMessageBox.Show("¿Cancelar venta?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes) LimpiarFormulario();
         }
 
-        // --- GUARDAR E IMPRIMIR (ACTUALIZADO) ---
-        private void btnGuardarFactura_Click(object sender, RoutedEventArgs e)
+        // --- GUARDAR Y FACTURAR (LA PARTE IMPORTANTE) ---
+        private async void btnGuardarFactura_Click(object sender, RoutedEventArgs e)
         {
-            if (CarritoDeVenta.Count == 0) { MessageBox.Show("Agregue productos."); return; }
-            if (_clienteSeleccionado == null) { MessageBox.Show("Seleccione cliente."); return; }
+            if (CarritoDeVenta.Count == 0) { CustomMessageBox.Show("Agregue productos."); return; }
+            if (_clienteSeleccionado == null) { CustomMessageBox.Show("Seleccione cliente."); return; }
 
-            if (MessageBox.Show("¿Confirmar venta?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            // 1. Recopilar datos
+            string condicion = (cmbCondicionVenta.SelectedItem as ComboBoxItem).Content.ToString();
+            string tipoCompStr = (cmbTipoComprobante.SelectedItem as ComboBoxItem).Content.ToString();
+            decimal totalVenta = CarritoDeVenta.Sum(i => i.Subtotal);
+            int clienteID = Convert.ToInt32(_clienteSeleccionado["ClienteID"]);
+            string clienteNombre = _clienteSeleccionado["RazonSocial"].ToString();
+
+            // Variables Fiscales
+            string caeObtenido = "";
+            string vtoCae = "";
+            int nroComprobante = 0;
+
+            // 2. Lógica Fiscal (AFIP)
+            if (tipoCompStr.Contains("Factura"))
             {
-                try
+                if (CustomMessageBox.Show("¿Confirmar FACTURA ELECTRÓNICA con AFIP?", "Atención Fiscal", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                 {
-                    string condicion = (cmbCondicionVenta.SelectedItem as ComboBoxItem).Content.ToString();
-                    string tipoComp = (cmbTipoComprobante.SelectedItem as ComboBoxItem).Content.ToString();
-                    decimal totalVenta = CarritoDeVenta.Sum(i => i.Subtotal);
-                    int clienteID = Convert.ToInt32(_clienteSeleccionado["ClienteID"]);
-                    string clienteNombre = _clienteSeleccionado["RazonSocial"].ToString();
+                    DataRow config = DatabaseService.GetConfiguracion();
+                    int ptoVenta = config != null && config["PuntoVenta"] != DBNull.Value ? Convert.ToInt32(config["PuntoVenta"]) : 1;
+                    int tipoAfip = tipoCompStr == "Factura A" ? 1 : 6;
 
-                    bool exito = DatabaseService.GuardarFactura(
-                        clienteID,
-                        tipoComp,
-                        totalVenta,
-                        CarritoDeVenta.ToList(),
-                        condicion
-                    );
+                    // Limpieza de CUIT
+                    string cuitLimpio = _clienteSeleccionado["CUIT"].ToString().Replace("-", "").Replace(" ", "");
+                    long cuitCliente = 0;
+                    long.TryParse(cuitLimpio, out cuitCliente);
 
-                    if (exito)
+                    // Llamada Asíncrona (Esto ahora coincidirá con el archivo AfipService actualizado)
+                    var resultadoAfip = await AfipService.FacturarAsync(tipoAfip, ptoVenta, (double)totalVenta, cuitCliente, CarritoDeVenta.ToList());
+
+                    if (!resultadoAfip.Exito)
                     {
-                        // PREGUNTA DE IMPRESIÓN
-                        if (MessageBox.Show("Venta guardada. ¿Desea imprimir ticket?", "Imprimir", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                        {
-                            // Convertir Carrito a DataTable para el reporte
-                            DataTable dtItems = new DataTable();
-                            dtItems.Columns.Add("Descripcion");
-                            dtItems.Columns.Add("Cantidad");
-                            dtItems.Columns.Add("Subtotal");
-
-                            foreach (var item in CarritoDeVenta)
-                            {
-                                dtItems.Rows.Add(item.Descripcion, item.Cantidad, item.Subtotal);
-                            }
-
-                            // Imprimir (Pasamos 0 como ID porque la BD no lo devuelve aún, pero sirve para ticket X)
-                            PrintService.ImprimirTicketVenta(tipoComp, 0, clienteNombre, DateTime.Now, dtItems, totalVenta, condicion);
-                        }
-
-                        LimpiarFormulario();
+                        CustomMessageBox.Show($"ERROR AFIP:\n{resultadoAfip.Error}", "Fallo", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return; // Cancelar si falla
                     }
+
+                    caeObtenido = resultadoAfip.CAE;
+                    vtoCae = resultadoAfip.Vencimiento;
+                    nroComprobante = resultadoAfip.NumeroComprobante;
+
+                    CustomMessageBox.Show("¡Factura Autorizada por AFIP!", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
-                catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}"); }
+            }
+
+            // 3. Guardar en BD
+            bool exito = DatabaseService.GuardarFactura(
+                clienteID,
+                tipoCompStr,
+                totalVenta,
+                CarritoDeVenta.ToList(),
+                condicion
+            );
+
+            if (exito)
+            {
+                if (CustomMessageBox.Show("Venta registrada. ¿Imprimir comprobante?", "Imprimir", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                {
+                    DataTable dtItems = new DataTable();
+                    dtItems.Columns.Add("Descripcion");
+                    dtItems.Columns.Add("Cantidad");
+                    dtItems.Columns.Add("Subtotal");
+                    foreach (var item in CarritoDeVenta) dtItems.Rows.Add(item.Descripcion, item.Cantidad, item.Subtotal);
+
+                    string infoExtra = $"CONDICIÓN: {condicion.ToUpper()}";
+                    if (!string.IsNullOrEmpty(caeObtenido))
+                    {
+                        infoExtra += $"\n\nCAE: {caeObtenido}\nVTO: {vtoCae}";
+                    }
+
+                    // Si obtuvimos número de AFIP, lo usamos. Si no, 0 (Pendiente)
+                    PrintService.ImprimirTicketVenta(tipoCompStr, nroComprobante, clienteNombre, DateTime.Now, dtItems, totalVenta, infoExtra);
+                }
+                LimpiarFormulario();
             }
         }
     }

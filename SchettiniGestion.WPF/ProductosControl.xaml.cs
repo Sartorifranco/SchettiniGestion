@@ -86,7 +86,7 @@ namespace SchettiniGestion.WPF
                     btnGuardar.Content = "Modificar";
                     btnEliminar.IsEnabled = true;
                 }
-                catch (Exception ex) { MessageBox.Show("Error al leer datos: " + ex.Message); }
+                catch (Exception ex) { CustomMessageBox.Show("Error al leer datos: " + ex.Message); }
                 _cargandoDatos = false;
             }
         }
@@ -134,11 +134,11 @@ namespace SchettiniGestion.WPF
                             DatabaseService.GuardarProducto(0, codigo, barras, descripcion, rubro, "21% (General)", costo, ganancia, 0, venta, stock, "");
                             contador++;
                         }
-                        MessageBox.Show($"¡Importación Exitosa! {contador} productos.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                        CustomMessageBox.Show($"¡Importación Exitosa! {contador} productos.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                         CargarLista();
                     }
                 }
-                catch (Exception ex) { MessageBox.Show($"Error al importar: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+                catch (Exception ex) { CustomMessageBox.Show($"Error al importar: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
             }
         }
 
@@ -158,7 +158,7 @@ namespace SchettiniGestion.WPF
         {
             if (string.IsNullOrWhiteSpace(txtCodigo.Text) || string.IsNullOrWhiteSpace(txtDescripcion.Text))
             {
-                MessageBox.Show("Código y Descripción son obligatorios.");
+                CustomMessageBox.Show("Código y Descripción son obligatorios.");
                 return;
             }
             decimal venta = numPrecioFinal.Value ?? 0;
@@ -170,12 +170,12 @@ namespace SchettiniGestion.WPF
                 venta = costo * (1 + (ganancia / 100)) + impuestos;
             }
             bool ok = DatabaseService.GuardarProducto(_productoID, txtCodigo.Text, txtCodigoBarra.Text, txtDescripcion.Text, cmbCategoria.Text, cmbTipoIVA.Text, numCosto.Value ?? 0, numGanancia.Value ?? 0, numImpInterno.Value ?? 0, venta, 0, _rutaImagenActual);
-            if (ok) { MessageBox.Show("Guardado."); CargarLista(); Limpiar(); }
+            if (ok) { CustomMessageBox.Show("Guardado."); CargarLista(); Limpiar(); }
         }
 
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
-            if (MessageBox.Show("¿Eliminar?", "Confirma", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            if (CustomMessageBox.Show("¿Eliminar?", "Confirma", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
                 DatabaseService.EliminarProducto(_productoID);
                 CargarLista();

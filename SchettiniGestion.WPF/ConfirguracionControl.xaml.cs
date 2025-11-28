@@ -91,11 +91,11 @@ namespace SchettiniGestion.WPF
                     _certificadoPath = destino;
                     txtCertificadoPath.Text = destino;
 
-                    MessageBox.Show("Certificado copiado al sistema correctamente.", "Seguridad", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CustomMessageBox.Show("Certificado copiado al sistema correctamente.", "Seguridad", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error al copiar certificado: {ex.Message}");
+                    CustomMessageBox.Show($"Error al copiar certificado: {ex.Message}");
                 }
             }
         }
@@ -120,7 +120,7 @@ namespace SchettiniGestion.WPF
 
             if (exito)
             {
-                MessageBox.Show("Configuración guardada correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                CustomMessageBox.Show("Configuración guardada correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
     }

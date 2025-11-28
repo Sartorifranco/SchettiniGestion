@@ -31,7 +31,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al cargar proveedores: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Error al cargar proveedores: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -80,7 +80,7 @@ namespace SchettiniGestion.WPF
             // Validaciones básicas
             if (string.IsNullOrWhiteSpace(txtCuit.Text) || string.IsNullOrWhiteSpace(txtRazonSocial.Text))
             {
-                MessageBox.Show("El CUIT y la Razón Social son obligatorios.", "Datos Incompletos", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("El CUIT y la Razón Social son obligatorios.", "Datos Incompletos", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -96,7 +96,7 @@ namespace SchettiniGestion.WPF
 
             if (exito)
             {
-                MessageBox.Show("Proveedor guardado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                CustomMessageBox.Show("Proveedor guardado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 CargarProveedores();
                 LimpiarCampos();
             }
@@ -107,7 +107,7 @@ namespace SchettiniGestion.WPF
             if (_proveedorIDSeleccionado == 0) return;
 
             // Confirmación
-            MessageBoxResult confirmacion = MessageBox.Show($"¿Está seguro de que desea eliminar al proveedor '{txtRazonSocial.Text}'?",
+            MessageBoxResult confirmacion = CustomMessageBox.Show($"¿Está seguro de que desea eliminar al proveedor '{txtRazonSocial.Text}'?",
                                                   "Confirmar eliminación",
                                                   MessageBoxButton.YesNo,
                                                   MessageBoxImage.Warning);
@@ -119,7 +119,7 @@ namespace SchettiniGestion.WPF
 
                 if (exito)
                 {
-                    MessageBox.Show("Proveedor eliminado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CustomMessageBox.Show("Proveedor eliminado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                     CargarProveedores();
                     LimpiarCampos();
                 }

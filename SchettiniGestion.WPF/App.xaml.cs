@@ -31,7 +31,7 @@ namespace SchettiniGestion.WPF
             }
             else
             {
-                MessageBox.Show("Error de licencia. La aplicación se cerrará.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show("Error de licencia. La aplicación se cerrará.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Application.Current.Shutdown();
             }
         }

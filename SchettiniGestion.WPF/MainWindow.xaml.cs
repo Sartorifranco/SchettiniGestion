@@ -32,7 +32,7 @@ namespace SchettiniGestion.WPF
 
             if (string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(password))
             {
-                MessageBox.Show("Por favor, ingrese usuario y contraseña.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Por favor, ingrese usuario y contraseña.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -56,13 +56,13 @@ namespace SchettiniGestion.WPF
                 else
                 {
                     // Error raro: el usuario existe pero no se pudieron cargar sus permisos
-                    MessageBox.Show("Error al cargar los permisos del usuario. Contacte al administrador.", "Error de Sesión", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show("Error al cargar los permisos del usuario. Contacte al administrador.", "Error de Sesión", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 // ===== FIN DE CÓDIGO NUEVO (SESIÓN) =====
             }
             else
             {
-                MessageBox.Show("Usuario o contraseña incorrectos.", "Error de Login", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show("Usuario o contraseña incorrectos.", "Error de Login", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -83,7 +83,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"No se pudo iniciar el teclado en pantalla: {ex.Message}", "Error de teclado", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"No se pudo iniciar el teclado en pantalla: {ex.Message}", "Error de teclado", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

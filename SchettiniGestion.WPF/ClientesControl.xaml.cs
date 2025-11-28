@@ -51,7 +51,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al cargar clientes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Error al cargar clientes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -100,12 +100,12 @@ namespace SchettiniGestion.WPF
             // 1. Validaciones
             if (string.IsNullOrWhiteSpace(txtCuit.Text) || string.IsNullOrWhiteSpace(txtRazonSocial.Text))
             {
-                MessageBox.Show("El CUIT y la Razón Social no pueden estar vacíos.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("El CUIT y la Razón Social no pueden estar vacíos.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (cmbCondicionIVA.SelectedItem == null)
             {
-                MessageBox.Show("Por favor, seleccione una Condición de IVA.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Por favor, seleccione una Condición de IVA.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -119,7 +119,7 @@ namespace SchettiniGestion.WPF
 
             if (exito)
             {
-                MessageBox.Show("Cliente guardado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                CustomMessageBox.Show("Cliente guardado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 CargarClientes();
                 LimpiarCampos();
             }
@@ -131,12 +131,12 @@ namespace SchettiniGestion.WPF
             // 1. Validar que haya un cliente seleccionado
             if (_clienteIDSeleccionado == 0)
             {
-                MessageBox.Show("Por favor, seleccione un cliente de la grilla para eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Por favor, seleccione un cliente de la grilla para eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             // 2. Pedir confirmación
-            MessageBoxResult confirmacion = MessageBox.Show($"¿Está seguro de que desea eliminar al cliente '{txtRazonSocial.Text}'?",
+            MessageBoxResult confirmacion = CustomMessageBox.Show($"¿Está seguro de que desea eliminar al cliente '{txtRazonSocial.Text}'?",
                                                             "Confirmar eliminación",
                                                             MessageBoxButton.YesNo,
                                                             MessageBoxImage.Warning);
@@ -148,7 +148,7 @@ namespace SchettiniGestion.WPF
 
                 if (exito)
                 {
-                    MessageBox.Show("Cliente eliminado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CustomMessageBox.Show("Cliente eliminado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                     CargarClientes();
                     LimpiarCampos();
                 }

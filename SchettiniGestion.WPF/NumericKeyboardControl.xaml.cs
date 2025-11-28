@@ -22,7 +22,7 @@ namespace SchettiniGestion.WPF
                 string numero = button.Content.ToString();
 
                 // --- DEBUG ---
-                // MessageBox.Show($"TECLADO: Click en {numero}", "Debug Teclado"); 
+                // CustomMessageBox.Show($"TECLADO: Click en {numero}", "Debug Teclado"); 
                 // --- FIN DEBUG ---
 
                 KeyPressed?.Invoke(this, numero);
@@ -32,7 +32,7 @@ namespace SchettiniGestion.WPF
         private void BackspaceButton_Click(object sender, RoutedEventArgs e)
         {
             // --- DEBUG ---
-            // MessageBox.Show("TECLADO: Click en Borrar", "Debug Teclado");
+            // CustomMessageBox.Show("TECLADO: Click en Borrar", "Debug Teclado");
             // --- FIN DEBUG ---
 
             KeyPressed?.Invoke(this, "Back");
@@ -41,7 +41,7 @@ namespace SchettiniGestion.WPF
         private void EnterButton_Click(object sender, RoutedEventArgs e)
         {
             // --- DEBUG ---
-            // MessageBox.Show("TECLADO: Click en Enter", "Debug Teclado");
+            // CustomMessageBox.Show("TECLADO: Click en Enter", "Debug Teclado");
             // --- FIN DEBUG ---
 
             KeyPressed?.Invoke(this, "Enter");

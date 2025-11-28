@@ -41,7 +41,7 @@ namespace SchettiniGestion.WPF
                 DataTable dt = DatabaseService.GetRankingVentas(dpDesdeRanking.SelectedDate ?? DateTime.Now, dpHastaRanking.SelectedDate ?? DateTime.Now);
                 dgvRanking.ItemsSource = dt.DefaultView;
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            catch (Exception ex) { CustomMessageBox.Show(ex.Message); }
         }
 
         private void btnExportarRanking_Click(object sender, RoutedEventArgs e)
@@ -120,7 +120,7 @@ namespace SchettiniGestion.WPF
 
                 dgvIVA.ItemsSource = processedData.DefaultView;
             }
-            catch (Exception ex) { MessageBox.Show("Error al procesar IVA: " + ex.Message); }
+            catch (Exception ex) { CustomMessageBox.Show("Error al procesar IVA: " + ex.Message); }
         }
 
         private void btnExportarIVA_Click(object sender, RoutedEventArgs e)
@@ -131,7 +131,7 @@ namespace SchettiniGestion.WPF
         // --- EXPORTACIÓN GENÉRICA CORREGIDA ---
         private void ExportarGrillaAExcel(DataView view, string nombreArchivo)
         {
-            if (view == null || view.Count == 0) { MessageBox.Show("No hay datos para exportar."); return; }
+            if (view == null || view.Count == 0) { CustomMessageBox.Show("No hay datos para exportar."); return; }
 
             SaveFileDialog sfd = new SaveFileDialog
             {
@@ -168,7 +168,7 @@ namespace SchettiniGestion.WPF
                     }
 
                     // ABRIR EL ARCHIVO AUTOMÁTICAMENTE
-                    if (MessageBox.Show("¡Exportación exitosa!\n¿Desea abrir el archivo ahora?", "Éxito", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                    if (CustomMessageBox.Show("¡Exportación exitosa!\n¿Desea abrir el archivo ahora?", "Éxito", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
                     {
                         var p = new Process();
                         p.StartInfo = new ProcessStartInfo(sfd.FileName)
@@ -180,7 +180,7 @@ namespace SchettiniGestion.WPF
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error al exportar: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show($"Error al exportar: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }

@@ -1,25 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using SchettiniGestion; // ¡Nuestro Cerebro!
+using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
 {
-    /// <summary>
-    /// Lógica de interacción para StockControl.xaml
-    /// </summary>
     public partial class StockControl : UserControl
     {
         private DataRow _productoSeleccionado = null;
@@ -32,7 +19,6 @@ namespace SchettiniGestion.WPF
 
         private void StockControl_Loaded(object sender, RoutedEventArgs e)
         {
-            // Cargamos los motivos de ajuste
             cmbTipoMovimiento.Items.Clear();
             cmbTipoMovimiento.Items.Add("Ingreso por Compra");
             cmbTipoMovimiento.Items.Add("Ajuste Manual (Suma)");
@@ -59,86 +45,74 @@ namespace SchettiniGestion.WPF
             // 1. Validaciones
             if (_productoSeleccionado == null)
             {
-                MessageBox.Show("Debe seleccionar un producto.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Debe seleccionar un producto.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             int cantidad = numCantidad.Value ?? 0;
             if (cantidad == 0)
             {
-                MessageBox.Show("La cantidad no puede ser cero.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("La cantidad no puede ser cero.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (cmbTipoMovimiento.SelectedItem == null)
             {
-                MessageBox.Show("Debe seleccionar un tipo de movimiento.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Debe seleccionar un tipo de movimiento.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             string tipoMovimiento = cmbTipoMovimiento.SelectedItem.ToString();
 
-            // ===== ¡CORRECCIÓN DE LÓGICA! =====
-            // Si el movimiento es de resta, la cantidad debe ser negativa
-            if (tipoMovimiento.Contains("(Resta)") && cantidad > 0)
+            // Corrección de signo
+            if ((tipoMovimiento.Contains("(Resta)") || tipoMovimiento.Contains("Rotura")) && cantidad > 0)
             {
                 cantidad = cantidad * -1;
             }
-            // Si el movimiento es de suma, la cantidad debe ser positiva
-            if (tipoMovimiento.Contains("(Suma)") && cantidad < 0)
+            // Asegurar positivo para ingresos/sumas si el usuario puso negativo por error
+            if ((tipoMovimiento.Contains("(Suma)") || tipoMovimiento.Contains("Ingreso")) && cantidad < 0)
             {
                 cantidad = cantidad * -1;
             }
-            if (tipoMovimiento.Contains("Ingreso por Compra") && cantidad < 0)
-            {
-                cantidad = cantidad * -1;
-            }
-            // ===== FIN DE CORRECCIÓN =====
-
 
             // 2. Confirmación
             int productoID = Convert.ToInt32(_productoSeleccionado["ProductoID"]);
             string nombreProducto = _productoSeleccionado["Descripcion"].ToString();
 
-            MessageBoxResult confirmacion = MessageBox.Show(
+            MessageBoxResult confirmacion = CustomMessageBox.Show(
                 $"¿Está seguro que desea registrar el siguiente movimiento?\n\n" +
                 $"Producto: {nombreProducto}\n" +
-                $"Cantidad: {cantidad}\n" + // Mostrará la cantidad ya con el signo
+                $"Cantidad: {cantidad}\n" +
                 $"Motivo: {tipoMovimiento}",
                 "Confirmar Movimiento",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 
-            if (confirmacion == MessageBoxResult.No)
-            {
-                return;
-            }
+            if (confirmacion == MessageBoxResult.No) return;
 
             // 3. Llamar a la Base de Datos
             bool exito = DatabaseService.AjustarStock(productoID, cantidad, tipoMovimiento);
 
             if (exito)
             {
-                MessageBox.Show("¡Movimiento de stock guardado exitosamente!", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                CustomMessageBox.Show("¡Movimiento de stock guardado exitosamente!", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 LimpiarCampos();
             }
             else
             {
-                MessageBox.Show("No se pudo guardar el movimiento.", "Error Grave", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show("No se pudo guardar el movimiento.", "Error Grave", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        // --- Lógica de Búsqueda Predictiva (copiada de FacturacionControl) ---
+        // --- Lógica de Búsqueda ---
         #region LogicaBusquedaPredictiva
 
         private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (txtBuscarProducto.Text.Length < 2) { popupProducto.IsOpen = false; _productoSeleccionado = null; lblProductoSeleccionado.Text = "Seleccione un producto..."; return; }
 
-            // ===== ¡AQUÍ ESTÁ LA CORRECCIÓN! =====
-            // Usamos el método _ParaCompra que no filtra por stock
+            // Usamos _ParaCompra porque muestra todos los productos (con o sin stock)
             DataTable productos = DatabaseService.BuscarProductosMultiples_ParaCompra(txtBuscarProducto.Text);
-            // ===== FIN DE LA CORRECCIÓN =====
 
             if (productos.Rows.Count > 0) { lstSugerenciasProducto.ItemsSource = productos.DefaultView; popupProducto.IsOpen = true; }
             else { popupProducto.IsOpen = false; _productoSeleccionado = null; }
@@ -181,7 +155,7 @@ namespace SchettiniGestion.WPF
         private async void txtBuscar_LostFocus(object sender, RoutedEventArgs e)
         {
             if (_ignorarPerdidaFoco) return;
-            await Task.Delay(150);
+            await System.Threading.Tasks.Task.Delay(150);
             if (!lstSugerenciasProducto.IsFocused) { popupProducto.IsOpen = false; }
         }
 

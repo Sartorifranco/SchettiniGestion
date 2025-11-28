@@ -110,6 +110,7 @@ C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bi
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\EPPlus.System.Drawing.dll
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\LicenseGenerator.dll
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\Microsoft.IO.RecyclableMemoryStream.dll
+C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\Newtonsoft.Json.dll
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\SchettiniGestion.dll
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\System.Buffers.dll
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\System.ComponentModel.Annotations.dll
@@ -125,7 +126,6 @@ C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bi
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\Xceed.Wpf.AvalonDock.Themes.Metro.dll
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\Xceed.Wpf.AvalonDock.Themes.VS2010.dll
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\Xceed.Wpf.Toolkit.dll
-C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\Newtonsoft.Json.dll
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\LicenseGenerator.pdb
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\SchettiniGestion.pdb
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\SchettiniGestion.dll.config
@@ -133,13 +133,13 @@ C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bi
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\EntityFramework.SqlServer.xml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\EPPlus.xml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\Microsoft.IO.RecyclableMemoryStream.xml
+C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\Newtonsoft.Json.xml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\System.Buffers.xml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\System.Data.SQLite.xml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\System.Memory.xml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\System.Numerics.Vectors.xml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\System.Runtime.CompilerServices.Unsafe.xml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\System.Security.Cryptography.Xml.xml
-C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\Newtonsoft.Json.xml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\cs-CZ\Xceed.Wpf.AvalonDock.resources.dll
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\de\Xceed.Wpf.AvalonDock.resources.dll
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\es\Xceed.Wpf.AvalonDock.resources.dll
@@ -154,12 +154,14 @@ C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bi
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\sv\Xceed.Wpf.AvalonDock.resources.dll
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Debug\zh-Hans\Xceed.Wpf.AvalonDock.resources.dll
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\SchettiniGestion.WPF.csproj.AssemblyReference.cache
+C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\CustomMessageBoxWindow.baml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\NumericKeyboardControl.baml
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\CajaControl.g.cs
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\ClientesControl.g.cs
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\ComprasControl.g.cs
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\ConfirguracionControl.g.cs
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\CuentasCorrientesControl.g.cs
+C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\CustomMessageBoxWindow.g.cs
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\FacturacionControl.g.cs
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\GestionPermisos.g.cs
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\ListasPreciosControl.g.cs
@@ -206,4 +208,3 @@ C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\ob
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\Schettin.EFE34DD2.Up2Date
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\SchettiniGestion.WPF.exe
 C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\SchettiniGestion.WPF.pdb
-C:\Users\Admin\Desktop\SchettiniGestion\SchettiniGestion\SchettiniGestion.WPF\obj\x64\Debug\SchettiniGestion.WPF.exe.config

@@ -127,7 +127,7 @@ namespace SchettiniGestion.WPF
         // --- CARRITO Y GUARDADO ---
         private void btnAgregarProducto_Click(object sender, RoutedEventArgs e)
         {
-            if (_productoSeleccionado == null) { MessageBox.Show("Seleccione un producto."); return; }
+            if (_productoSeleccionado == null) { CustomMessageBox.Show("Seleccione un producto."); return; }
 
             if (!int.TryParse(numCantidad.Text, out int cant) || cant <= 0) cant = 1;
 
@@ -183,14 +183,14 @@ namespace SchettiniGestion.WPF
 
         private void btnCancelar_Click(object sender, RoutedEventArgs e)
         {
-            if (MessageBox.Show("¿Borrar presupuesto?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            if (CustomMessageBox.Show("¿Borrar presupuesto?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                 LimpiarFormulario();
         }
 
         private void btnGuardarPresupuesto_Click(object sender, RoutedEventArgs e)
         {
-            if (Carrito.Count == 0) { MessageBox.Show("Agregue productos."); return; }
-            if (_clienteSeleccionado == null) { MessageBox.Show("Seleccione cliente."); return; }
+            if (Carrito.Count == 0) { CustomMessageBox.Show("Agregue productos."); return; }
+            if (_clienteSeleccionado == null) { CustomMessageBox.Show("Seleccione cliente."); return; }
 
             try
             {
@@ -202,14 +202,14 @@ namespace SchettiniGestion.WPF
 
                 if (exito)
                 {
-                    MessageBox.Show("Presupuesto guardado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CustomMessageBox.Show("Presupuesto guardado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                     LimpiarFormulario();
                     // Aquí iría la lógica de impresión (impresora NO fiscal)
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}");
+                CustomMessageBox.Show($"Error: {ex.Message}");
             }
         }
     }

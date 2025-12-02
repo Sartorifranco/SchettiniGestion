@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace SchettiniGestion.WPF
 {
     public partial class NumericKeyboardControl : UserControl
     {
+        // Evento simple que envía el texto de la tecla
         public event EventHandler<string> KeyPressed;
 
         public NumericKeyboardControl()
@@ -14,37 +14,18 @@ namespace SchettiniGestion.WPF
             InitializeComponent();
         }
 
-        private void KeyboardButton_Click(object sender, RoutedEventArgs e)
+        private void Button_Click(object sender, RoutedEventArgs e)
         {
-            Button button = sender as Button;
-            if (button != null)
+            if (sender is Button btn)
             {
-                string numero = button.Content.ToString();
+                string key = btn.Content.ToString();
 
-                // --- DEBUG ---
-                // CustomMessageBox.Show($"TECLADO: Click en {numero}", "Debug Teclado"); 
-                // --- FIN DEBUG ---
+                // Normalizamos nombres
+                if (key == "⬅") key = "BACKSPACE";
 
-                KeyPressed?.Invoke(this, numero);
+                // Enviamos la tecla pulsada a la ventana principal
+                KeyPressed?.Invoke(this, key);
             }
-        }
-
-        private void BackspaceButton_Click(object sender, RoutedEventArgs e)
-        {
-            // --- DEBUG ---
-            // CustomMessageBox.Show("TECLADO: Click en Borrar", "Debug Teclado");
-            // --- FIN DEBUG ---
-
-            KeyPressed?.Invoke(this, "Back");
-        }
-
-        private void EnterButton_Click(object sender, RoutedEventArgs e)
-        {
-            // --- DEBUG ---
-            // CustomMessageBox.Show("TECLADO: Click en Enter", "Debug Teclado");
-            // --- FIN DEBUG ---
-
-            KeyPressed?.Invoke(this, "Enter");
         }
     }
 }

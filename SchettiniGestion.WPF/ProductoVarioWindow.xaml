@@ -1,0 +1,70 @@
+﻿<Window x:Class="SchettiniGestion.WPF.ProductoVarioWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Agregar Varios" Height="280" Width="400"
+        WindowStartupLocation="CenterScreen" WindowStyle="None"
+        AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" Loaded="Window_Loaded">
+
+    <Border Background="#2E333A" BorderBrush="#007ACC" BorderThickness="1" CornerRadius="10">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Text="AGREGAR ÍTEM VARIO" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+            <StackPanel Grid.Row="1" Margin="0,0,0,15">
+                <TextBlock Text="Descripción:" Foreground="#CCC" Margin="0,0,0,5"/>
+                <TextBox x:Name="txtDescripcion" Height="35" FontSize="14" Padding="5" Background="#40444B" Foreground="White" BorderBrush="Gray"/>
+            </StackPanel>
+
+            <Grid Grid.Row="2" Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Precio Unitario ($):" Foreground="#CCC" Margin="0,0,0,5"/>
+                    <TextBox x:Name="txtPrecio" Height="35" FontSize="14" Padding="5" Background="#40444B" Foreground="White" BorderBrush="Gray" PreviewTextInput="SoloNumeros_PreviewTextInput"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="IVA (%):" Foreground="#CCC" Margin="0,0,0,5"/>
+                    <ComboBox x:Name="cmbIVA" Height="35" Background="#40444B" Foreground="Black" FontSize="14">
+                        <ComboBoxItem Content="21.0" IsSelected="True"/>
+                        <ComboBoxItem Content="10.5"/>
+                        <ComboBoxItem Content="0.0"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                <Button Content="CANCELAR" Click="btnCancelar_Click" Width="120" Height="40" Background="#B90202" Foreground="White" FontWeight="Bold" Margin="0,0,10,0" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" CornerRadius="5">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Button Content="AGREGAR" Click="btnAgregar_Click" Width="120" Height="40" Background="#00A86B" Foreground="White" FontWeight="Bold">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" CornerRadius="5">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

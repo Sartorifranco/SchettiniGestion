@@ -26,7 +26,6 @@
 
             <Border Grid.Column="0" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" Margin="0,0,10,0">
                 <StackPanel>
-
                     <TextBlock Text="Proveedor" Style="{StaticResource ModuleLabelStyle}"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -94,10 +93,7 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <DataGrid x:Name="dgvCarrito" Grid.Row="0" 
-                              Style="{StaticResource ModuleDataGridStyle}" 
-                              AutoGenerateColumns="False" 
-                              CanUserDeleteRows="False">
+                    <DataGrid x:Name="dgvCarrito" Grid.Row="0" Style="{StaticResource ModuleDataGridStyle}" AutoGenerateColumns="False" CanUserDeleteRows="False">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="100" IsReadOnly="True"/>
                             <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True"/>
@@ -107,9 +103,7 @@
                             <DataGridTemplateColumn Width="50">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="X" Style="{StaticResource DeleteButtonStyle}" Padding="5" MinHeight="25" MinWidth="25"
-                                                Click="btnEliminarItem_Click"
-                                                CommandParameter="{Binding}"/>
+                                        <Button Content="X" Style="{StaticResource DeleteButtonStyle}" Padding="5" MinHeight="25" MinWidth="25" Click="btnEliminarItem_Click" CommandParameter="{Binding}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -125,9 +119,7 @@
         </Grid>
 
         <Grid x:Name="popupOverlay" Background="#80000000" Visibility="Collapsed" MouseUp="popupOverlay_MouseUp">
-            <Border Background="{StaticResource ModuleBackgroundBrush}" BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1" CornerRadius="5" 
-                    VerticalAlignment="Center" HorizontalAlignment="Center" 
-                    Width="600" MaxHeight="500">
+            <Border Background="{StaticResource ModuleBackgroundBrush}" BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1" CornerRadius="5" VerticalAlignment="Center" HorizontalAlignment="Center" Width="600" MaxHeight="500">
                 <StackPanel Margin="20">
                     <TextBlock Text="Buscar Proveedor" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
                     <TextBox x:Name="txtBuscarProveedorPopup" Style="{StaticResource ModuleTextBoxStyle}" KeyDown="txtBuscarProveedorPopup_KeyDown"/>
@@ -144,6 +136,5 @@
                 </StackPanel>
             </Border>
         </Grid>
-
     </Grid>
 </UserControl>

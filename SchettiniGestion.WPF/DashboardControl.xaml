@@ -1,0 +1,82 @@
+﻿<UserControl x:Class="SchettiniGestion.WPF.DashboardControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1200"
+             Background="{StaticResource ModuleBackgroundBrush}"
+             Loaded="UserControl_Loaded">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+            <TextBlock Text="Hola," FontSize="28" Foreground="White" FontWeight="Light"/>
+            <TextBlock x:Name="lblUsuario" Text=" Admin!" FontSize="28" Foreground="White" FontWeight="Bold"/>
+        </StackPanel>
+
+        <Button Grid.Row="1" Content="🔄 Actualizar Tablero" HorizontalAlignment="Right" Style="{StaticResource ActionButtonStyle}" Click="btnActualizar_Click" Width="180" Margin="0,0,0,20"/>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="150"/>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="150"/>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="150"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Grid.Column="0" Background="#007ACC" CornerRadius="10" Padding="20">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Comprobantes Hoy" Foreground="White" FontSize="16" HorizontalAlignment="Center" Opacity="0.9"/>
+                    <TextBlock x:Name="lblCantVentas" Text="0" Foreground="White" FontSize="48" FontWeight="Bold" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="0" Grid.Column="2" Background="#00A86B" CornerRadius="10" Padding="20">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Total Ventas Hoy" Foreground="White" FontSize="16" HorizontalAlignment="Center" Opacity="0.9"/>
+                    <TextBlock x:Name="lblTotalVentas" Text="$ 0,00" Foreground="White" FontSize="40" FontWeight="Bold" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="0" Grid.Column="4" Background="#E67E22" CornerRadius="10" Padding="20">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Rentabilidad Estimada" Foreground="White" FontSize="16" HorizontalAlignment="Center" Opacity="0.9"/>
+                    <TextBlock x:Name="lblRentabilidad" Text="$ 0,00" Foreground="White" FontSize="40" FontWeight="Bold" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2" Grid.Column="0" Background="#8E44AD" CornerRadius="10" Padding="20">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Productos Activos" Foreground="White" FontSize="16" HorizontalAlignment="Center" Opacity="0.9"/>
+                    <TextBlock x:Name="lblProductos" Text="0" Foreground="White" FontSize="48" FontWeight="Bold" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2" Grid.Column="2" Background="#C0392B" CornerRadius="10" Padding="20">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Clientes Registrados" Foreground="White" FontSize="16" HorizontalAlignment="Center" Opacity="0.9"/>
+                    <TextBlock x:Name="lblClientes" Text="0" Foreground="White" FontSize="48" FontWeight="Bold" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2" Grid.Column="4" Background="#34495E" CornerRadius="10" Padding="20" Opacity="0.5">
+                <TextBlock Text="Próximamente..." Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,7 +1,7 @@
 ﻿using SchettiniGestion;
 using System;
 using System.Data;
-using System.IO; // Para manejar archivos
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
@@ -12,7 +12,7 @@ namespace SchettiniGestion.WPF
     public partial class ConfiguracionControl : UserControl
     {
         private string _logoPath = "";
-        private string _certificadoPath = ""; // Ruta final segura
+        private string _certificadoPath = "";
 
         public ConfiguracionControl()
         {
@@ -44,7 +44,7 @@ namespace SchettiniGestion.WPF
                     try { imgLogo.Source = new BitmapImage(new Uri(pathLogo)); } catch { }
                 }
 
-                // Datos Fiscales (Verificar si existen las columnas por si la BD es vieja)
+                // AFIP
                 if (row.Table.Columns.Contains("PuntoVenta") && row["PuntoVenta"] != DBNull.Value)
                     numPuntoVenta.Value = Convert.ToInt32(row["PuntoVenta"]);
 
@@ -56,6 +56,16 @@ namespace SchettiniGestion.WPF
 
                 if (row.Table.Columns.Contains("PasswordAfip"))
                     txtPasswordAfip.Password = row["PasswordAfip"].ToString();
+
+                // MERCADO PAGO (NUEVO)
+                if (row.Table.Columns.Contains("MPAccessToken"))
+                    txtMPToken.Text = row["MPAccessToken"].ToString();
+
+                if (row.Table.Columns.Contains("MPUserId"))
+                    txtMPUserID.Text = row["MPUserId"].ToString();
+
+                if (row.Table.Columns.Contains("MPPosId"))
+                    txtMPPosID.Text = row["MPPosId"].ToString();
             }
         }
 
@@ -69,7 +79,6 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        // --- LÓGICA SEGURA DE CERTIFICADO ---
         private void btnBuscarCertificado_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog dlg = new OpenFileDialog { Filter = "Certificado Digital|*.pfx;*.p12" };
@@ -85,7 +94,6 @@ namespace SchettiniGestion.WPF
 
                     string destino = Path.Combine(appData, "certificado_afip.pfx");
 
-                    // Copiamos el archivo a nuestra carpeta segura
                     File.Copy(origen, destino, true);
 
                     _certificadoPath = destino;
@@ -102,9 +110,7 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            // Validar datos mínimos si queremos facturar
-            // (Aquí podrías validar CUIT)
-
+            // Guardar TODO (Incluyendo MP)
             bool exito = DatabaseService.GuardarConfiguracion(
                 txtNombre.Text,
                 txtRazonSocial.Text,
@@ -113,9 +119,14 @@ namespace SchettiniGestion.WPF
                 txtTelefono.Text,
                 "", // Email
                 _logoPath,
-                _certificadoPath,       // Nuevo
-                txtPasswordAfip.Password, // Nuevo
-                numPuntoVenta.Value ?? 1  // Nuevo
+                _certificadoPath,
+                txtPasswordAfip.Password,
+                numPuntoVenta.Value ?? 1,
+
+                // Parámetros Nuevos MP
+                txtMPToken.Text.Trim(),
+                txtMPUserID.Text.Trim(),
+                txtMPPosID.Text.Trim()
             );
 
             if (exito)

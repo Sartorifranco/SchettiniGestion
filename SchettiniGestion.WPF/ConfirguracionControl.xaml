@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:SchettiniGestion.WPF"
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              mc:Ignorable="d" 
-             d:DesignHeight="600" d:DesignWidth="1000"
+             d:DesignHeight="800" d:DesignWidth="1000"
              Background="{StaticResource ModuleBackgroundBrush}"
              Loaded="UserControl_Loaded">
 
@@ -44,74 +44,104 @@
             </TabControl.Resources>
 
             <TabItem Header="🏢 Datos del Negocio">
-                <Border Background="{StaticResource PanelBackgroundBrush}" CornerRadius="0,5,5,5" Padding="30">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="50"/>
-                            <ColumnDefinition Width="1*"/>
-                        </Grid.ColumnDefinitions>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Border Background="{StaticResource PanelBackgroundBrush}" CornerRadius="0,5,5,5" Padding="30">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="50"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Nombre de Fantasía:" Style="{StaticResource ModuleLabelStyle}"/>
-                            <TextBox x:Name="txtNombre" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,15"/>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Nombre de Fantasía:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtNombre" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,15"/>
 
-                            <TextBlock Text="Razón Social:" Style="{StaticResource ModuleLabelStyle}"/>
-                            <TextBox x:Name="txtRazonSocial" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,15"/>
+                                <TextBlock Text="Razón Social:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtRazonSocial" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,15"/>
 
-                            <TextBlock Text="CUIT:" Style="{StaticResource ModuleLabelStyle}"/>
-                            <TextBox x:Name="txtCuit" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,15"/>
+                                <TextBlock Text="CUIT:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtCuit" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,15"/>
 
-                            <TextBlock Text="Dirección:" Style="{StaticResource ModuleLabelStyle}"/>
-                            <TextBox x:Name="txtDireccion" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,15"/>
+                                <TextBlock Text="Dirección:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtDireccion" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,15"/>
 
-                            <TextBlock Text="Teléfono:" Style="{StaticResource ModuleLabelStyle}"/>
-                            <TextBox x:Name="txtTelefono" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,15"/>
-                        </StackPanel>
+                                <TextBlock Text="Teléfono:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtTelefono" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,15"/>
+                            </StackPanel>
 
-                        <StackPanel Grid.Column="2" VerticalAlignment="Top">
-                            <TextBlock Text="Logo del Ticket:" Style="{StaticResource ModuleLabelStyle}" HorizontalAlignment="Center"/>
-                            <Border BorderBrush="#555" BorderThickness="1" CornerRadius="5" Height="200" Width="200" Margin="0,10,0,20" Background="#333">
-                                <Image x:Name="imgLogo" Stretch="Uniform"/>
-                            </Border>
-                            <Button Content="📷 Seleccionar Logo" Style="{StaticResource ActionButtonStyle}" Width="200" Click="btnSeleccionarLogo_Click"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
+                            <StackPanel Grid.Column="2" VerticalAlignment="Top">
+                                <TextBlock Text="Logo del Ticket:" Style="{StaticResource ModuleLabelStyle}" HorizontalAlignment="Center"/>
+                                <Border BorderBrush="#555" BorderThickness="1" CornerRadius="5" Height="200" Width="200" Margin="0,10,0,20" Background="#333">
+                                    <Image x:Name="imgLogo" Stretch="Uniform"/>
+                                </Border>
+                                <Button Content="📷 Seleccionar Logo" Style="{StaticResource ActionButtonStyle}" Width="200" Click="btnSeleccionarLogo_Click"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="🏛️ AFIP / Facturación Electrónica">
-                <Border Background="{StaticResource PanelBackgroundBrush}" CornerRadius="0,5,5,5" Padding="30">
-                    <StackPanel MaxWidth="600" HorizontalAlignment="Left">
+            <TabItem Header="🏛️ AFIP / Mercado Pago">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Border Background="{StaticResource PanelBackgroundBrush}" CornerRadius="0,5,5,5" Padding="30">
+                        <StackPanel MaxWidth="800" HorizontalAlignment="Left">
 
-                        <TextBlock Text="Configuración para Factura Electrónica (ARCA)" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,20"/>
+                            <!-- SECCIÓN AFIP -->
+                            <TextBlock Text="Configuración Factura Electrónica (AFIP)" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,15"/>
 
-                        <TextBlock Text="Punto de Venta (AFIP):" Style="{StaticResource ModuleLabelStyle}"/>
-                        <xctk:IntegerUpDown x:Name="numPuntoVenta" Style="{StaticResource ModuleIntegerUpDownStyle}" Minimum="1" Value="1" Margin="0,0,0,15" Width="150" HorizontalAlignment="Left"/>
+                            <TextBlock Text="Punto de Venta (AFIP):" Style="{StaticResource ModuleLabelStyle}"/>
+                            <xctk:IntegerUpDown x:Name="numPuntoVenta" Style="{StaticResource ModuleIntegerUpDownStyle}" Minimum="1" Value="1" Margin="0,0,0,15" Width="150" HorizontalAlignment="Left"/>
 
-                        <TextBlock Text="Certificado Digital (.pfx):" Style="{StaticResource ModuleLabelStyle}"/>
-                        <Grid Margin="0,0,0,15">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox x:Name="txtCertificadoPath" Style="{StaticResource ModuleTextBoxStyle}" IsReadOnly="True" Background="#333"/>
-                            <Button Grid.Column="1" Content="📂 Buscar" Style="{StaticResource ActionButtonStyle}" Width="80" Margin="10,0,0,0" Click="btnBuscarCertificado_Click"/>
-                        </Grid>
-                        <TextBlock Text="* El certificado se copiará a la carpeta del sistema por seguridad." Foreground="Gray" FontSize="12" Margin="0,-10,0,15"/>
+                            <TextBlock Text="Certificado Digital (.pfx):" Style="{StaticResource ModuleLabelStyle}"/>
+                            <Grid Margin="0,0,0,15">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="txtCertificadoPath" Style="{StaticResource ModuleTextBoxStyle}" IsReadOnly="True" Background="#333"/>
+                                <Button Grid.Column="1" Content="📂 Buscar" Style="{StaticResource ActionButtonStyle}" Width="80" Margin="10,0,0,0" Click="btnBuscarCertificado_Click"/>
+                            </Grid>
 
-                        <TextBlock Text="Contraseña del Certificado:" Style="{StaticResource ModuleLabelStyle}"/>
-                        <PasswordBox x:Name="txtPasswordAfip" Style="{StaticResource ModulePasswordBoxStyle}" Margin="0,0,0,15"/>
+                            <TextBlock Text="Contraseña del Certificado:" Style="{StaticResource ModuleLabelStyle}"/>
+                            <PasswordBox x:Name="txtPasswordAfip" Style="{StaticResource ModulePasswordBoxStyle}" Margin="0,0,0,20"/>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-                            <Button Content="💾 Guardar Toda la Configuración" 
-                                    Style="{StaticResource ActionButtonStyle}" 
-                                    Background="#00A86B" Height="50" Width="250" FontSize="16"
-                                    Click="btnGuardar_Click"/>
+                            <Separator Background="#444" Margin="0,10,0,20"/>
+
+                            <!-- SECCIÓN MERCADO PAGO (NUEVO) -->
+                            <TextBlock Text="Integración Mercado Pago (QR)" FontSize="18" FontWeight="Bold" Foreground="#009EE3" Margin="0,0,0,15"/>
+
+                            <TextBlock Text="Access Token (Producción):" Style="{StaticResource ModuleLabelStyle}"/>
+                            <TextBox x:Name="txtMPToken" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,15" ToolTip="Empieza con APP_USR-..."/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="User ID (Collector ID):" Style="{StaticResource ModuleLabelStyle}"/>
+                                    <TextBox x:Name="txtMPUserID" Style="{StaticResource ModuleTextBoxStyle}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Nombre de Caja (POS ID):" Style="{StaticResource ModuleLabelStyle}"/>
+                                    <TextBox x:Name="txtMPPosID" Style="{StaticResource ModuleTextBoxStyle}" ToolTip="Ej: CAJA01"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,40,0,0">
+                                <Button Content="💾 Guardar Toda la Configuración" 
+                                        Style="{StaticResource ActionButtonStyle}" 
+                                        Background="#00A86B" Height="50" Width="250" FontSize="16"
+                                        Click="btnGuardar_Click"/>
+                            </StackPanel>
+
                         </StackPanel>
-
-                    </StackPanel>
-                </Border>
+                    </Border>
+                </ScrollViewer>
             </TabItem>
 
         </TabControl>

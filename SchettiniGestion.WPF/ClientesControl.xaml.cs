@@ -2,7 +2,7 @@
 using System.Data;
 using System.Windows;
 using System.Windows.Controls;
-// --- ¡IMPORTANTE! Importamos la lógica de nuestro proyecto viejo ---
+using System.Windows.Input; // Necesario para el evento KeyDown
 using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
@@ -24,7 +24,6 @@ namespace SchettiniGestion.WPF
 
         private void ClientesControl_Loaded(object sender, RoutedEventArgs e)
         {
-            // Este evento se dispara cuando el control se carga
             CargarCondicionIVA();
             CargarClientes();
             ConfigurarGrilla();
@@ -45,7 +44,6 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                // Llamamos al DatabaseService (¡que ya funciona!)
                 DataTable dt = DatabaseService.GetClientes();
                 dgvClientes.ItemsSource = dt.DefaultView;
             }
@@ -57,9 +55,7 @@ namespace SchettiniGestion.WPF
 
         private void ConfigurarGrilla()
         {
-            // Ocultamos el ID, ya no lo hacemos en XAML sino aquí
-            // (La columna se genera sola por el ItemsSource, pero podemos acceder a ella)
-            // Nota: Esto se maneja mejor con propiedades de binding, pero así es más simple
+            // La grilla se autogenera, aquí podrías ajustar anchos si quisieras.
         }
 
         // --- MÉTODOS DE LA INTERFAZ ---
@@ -70,21 +66,74 @@ namespace SchettiniGestion.WPF
             txtCuit.Text = "";
             txtRazonSocial.Text = "";
             cmbCondicionIVA.SelectedIndex = 2; // "Consumidor Final"
-
             dgvClientes.SelectedItem = null;
+            txtCuit.Focus(); // Pone el foco en el CUIT para empezar rápido
         }
 
         private void dgvClientes_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Verificamos que haya una fila seleccionada
             if (dgvClientes.SelectedItem is DataRowView filaSeleccionada)
             {
-                // Obtenemos los valores de la fila
-                // IMPORTANTE: Accedemos a la columna por su NOMBRE en la base de datos
                 _clienteIDSeleccionado = Convert.ToInt32(filaSeleccionada["ClienteID"]);
                 txtCuit.Text = filaSeleccionada["CUIT"].ToString();
                 txtRazonSocial.Text = filaSeleccionada["RazonSocial"].ToString();
                 cmbCondicionIVA.Text = filaSeleccionada["CondicionIVA"].ToString();
+            }
+        }
+
+        // --- MAGIA DE AFIP: AUTOCOMPLETAR ---
+        // Asegúrate de que en tu XAML el TextBox txtCuit tenga el evento: KeyDown="txtCuit_KeyDown"
+        private async void txtCuit_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                string cuitTexto = txtCuit.Text.Replace("-", "").Trim();
+
+                // Validación simple de longitud
+                if (long.TryParse(cuitTexto, out long cuit))
+                {
+                    // Feedback visual: Ponemos el cursor en espera
+                    this.Cursor = Cursors.Wait;
+
+                    try
+                    {
+                        // Llamamos al servicio (Simulado o Real)
+                        var datos = await AfipService.ObtenerDatosPersonaAsync(cuit);
+
+                        if (datos.Exito)
+                        {
+                            // ¡Éxito! Llenamos los campos
+                            txtRazonSocial.Text = datos.RazonSocial.ToUpper();
+
+                            // Intentamos seleccionar la condición de IVA en el combo
+                            // (Debe coincidir el texto exacto, ej: "Responsable Inscripto")
+                            cmbCondicionIVA.Text = datos.CondicionIVA;
+
+                            // Si tuvieras campo Dirección en la DB, iría aquí:
+                            // txtDireccion.Text = datos.Domicilio; 
+
+                            // Pasamos el foco al siguiente campo para que confirme
+                            txtRazonSocial.Focus();
+                        }
+                        else
+                        {
+                            CustomMessageBox.Show("No se encontraron datos en AFIP o hubo un error: " + datos.Error, "Aviso AFIP", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        CustomMessageBox.Show("Error de conexión: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    finally
+                    {
+                        // Restauramos el cursor
+                        this.Cursor = Cursors.Arrow;
+                    }
+                }
+                else
+                {
+                    CustomMessageBox.Show("El CUIT ingresado no es válido (solo números).", "Formato Inválido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
             }
         }
 
@@ -114,7 +163,7 @@ namespace SchettiniGestion.WPF
             string razonSocial = txtRazonSocial.Text.Trim();
             string condicionIVA = cmbCondicionIVA.Text;
 
-            // 3. Guardar en la DB (usando nuestro DatabaseService)
+            // 3. Guardar en la DB
             bool exito = DatabaseService.GuardarCliente(_clienteIDSeleccionado, cuit, razonSocial, condicionIVA);
 
             if (exito)
@@ -123,27 +172,23 @@ namespace SchettiniGestion.WPF
                 CargarClientes();
                 LimpiarCampos();
             }
-            // (El DatabaseService ya muestra el MessageBox de error si falla)
         }
 
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Validar que haya un cliente seleccionado
             if (_clienteIDSeleccionado == 0)
             {
                 CustomMessageBox.Show("Por favor, seleccione un cliente de la grilla para eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            // 2. Pedir confirmación
             MessageBoxResult confirmacion = CustomMessageBox.Show($"¿Está seguro de que desea eliminar al cliente '{txtRazonSocial.Text}'?",
-                                                            "Confirmar eliminación",
-                                                            MessageBoxButton.YesNo,
-                                                            MessageBoxImage.Warning);
+                                                                "Confirmar eliminación",
+                                                                MessageBoxButton.YesNo,
+                                                                MessageBoxImage.Warning);
 
             if (confirmacion == MessageBoxResult.Yes)
             {
-                // 3. Eliminar de la DB (usando nuestro DatabaseService)
                 bool exito = DatabaseService.EliminarCliente(_clienteIDSeleccionado);
 
                 if (exito)

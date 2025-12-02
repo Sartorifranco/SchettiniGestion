@@ -38,6 +38,7 @@
                         <ComboBox x:Name="cmbCondicionVenta" Style="{StaticResource ModuleComboBoxStyle}" Width="140">
                             <ComboBoxItem Content="Contado" IsSelected="True"/>
                             <ComboBoxItem Content="Cuenta Corriente"/>
+                            <ComboBoxItem Content="Mercado Pago"/>
                         </ComboBox>
                     </StackPanel>
 
@@ -60,11 +61,20 @@
                           CanUserSortColumns="False"
                           CanUserAddRows="False">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="Auto" IsReadOnly="True" />
-                        <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True" />
-                        <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" Width="Auto" IsReadOnly="True" />
-                        <DataGridTextColumn Header="Precio Unit." Binding="{Binding PrecioUnitario, StringFormat=C2}" Width="Auto" IsReadOnly="True" />
-                        <DataGridTextColumn Header="Subtotal" Binding="{Binding Subtotal, StringFormat=C2}" Width="Auto" IsReadOnly="True" />
+                        <DataGridTemplateColumn Header="PRODUCTO" Width="60">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Image Source="{Binding ImagenPath}" Height="40" Width="40" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="DESCRIPCIÓN" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True" />
+                        <DataGridTextColumn Header="CÓDIGO" Binding="{Binding Codigo}" Width="Auto" IsReadOnly="True" />
+                        <DataGridTextColumn Header="CANT." Binding="{Binding Cantidad}" Width="Auto" IsReadOnly="True" />
+                        <DataGridTextColumn Header="PRECIO UNIT." Binding="{Binding PrecioUnitario, StringFormat=C2}" Width="Auto" IsReadOnly="True" />
+                        <DataGridTextColumn Header="SUBTOTAL" Binding="{Binding Subtotal, StringFormat=C2}" Width="Auto" IsReadOnly="True" />
+
                         <DataGridTemplateColumn Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -85,15 +95,18 @@
                 BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
 
             <DockPanel>
-
                 <StackPanel DockPanel.Dock="Bottom" Margin="0,20,0,0">
                     <Separator Background="#555"/>
                     <TextBlock Text="TOTAL" Foreground="White" FontSize="28" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0"/>
                     <TextBlock x:Name="lblTotal" Text="$ 0,00" Foreground="#00BFFF" FontSize="48" FontWeight="Bold" HorizontalAlignment="Right"/>
 
+                    <Button x:Name="btnPagoQR" Content="📱 Cobrar con QR" 
+                            Style="{StaticResource ActionButtonStyle}" 
+                            MinHeight="50" FontSize="18" Margin="0,20,0,0"
+                            Background="#009EE3" Click="btnPagoQR_Click"/>
                     <Button x:Name="btnGuardarFactura" Content="Cobrar / Guardar" 
                             Style="{StaticResource ActionButtonStyle}" 
-                            MinHeight="60" FontSize="20" Margin="0,20,0,0"
+                            MinHeight="60" FontSize="20" Margin="0,10,0,0"
                             Background="#00A86B" Click="btnGuardarFactura_Click"/>
 
                     <Button x:Name="btnCancelarFactura" Content="Cancelar" 

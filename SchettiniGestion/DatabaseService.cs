@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Data.SQLite;
 using System.IO;
-using System.Windows.Forms; // Usamos MessageBox estándar
 using System.Data;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace SchettiniGestion
 {
-    // Clases de Ayuda
+    // ==========================================
+    // CLASES DE AYUDA
+    // ==========================================
     public class FacturaItem
     {
         public int ProductoID { get; set; }
@@ -17,15 +20,24 @@ namespace SchettiniGestion
         public int Cantidad { get; set; }
         public decimal PrecioUnitario { get; set; }
         public decimal Subtotal { get { return Cantidad * PrecioUnitario; } }
+
+        // --- PROPIEDAD PARA LA FOTO (Visor y Grilla) ---
+        public string ImagenPath { get; set; }
+        // -----------------------------------------------
     }
+
     public class Rol { public int RolId { get; set; } public string Nombre { get; set; } }
     public class Permiso { public int PermisoId { get; set; } public string Nombre { get; set; } }
 
+    // ==========================================
+    // SERVICIO DE BASE DE DATOS
+    // ==========================================
     public static class DatabaseService
     {
         private static string _dbPath;
+        public static Action<string> OnDbError;
 
-        // Constantes
+        // Constantes de Permisos
         public const string PERMISO_USUARIOS = "ACCESO_USUARIOS";
         public const string PERMISO_CLIENTES = "ACCESO_CLIENTES";
         public const string PERMISO_PRODUCTOS = "ACCESO_PRODUCTOS";
@@ -40,6 +52,11 @@ namespace SchettiniGestion
         public const string PERMISO_PRESUPUESTOS = "ACCESO_PRESUPUESTOS";
         public const string PERMISO_CUENTASCORRIENTES = "ACCESO_CUENTASCORRIENTES";
         public const string PERMISO_LISTASPRECIOS = "ACCESO_LISTASPRECIOS";
+
+        private static void NotificarError(string mensaje)
+        {
+            OnDbError?.Invoke(mensaje);
+        }
 
         public static void InitializeDatabase()
         {
@@ -62,12 +79,12 @@ namespace SchettiniGestion
 
                             new SQLiteCommand("CREATE TABLE IF NOT EXISTS Usuarios (UsuarioID INTEGER PRIMARY KEY AUTOINCREMENT, NombreUsuario TEXT NOT NULL UNIQUE, PasswordHash TEXT NOT NULL, Rol TEXT, RolID INTEGER REFERENCES Roles(RolID));", conn, trans).ExecuteNonQuery();
                             try { new SQLiteCommand("ALTER TABLE Usuarios ADD COLUMN RolID INTEGER REFERENCES Roles(RolID);", conn, trans).ExecuteNonQuery(); } catch { }
-                            new SQLiteCommand($"INSERT OR IGNORE INTO Usuarios (NombreUsuario, PasswordHash, Rol, RolID) VALUES ('admin', '{PasswordHasher.HashPassword("12345")}', 'Admin', 1);", conn, trans).ExecuteNonQuery();
+                            string defaultPass = PasswordHasher.HashPassword("12345");
+                            new SQLiteCommand($"INSERT OR IGNORE INTO Usuarios (NombreUsuario, PasswordHash, Rol, RolID) VALUES ('admin', '{defaultPass}', 'Admin', 1);", conn, trans).ExecuteNonQuery();
 
                             // Productos
                             string sqlProductos = @"CREATE TABLE IF NOT EXISTS Productos (ProductoID INTEGER PRIMARY KEY AUTOINCREMENT, Codigo TEXT UNIQUE, CodigoBarra TEXT, Descripcion TEXT NOT NULL, Categoria TEXT, TipoIVA TEXT, PrecioCosto REAL DEFAULT 0, Ganancia REAL DEFAULT 0, ImpuestoInterno REAL DEFAULT 0, PrecioVenta REAL NOT NULL, StockActual INTEGER DEFAULT 0, ImagenPath TEXT);";
                             new SQLiteCommand(sqlProductos, conn, trans).ExecuteNonQuery();
-                            // Migraciones Productos
                             try { new SQLiteCommand("ALTER TABLE Productos ADD COLUMN PrecioCosto REAL DEFAULT 0;", conn, trans).ExecuteNonQuery(); } catch { }
                             try { new SQLiteCommand("ALTER TABLE Productos ADD COLUMN CodigoBarra TEXT;", conn, trans).ExecuteNonQuery(); } catch { }
                             try { new SQLiteCommand("ALTER TABLE Productos ADD COLUMN Categoria TEXT;", conn, trans).ExecuteNonQuery(); } catch { }
@@ -84,10 +101,9 @@ namespace SchettiniGestion
                             new SQLiteCommand("CREATE TABLE IF NOT EXISTS Proveedores (ProveedorID INTEGER PRIMARY KEY AUTOINCREMENT, CUIT TEXT UNIQUE, RazonSocial TEXT NOT NULL, Telefono TEXT, Email TEXT, Direccion TEXT, SaldoDeuda REAL DEFAULT 0);", conn, trans).ExecuteNonQuery();
                             try { new SQLiteCommand("ALTER TABLE Proveedores ADD COLUMN SaldoDeuda REAL DEFAULT 0;", conn, trans).ExecuteNonQuery(); } catch { }
 
-                            // Operaciones
+                            // Operaciones (Ventas, Compras, Stock)
                             new SQLiteCommand("CREATE TABLE IF NOT EXISTS Facturas (FacturaID INTEGER PRIMARY KEY AUTOINCREMENT, ClienteID INTEGER NOT NULL, Fecha TEXT NOT NULL, Total REAL NOT NULL, TipoComprobante TEXT, FOREIGN KEY(ClienteID) REFERENCES Clientes(ClienteID));", conn, trans).ExecuteNonQuery();
                             new SQLiteCommand("CREATE TABLE IF NOT EXISTS FacturaDetalle (DetalleID INTEGER PRIMARY KEY AUTOINCREMENT, FacturaID INTEGER NOT NULL, ProductoID INTEGER NOT NULL, Cantidad INTEGER NOT NULL, PrecioUnitario REAL NOT NULL, FOREIGN KEY(FacturaID) REFERENCES Facturas(FacturaID), FOREIGN KEY(ProductoID) REFERENCES Productos(ProductoID));", conn, trans).ExecuteNonQuery();
-
                             new SQLiteCommand("CREATE TABLE IF NOT EXISTS MovimientosStock (MovimientoID INTEGER PRIMARY KEY AUTOINCREMENT, ProductoID INTEGER NOT NULL, FacturaID INTEGER, CompraID INTEGER, Fecha TEXT NOT NULL, TipoMovimiento TEXT NOT NULL, Cantidad INTEGER NOT NULL);", conn, trans).ExecuteNonQuery();
                             try { new SQLiteCommand("ALTER TABLE MovimientosStock ADD COLUMN CompraID INTEGER;", conn, trans).ExecuteNonQuery(); } catch { }
 
@@ -103,25 +119,19 @@ namespace SchettiniGestion
                             new SQLiteCommand("CREATE TABLE IF NOT EXISTS ListasPrecios (ListaID INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL UNIQUE, Porcentaje REAL DEFAULT 0);", conn, trans).ExecuteNonQuery();
                             new SQLiteCommand("INSERT OR IGNORE INTO ListasPrecios (ListaID, Nombre, Porcentaje) VALUES (1, 'Lista Base (Minorista)', 0);", conn, trans).ExecuteNonQuery();
 
-                            // Configuración
-                            string sqlConfig = @"CREATE TABLE IF NOT EXISTS Configuracion (
-                                ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                                NombreFantasia TEXT,
-                                RazonSocial TEXT,
-                                CUIT TEXT,
-                                Direccion TEXT,
-                                Telefono TEXT,
-                                Email TEXT,
-                                LogoPath TEXT,
-                                CertificadoPath TEXT, 
-                                PasswordAfip TEXT, 
-                                PuntoVenta INTEGER
-                            );";
+                            // Configuración General
+                            string sqlConfig = @"CREATE TABLE IF NOT EXISTS Configuracion (ID INTEGER PRIMARY KEY AUTOINCREMENT, NombreFantasia TEXT, RazonSocial TEXT, CUIT TEXT, Direccion TEXT, Telefono TEXT, Email TEXT, LogoPath TEXT, CertificadoPath TEXT, PasswordAfip TEXT, PuntoVenta INTEGER);";
                             new SQLiteCommand(sqlConfig, conn, trans).ExecuteNonQuery();
-                            // Migraciones Config
                             try { new SQLiteCommand("ALTER TABLE Configuracion ADD COLUMN CertificadoPath TEXT;", conn, trans).ExecuteNonQuery(); } catch { }
                             try { new SQLiteCommand("ALTER TABLE Configuracion ADD COLUMN PasswordAfip TEXT;", conn, trans).ExecuteNonQuery(); } catch { }
                             try { new SQLiteCommand("ALTER TABLE Configuracion ADD COLUMN PuntoVenta INTEGER;", conn, trans).ExecuteNonQuery(); } catch { }
+
+                            // --- MIGRACIÓN: COLUMNAS PARA MERCADO PAGO ---
+                            try { new SQLiteCommand("ALTER TABLE Configuracion ADD COLUMN MPAccessToken TEXT;", conn, trans).ExecuteNonQuery(); } catch { }
+                            try { new SQLiteCommand("ALTER TABLE Configuracion ADD COLUMN MPUserId TEXT;", conn, trans).ExecuteNonQuery(); } catch { }
+                            try { new SQLiteCommand("ALTER TABLE Configuracion ADD COLUMN MPPosId TEXT;", conn, trans).ExecuteNonQuery(); } catch { }
+                            // ---------------------------------------------
+
                             new SQLiteCommand("INSERT OR IGNORE INTO Configuracion (ID, NombreFantasia) VALUES (1, 'Mi Negocio');", conn, trans).ExecuteNonQuery();
 
                             // Permisos
@@ -138,14 +148,73 @@ namespace SchettiniGestion
                     }
                 }
             }
-            catch (Exception ex) { MessageBox.Show($"Error Fatal DB: {ex.Message}"); Environment.Exit(1); }
+            catch (Exception ex)
+            {
+                NotificarError($"Error Fatal DB: {ex.Message}");
+            }
         }
+
+        #region Dashboard
+        public static int GetCantidadVentasHoy()
+        {
+            try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); var res = new SQLiteCommand($"SELECT COUNT(*) FROM Facturas WHERE date(Fecha) = date('now', 'localtime')", c).ExecuteScalar(); return Convert.ToInt32(res); } } catch { return 0; }
+        }
+        public static decimal GetTotalVentasHoy()
+        {
+            try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); var res = new SQLiteCommand($"SELECT SUM(Total) FROM Facturas WHERE date(Fecha) = date('now', 'localtime')", c).ExecuteScalar(); return res != DBNull.Value ? Convert.ToDecimal(res) : 0; } } catch { return 0; }
+        }
+        public static int GetCantidadProductos()
+        {
+            try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); return Convert.ToInt32(new SQLiteCommand("SELECT COUNT(*) FROM Productos", c).ExecuteScalar()); } } catch { return 0; }
+        }
+        public static int GetCantidadClientes()
+        {
+            try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); return Convert.ToInt32(new SQLiteCommand("SELECT COUNT(*) FROM Clientes", c).ExecuteScalar()); } } catch { return 0; }
+        }
+        public static decimal GetRentabilidadHoy()
+        {
+            try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); string sql = @"SELECT SUM((fd.PrecioUnitario - p.PrecioCosto) * fd.Cantidad) FROM FacturaDetalle fd JOIN Facturas f ON fd.FacturaID = f.FacturaID JOIN Productos p ON fd.ProductoID = p.ProductoID WHERE date(f.Fecha) = date('now', 'localtime')"; var res = new SQLiteCommand(sql, c).ExecuteScalar(); return res != DBNull.Value ? Convert.ToDecimal(res) : 0; } } catch { return 0; }
+        }
+        #endregion
 
         // Configuración
         public static DataRow GetConfiguracion() { try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); var dt = new DataTable(); new SQLiteDataAdapter("SELECT * FROM Configuracion WHERE ID = 1", c).Fill(dt); if (dt.Rows.Count > 0) return dt.Rows[0]; } } catch { } return null; }
-        public static bool GuardarConfiguracion(string nombre, string razon, string cuit, string dir, string tel, string email, string logoPath, string cert, string pass, int pto) { try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); using (var cmd = new SQLiteCommand("UPDATE Configuracion SET NombreFantasia=@n, RazonSocial=@r, CUIT=@c, Direccion=@d, Telefono=@t, Email=@e, LogoPath=@l, CertificadoPath=@cp, PasswordAfip=@pa, PuntoVenta=@pv WHERE ID=1", c)) { cmd.Parameters.AddWithValue("@n", nombre); cmd.Parameters.AddWithValue("@r", razon); cmd.Parameters.AddWithValue("@c", cuit); cmd.Parameters.AddWithValue("@d", dir); cmd.Parameters.AddWithValue("@t", tel); cmd.Parameters.AddWithValue("@e", email); cmd.Parameters.AddWithValue("@l", logoPath); cmd.Parameters.AddWithValue("@cp", cert); cmd.Parameters.AddWithValue("@pa", pass); cmd.Parameters.AddWithValue("@pv", pto); cmd.ExecuteNonQuery(); return true; } } } catch (Exception ex) { MessageBox.Show(ex.Message); return false; } }
 
-        // ABM
+        // --- MÉTODO GUARDAR ACTUALIZADO (CON PARAMETROS DE MP) ---
+        public static bool GuardarConfiguracion(string nombre, string razon, string cuit, string dir, string tel, string email, string logoPath, string cert, string pass, int pto, string mpToken = "", string mpUser = "", string mpPos = "")
+        {
+            try
+            {
+                using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    c.Open();
+                    string sql = "UPDATE Configuracion SET NombreFantasia=@n, RazonSocial=@r, CUIT=@c, Direccion=@d, Telefono=@t, Email=@e, LogoPath=@l, CertificadoPath=@cp, PasswordAfip=@pa, PuntoVenta=@pv, MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp WHERE ID=1";
+                    using (var cmd = new SQLiteCommand(sql, c))
+                    {
+                        cmd.Parameters.AddWithValue("@n", nombre);
+                        cmd.Parameters.AddWithValue("@r", razon);
+                        cmd.Parameters.AddWithValue("@c", cuit);
+                        cmd.Parameters.AddWithValue("@d", dir);
+                        cmd.Parameters.AddWithValue("@t", tel);
+                        cmd.Parameters.AddWithValue("@e", email);
+                        cmd.Parameters.AddWithValue("@l", logoPath);
+                        cmd.Parameters.AddWithValue("@cp", cert);
+                        cmd.Parameters.AddWithValue("@pa", pass);
+                        cmd.Parameters.AddWithValue("@pv", pto);
+                        // Params MP
+                        cmd.Parameters.AddWithValue("@mpt", mpToken);
+                        cmd.Parameters.AddWithValue("@mpu", mpUser);
+                        cmd.Parameters.AddWithValue("@mpp", mpPos);
+                        cmd.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex) { NotificarError(ex.Message); return false; }
+        }
+        // ---------------------------------------------------------
+
+        // ABM (Usuarios, Clientes, Proveedores, Productos)
         public static DataTable GetUsuarios() { var dt = new DataTable(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); new SQLiteDataAdapter("SELECT u.UsuarioID, u.NombreUsuario, r.NombreRol, u.RolID FROM Usuarios u LEFT JOIN Roles r ON u.RolID=r.RolID", c).Fill(dt); } } catch { } return dt; }
         public static bool ValidarUsuario(string u, string p) { try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); string h = ""; using (var cmd = new SQLiteCommand("SELECT PasswordHash FROM Usuarios WHERE NombreUsuario=@u", c)) { cmd.Parameters.AddWithValue("@u", u); var r = cmd.ExecuteScalar(); if (r != null) h = r.ToString(); else return false; } return PasswordHasher.VerifyPassword(p, h); } } catch { return false; } }
         public static List<Rol> GetRoles() { var l = new List<Rol>(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); using (var r = new SQLiteCommand("SELECT * FROM Roles", c).ExecuteReader()) { while (r.Read()) l.Add(new Rol { RolId = Convert.ToInt32(r["RolID"]), Nombre = r["NombreRol"].ToString() }); } } } catch { } return l; }
@@ -164,29 +233,49 @@ namespace SchettiniGestion
         public static DataTable BuscarProveedoresMultiples(string q) { var dt = new DataTable(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); new SQLiteDataAdapter($"SELECT * FROM Proveedores WHERE CUIT LIKE '%{q}%' OR RazonSocial LIKE '%{q}%' LIMIT 10", c).Fill(dt); } } catch { } return dt; }
 
         public static DataTable GetProductos() { var dt = new DataTable(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); new SQLiteDataAdapter("SELECT * FROM Productos", c).Fill(dt); } } catch { } return dt; }
-        public static bool GuardarProducto(int id, string cod, string cb, string desc, string cat, string iva, decimal costo, decimal gan, decimal imp, decimal venta, int stock, string img) { try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); string sql = id == 0 ? "INSERT INTO Productos (Codigo, CodigoBarra, Descripcion, Categoria, TipoIVA, PrecioCosto, Ganancia, ImpuestoInterno, PrecioVenta, StockActual, ImagenPath) VALUES (@c, @cb, @d, @cat, @iva, @pc, @g, @ii, @pv, @s, @img)" : "UPDATE Productos SET Codigo=@c, CodigoBarra=@cb, Descripcion=@d, Categoria=@cat, TipoIVA=@iva, PrecioCosto=@pc, Ganancia=@g, ImpuestoInterno=@ii, PrecioVenta=@pv, StockActual=@s, ImagenPath=@img WHERE ProductoID=@id"; using (var cmd = new SQLiteCommand(sql, c)) { cmd.Parameters.AddWithValue("@c", cod); cmd.Parameters.AddWithValue("@cb", cb); cmd.Parameters.AddWithValue("@d", desc); cmd.Parameters.AddWithValue("@cat", cat); cmd.Parameters.AddWithValue("@iva", iva); cmd.Parameters.AddWithValue("@pc", (double)costo); cmd.Parameters.AddWithValue("@g", (double)gan); cmd.Parameters.AddWithValue("@ii", (double)imp); cmd.Parameters.AddWithValue("@pv", (double)venta); cmd.Parameters.AddWithValue("@s", stock); cmd.Parameters.AddWithValue("@img", img); cmd.Parameters.AddWithValue("@id", id); cmd.ExecuteNonQuery(); return true; } } } catch (Exception ex) { MessageBox.Show(ex.Message); return false; } }
+        public static bool GuardarProducto(int id, string cod, string cb, string desc, string cat, string iva, decimal costo, decimal gan, decimal imp, decimal venta, int stock, string img) { try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); string sql = id == 0 ? "INSERT INTO Productos (Codigo, CodigoBarra, Descripcion, Categoria, TipoIVA, PrecioCosto, Ganancia, ImpuestoInterno, PrecioVenta, StockActual, ImagenPath) VALUES (@c, @cb, @d, @cat, @iva, @pc, @g, @ii, @pv, @s, @img)" : "UPDATE Productos SET Codigo=@c, CodigoBarra=@cb, Descripcion=@d, Categoria=@cat, TipoIVA=@iva, PrecioCosto=@pc, Ganancia=@g, ImpuestoInterno=@ii, PrecioVenta=@pv, StockActual=@s, ImagenPath=@img WHERE ProductoID=@id"; using (var cmd = new SQLiteCommand(sql, c)) { cmd.Parameters.AddWithValue("@c", cod); cmd.Parameters.AddWithValue("@cb", cb); cmd.Parameters.AddWithValue("@d", desc); cmd.Parameters.AddWithValue("@cat", cat); cmd.Parameters.AddWithValue("@iva", iva); cmd.Parameters.AddWithValue("@pc", (double)costo); cmd.Parameters.AddWithValue("@g", (double)gan); cmd.Parameters.AddWithValue("@ii", (double)imp); cmd.Parameters.AddWithValue("@pv", (double)venta); cmd.Parameters.AddWithValue("@s", stock); cmd.Parameters.AddWithValue("@img", img); cmd.Parameters.AddWithValue("@id", id); cmd.ExecuteNonQuery(); return true; } } } catch (Exception ex) { NotificarError(ex.Message); return false; } }
         public static bool EliminarProducto(int id) { try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); new SQLiteCommand($"DELETE FROM Productos WHERE ProductoID={id}", c).ExecuteNonQuery(); return true; } } catch { return false; } }
         public static DataRow BuscarProducto(string q) { try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); var dt = new DataTable(); new SQLiteDataAdapter($"SELECT * FROM Productos WHERE Codigo='{q}' OR CodigoBarra='{q}' OR Descripcion LIKE '%{q}%' LIMIT 1", c).Fill(dt); if (dt.Rows.Count > 0) return dt.Rows[0]; } } catch { } return null; }
         public static DataTable BuscarProductosMultiples_ParaVenta(string q) { var dt = new DataTable(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); new SQLiteDataAdapter($"SELECT * FROM Productos WHERE (Codigo LIKE '%{q}%' OR CodigoBarra LIKE '%{q}%' OR Descripcion LIKE '%{q}%') AND StockActual > 0 LIMIT 10", c).Fill(dt); } } catch { } return dt; }
         public static DataTable BuscarProductosMultiples_ParaCompra(string q) { var dt = new DataTable(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); new SQLiteDataAdapter($"SELECT * FROM Productos WHERE (Codigo LIKE '%{q}%' OR CodigoBarra LIKE '%{q}%' OR Descripcion LIKE '%{q}%') LIMIT 10", c).Fill(dt); } } catch { } return dt; }
         public static bool ActualizarPreciosProducto(int id, decimal cost, decimal prec) { try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); using (var cmd = new SQLiteCommand("UPDATE Productos SET PrecioCosto=@pc,PrecioVenta=@pv WHERE ProductoID=@id", c)) { cmd.Parameters.AddWithValue("@pc", (double)cost); cmd.Parameters.AddWithValue("@pv", (double)prec); cmd.Parameters.AddWithValue("@id", id); cmd.ExecuteNonQuery(); return true; } } } catch { return false; } }
 
-        // Permisos
+        // --- VENTA RÁPIDA (VARIOS) ---
+        public static int ObtenerIDProductoVarios()
+        {
+            try
+            {
+                using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+                {
+                    c.Open();
+                    var cmd = new SQLiteCommand("SELECT ProductoID FROM Productos WHERE Codigo = 'VARIOS'", c);
+                    object result = cmd.ExecuteScalar();
+
+                    if (result != null && result != DBNull.Value) return Convert.ToInt32(result);
+                    else
+                    {
+                        string sql = "INSERT INTO Productos (Codigo, Descripcion, PrecioVenta, StockActual, TipoIVA, Categoria) VALUES ('VARIOS', 'Producto Varios', 0, 999999, '21.0', 'General')";
+                        new SQLiteCommand(sql, c).ExecuteNonQuery();
+                        return Convert.ToInt32(new SQLiteCommand("SELECT last_insert_rowid()", c).ExecuteScalar());
+                    }
+                }
+            }
+            catch (Exception ex) { NotificarError(ex.Message); return 0; }
+        }
+
+        // Permisos y Listas
         public static bool CargarSesionUsuario(string u) { try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); int rid = 2; object r = new SQLiteCommand($"SELECT RolID FROM Usuarios WHERE NombreUsuario='{u}'", c).ExecuteScalar(); if (r != null && r != DBNull.Value) rid = Convert.ToInt32(r); var p = new List<string>(); using (var reader = new SQLiteCommand($"SELECT p.NombrePermiso FROM Roles_Permisos rp JOIN Permisos p ON rp.PermisoID=p.PermisoID WHERE rp.RolID={rid}", c).ExecuteReader()) { while (reader.Read()) p.Add(reader.GetString(0)); } SesionUsuario.Iniciar(u, rid, p); return true; } } catch { return false; } }
         public static List<Permiso> GetPermisos() { var l = new List<Permiso>(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); using (var r = new SQLiteCommand("SELECT * FROM Permisos ORDER BY NombrePermiso", c).ExecuteReader()) { while (r.Read()) l.Add(new Permiso { PermisoId = Convert.ToInt32(r["PermisoID"]), Nombre = r["NombrePermiso"].ToString() }); } } } catch { } return l; }
         public static Dictionary<int, List<int>> GetPermisosPorRol() { var d = new Dictionary<int, List<int>>(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); using (var r = new SQLiteCommand("SELECT * FROM Roles_Permisos", c).ExecuteReader()) { while (r.Read()) { int rid = Convert.ToInt32(r["RolID"]); int pid = Convert.ToInt32(r["PermisoID"]); if (!d.ContainsKey(rid)) d[rid] = new List<int>(); d[rid].Add(pid); } } } } catch { } return d; }
         public static void ActualizarPermisosParaRol(int rid, List<int> pids) { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); using (var t = c.BeginTransaction()) { try { new SQLiteCommand($"DELETE FROM Roles_Permisos WHERE RolID={rid}", c, t).ExecuteNonQuery(); if (pids != null) foreach (int pid in pids) new SQLiteCommand($"INSERT INTO Roles_Permisos (RolID,PermisoID) VALUES ({rid},{pid})", c, t).ExecuteNonQuery(); t.Commit(); } catch { t.Rollback(); } } } }
 
-        // Listas Precios
         public static DataTable GetListasPrecios() { var dt = new DataTable(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); new SQLiteDataAdapter("SELECT * FROM ListasPrecios", c).Fill(dt); } } catch { } return dt; }
-        public static bool GuardarListaPrecio(int id, string nombre, decimal porcentaje) { try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); string sql = id == 0 ? "INSERT INTO ListasPrecios (Nombre, Porcentaje) VALUES (@n, @p)" : "UPDATE ListasPrecios SET Nombre=@n, Porcentaje=@p WHERE ListaID=@id"; using (var cmd = new SQLiteCommand(sql, c)) { cmd.Parameters.AddWithValue("@n", nombre); cmd.Parameters.AddWithValue("@p", (double)porcentaje); cmd.Parameters.AddWithValue("@id", id); cmd.ExecuteNonQuery(); return true; } } } catch (Exception ex) { MessageBox.Show(ex.Message); return false; } }
-        public static bool EliminarListaPrecio(int id) { if (id == 1) { MessageBox.Show("No se puede eliminar la lista base."); return false; } try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); new SQLiteCommand($"DELETE FROM ListasPrecios WHERE ListaID={id}", c).ExecuteNonQuery(); return true; } } catch { return false; } }
+        public static bool GuardarListaPrecio(int id, string nombre, decimal porcentaje) { try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); string sql = id == 0 ? "INSERT INTO ListasPrecios (Nombre, Porcentaje) VALUES (@n, @p)" : "UPDATE ListasPrecios SET Nombre=@n, Porcentaje=@p WHERE ListaID=@id"; using (var cmd = new SQLiteCommand(sql, c)) { cmd.Parameters.AddWithValue("@n", nombre); cmd.Parameters.AddWithValue("@p", (double)porcentaje); cmd.Parameters.AddWithValue("@id", id); cmd.ExecuteNonQuery(); return true; } } } catch (Exception ex) { NotificarError(ex.Message); return false; } }
+        public static bool EliminarListaPrecio(int id) { if (id == 1) { NotificarError("No se puede eliminar la lista base."); return false; } try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); new SQLiteCommand($"DELETE FROM ListasPrecios WHERE ListaID={id}", c).ExecuteNonQuery(); return true; } } catch { return false; } }
 
-        // Reportes
         public static DataTable GetRankingVentas(DateTime desde, DateTime hasta) { var dt = new DataTable(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); string sql = @"SELECT p.Codigo, p.Descripcion, p.Categoria AS Rubro, SUM(fd.Cantidad) AS UnidadesVendidas, SUM(fd.Cantidad * fd.PrecioUnitario) AS TotalVendido FROM FacturaDetalle fd JOIN Facturas f ON fd.FacturaID=f.FacturaID JOIN Productos p ON fd.ProductoID=p.ProductoID WHERE f.Fecha BETWEEN @d AND @h GROUP BY p.ProductoID ORDER BY TotalVendido DESC"; using (var cmd = new SQLiteCommand(sql, c)) { cmd.Parameters.AddWithValue("@d", desde.ToString("yyyy-MM-dd 00:00:00")); cmd.Parameters.AddWithValue("@h", hasta.ToString("yyyy-MM-dd 23:59:59")); new SQLiteDataAdapter(cmd).Fill(dt); } } } catch { } return dt; }
         public static DataTable GetVentasParaLibroIVA(DateTime desde, DateTime hasta) { var dt = new DataTable(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); string sql = @"SELECT f.Fecha, f.TipoComprobante, f.FacturaID AS NroComprobante, cl.RazonSocial AS Cliente, cl.CUIT, cl.CondicionIVA, f.Total, fd.Cantidad, fd.PrecioUnitario, p.TipoIVA AS AlicuotaProducto FROM Facturas f JOIN Clientes cl ON f.ClienteID=cl.ClienteID JOIN FacturaDetalle fd ON f.FacturaID=fd.FacturaID JOIN Productos p ON fd.ProductoID=p.ProductoID WHERE f.Fecha BETWEEN @d AND @h ORDER BY f.Fecha ASC"; using (var cmd = new SQLiteCommand(sql, c)) { cmd.Parameters.AddWithValue("@d", desde.ToString("yyyy-MM-dd 00:00:00")); cmd.Parameters.AddWithValue("@h", hasta.ToString("yyyy-MM-dd 23:59:59")); new SQLiteDataAdapter(cmd).Fill(dt); } } } catch { } return dt; }
 
-        // Operaciones
         public static bool GuardarFactura(int cid, string tc, decimal t, List<FacturaItem> its, string cond) { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); using (var tr = c.BeginTransaction()) { try { string f = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"); new SQLiteCommand($"INSERT INTO Facturas (ClienteID,Fecha,Total,TipoComprobante) VALUES ({cid},'{f}',{(double)t},'{tc}')", c, tr).ExecuteNonQuery(); long fid = c.LastInsertRowId; foreach (var i in its) { new SQLiteCommand($"INSERT INTO FacturaDetalle (FacturaID,ProductoID,Cantidad,PrecioUnitario) VALUES ({fid},{i.ProductoID},{i.Cantidad},{(double)i.PrecioUnitario})", c, tr).ExecuteNonQuery(); new SQLiteCommand($"UPDATE Productos SET StockActual=StockActual-{i.Cantidad} WHERE ProductoID={i.ProductoID}", c, tr).ExecuteNonQuery(); new SQLiteCommand($"INSERT INTO MovimientosStock (ProductoID,FacturaID,Fecha,TipoMovimiento,Cantidad) VALUES ({i.ProductoID},{fid},'{f}','Venta',{-i.Cantidad})", c, tr).ExecuteNonQuery(); } if (cond == "Contado") new SQLiteCommand($"INSERT INTO MovimientosCaja (Fecha,Concepto,Tipo,Monto,Usuario) VALUES ('{f}','Venta #{fid} ({tc})','Ingreso',{(double)t},'{SesionUsuario.NombreUsuario}')", c, tr).ExecuteNonQuery(); else { new SQLiteCommand($"UPDATE Clientes SET SaldoDeuda=SaldoDeuda+{(double)t} WHERE ClienteID={cid}", c, tr).ExecuteNonQuery(); object sal = new SQLiteCommand($"SELECT SaldoDeuda FROM Clientes WHERE ClienteID={cid}", c, tr).ExecuteScalar(); new SQLiteCommand($"INSERT INTO MovimientosCuentaCorriente (ClienteID,Fecha,Descripcion,Monto,SaldoHistorico) VALUES ({cid},'{f}','Venta #{fid} (Cta Cte)',{(double)t},{(double)Convert.ToDecimal(sal)})", c, tr).ExecuteNonQuery(); } tr.Commit(); return true; } catch { tr.Rollback(); return false; } } } }
         public static bool GuardarCompra(int pid, string tc, decimal t, List<FacturaItem> its, string cond) { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); using (var tr = c.BeginTransaction()) { try { string f = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"); new SQLiteCommand($"INSERT INTO Compras (ProveedorID,Fecha,Total,TipoComprobante) VALUES ({pid},'{f}',{(double)t},'{tc}')", c, tr).ExecuteNonQuery(); long cid = c.LastInsertRowId; foreach (var i in its) { new SQLiteCommand($"INSERT INTO CompraDetalle (CompraID,ProductoID,Cantidad,PrecioCosto) VALUES ({cid},{i.ProductoID},{i.Cantidad},{(double)i.PrecioUnitario})", c, tr).ExecuteNonQuery(); new SQLiteCommand($"UPDATE Productos SET StockActual=StockActual+{i.Cantidad}, PrecioCosto={(double)i.PrecioUnitario} WHERE ProductoID={i.ProductoID}", c, tr).ExecuteNonQuery(); new SQLiteCommand($"INSERT INTO MovimientosStock (ProductoID,CompraID,Fecha,TipoMovimiento,Cantidad) VALUES ({i.ProductoID},{cid},'{f}','Compra',{i.Cantidad})", c, tr).ExecuteNonQuery(); } if (cond == "Contado") new SQLiteCommand($"INSERT INTO MovimientosCaja (Fecha,Concepto,Tipo,Monto,Usuario) VALUES ('{f}','Compra #{cid} ({tc})','Egreso',{(double)t},'{SesionUsuario.NombreUsuario}')", c, tr).ExecuteNonQuery(); else { new SQLiteCommand($"UPDATE Proveedores SET SaldoDeuda=SaldoDeuda+{(double)t} WHERE ProveedorID={pid}", c, tr).ExecuteNonQuery(); object sal = new SQLiteCommand($"SELECT SaldoDeuda FROM Proveedores WHERE ProveedorID={pid}", c, tr).ExecuteScalar(); new SQLiteCommand($"INSERT INTO MovimientosCuentaCorriente (ProveedorID,Fecha,Descripcion,Monto,SaldoHistorico) VALUES ({pid},'{f}','Compra #{cid} (Cta Cte)',{(double)t},{(double)Convert.ToDecimal(sal)})", c, tr).ExecuteNonQuery(); } tr.Commit(); return true; } catch { tr.Rollback(); return false; } } } }
         public static DataTable GetFacturasPorFecha(DateTime d, DateTime h) { var dt = new DataTable(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); new SQLiteDataAdapter($"SELECT f.FacturaID, f.Fecha, cl.RazonSocial, f.TipoComprobante, f.Total FROM Facturas f JOIN Clientes cl ON f.ClienteID=cl.ClienteID WHERE f.Fecha BETWEEN '{d:yyyy-MM-dd} 00:00:00' AND '{h:yyyy-MM-dd} 23:59:59' ORDER BY f.Fecha DESC", c).Fill(dt); } } catch { } return dt; }
@@ -199,8 +288,8 @@ namespace SchettiniGestion
         public static DataTable GetPresupuestos(DateTime d, DateTime h) { var dt = new DataTable(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); new SQLiteDataAdapter($"SELECT p.PresupuestoID, p.Fecha, cl.RazonSocial, p.Total, p.Estado FROM Presupuestos p JOIN Clientes cl ON p.ClienteID=cl.ClienteID WHERE p.Fecha BETWEEN '{d:yyyy-MM-dd} 00:00:00' AND '{h:yyyy-MM-dd} 23:59:59' ORDER BY p.Fecha DESC", c).Fill(dt); } } catch { } return dt; }
         public static DataTable GetPresupuestoDetalle(int pid) { var dt = new DataTable(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); new SQLiteDataAdapter($"SELECT p.Codigo,p.Descripcion,pd.Cantidad,pd.PrecioUnitario,(pd.Cantidad*pd.PrecioUnitario) as Subtotal FROM PresupuestoDetalle pd JOIN Productos p ON pd.ProductoID=p.ProductoID WHERE pd.PresupuestoID={pid}", c).Fill(dt); } } catch { } return dt; }
         public static bool EliminarPresupuesto(int pid) { try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); new SQLiteCommand($"DELETE FROM PresupuestoDetalle WHERE PresupuestoID={pid}", c).ExecuteNonQuery(); new SQLiteCommand($"DELETE FROM Presupuestos WHERE PresupuestoID={pid}", c).ExecuteNonQuery(); return true; } } catch { return false; } }
-        public static bool RegistrarPagoCliente(int cid, decimal m) { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); using (var t = c.BeginTransaction()) { try { new SQLiteCommand($"UPDATE Clientes SET SaldoDeuda=SaldoDeuda-{(double)m} WHERE ClienteID={cid}", c, t).ExecuteNonQuery(); object s = new SQLiteCommand($"SELECT SaldoDeuda FROM Clientes WHERE ClienteID={cid}", c, t).ExecuteScalar(); new SQLiteCommand($"INSERT INTO MovimientosCuentaCorriente (ClienteID,Fecha,Descripcion,Monto,SaldoHistorico) VALUES ({cid},'{DateTime.Now:yyyy-MM-dd HH:mm:ss}','Pago a Cuenta',{(double)(m * -1)},{(double)Convert.ToDecimal(s)})", c, t).ExecuteNonQuery(); new SQLiteCommand($"INSERT INTO MovimientosCaja (Fecha,Concepto,Tipo,Monto,Usuario) VALUES ('{DateTime.Now:yyyy-MM-dd HH:mm:ss}','Cobro Cta Cte #{cid}','Ingreso',{(double)m},'{SesionUsuario.NombreUsuario}')", c, t).ExecuteNonQuery(); t.Commit(); return true; } catch (Exception e) { t.Rollback(); MessageBox.Show(e.Message); return false; } } } }
-        public static bool RegistrarPagoProveedor(int pid, decimal m) { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); using (var t = c.BeginTransaction()) { try { new SQLiteCommand($"UPDATE Proveedores SET SaldoDeuda=SaldoDeuda-{(double)m} WHERE ProveedorID={pid}", c, t).ExecuteNonQuery(); object s = new SQLiteCommand($"SELECT SaldoDeuda FROM Proveedores WHERE ProveedorID={pid}", c, t).ExecuteScalar(); new SQLiteCommand($"INSERT INTO MovimientosCuentaCorriente (ProveedorID,Fecha,Descripcion,Monto,SaldoHistorico) VALUES ({pid},'{DateTime.Now:yyyy-MM-dd HH:mm:ss}','Pago a Proveedor',{(double)(m * -1)},{(double)Convert.ToDecimal(s)})", c, t).ExecuteNonQuery(); new SQLiteCommand($"INSERT INTO MovimientosCaja (Fecha,Concepto,Tipo,Monto,Usuario) VALUES ('{DateTime.Now:yyyy-MM-dd HH:mm:ss}','Pago Cta Cte #{pid}','Egreso',{(double)m},'{SesionUsuario.NombreUsuario}')", c, t).ExecuteNonQuery(); t.Commit(); return true; } catch (Exception e) { t.Rollback(); MessageBox.Show(e.Message); return false; } } } }
+        public static bool RegistrarPagoCliente(int cid, decimal m) { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); using (var t = c.BeginTransaction()) { try { new SQLiteCommand($"UPDATE Clientes SET SaldoDeuda=SaldoDeuda-{(double)m} WHERE ClienteID={cid}", c, t).ExecuteNonQuery(); object s = new SQLiteCommand($"SELECT SaldoDeuda FROM Clientes WHERE ClienteID={cid}", c, t).ExecuteScalar(); new SQLiteCommand($"INSERT INTO MovimientosCuentaCorriente (ClienteID,Fecha,Descripcion,Monto,SaldoHistorico) VALUES ({cid},'{DateTime.Now:yyyy-MM-dd HH:mm:ss}','Pago a Cuenta',{(double)(m * -1)},{(double)Convert.ToDecimal(s)})", c, t).ExecuteNonQuery(); new SQLiteCommand($"INSERT INTO MovimientosCaja (Fecha,Concepto,Tipo,Monto,Usuario) VALUES ('{DateTime.Now:yyyy-MM-dd HH:mm:ss}','Cobro Cta Cte #{cid}','Ingreso',{(double)m},'{SesionUsuario.NombreUsuario}')", c, t).ExecuteNonQuery(); t.Commit(); return true; } catch (Exception e) { NotificarError(e.Message); return false; } } } }
+        public static bool RegistrarPagoProveedor(int pid, decimal m) { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); using (var t = c.BeginTransaction()) { try { new SQLiteCommand($"UPDATE Proveedores SET SaldoDeuda=SaldoDeuda-{(double)m} WHERE ProveedorID={pid}", c, t).ExecuteNonQuery(); object s = new SQLiteCommand($"SELECT SaldoDeuda FROM Proveedores WHERE ProveedorID={pid}", c, t).ExecuteScalar(); new SQLiteCommand($"INSERT INTO MovimientosCuentaCorriente (ProveedorID,Fecha,Descripcion,Monto,SaldoHistorico) VALUES ({pid},'{DateTime.Now:yyyy-MM-dd HH:mm:ss}','Pago a Proveedor',{(double)(m * -1)},{(double)Convert.ToDecimal(s)})", c, t).ExecuteNonQuery(); new SQLiteCommand($"INSERT INTO MovimientosCaja (Fecha,Concepto,Tipo,Monto,Usuario) VALUES ('{DateTime.Now:yyyy-MM-dd HH:mm:ss}','Pago Cta Cte #{pid}','Egreso',{(double)m},'{SesionUsuario.NombreUsuario}')", c, t).ExecuteNonQuery(); t.Commit(); return true; } catch (Exception e) { NotificarError(e.Message); return false; } } } }
         public static DataTable GetMovimientosCC(int? cid, int? pid) { var dt = new DataTable(); try { using (var c = new SQLiteConnection($"Data Source={_dbPath};Version=3;")) { c.Open(); string w = cid.HasValue ? $"ClienteID={cid}" : $"ProveedorID={pid}"; new SQLiteDataAdapter($"SELECT Fecha,Descripcion,Monto,SaldoHistorico FROM MovimientosCuentaCorriente WHERE {w} ORDER BY Fecha DESC", c).Fill(dt); } } catch { } return dt; }
     }
 }

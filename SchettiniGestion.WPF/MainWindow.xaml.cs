@@ -1,106 +1,113 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics; // Necesario para Process (Teclado)
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using SchettiniGestion; // Importamos la lógica
-using System.Diagnostics; // <-- Para el teclado
-using System.IO;
+using SchettiniGestion; // Importamos la lógica de base de datos
 
 namespace SchettiniGestion.WPF
 {
-    public partial class MainWindow : Window
-    {
-        public MainWindow()
-        {
-            InitializeComponent();
-        }
+	public partial class MainWindow : Window
+	{
+		public MainWindow()
+		{
+			InitializeComponent();
 
-        private void btnIngresar_Click(object sender, RoutedEventArgs e)
-        {
-            string usuario = txtUsuario.Text;
-            string password = txtPassword.Password;
+			// ================================================================
+			// CONEXIÓN DEL PUENTE DE ERRORES (CRUCIAL)
+			// ================================================================
+			// Aquí le decimos al núcleo (DatabaseService): 
+			// "Cuando tengas un error, usa MI diseño (CustomMessageBox) para mostrarlo".
+			DatabaseService.OnDbError = (mensajeError) =>
+			{
+				// Usamos Dispatcher por si el error viene de un hilo secundario
+				Application.Current.Dispatcher.Invoke(() =>
+				{
+					CustomMessageBox.Show(mensajeError, "Aviso del Sistema", MessageBoxButton.OK, MessageBoxImage.Error);
+				});
+			};
+		}
 
-            if (string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(password))
-            {
-                CustomMessageBox.Show("Por favor, ingrese usuario y contraseña.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+		private void btnIngresar_Click(object sender, RoutedEventArgs e)
+		{
+			string usuario = txtUsuario.Text;
+			string password = txtPassword.Password;
 
-            // 1. Validamos la contraseña
-            bool esValido = DatabaseService.ValidarUsuario(usuario, password);
+			if (string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(password))
+			{
+				CustomMessageBox.Show("Por favor, ingrese usuario y contraseña.", "Datos Incompletos", MessageBoxButton.OK, MessageBoxImage.Warning);
+				return;
+			}
 
-            if (esValido)
-            {
-                // ===== INICIO DE CÓDIGO NUEVO (SESIÓN) =====
+			// 1. Validamos la contraseña
+			bool esValido = DatabaseService.ValidarUsuario(usuario, password);
 
-                // 2. Si es válida, cargamos todos sus permisos en la sesión global
-                bool sesionCargada = DatabaseService.CargarSesionUsuario(usuario);
+			if (esValido)
+			{
+				// 2. Si es válida, cargamos todos sus permisos en la sesión global
+				bool sesionCargada = DatabaseService.CargarSesionUsuario(usuario);
 
-                if (sesionCargada)
-                {
-                    // 3. Si los permisos se cargaron bien, abrimos la app
-                    PrincipalWindow ventanaPrincipal = new PrincipalWindow();
-                    ventanaPrincipal.Show();
-                    this.Close();
-                }
-                else
-                {
-                    // Error raro: el usuario existe pero no se pudieron cargar sus permisos
-                    CustomMessageBox.Show("Error al cargar los permisos del usuario. Contacte al administrador.", "Error de Sesión", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-                // ===== FIN DE CÓDIGO NUEVO (SESIÓN) =====
-            }
-            else
-            {
-                CustomMessageBox.Show("Usuario o contraseña incorrectos.", "Error de Login", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
+				if (sesionCargada)
+				{
+					// 3. Si los permisos se cargaron bien, abrimos la app
+					PrincipalWindow ventanaPrincipal = new PrincipalWindow();
+					ventanaPrincipal.Show();
+					this.Close();
+				}
+				else
+				{
+					// Si falla cargar sesión, el DatabaseService ya habrá disparado el OnDbError,
+					// pero mostramos un aviso extra por seguridad.
+					CustomMessageBox.Show("Error al cargar los permisos. Contacte al administrador.", "Error de Sesión", MessageBoxButton.OK, MessageBoxImage.Error);
+				}
+			}
+			else
+			{
+				CustomMessageBox.Show("Usuario o contraseña incorrectos.", "Acceso Denegado", MessageBoxButton.OK, MessageBoxImage.Error);
+			}
+		}
 
-        private void btnClose_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
-        }
+		private void btnClose_Click(object sender, RoutedEventArgs e)
+		{
+			Application.Current.Shutdown();
+		}
 
-        private void btnTeclado_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                Process[] oskProcesses = Process.GetProcessesByName("osk");
-                if (oskProcesses.Length == 0)
-                {
-                    Process.Start("osk");
-                }
-            }
-            catch (Exception ex)
-            {
-                CustomMessageBox.Show($"No se pudo iniciar el teclado en pantalla: {ex.Message}", "Error de teclado", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
+		private void btnTeclado_Click(object sender, RoutedEventArgs e)
+		{
+			try
+			{
+				Process[] oskProcesses = Process.GetProcessesByName("osk");
+				if (oskProcesses.Length == 0)
+				{
+					// Intentamos abrir el teclado en pantalla de Windows
+					string path64 = @"C:\Windows\Www64\osk.exe";
+					string path32 = @"C:\Windows\System32\osk.exe";
 
-        private void Input_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                btnIngresar_Click(sender, e);
-            }
-        }
+					if (System.IO.File.Exists(path64))
+						Process.Start(path64);
+					else
+						Process.Start(path32);
+				}
+			}
+			catch (Exception ex)
+			{
+				CustomMessageBox.Show($"No se pudo iniciar el teclado: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+			}
+		}
 
-        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                DragMove();
-            }
-        }
-    }
+		private void Input_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.Key == Key.Enter)
+			{
+				btnIngresar_Click(sender, e);
+			}
+		}
+
+		private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+		{
+			if (e.LeftButton == MouseButtonState.Pressed)
+			{
+				DragMove();
+			}
+		}
+	}
 }

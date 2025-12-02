@@ -22,6 +22,12 @@ namespace SchettiniGestion.WPF
         public PrincipalWindow()
         {
             InitializeComponent();
+
+            // --- NUEVO: INICIAR PANTALLA SECUNDARIA AL ARRANCAR ---
+            CustomerScreenService.Iniciar();
+            CustomerScreenService.Resetear(); // Muestra el logo de bienvenida
+            // ------------------------------------------------------
+
             btnInicio_Click(null, null);
         }
 
@@ -149,7 +155,6 @@ namespace SchettiniGestion.WPF
             }
             else { btnUsuarios.Visibility = Visibility.Collapsed; }
 
-            // Usamos PERMISO_PERMISOS también para Configuración para simplificar (Admin Access)
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS) &&
                 SesionUsuario.TienePermiso(DatabaseService.PERMISO_PERMISOS))
             {
@@ -189,15 +194,7 @@ namespace SchettiniGestion.WPF
 
         private void btnInicio_Click(object sender, RoutedEventArgs e)
         {
-            mainContentArea.Content = new TextBlock
-            {
-                Text = $"¡Bienvenido, {SesionUsuario.NombreUsuario}!",
-                FontSize = 48,
-                FontWeight = FontWeights.Bold,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                Foreground = (SolidColorBrush)FindResource("BodyForegroundBrush")
-            };
+            mainContentArea.Content = new DashboardControl();
         }
 
         private void btnFacturacion_Click(object sender, RoutedEventArgs e)
@@ -282,17 +279,17 @@ namespace SchettiniGestion.WPF
             mainContentArea.Content = new GestionPermisos();
         }
 
-        // ===== EVENTO NUEVO (CONFIGURACIÓN) =====
         private void btnConfiguracion_Click(object sender, RoutedEventArgs e)
         {
-            // Usamos permiso de admin (el mismo que para gestionar permisos)
             if (!LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS) || !SesionUsuario.TienePermiso(DatabaseService.PERMISO_PERMISOS)) return;
             mainContentArea.Content = new ConfiguracionControl();
         }
-        // ========================================
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            // --- NUEVO: APAGAR PANTALLA SECUNDARIA AL SALIR ---
+            CustomerScreenService.Cerrar();
+            // --------------------------------------------------
             SesionUsuario.Cerrar();
             Application.Current.Shutdown();
         }

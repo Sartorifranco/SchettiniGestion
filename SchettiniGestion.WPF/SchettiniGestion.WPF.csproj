@@ -99,6 +99,9 @@
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="QRCoder, Version=1.7.0.0, Culture=neutral, PublicKeyToken=c4ed5b9ae8358a28, processorArchitecture=MSIL">
+      <HintPath>..\packages\QRCoder.1.7.0\lib\net40\QRCoder.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
@@ -176,9 +179,13 @@
     <Compile Include="CuentasCorrientesControl.xaml.cs">
       <DependentUpon>CuentasCorrientesControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CustomerScreenService.cs" />
     <Compile Include="CustomMessageBox.cs" />
     <Compile Include="CustomMessageBoxWindow.xaml.cs">
       <DependentUpon>CustomMessageBoxWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DashboardControl.xaml.cs">
+      <DependentUpon>DashboardControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="GestionPermisos.xaml.cs">
       <DependentUpon>GestionPermisos.xaml</DependentUpon>
@@ -186,6 +193,7 @@
     <Compile Include="ListasPreciosControl.xaml.cs">
       <DependentUpon>ListasPreciosControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="MercadoPagoService.cs" />
     <Compile Include="NumericKeyboardControl.xaml.cs">
       <DependentUpon>NumericKeyboardControl.xaml</DependentUpon>
     </Compile>
@@ -196,6 +204,9 @@
       <DependentUpon>PresupuestosControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="PrintService.cs" />
+    <Compile Include="ProductoVarioWindow.xaml.cs">
+      <DependentUpon>ProductoVarioWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ProveedoresControl.xaml.cs">
       <DependentUpon>ProveedoresControl.xaml</DependentUpon>
     </Compile>
@@ -210,6 +221,9 @@
     </Compile>
     <Compile Include="VentasControl.xaml.cs">
       <DependentUpon>VentasControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="VisorClienteWindow.xaml.cs">
+      <DependentUpon>VisorClienteWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="VisualTreeHelpers.cs" />
     <Page Include="CajaControl.xaml">
@@ -233,6 +247,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CustomMessageBoxWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DashboardControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -272,6 +290,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="ProductoVarioWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="ProveedoresControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -298,6 +320,10 @@
     <Compile Include="KeyboardHelper.cs" />
     <Compile Include="UsuariosControl.xaml.cs" />
     <Page Include="VentasControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="VisorClienteWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

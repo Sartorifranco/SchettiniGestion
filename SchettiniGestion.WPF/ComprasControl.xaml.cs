@@ -39,7 +39,10 @@ namespace SchettiniGestion.WPF
             txtBuscarProveedorPopup.Focus();
         }
 
-        private void popupOverlay_MouseUp(object sender, MouseButtonEventArgs e) { if (e.Source == popupOverlay) popupOverlay.Visibility = Visibility.Collapsed; }
+        private void popupOverlay_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.Source == popupOverlay) popupOverlay.Visibility = Visibility.Collapsed;
+        }
 
         private void txtBuscarProveedorPopup_KeyDown(object sender, KeyEventArgs e)
         {
@@ -49,7 +52,11 @@ namespace SchettiniGestion.WPF
                 {
                     DataTable dt = DatabaseService.BuscarProveedoresMultiples(txtBuscarProveedorPopup.Text);
                     lstProveedores.ItemsSource = dt.DefaultView;
-                    if (dt.Rows.Count > 0) { lstProveedores.SelectedIndex = 0; lstProveedores.Focus(); }
+                    if (dt.Rows.Count > 0)
+                    {
+                        lstProveedores.SelectedIndex = 0;
+                        lstProveedores.Focus();
+                    }
                 }
                 catch { }
             }
@@ -78,7 +85,6 @@ namespace SchettiniGestion.WPF
             try
             {
                 DataTable dt = DatabaseService.BuscarProductosMultiples_ParaCompra(txtBuscarProducto.Text);
-                // ¡OJO AQUÍ! Debe coincidir con el nombre en XAML (lstSugerenciasProducto)
                 lstSugerenciasProducto.ItemsSource = dt.DefaultView;
                 popupProductos.IsOpen = dt.Rows.Count > 0;
             }
@@ -99,12 +105,23 @@ namespace SchettiniGestion.WPF
             numPrecioCosto.Focus();
         }
 
-        private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e) { if (lstSugerenciasProducto.SelectedItem is DataRowView drv) SeleccionarProducto(drv.Row); }
-        private void lstSugerencias_PreviewKeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Enter && lstSugerenciasProducto.SelectedItem is DataRowView drv) SeleccionarProducto(drv.Row); }
+        private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (lstSugerenciasProducto.SelectedItem is DataRowView drv) SeleccionarProducto(drv.Row);
+        }
+
+        private void lstSugerencias_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && lstSugerenciasProducto.SelectedItem is DataRowView drv) SeleccionarProducto(drv.Row);
+        }
 
         private void txtBuscar_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Down && popupProductos.IsOpen) { lstSugerenciasProducto.SelectedIndex = 0; lstSugerenciasProducto.Focus(); }
+            if (e.Key == Key.Down && popupProductos.IsOpen)
+            {
+                lstSugerenciasProducto.SelectedIndex = 0;
+                lstSugerenciasProducto.Focus();
+            }
             else if (e.Key == Key.Escape) popupProductos.IsOpen = false;
         }
 

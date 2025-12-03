@@ -5,6 +5,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 // Importamos la lógica de nuestro proyecto
 using SchettiniGestion;
 

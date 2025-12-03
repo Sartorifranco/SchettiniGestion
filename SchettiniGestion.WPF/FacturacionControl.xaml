@@ -1,14 +1,14 @@
 ﻿<UserControl x:Class="SchettiniGestion.WPF.FacturacionControl"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:SchettiniGestion.WPF"
-             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-             mc:Ignorable="d" 
-             d:DesignHeight="700" d:DesignWidth="1200"
-             Background="{StaticResource ModuleBackgroundBrush}"
-             Loaded="FacturacionControl_Loaded">
+			 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+			 xmlns:local="clr-namespace:SchettiniGestion.WPF"
+			 xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+			 mc:Ignorable="d" 
+			 d:DesignHeight="700" d:DesignWidth="1200"
+			 Background="{StaticResource ModuleBackgroundBrush}"
+			 Loaded="FacturacionControl_Loaded">
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -19,9 +19,9 @@
         <DockPanel Grid.Column="0" Margin="10,0,5,10">
 
             <Border DockPanel.Dock="Top" 
-                    Background="{StaticResource PanelBackgroundBrush}" 
-                    CornerRadius="5,5,0,0" Margin="10,10,10,0" Padding="15"
-                    BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1,1,1,0">
+					Background="{StaticResource PanelBackgroundBrush}" 
+					CornerRadius="5,5,0,0" Margin="10,10,10,0" Padding="15"
+					BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1,1,1,0">
                 <WrapPanel Orientation="Horizontal">
                     <StackPanel Orientation="Horizontal" Margin="0,0,20,5">
                         <TextBlock Text="Comprobante:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
@@ -35,7 +35,8 @@
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,20,5">
                         <TextBlock Text="Condición:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <ComboBox x:Name="cmbCondicionVenta" Style="{StaticResource ModuleComboBoxStyle}" Width="140">
+                        <ComboBox x:Name="cmbCondicionVenta" Style="{StaticResource ModuleComboBoxStyle}" Width="140"
+                                  SelectionChanged="cmbCondicionVenta_SelectionChanged">
                             <ComboBoxItem Content="Contado" IsSelected="True"/>
                             <ComboBoxItem Content="Cuenta Corriente"/>
                             <ComboBoxItem Content="Mercado Pago"/>
@@ -52,14 +53,14 @@
             </Border>
 
             <Border Background="{StaticResource PanelBackgroundBrush}" 
-                    CornerRadius="0,0,5,5" Margin="10,0,10,10" Padding="5"
-                    BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1,0,1,1">
+					CornerRadius="0,0,5,5" Margin="10,0,10,10" Padding="5"
+					BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1,0,1,1">
 
                 <DataGrid x:Name="dgvFactura" 
-                          Style="{StaticResource ModuleDataGridStyle}"
-                          AutoGenerateColumns="False" 
-                          CanUserSortColumns="False"
-                          CanUserAddRows="False">
+						  Style="{StaticResource ModuleDataGridStyle}"
+						  AutoGenerateColumns="False" 
+						  CanUserSortColumns="False"
+						  CanUserAddRows="False">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="PRODUCTO" Width="60">
                             <DataGridTemplateColumn.CellTemplate>
@@ -79,9 +80,9 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button x:Name="btnEliminarItem" Content="✕" 
-                                            Style="{StaticResource DeleteButtonStyle}"
-                                            Padding="10,5" MinHeight="0" MinWidth="0"
-                                            Click="btnEliminarItem_Click"/>
+											Style="{StaticResource DeleteButtonStyle}"
+											Padding="10,5" MinHeight="0" MinWidth="0"
+											Click="btnEliminarItem_Click"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -91,28 +92,40 @@
         </DockPanel>
 
         <Border Grid.Column="1" Background="{StaticResource PanelBackgroundBrush}" 
-                CornerRadius="5" Margin="5,10,10,10" Padding="15"
-                BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+				CornerRadius="5" Margin="5,10,10,10" Padding="15"
+				BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
 
             <DockPanel>
                 <StackPanel DockPanel.Dock="Bottom" Margin="0,20,0,0">
+
+                    <StackPanel x:Name="pnlCalculoEfectivo" Visibility="Collapsed" Margin="0,0,0,15">
+                        <TextBlock Text="Paga con (Efectivo):" Style="{StaticResource ModuleLabelStyle}" Margin="0,0,0,5"/>
+                        <TextBox x:Name="txtMontoPagado" 
+                                 Style="{StaticResource ModuleTextBoxStyle}" 
+                                 TextChanged="txtMontoPagado_TextChanged" 
+                                 InputMethod.IsInputMethodEnabled="False" 
+                                 PreviewTextInput="NumberValidationTextBox"/>
+
+                        <TextBlock Text="VUELTO A DEVOLVER" Foreground="White" FontSize="20" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,15,0,0"/>
+                        <TextBlock x:Name="lblVuelto" Text="$ 0,00" Foreground="#FFCC00" FontSize="36" FontWeight="Bold" HorizontalAlignment="Right"/>
+                    </StackPanel>
                     <Separator Background="#555"/>
                     <TextBlock Text="TOTAL" Foreground="White" FontSize="28" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0"/>
                     <TextBlock x:Name="lblTotal" Text="$ 0,00" Foreground="#00BFFF" FontSize="48" FontWeight="Bold" HorizontalAlignment="Right"/>
 
                     <Button x:Name="btnPagoQR" Content="📱 Cobrar con QR" 
-                            Style="{StaticResource ActionButtonStyle}" 
-                            MinHeight="50" FontSize="18" Margin="0,20,0,0"
-                            Background="#009EE3" Click="btnPagoQR_Click"/>
+							Style="{StaticResource ActionButtonStyle}" 
+							MinHeight="50" FontSize="18" Margin="0,20,0,0"
+							Background="#009EE3" Click="btnPagoQR_Click"/>
                     <Button x:Name="btnGuardarFactura" Content="Cobrar / Guardar" 
-                            Style="{StaticResource ActionButtonStyle}" 
-                            MinHeight="60" FontSize="20" Margin="0,10,0,0"
-                            Background="#00A86B" Click="btnGuardarFactura_Click"/>
+							Style="{StaticResource ActionButtonStyle}" 
+							MinHeight="60" FontSize="20" Margin="0,10,0,0"
+							Background="#00A86B" Click="btnGuardarFactura_Click"/>
 
                     <Button x:Name="btnCancelarFactura" Content="Cancelar" 
-                            Style="{StaticResource DeleteButtonStyle}" 
-                            MinHeight="44" FontSize="16" Margin="0,10,0,0"
-                            Click="btnCancelarFactura_Click"/>
+							Style="{StaticResource DeleteButtonStyle}" 
+							MinHeight="44" FontSize="16" Margin="0,10,0,0"
+							Click="btnCancelarFactura_Click"/>
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Top">
@@ -120,20 +133,20 @@
                         <StackPanel>
                             <TextBlock Text="1. Buscar Cliente (por CUIT o Razón Social)" Style="{StaticResource ModuleLabelStyle}" Margin="0,0,0,5"/>
                             <TextBox x:Name="txtBuscarCliente" Style="{StaticResource ModuleTextBoxStyle}" 
-                                     TextChanged="txtBuscarCliente_TextChanged"
-                                     PreviewKeyDown="txtBuscar_PreviewKeyDown"
-                                     LostFocus="txtBuscar_LostFocus"/>
+									 TextChanged="txtBuscarCliente_TextChanged"
+									 PreviewKeyDown="txtBuscar_PreviewKeyDown"
+									 LostFocus="txtBuscar_LostFocus"/>
 
                             <Popup x:Name="popupCliente" PlacementTarget="{Binding ElementName=txtBuscarCliente}" Placement="Bottom" StaysOpen="False">
                                 <Border Background="{StaticResource PanelBackgroundBrush}" BorderBrush="#007ACC" BorderThickness="1" MaxHeight="200">
                                     <ListBox x:Name="lstSugerenciasCliente" 
-                                             ItemsSource="{Binding}" 
-                                             DisplayMemberPath="RazonSocial" 
-                                             MouseUp="lstSugerenciasCliente_MouseUp"
-                                             PreviewKeyDown="lstSugerencias_PreviewKeyDown"
-                                             Background="{StaticResource PanelBackgroundBrush}"
-                                             Foreground="{StaticResource BodyForegroundBrush}"
-                                             BorderThickness="0"/>
+											 ItemsSource="{Binding}" 
+											 DisplayMemberPath="RazonSocial" 
+											 MouseUp="lstSugerenciasCliente_MouseUp"
+											 PreviewKeyDown="lstSugerencias_PreviewKeyDown"
+											 Background="{StaticResource PanelBackgroundBrush}"
+											 Foreground="{StaticResource BodyForegroundBrush}"
+											 BorderThickness="0"/>
                                 </Border>
                             </Popup>
                             <TextBlock x:Name="lblClienteSeleccionado" Text="Consumidor Final" Foreground="White" FontSize="16" FontWeight="SemiBold" Margin="0,5,0,0"/>
@@ -144,20 +157,20 @@
                         <StackPanel>
                             <TextBlock Text="2. Buscar Producto (por Código o Descripción)" Style="{StaticResource ModuleLabelStyle}" Margin="0,0,0,5"/>
                             <TextBox x:Name="txtBuscarProducto" Style="{StaticResource ModuleTextBoxStyle}" 
-                                     TextChanged="txtBuscarProducto_TextChanged"
-                                     PreviewKeyDown="txtBuscar_PreviewKeyDown"
-                                     LostFocus="txtBuscar_LostFocus"/>
+									 TextChanged="txtBuscarProducto_TextChanged"
+									 PreviewKeyDown="txtBuscar_PreviewKeyDown"
+									 LostFocus="txtBuscar_LostFocus"/>
 
                             <Popup x:Name="popupProducto" PlacementTarget="{Binding ElementName=txtBuscarProducto}" Placement="Bottom" StaysOpen="False">
                                 <Border Background="{StaticResource PanelBackgroundBrush}" BorderBrush="#007ACC" BorderThickness="1" MaxHeight="200">
                                     <ListBox x:Name="lstSugerenciasProducto" 
-                                             ItemsSource="{Binding}" 
-                                             DisplayMemberPath="Descripcion" 
-                                             MouseUp="lstSugerenciasProducto_MouseUp"
-                                             PreviewKeyDown="lstSugerencias_PreviewKeyDown"
-                                             Background="{StaticResource PanelBackgroundBrush}"
-                                             Foreground="{StaticResource BodyForegroundBrush}"
-                                             BorderThickness="0"/>
+											 ItemsSource="{Binding}" 
+											 DisplayMemberPath="Descripcion" 
+											 MouseUp="lstSugerenciasProducto_MouseUp"
+											 PreviewKeyDown="lstSugerencias_PreviewKeyDown"
+											 Background="{StaticResource PanelBackgroundBrush}"
+											 Foreground="{StaticResource BodyForegroundBrush}"
+											 BorderThickness="0"/>
                                 </Border>
                             </Popup>
 
@@ -173,10 +186,10 @@
                                 </StackPanel>
 
                                 <Button x:Name="btnAgregarProducto" Grid.Column="1" Content="Agregar ➔" 
-                                        Style="{StaticResource ActionButtonStyle}" 
-                                        VerticalAlignment="Bottom" 
-                                        MinHeight="38" Margin="0,5,0,0"
-                                        Click="btnAgregarProducto_Click"/>
+										Style="{StaticResource ActionButtonStyle}" 
+										VerticalAlignment="Bottom" 
+										MinHeight="38" Margin="0,5,0,0"
+										Click="btnAgregarProducto_Click"/>
                             </Grid>
                         </StackPanel>
                     </Border>

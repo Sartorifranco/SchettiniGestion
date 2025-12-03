@@ -57,7 +57,7 @@ namespace SchettiniGestion.WPF
                 if (row.Table.Columns.Contains("PasswordAfip"))
                     txtPasswordAfip.Password = row["PasswordAfip"].ToString();
 
-                // MERCADO PAGO (NUEVO)
+                // MERCADO PAGO
                 if (row.Table.Columns.Contains("MPAccessToken"))
                     txtMPToken.Text = row["MPAccessToken"].ToString();
 
@@ -66,6 +66,13 @@ namespace SchettiniGestion.WPF
 
                 if (row.Table.Columns.Contains("MPPosId"))
                     txtMPPosID.Text = row["MPPosId"].ToString();
+
+                // VISOR CLIENTE (NUEVO)
+                if (row.Table.Columns.Contains("UsaVisorCliente"))
+                {
+                    // Convertimos el valor de la DB (INTEGER) a bool. Si es DBNull, usamos el valor por defecto (True).
+                    chkUsaVisorCliente.IsChecked = row["UsaVisorCliente"] != DBNull.Value ? Convert.ToBoolean(row["UsaVisorCliente"]) : true;
+                }
             }
         }
 
@@ -110,7 +117,7 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            // Guardar TODO (Incluyendo MP)
+            // Guardar TODO (Incluyendo MP y Visor Cliente)
             bool exito = DatabaseService.GuardarConfiguracion(
                 txtNombre.Text,
                 txtRazonSocial.Text,
@@ -123,15 +130,21 @@ namespace SchettiniGestion.WPF
                 txtPasswordAfip.Password,
                 numPuntoVenta.Value ?? 1,
 
-                // Parámetros Nuevos MP
+                // Parámetros MP
                 txtMPToken.Text.Trim(),
                 txtMPUserID.Text.Trim(),
-                txtMPPosID.Text.Trim()
+                txtMPPosID.Text.Trim(),
+
+                // Parámetro NUEVO Visor Cliente
+                chkUsaVisorCliente.IsChecked ?? true
             );
 
             if (exito)
             {
                 CustomMessageBox.Show("Configuración guardada correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                // Si guardamos, reiniciamos el servicio del visor para que aplique la nueva configuración inmediatamente.
+                CustomerScreenService.Cerrar();
+                CustomerScreenService.Iniciar();
             }
         }
     }

@@ -1,13 +1,16 @@
 ﻿using SchettiniGestion;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
+using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using System.Windows.Media;
 
 namespace SchettiniGestion.WPF
 {
@@ -36,12 +39,117 @@ namespace SchettiniGestion.WPF
             CustomerScreenService.Iniciar();
             CustomerScreenService.Resetear();
             LimpiarFormulario();
+            // Inicializamos el control de vuelto
+            cmbCondicionVenta_SelectionChanged(null, null);
         }
 
         private void FacturacionControl_Unloaded(object sender, RoutedEventArgs e)
         {
             CustomerScreenService.OnClienteEligioPago -= ProcesarPagoCliente;
         }
+
+        private void cmbCondicionVenta_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // *** INICIO DEL CHEQUEO CRÍTICO ***
+            // 1. Si el panel de vuelto no está inicializado, salimos inmediatamente para evitar el NRE.
+            // Esto sucede en la carga inicial del control.
+            if (pnlCalculoEfectivo == null)
+            {
+                return;
+            }
+            // *** FIN DEL CHEQUEO CRÍTICO ***
+
+            string condicion = null;
+
+            // 2. Verificación de elemento seleccionado (la corrección anterior)
+            if (cmbCondicionVenta.SelectedItem == null)
+            {
+                pnlCalculoEfectivo.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            if (cmbCondicionVenta.SelectedItem is ComboBoxItem selectedItem)
+            {
+                condicion = selectedItem.Content?.ToString();
+            }
+
+            if (string.IsNullOrEmpty(condicion))
+            {
+                pnlCalculoEfectivo.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            // 3. Lógica para mostrar/ocultar
+            if (condicion == "Contado")
+            {
+                pnlCalculoEfectivo.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                pnlCalculoEfectivo.Visibility = Visibility.Collapsed;
+                // Limpiamos los campos al ocultar para que no interfieran
+                txtMontoPagado.Text = "";
+                lblVuelto.Text = "$ 0,00";
+            }
+        }
+
+        // --- LÓGICA DE CÁLCULO DE VUELTO ---
+
+        private void txtMontoPagado_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // Definimos la cultura regional para el parseo (usaremos la cultura actual de Windows/Argentina)
+            CultureInfo culture = CultureInfo.CurrentCulture;
+
+            // 1. Obtener el total de la venta de lblTotal
+            // Intentamos parsear el texto de lblTotal usando la cultura actual (esto maneja el "$", el separador de miles y el separador decimal)
+            if (decimal.TryParse(lblTotal.Text, NumberStyles.Currency, culture, out decimal totalVenta))
+            {
+                // 2. Obtener el monto que el cliente paga del TextBox
+                // Usamos la misma cultura para asegurar que "100,50" se lea como 100.50
+                if (decimal.TryParse(txtMontoPagado.Text, NumberStyles.Number, culture, out decimal montoPagado))
+                {
+                    if (montoPagado >= totalVenta)
+                    {
+                        // Cálculo correcto del Vuelto
+                        decimal vuelto = montoPagado - totalVenta;
+                        lblVuelto.Text = vuelto.ToString("C2", culture);
+                        lblVuelto.Foreground = Brushes.LightGreen;
+                    }
+                    else
+                    {
+                        // Faltante
+                        decimal faltante = totalVenta - montoPagado;
+                        lblVuelto.Text = $"- {faltante.ToString("C2", culture)} (Falta)";
+                        lblVuelto.Foreground = Brushes.OrangeRed;
+                    }
+                }
+                else
+                {
+                    // El campo de pago está vacío o inválido (comportamiento opcional)
+                    lblVuelto.Text = "$ 0,00";
+                    lblVuelto.Foreground = Brushes.Yellow;
+                }
+            }
+            // Si lblTotal no se pudo parsear (lo cual sería un error grave), no hacemos nada.
+        }
+
+        // Validador para asegurar que solo se ingresen números y un punto/coma decimal
+        private void NumberValidationTextBox(object sender, TextCompositionEventArgs e)
+        {
+            Regex regex = new Regex("[^0-9,.]+"); // Excluye dígitos, coma y punto
+            e.Handled = regex.IsMatch(e.Text);
+
+            // Permite solo un punto o coma decimal
+            if (e.Text == "." || e.Text == ",")
+            {
+                if (((TextBox)sender).Text.Contains(".") || ((TextBox)sender).Text.Contains(","))
+                {
+                    e.Handled = true;
+                }
+            }
+        }
+
+        // --- FIN LÓGICA DE CÁLCULO DE VUELTO ---
 
         // --- LÓGICA DE PAGO (QR / TACTIL) ---
 
@@ -72,18 +180,31 @@ namespace SchettiniGestion.WPF
         {
             Dispatcher.Invoke(() =>
             {
+                // Usamos el Dispatcher para asegurar que el evento se ejecute en el hilo principal de la UI
+
+                // Primero, seleccionamos la opción en el ComboBox del empleado
+                foreach (ComboBoxItem item in cmbCondicionVenta.Items)
+                {
+                    if (item.Content.ToString().Replace(" ", "").ToUpper() == opcion.ToUpper())
+                    {
+                        cmbCondicionVenta.SelectedItem = item;
+                        break;
+                    }
+                }
+
                 if (opcion == "MERCADOPAGO")
                 {
-                    // Hacemos lo mismo que si el empleado hubiera apretado el botón
+                    // Llama al botón QR automáticamente
                     btnPagoQR_Click(null, null);
                 }
                 else if (opcion == "TARJETA")
                 {
-                    CustomMessageBox.Show("El cliente eligió Tarjeta. (Se puede aplicar recargo aquí).", "Atención");
+                    CustomMessageBox.Show("El cliente eligió Tarjeta. (Proceder con el posnet).", "Atención");
                 }
-                else
+                else // EFECTIVO/CONTADO
                 {
-                    CustomMessageBox.Show($"El cliente eligió: {opcion}", "Atención");
+                    // El combo ya fue seleccionado, el cajero procede con el cálculo de vuelto manual.
+                    txtMontoPagado.Focus();
                 }
             });
         }
@@ -185,6 +306,9 @@ namespace SchettiniGestion.WPF
             decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
             lblTotal.Text = $"{total:C2}";
 
+            // Re-ejecutamos el cálculo de vuelto para actualizar el monto final
+            txtMontoPagado_TextChanged(null, null);
+
             if (CarritoDeVenta.Count > 0)
                 CustomerScreenService.Actualizar(CarritoDeVenta.ToList(), total);
             else
@@ -200,15 +324,23 @@ namespace SchettiniGestion.WPF
             if (CarritoDeVenta.Count == 0) { CustomMessageBox.Show("Agregue productos."); return; }
             if (_clienteSeleccionado == null) { CustomMessageBox.Show("Seleccione cliente."); return; }
 
-            // Si el cliente no eligió método de pago en pantalla táctil, 
-            // podemos forzar la selección aquí llamando a: CustomerScreenService.PantallaPagos();
+            // Si es Contado, verificamos el vuelto (es opcional, pero avisamos si falta dinero)
+            string condicion = cmbCondicionVenta.Text;
+            if (condicion == "Contado")
+            {
+                if (lblVuelto.Text.Contains("(Falta)"))
+                {
+                    CustomMessageBox.Show("El monto ingresado es insuficiente. Revise el campo 'Paga con'.", "Error de Pago", MessageBoxButton.OK, MessageBoxImage.Error);
+                    txtMontoPagado.Focus();
+                    return;
+                }
+            }
+
 
             if (CustomMessageBox.Show("¿Confirmar venta?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
                 try
                 {
-                    // Si elegimos "Mercado Pago" en el combo, usamos eso. Si no, Contado.
-                    string condicion = cmbCondicionVenta.Text; // Usamos .Text por si seleccionamos desde código
                     if (string.IsNullOrEmpty(condicion)) condicion = "Contado";
 
                     string tipoComp = (cmbTipoComprobante.SelectedItem as ComboBoxItem).Content.ToString();

@@ -1,14 +1,14 @@
 ﻿<UserControl x:Class="SchettiniGestion.WPF.ConfiguracionControl"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:SchettiniGestion.WPF"
-             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-             mc:Ignorable="d" 
-             d:DesignHeight="800" d:DesignWidth="1000"
-             Background="{StaticResource ModuleBackgroundBrush}"
-             Loaded="UserControl_Loaded">
+			 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+			 xmlns:local="clr-namespace:SchettiniGestion.WPF"
+			 xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+			 mc:Ignorable="d" 
+			 d:DesignHeight="800" d:DesignWidth="1000"
+			 Background="{StaticResource ModuleBackgroundBrush}"
+			 Loaded="UserControl_Loaded">
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -87,7 +87,6 @@
                     <Border Background="{StaticResource PanelBackgroundBrush}" CornerRadius="0,5,5,5" Padding="30">
                         <StackPanel MaxWidth="800" HorizontalAlignment="Left">
 
-                            <!-- SECCIÓN AFIP -->
                             <TextBlock Text="Configuración Factura Electrónica (AFIP)" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,15"/>
 
                             <TextBlock Text="Punto de Venta (AFIP):" Style="{StaticResource ModuleLabelStyle}"/>
@@ -108,7 +107,6 @@
 
                             <Separator Background="#444" Margin="0,10,0,20"/>
 
-                            <!-- SECCIÓN MERCADO PAGO (NUEVO) -->
                             <TextBlock Text="Integración Mercado Pago (QR)" FontSize="18" FontWeight="Bold" Foreground="#009EE3" Margin="0,0,0,15"/>
 
                             <TextBlock Text="Access Token (Producción):" Style="{StaticResource ModuleLabelStyle}"/>
@@ -132,11 +130,20 @@
                                 </StackPanel>
                             </Grid>
 
-                            <StackPanel Orientation="Horizontal" Margin="0,40,0,0">
+                            <Separator Background="#444" Margin="0,20,0,10"/>
+
+                            <CheckBox x:Name="chkUsaVisorCliente" 
+									  Content="Habilitar Visor de Cliente (Segunda Pantalla)" 
+									  IsChecked="True" 
+									  Foreground="White" 
+									  FontSize="14" 
+									  Margin="0,10,0,30"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
                                 <Button Content="💾 Guardar Toda la Configuración" 
-                                        Style="{StaticResource ActionButtonStyle}" 
-                                        Background="#00A86B" Height="50" Width="250" FontSize="16"
-                                        Click="btnGuardar_Click"/>
+										Style="{StaticResource ActionButtonStyle}" 
+										Background="#00A86B" Height="50" Width="250" FontSize="16"
+										Click="btnGuardar_Click"/>
                             </StackPanel>
 
                         </StackPanel>

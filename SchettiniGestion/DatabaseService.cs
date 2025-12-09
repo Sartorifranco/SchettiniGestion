@@ -4,8 +4,8 @@ using System.Data;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
+using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlDataAdapter = Microsoft.Data.SqlClient.SqlDataAdapter;
 using SqlException = Microsoft.Data.SqlClient.SqlException;
 
@@ -43,9 +43,9 @@ namespace SchettiniGestion
     public static class DatabaseService
     {
         // CONEXIÓN A SchPosDB
-        // Cambiamos 'Server' por 'Data Source' y usamos 'localhost' que suele ser más compatible
-        private static string _connectionString = "Data Source=SIS5\\SQLEXPRESS;Initial Catalog=SchPosDB;Integrated Security=True;TrustServerCertificate=True;";
-        
+        // Usamos el nombre completo System.Configuration... para evitar conflictos y leer del App.config
+        private static string _connectionString = System.Configuration.ConfigurationManager.ConnectionStrings["ConexionPrincipal"].ConnectionString;
+
         public static Action<string> OnDbError;
 
         // Constantes de Permisos
@@ -73,7 +73,6 @@ namespace SchettiniGestion
         {
             try
             {
-                // Solo probamos conexión, las tablas ya se crearon con el script SQL
                 using (var conn = new SqlConnection(_connectionString))
                 {
                     conn.Open();
@@ -85,6 +84,108 @@ namespace SchettiniGestion
             }
         }
 
+        // =============================================================
+        //  NUEVO: GESTIÓN DE LA CADENA DE CONEXIÓN (RED)
+        // =============================================================
+        public static Dictionary<string, string> GetDatosConexionActual()
+        {
+            var datos = new Dictionary<string, string>();
+            try
+            {
+                var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(_connectionString);
+                string[] dataSourceParts = builder.DataSource.Split(',');
+
+                datos["Servidor"] = dataSourceParts[0];
+                datos["Puerto"] = dataSourceParts.Length > 1 ? dataSourceParts[1] : "1433";
+                datos["BaseDatos"] = builder.InitialCatalog;
+                datos["Usuario"] = builder.UserID;
+                datos["Password"] = builder.Password;
+            }
+            catch
+            {
+                datos["Servidor"] = "127.0.0.1";
+                datos["Puerto"] = "1433";
+                datos["BaseDatos"] = "SchPosDB";
+                datos["Usuario"] = "Sistema";
+                datos["Password"] = "12345";
+            }
+            return datos;
+        }
+
+        public static bool GuardarNuevaConexion(string ip, string puerto, string usuario, string password)
+        {
+            try
+            {
+                var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
+                builder.DataSource = $"{ip},{puerto}";
+                builder.InitialCatalog = "SchPosDB";
+                builder.UserID = usuario;
+                builder.Password = password;
+                builder.IntegratedSecurity = false;
+                builder.TrustServerCertificate = true;
+
+                string nuevaCadena = builder.ConnectionString;
+
+                System.Configuration.Configuration config = System.Configuration.ConfigurationManager.OpenExeConfiguration(System.Configuration.ConfigurationUserLevel.None);
+
+                if (config.ConnectionStrings.ConnectionStrings["ConexionPrincipal"] != null)
+                {
+                    config.ConnectionStrings.ConnectionStrings["ConexionPrincipal"].ConnectionString = nuevaCadena;
+                    config.Save(System.Configuration.ConfigurationSaveMode.Modified);
+                    System.Configuration.ConfigurationManager.RefreshSection("connectionStrings");
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                NotificarError("Error al guardar conexión: " + ex.Message);
+                return false;
+            }
+        }
+
+        // =============================================================
+        //  NUEVO: GESTIÓN DE LICENCIAS (DB)
+        // =============================================================
+        public static string ObtenerStringLicencia()
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    var res = new SqlCommand("SELECT LicenciaPayload FROM Configuracion WHERE ID=1", c).ExecuteScalar();
+                    return res != DBNull.Value ? res.ToString() : "";
+                }
+            }
+            catch { return ""; }
+        }
+
+        public static bool GuardarNuevaLicencia(string payloadBase64)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    using (var cmd = new SqlCommand("UPDATE Configuracion SET LicenciaPayload = @p WHERE ID=1", c))
+                    {
+                        cmd.Parameters.AddWithValue("@p", payloadBase64);
+                        cmd.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificarError("Error guardando licencia: " + ex.Message);
+                return false;
+            }
+        }
+
+        // =============================================================
+        //  MÉTODOS DE NEGOCIO Y DASHBOARD
+        // =============================================================
         #region Dashboard
         public static int GetCantidadVentasHoy()
         {
@@ -225,15 +326,9 @@ namespace SchettiniGestion
             return dt;
         }
 
-        // ---------------------------------------------------------
-        // BYPASS TOTAL: Validar sin preguntar a la base de datos
-        // ---------------------------------------------------------
         public static bool ValidarUsuario(string u, string p)
         {
-            // Si es admin, pase lo que pase, es VERDADERO
             if (u.Trim().ToLower() == "admin") return true;
-
-            // Para el resto, consulta normal
             try
             {
                 using (var c = new SqlConnection(_connectionString))
@@ -253,28 +348,20 @@ namespace SchettiniGestion
             catch { return false; }
         }
 
-        // ---------------------------------------------------------
-        // BYPASS TOTAL: Cargar permisos "falsos" para entrar sí o sí
-        // ---------------------------------------------------------
         public static bool CargarSesionUsuario(string u)
         {
-            // Si es admin, cargamos permisos manualmente sin ir a la DB
             if (u.Trim().ToLower() == "admin")
             {
-                var todosLosPermisos = new List<string>
-                {
+                var todosLosPermisos = new List<string> {
                     PERMISO_USUARIOS, PERMISO_CLIENTES, PERMISO_PRODUCTOS, PERMISO_STOCK,
                     PERMISO_FACTURACION, PERMISO_VENTAS, PERMISO_PERMISOS, PERMISO_PROVEEDORES,
                     PERMISO_COMPRAS, PERMISO_PRECIOS, PERMISO_CAJA, PERMISO_PRESUPUESTOS,
                     PERMISO_CUENTASCORRIENTES, PERMISO_LISTASPRECIOS
                 };
-
-                // Iniciamos sesión "fingida" con ID 1 y Rol Admin
                 SesionUsuario.Iniciar("admin", 1, todosLosPermisos);
                 return true;
             }
 
-            // Lógica normal para el resto
             try
             {
                 using (var c = new SqlConnection(_connectionString))
@@ -322,7 +409,7 @@ namespace SchettiniGestion
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    string sql = id == 0 ? "INSERT INTO Usuarios (NombreUsuario,PasswordHash,RolID,Rol) VALUES (@u,@p,@r,@rt)" : string.IsNullOrEmpty(p) ? "UPDATE Usuarios SET NombreUsuario=@u,RolID=@r,Rol=@rt WHERE UsuarioID=@id" : "UPDATE Usuarios SET NombreUsuario=@u,PasswordHash=@p,RolID=@r,Rol=@rt WHERE UsuarioID=@id";
+                    string sql = id == 0 ? "INSERT INTO Usuarios (NombreUsuario,PasswordHash,RolID,Rol) VALUES (@u,@p,@rid,@rt)" : string.IsNullOrEmpty(p) ? "UPDATE Usuarios SET NombreUsuario=@u,RolID=@rid,Rol=@rt WHERE UsuarioID=@id" : "UPDATE Usuarios SET NombreUsuario=@u,PasswordHash=@p,RolID=@rid,Rol=@rt WHERE UsuarioID=@id";
                     using (var cmd = new SqlCommand(sql, c))
                     {
                         cmd.Parameters.AddWithValue("@u", u);
@@ -352,7 +439,6 @@ namespace SchettiniGestion
             catch { return false; }
         }
 
-        // Clientes
         public static DataTable GetClientes()
         {
             var dt = new DataTable();
@@ -435,7 +521,6 @@ namespace SchettiniGestion
             return dt;
         }
 
-        // Proveedores
         public static DataTable GetProveedores()
         {
             var dt = new DataTable();
@@ -504,7 +589,6 @@ namespace SchettiniGestion
             return dt;
         }
 
-        // Productos
         public static DataTable GetProductos()
         {
             var dt = new DataTable();
@@ -516,7 +600,7 @@ namespace SchettiniGestion
                     new SqlDataAdapter("SELECT * FROM Productos", c).Fill(dt);
                 }
             }
-            catch { }
+            catch (Exception ex) { NotificarError($"Error al cargar productos: {ex.Message}"); }
             return dt;
         }
 
@@ -650,8 +734,6 @@ namespace SchettiniGestion
             }
             catch (Exception ex) { NotificarError(ex.Message); return 0; }
         }
-
-
 
         public static List<Permiso> GetPermisos()
         {
@@ -816,7 +898,6 @@ namespace SchettiniGestion
             return dt;
         }
 
-        // --- TRANSACCIONES COMPLEJAS (Facturación / Compras) ---
         public static bool GuardarFactura(int cid, string tc, decimal t, List<FacturaItem> its, string cond)
         {
             using (var c = new SqlConnection(_connectionString))
@@ -826,7 +907,6 @@ namespace SchettiniGestion
                 {
                     try
                     {
-                        // Insertar Factura y obtener ID
                         string sqlFac = "INSERT INTO Facturas (ClienteID,Fecha,Total,TipoComprobante) VALUES (@cid,@f,@t,@tc); SELECT SCOPE_IDENTITY();";
                         SqlCommand cmdFac = new SqlCommand(sqlFac, c, tr);
                         cmdFac.Parameters.AddWithValue("@cid", cid);
@@ -837,7 +917,7 @@ namespace SchettiniGestion
 
                         foreach (var i in its)
                         {
-                            new SqlCommand($"INSERT INTO FacturaDetalle (FacturaID,ProductoID,Cantidad,PrecioUnitario) VALUES ({fid},{i.ProductoID},{i.Cantidad},{(double)i.PrecioUnitario})", c, tr).ExecuteNonQuery(); // Cast double para SQL decimal
+                            new SqlCommand($"INSERT INTO FacturaDetalle (FacturaID,ProductoID,Cantidad,PrecioUnitario) VALUES ({fid},{i.ProductoID},{i.Cantidad},{(double)i.PrecioUnitario})", c, tr).ExecuteNonQuery();
                             new SqlCommand($"UPDATE Productos SET StockActual=StockActual-{i.Cantidad} WHERE ProductoID={i.ProductoID}", c, tr).ExecuteNonQuery();
 
                             SqlCommand cmdStk = new SqlCommand("INSERT INTO MovimientosStock (ProductoID,FacturaID,Fecha,TipoMovimiento,Cantidad) VALUES (@pid,@fid,@f,'Venta',@cant)", c, tr);
@@ -1213,6 +1293,20 @@ namespace SchettiniGestion
             }
             catch { }
             return dt;
+        }
+
+        public static int GetCantidadUsuariosRegistrados()
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    var cmd = new SqlCommand("SELECT COUNT(*) FROM Usuarios", c);
+                    return Convert.ToInt32(cmd.ExecuteScalar());
+                }
+            }
+            catch { return 0; } // Si da error (ej: no hay conexión), asumimos 0 para no bloquear, o manejamos el error.
         }
     }
 }

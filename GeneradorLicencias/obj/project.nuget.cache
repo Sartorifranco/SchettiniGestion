@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "jKfQguPDQgQ=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\GeneradorLicencias\\GeneradorLicencias.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Admin\\.nuget\\packages\\newtonsoft.json\\13.0.4\\newtonsoft.json.13.0.4.nupkg.sha512"
+  ],
+  "logs": []
+}

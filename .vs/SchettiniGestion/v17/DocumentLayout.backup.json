@@ -1,284 +1,287 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\",
+  "WorkspaceRootPath": "C:\\SchettiniGestion\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\numerickeyboardcontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\numerickeyboardcontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\printservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\printservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\numerickeyboardcontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\numerickeyboardcontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|c:\\users\\admin\\desktop\\schettinigestion\\schettinigestion\\schettinigestion.wpf\\loginwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\loginwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|c:\\users\\admin\\desktop\\schettinigestion\\schettinigestion\\schettinigestion.wpf\\loginwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\loginwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\confirguracioncontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\confirguracioncontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D16A7D18-A08A-4F57-9BE9-9BDB00BA4F93}|GeneradorLicencias\\GeneradorLicencias.csproj|c:\\users\\admin\\desktop\\schettinigestion\\schettinigestion\\generadorlicencias\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D16A7D18-A08A-4F57-9BE9-9BDB00BA4F93}|GeneradorLicencias\\GeneradorLicencias.csproj|solutionrelative:generadorlicencias\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|c:\\users\\admin\\desktop\\schettinigestion\\schettinigestion\\schettinigestion.wpf\\welcomewindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\welcomewindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|c:\\users\\admin\\desktop\\schettinigestion\\schettinigestion\\schettinigestion.wpf\\welcomewindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\welcomewindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion\\databaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\databaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion\\licensemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\licensemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\principalwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\principalwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\confirguracioncontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\confirguracioncontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\principalwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\principalwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|c:\\users\\admin\\desktop\\schettinigestion\\schettinigestion\\schettinigestion.wpf\\app.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\app.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\app.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion\\app.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\principalwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\principalwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|C:\\SchettiniGestion\\schettinigestion\\databaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\databaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|c:\\schettinigestion\\schettinigestion\\passwordhasher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\passwordhasher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\confirguracioncontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\confirguracioncontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\afipservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\afipservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|c:\\schettinigestion\\schettinigestion.wpf\\numerickeyboardcontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\numerickeyboardcontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\numerickeyboardcontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\numerickeyboardcontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\loginwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\loginwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\loginwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\loginwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D16A7D18-A08A-4F57-9BE9-9BDB00BA4F93}|GeneradorLicencias\\GeneradorLicencias.csproj|c:\\schettinigestion\\generadorlicencias\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D16A7D18-A08A-4F57-9BE9-9BDB00BA4F93}|GeneradorLicencias\\GeneradorLicencias.csproj|solutionrelative:generadorlicencias\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\welcomewindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\welcomewindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\welcomewindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\welcomewindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|C:\\SchettiniGestion\\schettinigestion\\licensemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\licensemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\confirguracioncontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\confirguracioncontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\principalwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\principalwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|C:\\SchettiniGestion\\schettinigestion\\app.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
       "RelativeMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\app.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Admin\\AppData\\Local\\Temp\\.vsdbgsrc\\d7e094135bd91775b2afb1826e2ec0afeed488d701c4cd3cd9fcc9610a1579f9\\DUCE.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\customerscreenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\customerscreenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\customerscreenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\facturacioncontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\facturacioncontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\facturacioncontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\facturacioncontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\facturacioncontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\facturacioncontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\mercadopagoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\mercadopagoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\mercadopagoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\visorclientewindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\visorclientewindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\visorclientewindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\visorclientewindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\visorclientewindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\visorclientewindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\afipservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\afipservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\clientescontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\clientescontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\clientescontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\clientescontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\clientescontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\clientescontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\productovariowindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\productovariowindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\productovariowindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\ventascontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\ventascontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\ventascontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\ventascontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\ventascontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\ventascontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\productovariowindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\productovariowindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\productovariowindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\printservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\printservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\custommessageboxwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\custommessageboxwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\custommessageboxwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\custommessageboxwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\custommessageboxwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\custommessageboxwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\custommessagebox.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\custommessagebox.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\custommessagebox.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\comprascontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\comprascontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\comprascontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\precioscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\precioscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\precioscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\dashboardcontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\dashboardcontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\dashboardcontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\dashboardcontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\dashboardcontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\dashboardcontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\comprascontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\comprascontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\comprascontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\precioscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\precioscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\precioscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\stockcontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\stockcontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\stockcontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\productoscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\productoscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\productoscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\reportescontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\reportescontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\reportescontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\reportescontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\reportescontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\reportescontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\listasprecioscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\listasprecioscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\listasprecioscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\listasprecioscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\listasprecioscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\listasprecioscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\productoscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\productoscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\productoscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\packages\\EPPlus.8.3.0\\readme.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:packages\\EPPlus.8.3.0\\readme.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\packages\\EPPlus.8.3.0\\readme.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\proveedorescontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\proveedorescontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\proveedorescontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\reportepresupuestoscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\reportepresupuestoscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\reportepresupuestoscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\cuentascorrientescontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\cuentascorrientescontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\cuentascorrientescontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\cuentascorrientescontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\cuentascorrientescontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\cuentascorrientescontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\presupuestoscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\presupuestoscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\presupuestoscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\reportepresupuestoscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\reportepresupuestoscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\reportepresupuestoscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\presupuestoscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\presupuestoscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\presupuestoscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\cajacontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\cajacontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\cajacontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\cajacontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\cajacontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\cajacontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\visualtreehelpers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\visualtreehelpers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\visualtreehelpers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\proveedorescontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\proveedorescontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\proveedorescontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion\\sesionusuario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|C:\\SchettiniGestion\\schettinigestion\\sesionusuario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{F2F0D54B-CD96-429B-B632-1C29E111AE75}|SchettiniGestion\\SchettiniGestion.csproj|solutionrelative:schettinigestion\\sesionusuario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\gestionpermisos.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\gestionpermisos.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\gestionpermisos.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\usuarioscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\usuarioscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\usuarioscontrol.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\gestionpermisos.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\gestionpermisos.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\gestionpermisos.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\usuarioscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\usuarioscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\usuarioscontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\stockcontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\stockcontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\stockcontrol.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\schettinigestion.wpf\\keyboardhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|C:\\SchettiniGestion\\schettinigestion.wpf\\keyboardhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{4179A661-2477-4F8D-81A8-35735FAE775B}|SchettiniGestion.WPF\\SchettiniGestion.WPF.csproj|solutionrelative:schettinigestion.wpf\\keyboardhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{8C21DB47-5DBD-4B29-BFAE-0E971109B4FD}|LicenseGenerator\\LicenseGenerator.csproj|C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\LicenseGenerator\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{8C21DB47-5DBD-4B29-BFAE-0E971109B4FD}|LicenseGenerator\\LicenseGenerator.csproj|C:\\SchettiniGestion\\LicenseGenerator\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{8C21DB47-5DBD-4B29-BFAE-0E971109B4FD}|LicenseGenerator\\LicenseGenerator.csproj|solutionrelative:LicenseGenerator\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
@@ -289,77 +292,28 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 7,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "LoginWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\LoginWindow.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\LoginWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\LoginWindow.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\LoginWindow.xaml.cs",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAwwCsAAAABAAAAAAAAAA==",
+              "Title": "PrincipalWindow.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PrincipalWindow.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\PrincipalWindow.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PrincipalWindow.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\PrincipalWindow.xaml.cs",
+              "ViewState": "AgIAAB0BAAAAAAAAAAA7wCMBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-09T19:44:37.626Z",
+              "WhenOpened": "2025-11-11T13:28:59.811Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "LoginWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\LoginWindow.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\LoginWindow.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\LoginWindow.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\LoginWindow.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-12-09T19:43:45.138Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\GeneradorLicencias\\Program.cs",
-              "RelativeDocumentMoniker": "GeneradorLicencias\\Program.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\GeneradorLicencias\\Program.cs",
-              "RelativeToolTip": "GeneradorLicencias\\Program.cs",
-              "ViewState": "AgIAADMAAAAAAAAAAAAowD4AAABMAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-09T19:11:03.906Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 20,
-              "Title": "FacturacionControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\FacturacionControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\FacturacionControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\FacturacionControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\FacturacionControl.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-11T16:02:03.394Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "App.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\App.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\App.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\App.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\App.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-11T13:28:30.954Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 7,
               "Title": "ConfirguracionControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ConfirguracionControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ConfirguracionControl.xaml",
               "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ConfirguracionControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ConfirguracionControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ConfirguracionControl.xaml",
               "RelativeToolTip": "SchettiniGestion.WPF\\ConfirguracionControl.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
               "WhenOpened": "2025-11-27T15:30:23.39Z",
@@ -367,393 +321,63 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "NumericKeyboardControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\NumericKeyboardControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\NumericKeyboardControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\NumericKeyboardControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\NumericKeyboardControl.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-13T17:25:10.964Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "NumericKeyboardControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\NumericKeyboardControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\NumericKeyboardControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\NumericKeyboardControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\NumericKeyboardControl.xaml.cs",
-              "ViewState": "AgIAACgAAAAAAAAAAAAgwEsAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-13T17:25:28.575Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 4,
               "Title": "DatabaseService.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\DatabaseService.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion\\DatabaseService.cs",
               "RelativeDocumentMoniker": "SchettiniGestion\\DatabaseService.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\DatabaseService.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion\\DatabaseService.cs",
               "RelativeToolTip": "SchettiniGestion\\DatabaseService.cs",
-              "ViewState": "AgIAAAQFAAAAAAAAAAAwwB0FAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAALMBAAAAAAAAAAAAwMIBAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-11-11T16:37:27.627Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "PrincipalWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PrincipalWindow.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\PrincipalWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PrincipalWindow.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\PrincipalWindow.xaml.cs",
-              "ViewState": "AgIAADQBAAAAAAAAAAA0wE4BAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-11T13:28:59.811Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "PrincipalWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PrincipalWindow.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\PrincipalWindow.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PrincipalWindow.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\PrincipalWindow.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-11T13:26:00.66Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "WelcomeWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\WelcomeWindow.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\WelcomeWindow.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\WelcomeWindow.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\WelcomeWindow.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-12-09T19:07:57.635Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "LicenseManager.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\LicenseManager.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion\\LicenseManager.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\LicenseManager.cs",
-              "RelativeToolTip": "SchettiniGestion\\LicenseManager.cs",
-              "ViewState": "AgIAAB0AAAAAAAAAAAAwwDIAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T18:53:58.379Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "WelcomeWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\WelcomeWindow.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\WelcomeWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\WelcomeWindow.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\WelcomeWindow.xaml.cs",
-              "ViewState": "AgIAABMAAAAAAAAAAAAwwDgAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-09T19:08:22.365Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 3,
               "Title": "App.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\App.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\App.xaml.cs",
               "RelativeDocumentMoniker": "SchettiniGestion.WPF\\App.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\App.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\App.xaml.cs",
               "RelativeToolTip": "SchettiniGestion.WPF\\App.xaml.cs",
-              "ViewState": "AgIAAAQAAAAAAAAAAAAgwCcAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAACUAAAAAAAAAAAAcwDYAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-11-12T14:51:32.913Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
-              "Title": "ConfirguracionControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ConfirguracionControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ConfirguracionControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ConfirguracionControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ConfirguracionControl.xaml.cs",
-              "ViewState": "AgIAALIAAAAAAAAAAAAwwNEAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-27T15:30:41.177Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 1,
               "Title": "App.config",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\App.config",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\App.config",
               "RelativeDocumentMoniker": "SchettiniGestion.WPF\\App.config",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\App.config",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\App.config",
               "RelativeToolTip": "SchettiniGestion.WPF\\App.config",
-              "ViewState": "AgIAADwAAAAAAAAAAAAIwE8AAAAQAAAAAAAAAA==",
+              "ViewState": "AgIAAD8AAAAAAAAAAAAqwFAAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000601|",
               "WhenOpened": "2025-12-09T17:06:43.812Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 39,
-              "Title": "DashboardControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\DashboardControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\DashboardControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\DashboardControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\DashboardControl.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-12-01T16:40:39.482Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 59,
-              "Title": "VisualTreeHelpers.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\VisualTreeHelpers.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\VisualTreeHelpers.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\VisualTreeHelpers.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\VisualTreeHelpers.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAzAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-13T19:08:41.069Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 60,
-              "Title": "ProveedoresControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ProveedoresControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ProveedoresControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ProveedoresControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ProveedoresControl.xaml.cs",
-              "ViewState": "AgIAAFkAAAAAAAAAAADwv4AAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-13T12:59:13.684Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 56,
-              "Title": "PresupuestosControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PresupuestosControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\PresupuestosControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PresupuestosControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\PresupuestosControl.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-20T15:25:39.166Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 42,
-              "Title": "StockControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\StockControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\StockControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\StockControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\StockControl.xaml.cs",
-              "ViewState": "AgIAAJUAAAAAAAAAAAAAwKMAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-11T18:34:40.616Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 16,
-              "Title": "App.config",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\App.config",
-              "RelativeDocumentMoniker": "SchettiniGestion\\App.config",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\App.config",
-              "RelativeToolTip": "SchettiniGestion\\App.config",
-              "ViewState": "AgIAADAAAAAAAAAAAAAIwEMAAAAQAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000601|",
-              "WhenOpened": "2025-12-09T14:57:25.86Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 17,
-              "Title": "DUCE.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\AppData\\Local\\Temp\\.vsdbgsrc\\d7e094135bd91775b2afb1826e2ec0afeed488d701c4cd3cd9fcc9610a1579f9\\DUCE.cs",
-              "RelativeDocumentMoniker": "..\\..\\..\\AppData\\Local\\Temp\\.vsdbgsrc\\d7e094135bd91775b2afb1826e2ec0afeed488d701c4cd3cd9fcc9610a1579f9\\DUCE.cs",
-              "ToolTip": "C:\\Users\\Admin\\AppData\\Local\\Temp\\.vsdbgsrc\\d7e094135bd91775b2afb1826e2ec0afeed488d701c4cd3cd9fcc9610a1579f9\\DUCE.cs",
-              "RelativeToolTip": "..\\..\\..\\AppData\\Local\\Temp\\.vsdbgsrc\\d7e094135bd91775b2afb1826e2ec0afeed488d701c4cd3cd9fcc9610a1579f9\\DUCE.cs",
-              "ViewState": "AgIAANsAAAAAAAAAAAAlwPAAAAAEAAAAAQAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-03T19:52:36.713Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 19,
-              "Title": "FacturacionControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\FacturacionControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\FacturacionControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\FacturacionControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\FacturacionControl.xaml.cs",
-              "ViewState": "AgIAAGEAAAAAAAAAAAAIwIUAAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-11T16:38:20.227Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 18,
-              "Title": "CustomerScreenService.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CustomerScreenService.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CustomerScreenService.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CustomerScreenService.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\CustomerScreenService.cs",
-              "ViewState": "AgIAAFQAAAAAAAAAAAAuwGkAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-01T19:49:45.999Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 21,
-              "Title": "MercadoPagoService.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\MercadoPagoService.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\MercadoPagoService.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\MercadoPagoService.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\MercadoPagoService.cs",
-              "ViewState": "AgIAAFgAAAAAAAAAAAAAwHMAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-02T17:29:37.634Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 23,
-              "Title": "VisorClienteWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\VisorClienteWindow.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\VisorClienteWindow.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\VisorClienteWindow.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\VisorClienteWindow.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-12-01T19:47:06.113Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 68,
-              "Title": "KeyboardHelper.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\KeyboardHelper.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\KeyboardHelper.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\KeyboardHelper.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\KeyboardHelper.cs",
-              "ViewState": "AgIAABwAAAAAAAAAAAAAwDIAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-11T14:54:36.162Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 66,
-              "Title": "StockControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\StockControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\StockControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\StockControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\StockControl.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-11T18:33:36.169Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 61,
-              "Title": "SesionUsuario.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\SesionUsuario.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion\\SesionUsuario.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion\\SesionUsuario.cs",
-              "RelativeToolTip": "SchettiniGestion\\SesionUsuario.cs",
-              "ViewState": "AgIAABoAAAAAAAAAAAAcwEUAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T16:56:16.283Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 52,
-              "Title": "CuentasCorrientesControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CuentasCorrientesControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CuentasCorrientesControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CuentasCorrientesControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\CuentasCorrientesControl.xaml.cs",
-              "ViewState": "AgIAAH8AAAAAAAAAAAAgwKkAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T18:40:42.527Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 43,
-              "Title": "ProductosControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ProductosControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ProductosControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ProductosControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ProductosControl.xaml.cs",
-              "ViewState": "AgIAAI8AAAAAAAAAAAAqwLkAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-13T16:58:54.185Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 22,
-              "Title": "VisorClienteWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\VisorClienteWindow.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\VisorClienteWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\VisorClienteWindow.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\VisorClienteWindow.xaml.cs",
-              "ViewState": "AgIAAFkAAAAAAAAAAAAswGsAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-01T19:47:21.931Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 31,
+              "DocumentIndex": 0,
               "Title": "PrintService.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PrintService.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PrintService.cs",
               "RelativeDocumentMoniker": "SchettiniGestion.WPF\\PrintService.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PrintService.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PrintService.cs",
               "RelativeToolTip": "SchettiniGestion.WPF\\PrintService.cs",
-              "ViewState": "AgIAAD4AAAAAAAAAAAAAABkAAAAIAAAAAAAAAA==",
+              "ViewState": "AgIAAGwBAAAAAAAAAAAcwH4BAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-11-26T13:11:37.904Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
-              "Title": "ClientesControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ClientesControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ClientesControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ClientesControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ClientesControl.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-11T15:18:35.608Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 8,
               "Title": "AfipService.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\AfipService.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\AfipService.cs",
               "RelativeDocumentMoniker": "SchettiniGestion.WPF\\AfipService.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\AfipService.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\AfipService.cs",
               "RelativeToolTip": "SchettiniGestion.WPF\\AfipService.cs",
               "ViewState": "AgIAABwAAAAAAAAAAAAwwDYAAABuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -762,263 +386,607 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 57,
-              "Title": "CajaControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CajaControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CajaControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CajaControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\CajaControl.xaml.cs",
-              "ViewState": "AgIAADwAAAAAAAAAAAAiwF8AAACDAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T14:52:10.493Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 47,
-              "Title": "ListasPreciosControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ListasPreciosControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ListasPreciosControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ListasPreciosControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ListasPreciosControl.xaml",
+              "DocumentIndex": 6,
+              "Title": "App.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\App.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\App.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\App.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\App.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-27T00:10:00.996Z",
+              "WhenOpened": "2025-11-11T13:28:30.954Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 53,
-              "Title": "CuentasCorrientesControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CuentasCorrientesControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CuentasCorrientesControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CuentasCorrientesControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\CuentasCorrientesControl.xaml",
+              "DocumentIndex": 5,
+              "Title": "PasswordHasher.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion\\PasswordHasher.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion\\PasswordHasher.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion\\PasswordHasher.cs",
+              "RelativeToolTip": "SchettiniGestion\\PasswordHasher.cs",
+              "ViewState": "AgIAAEIAAAAAAAAAAAAcwFMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-10T00:56:16.838Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "FacturacionControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\FacturacionControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\FacturacionControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\FacturacionControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\FacturacionControl.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-20T18:40:23.037Z",
+              "WhenOpened": "2025-11-11T16:02:03.394Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\GeneradorLicencias\\Program.cs",
+              "RelativeDocumentMoniker": "GeneradorLicencias\\Program.cs",
+              "ToolTip": "C:\\SchettiniGestion\\GeneradorLicencias\\Program.cs",
+              "RelativeToolTip": "GeneradorLicencias\\Program.cs",
+              "ViewState": "AgIAADMAAAAAAAAAAAAowD4AAABMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-09T19:11:03.906Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "NumericKeyboardControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\NumericKeyboardControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\NumericKeyboardControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\NumericKeyboardControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\NumericKeyboardControl.xaml.cs",
+              "ViewState": "AgIAAEAAAAAAAAAAAAAIwEsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T17:25:28.575Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 58,
-              "Title": "CajaControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CajaControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CajaControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CajaControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\CajaControl.xaml",
+              "DocumentIndex": 11,
+              "Title": "LoginWindow.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\LoginWindow.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\LoginWindow.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\LoginWindow.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\LoginWindow.xaml.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAwwCsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-09T19:44:37.626Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "LoginWindow.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\LoginWindow.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\LoginWindow.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\LoginWindow.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\LoginWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-20T14:51:30.637Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-09T19:43:45.138Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 30,
-              "Title": "ProductoVarioWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ProductoVarioWindow.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ProductoVarioWindow.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ProductoVarioWindow.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ProductoVarioWindow.xaml",
+              "DocumentIndex": 10,
+              "Title": "NumericKeyboardControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\NumericKeyboardControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\NumericKeyboardControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\NumericKeyboardControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\NumericKeyboardControl.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-12-01T19:04:37.55Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-13T17:25:10.964Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 26,
-              "Title": "ClientesControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ClientesControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ClientesControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ClientesControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ClientesControl.xaml.cs",
-              "ViewState": "AgIAAK8AAAAAAAAAAAAuwMoAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-01T19:20:22.207Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 29,
-              "Title": "VentasControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\VentasControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\VentasControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\VentasControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\VentasControl.xaml",
+              "DocumentIndex": 18,
+              "Title": "PrincipalWindow.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PrincipalWindow.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\PrincipalWindow.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PrincipalWindow.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\PrincipalWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-11T17:19:47.023Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-11T13:26:00.66Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 28,
-              "Title": "VentasControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\VentasControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\VentasControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\VentasControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\VentasControl.xaml.cs",
-              "ViewState": "AgIAAC0AAAAAAAAAAAAmwEcAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-11T17:20:26.354Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 27,
-              "Title": "ProductoVarioWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ProductoVarioWindow.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ProductoVarioWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ProductoVarioWindow.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ProductoVarioWindow.xaml.cs",
-              "ViewState": "AgIAAEIAAAAAAAAAAAAzwEkAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-01T19:05:01.445Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 32,
-              "Title": "MainWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\MainWindow.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\MainWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\MainWindow.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\MainWindow.xaml.cs",
-              "ViewState": "AgIAAGQAAAAAAAAAAAAYwHAAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-11T13:16:31.539Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 33,
-              "Title": "CustomMessageBoxWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml.cs",
-              "ViewState": "AgIAADMAAAAAAAAAAAAgwE0AAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-28T17:49:39.041Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 34,
-              "Title": "CustomMessageBoxWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml",
+              "DocumentIndex": 15,
+              "Title": "WelcomeWindow.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\WelcomeWindow.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\WelcomeWindow.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\WelcomeWindow.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\WelcomeWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-28T17:49:12.696Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-09T19:07:57.635Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 35,
-              "Title": "CustomMessageBox.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CustomMessageBox.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CustomMessageBox.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\CustomMessageBox.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\CustomMessageBox.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAABAAAAAAAAAA==",
+              "DocumentIndex": 16,
+              "Title": "LicenseManager.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion\\LicenseManager.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion\\LicenseManager.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion\\LicenseManager.cs",
+              "RelativeToolTip": "SchettiniGestion\\LicenseManager.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAwwDIAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-28T17:50:15.268Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-12T18:53:58.379Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 65,
-              "Title": "UsuariosControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\UsuariosControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\UsuariosControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\UsuariosControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\UsuariosControl.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-11T15:18:48.489Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 63,
-              "Title": "UsuariosControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\UsuariosControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\UsuariosControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\UsuariosControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\UsuariosControl.xaml.cs",
-              "ViewState": "AgIAAI0AAAAAAAAAAAAAAJ8AAAABAAAAAAAAAA==",
+              "DocumentIndex": 14,
+              "Title": "WelcomeWindow.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\WelcomeWindow.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\WelcomeWindow.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\WelcomeWindow.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\WelcomeWindow.xaml.cs",
+              "ViewState": "AgIAABMAAAAAAAAAAAAwwDgAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T11:59:38.485Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-09T19:08:22.365Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 62,
-              "Title": "GestionPermisos.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\GestionPermisos.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\GestionPermisos.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\GestionPermisos.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\GestionPermisos.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-12T15:05:18.999Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 64,
-              "Title": "GestionPermisos.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\GestionPermisos.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\GestionPermisos.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\GestionPermisos.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\GestionPermisos.xaml.cs",
-              "ViewState": "AgIAAF0AAAAAAAAAAAAYwIQAAAABAAAAAAAAAA==",
+              "DocumentIndex": 17,
+              "Title": "ConfirguracionControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ConfirguracionControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ConfirguracionControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ConfirguracionControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ConfirguracionControl.xaml.cs",
+              "ViewState": "AgIAALIAAAAAAAAAAAAwwNEAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-12T15:05:42.049Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 36,
-              "Title": "ComprasControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ComprasControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ComprasControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ComprasControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ComprasControl.xaml.cs",
-              "ViewState": "AgIAALEAAAAAAAAAAAAmwMEAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-13T14:16:22.058Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 37,
-              "Title": "PreciosControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PreciosControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\PreciosControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PreciosControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\PreciosControl.xaml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAHoAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-13T16:51:08.87Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 38,
-              "Title": "DashboardControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\DashboardControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\DashboardControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\DashboardControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\DashboardControl.xaml.cs",
-              "ViewState": "AgIAAAgAAAAAAAAAAAAmwCcAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-01T16:41:00.96Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-27T15:30:41.177Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 40,
+              "Title": "DashboardControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\DashboardControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\DashboardControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\DashboardControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\DashboardControl.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-12-01T16:40:39.482Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 60,
+              "Title": "VisualTreeHelpers.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\VisualTreeHelpers.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\VisualTreeHelpers.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\VisualTreeHelpers.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\VisualTreeHelpers.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T19:08:41.069Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 61,
+              "Title": "ProveedoresControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ProveedoresControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ProveedoresControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ProveedoresControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ProveedoresControl.xaml.cs",
+              "ViewState": "AgIAAFkAAAAAAAAAAADwv4AAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T12:59:13.684Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 57,
+              "Title": "PresupuestosControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PresupuestosControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\PresupuestosControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PresupuestosControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\PresupuestosControl.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-20T15:25:39.166Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 43,
+              "Title": "StockControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\StockControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\StockControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\StockControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\StockControl.xaml.cs",
+              "ViewState": "AgIAAJUAAAAAAAAAAAAAwKMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-11T18:34:40.616Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "App.config",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion\\App.config",
+              "RelativeDocumentMoniker": "SchettiniGestion\\App.config",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion\\App.config",
+              "RelativeToolTip": "SchettiniGestion\\App.config",
+              "ViewState": "AgIAADAAAAAAAAAAAAAIwEMAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000601|",
+              "WhenOpened": "2025-12-09T14:57:25.86Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "DUCE.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\AppData\\Local\\Temp\\.vsdbgsrc\\d7e094135bd91775b2afb1826e2ec0afeed488d701c4cd3cd9fcc9610a1579f9\\DUCE.cs",
+              "RelativeDocumentMoniker": "..\\Users\\Admin\\AppData\\Local\\Temp\\.vsdbgsrc\\d7e094135bd91775b2afb1826e2ec0afeed488d701c4cd3cd9fcc9610a1579f9\\DUCE.cs",
+              "ToolTip": "C:\\Users\\Admin\\AppData\\Local\\Temp\\.vsdbgsrc\\d7e094135bd91775b2afb1826e2ec0afeed488d701c4cd3cd9fcc9610a1579f9\\DUCE.cs",
+              "RelativeToolTip": "..\\Users\\Admin\\AppData\\Local\\Temp\\.vsdbgsrc\\d7e094135bd91775b2afb1826e2ec0afeed488d701c4cd3cd9fcc9610a1579f9\\DUCE.cs",
+              "ViewState": "AgIAANsAAAAAAAAAAAAlwPAAAAAEAAAAAQAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-03T19:52:36.713Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "FacturacionControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\FacturacionControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\FacturacionControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\FacturacionControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\FacturacionControl.xaml.cs",
+              "ViewState": "AgIAAGEAAAAAAAAAAAAIwIUAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-11T16:38:20.227Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "CustomerScreenService.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CustomerScreenService.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CustomerScreenService.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CustomerScreenService.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\CustomerScreenService.cs",
+              "ViewState": "AgIAAFQAAAAAAAAAAAAuwGkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-01T19:49:45.999Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "MercadoPagoService.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\MercadoPagoService.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\MercadoPagoService.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\MercadoPagoService.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\MercadoPagoService.cs",
+              "ViewState": "AgIAAFgAAAAAAAAAAAAAwHMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-02T17:29:37.634Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "VisorClienteWindow.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\VisorClienteWindow.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\VisorClienteWindow.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\VisorClienteWindow.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\VisorClienteWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-12-01T19:47:06.113Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 69,
+              "Title": "KeyboardHelper.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\KeyboardHelper.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\KeyboardHelper.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\KeyboardHelper.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\KeyboardHelper.cs",
+              "ViewState": "AgIAABwAAAAAAAAAAAAAwDIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-11T14:54:36.162Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 67,
+              "Title": "StockControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\StockControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\StockControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\StockControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\StockControl.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-11T18:33:36.169Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 62,
+              "Title": "SesionUsuario.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion\\SesionUsuario.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion\\SesionUsuario.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion\\SesionUsuario.cs",
+              "RelativeToolTip": "SchettiniGestion\\SesionUsuario.cs",
+              "ViewState": "AgIAABoAAAAAAAAAAAAcwEUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-12T16:56:16.283Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 53,
+              "Title": "CuentasCorrientesControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CuentasCorrientesControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CuentasCorrientesControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CuentasCorrientesControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\CuentasCorrientesControl.xaml.cs",
+              "ViewState": "AgIAAH8AAAAAAAAAAAAgwKkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-20T18:40:42.527Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 44,
+              "Title": "ProductosControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ProductosControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ProductosControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ProductosControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ProductosControl.xaml.cs",
+              "ViewState": "AgIAAI8AAAAAAAAAAAAqwLkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T16:58:54.185Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "VisorClienteWindow.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\VisorClienteWindow.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\VisorClienteWindow.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\VisorClienteWindow.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\VisorClienteWindow.xaml.cs",
+              "ViewState": "AgIAAFkAAAAAAAAAAAAswGsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-01T19:47:21.931Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "ClientesControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ClientesControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ClientesControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ClientesControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ClientesControl.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-11T15:18:35.608Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 58,
+              "Title": "CajaControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CajaControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CajaControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CajaControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\CajaControl.xaml.cs",
+              "ViewState": "AgIAADwAAAAAAAAAAAAiwF8AAACDAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-20T14:52:10.493Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 48,
+              "Title": "ListasPreciosControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ListasPreciosControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ListasPreciosControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ListasPreciosControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ListasPreciosControl.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-27T00:10:00.996Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 54,
+              "Title": "CuentasCorrientesControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CuentasCorrientesControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CuentasCorrientesControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CuentasCorrientesControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\CuentasCorrientesControl.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-20T18:40:23.037Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 59,
+              "Title": "CajaControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CajaControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CajaControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CajaControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\CajaControl.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-20T14:51:30.637Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 32,
+              "Title": "ProductoVarioWindow.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ProductoVarioWindow.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ProductoVarioWindow.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ProductoVarioWindow.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ProductoVarioWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-12-01T19:04:37.55Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "ClientesControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ClientesControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ClientesControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ClientesControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ClientesControl.xaml.cs",
+              "ViewState": "AgIAAK8AAAAAAAAAAAAuwMoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-01T19:20:22.207Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "VentasControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\VentasControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\VentasControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\VentasControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\VentasControl.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-11T17:19:47.023Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "VentasControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\VentasControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\VentasControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\VentasControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\VentasControl.xaml.cs",
+              "ViewState": "AgIAAC0AAAAAAAAAAAAmwEcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-11T17:20:26.354Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "ProductoVarioWindow.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ProductoVarioWindow.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ProductoVarioWindow.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ProductoVarioWindow.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ProductoVarioWindow.xaml.cs",
+              "ViewState": "AgIAAEIAAAAAAAAAAAAzwEkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-01T19:05:01.445Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 33,
+              "Title": "MainWindow.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\MainWindow.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\MainWindow.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\MainWindow.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\MainWindow.xaml.cs",
+              "ViewState": "AgIAAGQAAAAAAAAAAAAYwHAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-11T13:16:31.539Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 34,
+              "Title": "CustomMessageBoxWindow.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml.cs",
+              "ViewState": "AgIAADMAAAAAAAAAAAAgwE0AAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-28T17:49:39.041Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 35,
+              "Title": "CustomMessageBoxWindow.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\CustomMessageBoxWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-28T17:49:12.696Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 36,
+              "Title": "CustomMessageBox.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CustomMessageBox.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\CustomMessageBox.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\CustomMessageBox.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\CustomMessageBox.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-28T17:50:15.268Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 66,
+              "Title": "UsuariosControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\UsuariosControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\UsuariosControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\UsuariosControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\UsuariosControl.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-11T15:18:48.489Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 64,
+              "Title": "UsuariosControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\UsuariosControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\UsuariosControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\UsuariosControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\UsuariosControl.xaml.cs",
+              "ViewState": "AgIAAI0AAAAAAAAAAAAAAJ8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-12T11:59:38.485Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 63,
+              "Title": "GestionPermisos.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\GestionPermisos.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\GestionPermisos.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\GestionPermisos.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\GestionPermisos.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-12T15:05:18.999Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 65,
+              "Title": "GestionPermisos.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\GestionPermisos.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\GestionPermisos.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\GestionPermisos.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\GestionPermisos.xaml.cs",
+              "ViewState": "AgIAAF0AAAAAAAAAAAAYwIQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-12T15:05:42.049Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 37,
+              "Title": "ComprasControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ComprasControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ComprasControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ComprasControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ComprasControl.xaml.cs",
+              "ViewState": "AgIAALEAAAAAAAAAAAAmwMEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T14:16:22.058Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 38,
+              "Title": "PreciosControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PreciosControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\PreciosControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PreciosControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\PreciosControl.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAHoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T16:51:08.87Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 39,
+              "Title": "DashboardControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\DashboardControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\DashboardControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\DashboardControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\DashboardControl.xaml.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAmwCcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-01T16:41:00.96Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 41,
               "Title": "ComprasControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ComprasControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ComprasControl.xaml",
               "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ComprasControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ComprasControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ComprasControl.xaml",
               "RelativeToolTip": "SchettiniGestion.WPF\\ComprasControl.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
               "WhenOpened": "2025-11-13T14:16:01.37Z",
@@ -1026,151 +994,140 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 41,
+              "DocumentIndex": 42,
               "Title": "PreciosControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PreciosControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PreciosControl.xaml",
               "RelativeDocumentMoniker": "SchettiniGestion.WPF\\PreciosControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PreciosControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PreciosControl.xaml",
               "RelativeToolTip": "SchettiniGestion.WPF\\PreciosControl.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-13T16:49:56.902Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 44,
-              "Title": "ReportesControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ReportesControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ReportesControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ReportesControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ReportesControl.xaml.cs",
-              "ViewState": "AgIAAKUAAAAAAAAAAAAgwLsAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-27T14:23:12.25Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 46,
-              "Title": "ListasPreciosControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ListasPreciosControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ListasPreciosControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ListasPreciosControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ListasPreciosControl.xaml.cs",
-              "ViewState": "AgIAADgAAAAAAAAAAAAIwEwAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-27T00:10:25.135Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-13T16:49:56.902Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 45,
-              "Title": "ReportesControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ReportesControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ReportesControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ReportesControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ReportesControl.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-27T14:22:54.035Z",
-              "EditorCaption": ""
+              "Title": "ReportesControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ReportesControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ReportesControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ReportesControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ReportesControl.xaml.cs",
+              "ViewState": "AgIAAKUAAAAAAAAAAAAgwLsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-27T14:23:12.25Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 50,
-              "Title": "ProveedoresControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ProveedoresControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ProveedoresControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ProveedoresControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ProveedoresControl.xaml",
+              "DocumentIndex": 47,
+              "Title": "ListasPreciosControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ListasPreciosControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ListasPreciosControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ListasPreciosControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ListasPreciosControl.xaml.cs",
+              "ViewState": "AgIAADgAAAAAAAAAAAAIwEwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-27T00:10:25.135Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 46,
+              "Title": "ReportesControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ReportesControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ReportesControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ReportesControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ReportesControl.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-13T12:58:42.959Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-27T14:22:54.035Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 51,
-              "Title": "ReportePresupuestosControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ReportePresupuestosControl.xaml.cs",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ReportePresupuestosControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ReportePresupuestosControl.xaml.cs",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ReportePresupuestosControl.xaml.cs",
-              "ViewState": "AgIAAFEAAAAAAAAAAAAswHYAAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T15:40:04.836Z",
-              "EditorCaption": ""
+              "Title": "ProveedoresControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ProveedoresControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ProveedoresControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ProveedoresControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ProveedoresControl.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-13T12:58:42.959Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 49,
+              "DocumentIndex": 52,
+              "Title": "ReportePresupuestosControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ReportePresupuestosControl.xaml.cs",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ReportePresupuestosControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ReportePresupuestosControl.xaml.cs",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ReportePresupuestosControl.xaml.cs",
+              "ViewState": "AgIAAFEAAAAAAAAAAAAswHYAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-20T15:40:04.836Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 50,
               "Title": "readme.txt",
               "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\packages\\EPPlus.8.3.0\\readme.txt",
-              "RelativeDocumentMoniker": "packages\\EPPlus.8.3.0\\readme.txt",
+              "RelativeDocumentMoniker": "..\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\packages\\EPPlus.8.3.0\\readme.txt",
               "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\packages\\EPPlus.8.3.0\\readme.txt",
-              "RelativeToolTip": "packages\\EPPlus.8.3.0\\readme.txt",
+              "RelativeToolTip": "..\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\packages\\EPPlus.8.3.0\\readme.txt",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
               "WhenOpened": "2025-11-26T18:47:45.303Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 48,
+              "DocumentIndex": 49,
               "Title": "ProductosControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ProductosControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ProductosControl.xaml",
               "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ProductosControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ProductosControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ProductosControl.xaml",
               "RelativeToolTip": "SchettiniGestion.WPF\\ProductosControl.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-11T15:18:18.103Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-11T15:18:18.103Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 56,
+              "Title": "ReportePresupuestosControl.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ReportePresupuestosControl.xaml",
+              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ReportePresupuestosControl.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\ReportePresupuestosControl.xaml",
+              "RelativeToolTip": "SchettiniGestion.WPF\\ReportePresupuestosControl.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-11-20T15:39:33.579Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 55,
-              "Title": "ReportePresupuestosControl.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ReportePresupuestosControl.xaml",
-              "RelativeDocumentMoniker": "SchettiniGestion.WPF\\ReportePresupuestosControl.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\ReportePresupuestosControl.xaml",
-              "RelativeToolTip": "SchettiniGestion.WPF\\ReportePresupuestosControl.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-20T15:39:33.579Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 54,
               "Title": "PresupuestosControl.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PresupuestosControl.xaml.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PresupuestosControl.xaml.cs",
               "RelativeDocumentMoniker": "SchettiniGestion.WPF\\PresupuestosControl.xaml.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\PresupuestosControl.xaml.cs",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\PresupuestosControl.xaml.cs",
               "RelativeToolTip": "SchettiniGestion.WPF\\PresupuestosControl.xaml.cs",
               "ViewState": "AgIAALAAAAAAAAAAAADwv9cAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-20T15:25:55.876Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-20T15:25:55.876Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 67,
+              "DocumentIndex": 68,
               "Title": "MainWindow.xaml",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\MainWindow.xaml",
+              "DocumentMoniker": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\MainWindow.xaml",
               "RelativeDocumentMoniker": "SchettiniGestion.WPF\\MainWindow.xaml",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\SchettiniGestion.WPF\\MainWindow.xaml",
+              "ToolTip": "C:\\SchettiniGestion\\SchettiniGestion.WPF\\MainWindow.xaml",
               "RelativeToolTip": "SchettiniGestion.WPF\\MainWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-11T13:07:25.265Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-11T13:07:25.265Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 69,
+              "DocumentIndex": 70,
               "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\LicenseGenerator\\Program.cs",
+              "DocumentMoniker": "C:\\SchettiniGestion\\LicenseGenerator\\Program.cs",
               "RelativeDocumentMoniker": "LicenseGenerator\\Program.cs",
-              "ToolTip": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\LicenseGenerator\\Program.cs",
+              "ToolTip": "C:\\SchettiniGestion\\LicenseGenerator\\Program.cs",
               "RelativeToolTip": "LicenseGenerator\\Program.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-10T18:45:09.446Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-10T18:45:09.446Z"
             }
           ]
         }

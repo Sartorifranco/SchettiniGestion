@@ -1,12 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media;
-// Importamos la lógica de nuestro proyecto
 using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
@@ -17,23 +10,45 @@ namespace SchettiniGestion.WPF
         {
             base.OnStartup(e);
 
-            // 1. ¡CRÍTICO! Configurar licencia de Excel (EPPlus)
-            // Si no pones esta línea, la App se cierra al intentar usar funciones de Excel.
-            OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+            // IMPORTANTE: Evita que la app se cierre si cerramos la ventana de Login/Bienvenida
+            this.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-            // 2. Validar Licencia del Sistema
-            bool licenciaValida = LicenseManager.ValidarLicencia();
-
-            if (licenciaValida)
+            try
             {
-                // 3. Inicializar y Actualizar Base de Datos
-                // Esto ejecutará los "ALTER TABLE" para agregar las columnas nuevas (Código de Barras, etc.)
+                // 1. Intentamos conectar a la Base de Datos
                 DatabaseService.InitializeDatabase();
+
+                // 2. Verificamos usuarios (Aquí es donde explota si la IP está mal)
+                int cantidadUsuarios = DatabaseService.GetCantidadUsuariosRegistrados();
+
+                if (cantidadUsuarios == 0)
+                {
+                    // EXPERIENCIA PREMIUM: Base vacía -> Bienvenida
+                    WelcomeWindow welcome = new WelcomeWindow();
+                    welcome.Show();
+                }
+                else
+                {
+                    // EXPERIENCIA NORMAL: Hay usuarios -> Login
+                    LoginWindow login = new LoginWindow();
+                    login.Show();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                CustomMessageBox.Show("Error de licencia. La aplicación se cerrará.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                Application.Current.Shutdown();
+                // 3. PLAN B (SOLO SI FALLA LA CONEXIÓN)
+                // Si llegamos acá, es porque la IP está mal o el servidor apagado.
+                // Abrimos la ventana principal DIRECTO para que puedas ir a Configuración.
+
+                string mensaje = "No se pudo conectar a la Base de Datos.\n" +
+                                 "Posiblemente la IP configurada no es correcta.\n\n" +
+                                 "El sistema se abrirá en MODO DE EMERGENCIA para que pueda corregirlo en:\n" +
+                                 "CONFIGURACIÓN > RED Y SERVIDOR";
+
+                MessageBox.Show(mensaje, "Error de Conexión", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                PrincipalWindow principal = new PrincipalWindow();
+                principal.Show();
             }
         }
     }

@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\GeneradorLicencias\\GeneradorLicencias.csproj": {}
+    "C:\\SchettiniGestion\\GeneradorLicencias\\GeneradorLicencias.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\GeneradorLicencias\\GeneradorLicencias.csproj": {
+    "C:\\SchettiniGestion\\GeneradorLicencias\\GeneradorLicencias.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\GeneradorLicencias\\GeneradorLicencias.csproj",
+        "projectUniqueName": "C:\\SchettiniGestion\\GeneradorLicencias\\GeneradorLicencias.csproj",
         "projectName": "GeneradorLicencias",
-        "projectPath": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\GeneradorLicencias\\GeneradorLicencias.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Admin\\Desktop\\SchettiniGestion\\SchettiniGestion\\GeneradorLicencias\\obj\\",
+        "projectPath": "C:\\SchettiniGestion\\GeneradorLicencias\\GeneradorLicencias.csproj",
+        "packagesPath": "C:\\Users\\cande_adfb3yp\\.nuget\\packages\\",
+        "outputPath": "C:\\SchettiniGestion\\GeneradorLicencias\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\cande_adfb3yp\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -67,7 +67,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

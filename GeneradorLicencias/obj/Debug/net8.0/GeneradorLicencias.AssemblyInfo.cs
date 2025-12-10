@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GeneradorLicencias")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1507ba100efa8b3956af38cfc06c17be61c7bf61")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a7b86c5d87a266ff986ddaca1feca3eacc4ea740")]
 [assembly: System.Reflection.AssemblyProductAttribute("GeneradorLicencias")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GeneradorLicencias")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

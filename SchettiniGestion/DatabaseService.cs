@@ -403,26 +403,51 @@ namespace SchettiniGestion
 
         public static bool GuardarUsuario(int id, string u, string p, int rid, string rt)
         {
-            string ph = string.IsNullOrEmpty(p) ? "" : PasswordHasher.HashPassword(p);
             try
             {
+                string ph = string.IsNullOrEmpty(p) ? "" : PasswordHasher.HashPassword(p);
+
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    string sql = id == 0 ? "INSERT INTO Usuarios (NombreUsuario,PasswordHash,RolID,Rol) VALUES (@u,@p,@rid,@rt)" : string.IsNullOrEmpty(p) ? "UPDATE Usuarios SET NombreUsuario=@u,RolID=@rid,Rol=@rt WHERE UsuarioID=@id" : "UPDATE Usuarios SET NombreUsuario=@u,PasswordHash=@p,RolID=@rid,Rol=@rt WHERE UsuarioID=@id";
+
+                    // CORRECCIÓN: Nos aseguramos de usar @rid en ambos lugares
+                    string sql = "";
+                    if (id == 0)
+                    {
+                        // INSERT
+                        sql = "INSERT INTO Usuarios (NombreUsuario, PasswordHash, RolID, Rol) VALUES (@u, @p, @rid, @rt)";
+                    }
+                    else
+                    {
+                        // UPDATE
+                        if (string.IsNullOrEmpty(p))
+                            sql = "UPDATE Usuarios SET NombreUsuario=@u, RolID=@rid, Rol=@rt WHERE UsuarioID=@id";
+                        else
+                            sql = "UPDATE Usuarios SET NombreUsuario=@u, PasswordHash=@p, RolID=@rid, Rol=@rt WHERE UsuarioID=@id";
+                    }
+
                     using (var cmd = new SqlCommand(sql, c))
                     {
                         cmd.Parameters.AddWithValue("@u", u);
-                        cmd.Parameters.AddWithValue("@rid", rid);
+                        cmd.Parameters.AddWithValue("@rid", rid); // Ahora coincide con el SQL (@rid)
                         cmd.Parameters.AddWithValue("@rt", rt);
                         cmd.Parameters.AddWithValue("@id", id);
-                        if (sql.Contains("@p")) cmd.Parameters.AddWithValue("@p", ph);
+
+                        if (sql.Contains("@p"))
+                            cmd.Parameters.AddWithValue("@p", ph);
+
                         cmd.ExecuteNonQuery();
                         return true;
                     }
                 }
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                // CAMBIO: Ahora mostramos el error real para que sepas qué pasó
+                NotificarError("Error SQL al guardar usuario: " + ex.Message);
+                return false;
+            }
         }
 
         public static bool EliminarUsuario(int id)

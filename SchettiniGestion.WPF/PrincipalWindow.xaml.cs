@@ -11,9 +11,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using System.Diagnostics; // Para poder llamar a procesos (el teclado)
-using System.IO; // Para manejar rutas de archivos
-
+// --- ¡BORRAMOS LOS USINGS VIEJOS! ---
+// (Ya no necesitamos System.Diagnostics ni System.IO aquí)
 
 namespace SchettiniGestion.WPF
 {
@@ -59,26 +58,12 @@ namespace SchettiniGestion.WPF
             Application.Current.Shutdown();
         }
 
-        // --- ¡INICIO DE LA MODIFICACIÓN (SIMPLIFICACIÓN)! ---
+        // --- ¡INICIO DE LA MODIFICACIÓN (LA BUENA)! ---
         private void btnTeclado_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                // Verificamos si ya está abierto
-                Process[] oskProcesses = Process.GetProcessesByName("osk");
-                if (oskProcesses.Length == 0)
-                {
-                    // Si no está abierto, lo iniciamos.
-                    // Esta es la ruta directa que debe funcionar en todos los Windows.
-                    Process.Start(@"C:\Windows\System32\osk.exe");
-                }
-            }
-            catch (Exception ex)
-            {
-                // Si falla (ej: archivo no encontrado en esa ruta)
-                MessageBox.Show($"No se pudo iniciar el teclado en pantalla: {ex.Message}", "Error de teclado", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            // ¡Llamamos a nuestro nuevo ayudante!
+            KeyboardHelper.ShowOnScreenKeyboard();
         }
-        // --- ¡FIN DE LA MODIFICACIÓN (SIMPLIFICACIÓN)! ---
+        // --- ¡FIN DE LA MODIFICACIÓN (LA BUENA)! ---
     }
 }

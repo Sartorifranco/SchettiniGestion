@@ -1,0 +1,118 @@
+﻿<UserControl x:Class="SchettiniGestion.WPF.ReportesControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SchettiniGestion.WPF"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1200"
+             Background="{StaticResource ModuleBackgroundBrush}"
+             Loaded="UserControl_Loaded">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Reportes y Exportación" FontSize="24" FontWeight="Bold" Foreground="White" Margin="0,0,0,20"/>
+
+        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border Name="Border" BorderThickness="0" Background="#333A44" CornerRadius="5,5,0,0" Margin="2,0">
+                                    <ContentPresenter x:Name="ContentSite"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Center"
+                                        ContentSource="Header"
+                                        Margin="15,10"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Border" Property="Background" Value="#007ACC" />
+                                        <Setter Property="Foreground" Value="White" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="False">
+                                        <Setter TargetName="Border" Property="Background" Value="#2E333A" />
+                                        <Setter Property="Foreground" Value="#AAA" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
+
+            <TabItem Header="🏆 Ranking de Ventas">
+                <Grid Background="{StaticResource PanelBackgroundBrush}" Margin="0,10,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Orientation="Horizontal" Margin="15">
+                        <TextBlock Text="Desde:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center"/>
+                        <DatePicker x:Name="dpDesdeRanking" Margin="5,0,15,0" VerticalContentAlignment="Center"/>
+                        <TextBlock Text="Hasta:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center"/>
+                        <DatePicker x:Name="dpHastaRanking" Margin="5,0,15,0" VerticalContentAlignment="Center"/>
+                        <Button Content="Actualizar" Style="{StaticResource ActionButtonStyle}" Width="100" Click="btnActualizarRanking_Click"/>
+                    </StackPanel>
+
+                    <DataGrid x:Name="dgvRanking" Grid.Row="1" Style="{StaticResource ModuleDataGridStyle}" AutoGenerateColumns="False" IsReadOnly="True" Margin="15,0,15,15">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="100"/>
+                            <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" Width="*"/>
+                            <DataGridTextColumn Header="Rubro" Binding="{Binding Rubro}" Width="150"/>
+                            <DataGridTextColumn Header="Unidades" Binding="{Binding UnidadesVendidas}" Width="100"/>
+                            <DataGridTextColumn Header="Total Vendido ($)" Binding="{Binding TotalVendido, StringFormat=C2}" Width="150" FontWeight="Bold"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <Button Grid.Row="2" Content="📗 Exportar a Excel" Background="#1D6F42" Style="{StaticResource ActionButtonStyle}" 
+                            HorizontalAlignment="Right" Margin="15" Width="150" Click="btnExportarRanking_Click"/>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="📊 Libro IVA Ventas">
+                <Grid Background="{StaticResource PanelBackgroundBrush}" Margin="0,10,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Orientation="Horizontal" Margin="15">
+                        <TextBlock Text="Desde:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center"/>
+                        <DatePicker x:Name="dpDesdeIVA" Margin="5,0,15,0" VerticalContentAlignment="Center"/>
+                        <TextBlock Text="Hasta:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center"/>
+                        <DatePicker x:Name="dpHastaIVA" Margin="5,0,15,0" VerticalContentAlignment="Center"/>
+                        <Button Content="Actualizar" Style="{StaticResource ActionButtonStyle}" Width="100" Click="btnActualizarIVA_Click"/>
+                    </StackPanel>
+
+                    <DataGrid x:Name="dgvIVA" Grid.Row="1" Style="{StaticResource ModuleDataGridStyle}" AutoGenerateColumns="False" IsReadOnly="True" Margin="15,0,15,15">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha}" Width="120"/>
+                            <DataGridTextColumn Header="Comprobante" Binding="{Binding TipoComprobante}" Width="120"/>
+                            <DataGridTextColumn Header="Nro" Binding="{Binding NroComprobante}" Width="80"/>
+                            <DataGridTextColumn Header="Cliente" Binding="{Binding Cliente}" Width="*"/>
+                            <DataGridTextColumn Header="CUIT" Binding="{Binding CUIT}" Width="100"/>
+                            <DataGridTextColumn Header="Neto 21%" Binding="{Binding Neto21, StringFormat=N2}" Width="100"/>
+                            <DataGridTextColumn Header="IVA 21%" Binding="{Binding IVA21, StringFormat=N2}" Width="100"/>
+                            <DataGridTextColumn Header="Neto 10.5%" Binding="{Binding Neto105, StringFormat=N2}" Width="100"/>
+                            <DataGridTextColumn Header="IVA 10.5%" Binding="{Binding IVA105, StringFormat=N2}" Width="100"/>
+                            <DataGridTextColumn Header="Total" Binding="{Binding TotalFactura, StringFormat=C2}" Width="120" FontWeight="Bold"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <Button Grid.Row="2" Content="📗 Exportar a Excel" Background="#1D6F42" Style="{StaticResource ActionButtonStyle}" 
+                            HorizontalAlignment="Right" Margin="15" Width="150" Click="btnExportarIVA_Click"/>
+                </Grid>
+            </TabItem>
+
+        </TabControl>
+    </Grid>
+</UserControl>

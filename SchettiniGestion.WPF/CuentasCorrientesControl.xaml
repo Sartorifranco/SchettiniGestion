@@ -1,0 +1,110 @@
+﻿<UserControl x:Class="SchettiniGestion.WPF.CuentasCorrientesControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SchettiniGestion.WPF"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1200"
+             Background="{StaticResource ModuleBackgroundBrush}"
+             Loaded="UserControl_Loaded">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Cuentas Corrientes" FontSize="24" FontWeight="Bold" Foreground="{StaticResource HeaderForegroundBrush}" Margin="0,0,0,20"/>
+
+        <Border Grid.Row="1" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="15" Margin="0,0,0,20">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                    <RadioButton x:Name="rbClientes" Content="Clientes" GroupName="TipoEntidad" IsChecked="True" Foreground="White" FontSize="16" Margin="0,0,20,0" Checked="rbTipo_Checked"/>
+                    <RadioButton x:Name="rbProveedores" Content="Proveedores" GroupName="TipoEntidad" Foreground="White" FontSize="16" Checked="rbTipo_Checked"/>
+                </StackPanel>
+
+                <TextBlock Text="Buscar:" Style="{StaticResource ModuleLabelStyle}"/>
+                <TextBox x:Name="txtBuscar" Style="{StaticResource ModuleTextBoxStyle}" 
+                         TextChanged="txtBuscar_TextChanged" 
+                         PreviewKeyDown="txtBuscar_PreviewKeyDown"/>
+
+                <Popup x:Name="popupBusqueda" PlacementTarget="{Binding ElementName=txtBuscar}" Placement="Bottom" StaysOpen="False">
+                    <Border Background="{StaticResource PanelBackgroundBrush}" BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1" CornerRadius="3" MinWidth="400">
+                        <ListBox x:Name="lstResultados" MaxHeight="200" 
+                                 MouseUp="lstResultados_MouseUp"
+                                 PreviewKeyDown="lstResultados_PreviewKeyDown">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding RazonSocial}" Foreground="White" FontSize="14" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding CUIT}" Foreground="#AAA" FontSize="12"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+                </Popup>
+            </StackPanel>
+        </Border>
+
+        <Border x:Name="panelSaldo" Grid.Row="2" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" Margin="0,0,0,20" Visibility="Collapsed">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock x:Name="lblNombreEntidad" Text="Nombre del Cliente" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock Text="Saldo Deudor Actual: " FontSize="16" Foreground="#AAA" VerticalAlignment="Bottom" Margin="0,0,10,4"/>
+                        <TextBlock x:Name="lblSaldo" Text="$ 0,00" FontSize="32" FontWeight="Bold" Foreground="#FF5252"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Button x:Name="btnAsentarPago" Grid.Column="1" Content="💵 Asentar Cobro/Pago" 
+                        Style="{StaticResource ActionButtonStyle}" Background="#2E7D32"
+                        FontSize="16" Height="50" Padding="20,0"
+                        Click="btnAsentarPago_Click"/>
+            </Grid>
+        </Border>
+
+        <DataGrid x:Name="dgvMovimientos" Grid.Row="3" Style="{StaticResource ModuleDataGridStyle}" AutoGenerateColumns="False" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha}" Width="150"/>
+                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
+                <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat=C2}" Width="120" FontWeight="Bold"/>
+                <DataGridTextColumn Header="Saldo Hist." Binding="{Binding SaldoHistorico, StringFormat=C2}" Width="120"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Grid x:Name="popupPago" Visibility="Collapsed" Background="#AA000000" Grid.RowSpan="4">
+            <Border Background="{StaticResource ModuleBackgroundBrush}" Width="400" Height="300" CornerRadius="10" BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Registrar Pago" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+
+                    <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                        <TextBlock Text="Monto a pagar:" Style="{StaticResource ModuleLabelStyle}"/>
+                        <xctk:DecimalUpDown x:Name="numMontoPago" Style="{StaticResource ModuleNumericUpDownStyle}" FormatString="C2" Margin="0,0,0,20" FontSize="18"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancelar" Style="{StaticResource DeleteButtonStyle}" Width="100" Margin="0,0,10,0" Click="btnCancelarPopup_Click"/>
+                        <Button Content="Confirmar" Style="{StaticResource ActionButtonStyle}" Width="100" Click="btnConfirmarPago_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+    </Grid>
+</UserControl>

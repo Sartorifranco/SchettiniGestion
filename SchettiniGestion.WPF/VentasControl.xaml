@@ -1,0 +1,94 @@
+﻿<UserControl x:Class="SchettiniGestion.WPF.VentasControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SchettiniGestion.WPF"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1000"
+             Loaded="VentasControl_Loaded"
+             Background="{StaticResource ModuleBackgroundBrush}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="200"/>
+        </Grid.RowDefinitions>
+
+        <!-- 1. Panel de Filtros (arriba) -->
+        <Border Grid.Row="0" 
+                Background="{StaticResource PanelBackgroundBrush}" 
+                CornerRadius="5" Margin="20,20,20,10" Padding="20"
+                BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Margin="0,0,20,0">
+                    <TextBlock Text="Fecha Desde:" Style="{StaticResource ModuleLabelStyle}"/>
+                    <DatePicker x:Name="dpDesde" Style="{StaticResource {x:Type DatePicker}}" MinHeight="38" FontSize="14" Width="169"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Margin="10,0,20,0">
+                    <TextBlock Text="Fecha Hasta:" Style="{StaticResource ModuleLabelStyle}"/>
+                    <DatePicker x:Name="dpHasta" Style="{StaticResource {x:Type DatePicker}}" MinHeight="38" FontSize="14" Width="166"/>
+                </StackPanel>
+
+                <Button x:Name="btnBuscarVentas" Grid.Column="2" Content="🔍 Buscar" 
+                        Style="{StaticResource ActionButtonStyle}" 
+                        VerticalAlignment="Bottom" Margin="10,0,0,0"
+                        Click="btnBuscarVentas_Click"/>
+
+            </Grid>
+        </Border>
+
+        <!-- 2. Grilla de Facturas (Principal) -->
+        <Border Grid.Row="1" 
+                Background="{StaticResource PanelBackgroundBrush}" 
+                CornerRadius="5" Margin="20,0,20,10" Padding="5"
+                BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+            <DataGrid x:Name="dgvFacturas" 
+                      Style="{StaticResource ModuleDataGridStyle}"
+                      AutoGenerateColumns="False" 
+                      SelectionChanged="dgvFacturas_SelectionChanged">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="N° Factura" Binding="{Binding FacturaID}" Width="Auto" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat='dd/MM/yyyy HH:mm'}" Width="Auto" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Cliente" Binding="{Binding RazonSocial}" Width="*" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Tipo" Binding="{Binding TipoComprobante}" Width="Auto" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C2}" Width="Auto" IsReadOnly="True" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- 3. Título del Detalle -->
+        <TextBlock Grid.Row="2" Text="Detalle de la Venta Seleccionada:" 
+                   Style="{StaticResource ModuleLabelStyle}" 
+                   FontSize="16" Margin="25,0,0,5"/>
+
+        <!-- 4. Grilla de Detalle (Abajo) -->
+        <Border Grid.Row="3" 
+                Background="{StaticResource PanelBackgroundBrush}" 
+                CornerRadius="5" Margin="20,0,20,20" Padding="5"
+                BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+            <DataGrid x:Name="dgvFacturaDetalle" 
+                      Style="{StaticResource ModuleDataGridStyle}"
+                      AutoGenerateColumns="False">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="Auto" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad}" Width="Auto" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Precio Unit." Binding="{Binding PrecioUnitario, StringFormat=C2}" Width="Auto" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Subtotal" Binding="{Binding Subtotal, StringFormat=C2}" Width="Auto" IsReadOnly="True" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+    </Grid>
+</UserControl>

@@ -1,149 +1,185 @@
-﻿using SchettiniGestion; // <-- ¡Nuestro Cerebro!
+﻿using SchettiniGestion;
 using System;
-using System.Data; // <-- Para usar DataTable
+using System.Data;
 using System.Windows;
 using System.Windows.Controls;
-// ¡Importamos el Toolkit!
-using Xceed.Wpf.Toolkit;
+using System.Windows.Media.Imaging;
+using Microsoft.Win32;
+using System.IO;
+using OfficeOpenXml;
 
 namespace SchettiniGestion.WPF
 {
-    /// <summary>
-    /// Lógica de interacción para ProductosControl.xaml
-    /// </summary>
     public partial class ProductosControl : UserControl
     {
-        private int _productoIDSeleccionado = 0;
+        private int _productoID = 0;
+        private string _rutaImagenActual = "";
+        private bool _cargandoDatos = false;
 
         public ProductosControl()
         {
             InitializeComponent();
         }
 
-        // --- 1. MÉTODOS DE CARGA ---
-
         private void ProductosControl_Loaded(object sender, RoutedEventArgs e)
         {
-            ConfigurarControlesNumericos();
-            CargarProductos();
-            LimpiarCampos();
+            CargarLista();
+            Limpiar();
         }
 
-        private void ConfigurarControlesNumericos()
+        private void CargarLista()
         {
-            // --- ¡ESTA ES LA CORRECCIÓN! ---
-            // Borramos las líneas que daban error (DecimalPlaces y Minimum)
-            // 'FormatString' ya hace el trabajo de formatear.
-
-            // Configuración para el Precio de Venta
-            numPrecioVenta.FormatString = "C2"; // "C2" = Formato Moneda (ej: $1,250.50)
-            numPrecioVenta.AllowSpin = true; // Permite usar las flechitas
-
-            // Configuración para el Stock
-            numStockActual.FormatString = "N0"; // "N0" = Número sin decimales
-            numStockActual.AllowSpin = true;
+            try { dgvProductos.ItemsSource = DatabaseService.GetProductos().DefaultView; } catch { }
         }
 
-        private void CargarProductos()
+        private void Limpiar()
         {
-            try
+            _cargandoDatos = true;
+            _productoID = 0;
+            _rutaImagenActual = "";
+            txtCodigo.Text = "";
+            txtCodigoBarra.Text = "";
+            txtDescripcion.Text = "";
+            cmbCategoria.Text = "";
+            cmbTipoIVA.SelectedIndex = 0;
+            numCosto.Value = 0;
+            numGanancia.Value = 30;
+            numImpInterno.Value = 0;
+            numPrecioFinal.Value = 0;
+            imgProducto.Source = null;
+            btnGuardar.Content = "💾 Guardar";
+            btnEliminar.IsEnabled = false;
+            _cargandoDatos = false;
+            txtCodigo.Focus();
+        }
+
+        private void dgvProductos_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (dgvProductos.SelectedItem is DataRowView row)
             {
-                DataTable dt = DatabaseService.GetProductos();
-                dvgProductos.ItemsSource = dt.DefaultView;
-            }
-            catch (Exception ex)
-            {
-                // Especificamos 'System.Windows' para evitar la ambigüedad
-                System.Windows.MessageBox.Show($"Error al cargar productos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _cargandoDatos = true;
+                try
+                {
+                    _productoID = Convert.ToInt32(row["ProductoID"]);
+                    txtCodigo.Text = row["Codigo"].ToString();
+                    if (row.Row.Table.Columns.Contains("CodigoBarra")) txtCodigoBarra.Text = row["CodigoBarra"].ToString();
+                    txtDescripcion.Text = row["Descripcion"].ToString();
+                    if (row.Row.Table.Columns.Contains("Categoria")) cmbCategoria.Text = row["Categoria"].ToString();
+
+                    decimal costo = 0; if (row.Row.Table.Columns.Contains("PrecioCosto")) decimal.TryParse(row["PrecioCosto"].ToString(), out costo);
+                    numCosto.Value = costo;
+
+                    decimal ganancia = 0; if (row.Row.Table.Columns.Contains("Ganancia")) decimal.TryParse(row["Ganancia"].ToString(), out ganancia);
+                    numGanancia.Value = ganancia;
+
+                    decimal imp = 0; if (row.Row.Table.Columns.Contains("ImpuestoInterno")) decimal.TryParse(row["ImpuestoInterno"].ToString(), out imp);
+                    numImpInterno.Value = imp;
+
+                    decimal venta = 0; if (row.Row.Table.Columns.Contains("PrecioVenta")) decimal.TryParse(row["PrecioVenta"].ToString(), out venta);
+                    numPrecioFinal.Value = venta;
+
+                    imgProducto.Source = null;
+                    if (row.Row.Table.Columns.Contains("ImagenPath") && !string.IsNullOrEmpty(row["ImagenPath"].ToString()))
+                    {
+                        try { imgProducto.Source = new BitmapImage(new Uri(row["ImagenPath"].ToString())); } catch { }
+                    }
+                    btnGuardar.Content = "Modificar";
+                    btnEliminar.IsEnabled = true;
+                }
+                catch (Exception ex) { CustomMessageBox.Show("Error al leer datos: " + ex.Message); }
+                _cargandoDatos = false;
             }
         }
 
-        // --- 2. LÓGICA DE LOS BOTONES ---
-
-        private void btnNuevo_Click(object sender, RoutedEventArgs e)
+        private void CalcularPrecio_ValueChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            LimpiarCampos();
+            if (_cargandoDatos) return;
+            CalcularPrecioVenta();
         }
+
+        private void CalcularPrecioVenta()
+        {
+            if (numCosto == null || numGanancia == null || numImpInterno == null || numPrecioFinal == null) return;
+            decimal costo = numCosto.Value ?? 0;
+            decimal ganancia = numGanancia.Value ?? 0;
+            decimal impuestos = numImpInterno.Value ?? 0;
+            decimal venta = costo * (1 + (ganancia / 100)) + impuestos;
+            numPrecioFinal.Value = Math.Round(venta, 2);
+        }
+
+        private void btnImportarExcel_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog dlg = new OpenFileDialog { Filter = "Archivos Excel|*.xlsx;*.xls" };
+            if (dlg.ShowDialog() == true)
+            {
+                try
+                {
+                    using (ExcelPackage package = new ExcelPackage(new FileInfo(dlg.FileName)))
+                    {
+                        ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
+                        int rowCount = worksheet.Dimension.Rows;
+                        int contador = 0;
+                        for (int row = 2; row <= rowCount; row++)
+                        {
+                            string codigo = worksheet.Cells[row, 1].Text;
+                            if (string.IsNullOrWhiteSpace(codigo)) continue;
+                            string barras = worksheet.Cells[row, 2].Text;
+                            string descripcion = worksheet.Cells[row, 3].Text;
+                            string rubro = worksheet.Cells[row, 4].Text;
+                            decimal costo = 0; decimal.TryParse(worksheet.Cells[row, 5].Text, out costo);
+                            decimal ganancia = 30; decimal.TryParse(worksheet.Cells[row, 6].Text, out ganancia);
+                            int stock = 0; int.TryParse(worksheet.Cells[row, 7].Text, out stock);
+                            decimal venta = costo * (1 + (ganancia / 100));
+
+                            DatabaseService.GuardarProducto(0, codigo, barras, descripcion, rubro, "21% (General)", costo, ganancia, 0, venta, stock, "");
+                            contador++;
+                        }
+                        CustomMessageBox.Show($"¡Importación Exitosa! {contador} productos.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                        CargarLista();
+                    }
+                }
+                catch (Exception ex) { CustomMessageBox.Show($"Error al importar: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+            }
+        }
+
+        private void btnSeleccionarImagen_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog dlg = new OpenFileDialog { Filter = "Imágenes|*.jpg;*.png;*.jpeg" };
+            if (dlg.ShowDialog() == true)
+            {
+                _rutaImagenActual = dlg.FileName;
+                imgProducto.Source = new BitmapImage(new Uri(_rutaImagenActual));
+            }
+        }
+
+        private void btnNuevo_Click(object sender, RoutedEventArgs e) { Limpiar(); }
 
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Validar que la descripción no esté vacía
-            if (string.IsNullOrWhiteSpace(txtDescripcion.Text))
+            if (string.IsNullOrWhiteSpace(txtCodigo.Text) || string.IsNullOrWhiteSpace(txtDescripcion.Text))
             {
-                System.Windows.MessageBox.Show("La descripción del producto no puede estar vacía.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Código y Descripción son obligatorios.");
                 return;
             }
-
-            // 2. Obtener los valores de los campos
-            string codigo = txtCodigo.Text.Trim();
-            string descripcion = txtDescripcion.Text.Trim();
-            decimal precio = numPrecioVenta.Value ?? 0;
-            int stock = numStockActual.Value ?? 0;
-
-            // 3. Llamar al servicio de base de datos para guardar
-            bool exito = DatabaseService.GuardarProducto(_productoIDSeleccionado, codigo, descripcion, precio, stock);
-
-            if (exito)
+            decimal venta = numPrecioFinal.Value ?? 0;
+            if (venta == 0 && (numCosto.Value ?? 0) > 0)
             {
-                System.Windows.MessageBox.Show("Producto guardado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                CargarProductos();
-                LimpiarCampos();
+                decimal costo = numCosto.Value ?? 0;
+                decimal ganancia = numGanancia.Value ?? 0;
+                decimal impuestos = numImpInterno.Value ?? 0;
+                venta = costo * (1 + (ganancia / 100)) + impuestos;
             }
+            bool ok = DatabaseService.GuardarProducto(_productoID, txtCodigo.Text, txtCodigoBarra.Text, txtDescripcion.Text, cmbCategoria.Text, cmbTipoIVA.Text, numCosto.Value ?? 0, numGanancia.Value ?? 0, numImpInterno.Value ?? 0, venta, 0, _rutaImagenActual);
+            if (ok) { CustomMessageBox.Show("Guardado."); CargarLista(); Limpiar(); }
         }
 
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Validar que haya un producto seleccionado
-            if (_productoIDSeleccionado == 0)
+            if (CustomMessageBox.Show("¿Eliminar?", "Confirma", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
-                System.Windows.MessageBox.Show("Por favor, seleccione un producto de la grilla para eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // 2. Pedir confirmación
-            MessageBoxResult confirmacion = System.Windows.MessageBox.Show($"¿Está seguro de que desea eliminar el producto '{txtDescripcion.Text}'?",
-                                                      "Confirmar eliminación",
-                                                      MessageBoxButton.YesNo,
-                                                      MessageBoxImage.Warning);
-
-            if (confirmacion == MessageBoxResult.Yes)
-            {
-                // 3. Llamar al servicio para eliminar
-                bool exito = DatabaseService.EliminarProducto(_productoIDSeleccionado);
-
-                if (exito)
-                {
-                    System.Windows.MessageBox.Show("Producto eliminado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                    CargarProductos();
-                    LimpiarCampos();
-                }
-            }
-        }
-
-        // --- 3. MÉTODOS AYUDANTES ---
-
-        private void LimpiarCampos()
-        {
-            _productoIDSeleccionado = 0;
-            txtCodigo.Text = "";
-            txtDescripcion.Text = "";
-            numPrecioVenta.Value = 0;
-            numStockActual.Value = 0;
-
-            dvgProductos.UnselectAll();
-        }
-
-        private void dvgProductos_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (dvgProductos.SelectedItem is DataRowView filaSeleccionada)
-            {
-                _productoIDSeleccionado = Convert.ToInt32(filaSeleccionada["ProductoID"]);
-                txtCodigo.Text = filaSeleccionada["Codigo"].ToString();
-                txtDescripcion.Text = filaSeleccionada["Descripcion"].ToString();
-                numPrecioVenta.Value = Convert.ToDecimal(filaSeleccionada["PrecioVenta"]);
-                numStockActual.Value = Convert.ToInt32(filaSeleccionada["StockActual"]);
+                DatabaseService.EliminarProducto(_productoID);
+                CargarLista();
+                Limpiar();
             }
         }
     }

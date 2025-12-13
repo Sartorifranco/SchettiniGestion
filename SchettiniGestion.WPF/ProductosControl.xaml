@@ -6,67 +6,100 @@
              xmlns:local="clr-namespace:SchettiniGestion.WPF"
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              mc:Ignorable="d" 
-             d:DesignHeight="600" d:DesignWidth="800"
-             Background="#F0F0F0"
+             d:DesignHeight="700" d:DesignWidth="1100"
+             Background="{StaticResource ModuleBackgroundBrush}"
              Loaded="ProductosControl_Loaded">
 
-    <Grid Margin="15">
+    <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 1. CAMPOS DE ENTRADA Y BOTONES (Fila 0) -->
-        <Border Grid.Row="0" Background="White" Padding="20" CornerRadius="5" BorderBrush="#CCC" BorderThickness="1">
+        <TextBlock Grid.Row="0" Text="Gestión de Productos" FontSize="28" FontWeight="Bold" Foreground="White" Margin="0,0,0,20"/>
+
+        <Border Grid.Row="1" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" Margin="0,0,0,20">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="1.5*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="1*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Fila 0: Código y Descripción -->
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Código:" Style="{StaticResource LabelStyle}"/>
-                <TextBox x:Name="txtCodigo" Grid.Row="1" Grid.Column="0" Style="{StaticResource TextBoxStyle}"/>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Código Interno:" Style="{StaticResource ModuleLabelStyle}" FontSize="16"/>
+                    <TextBox x:Name="txtCodigo" Style="{StaticResource ModuleTextBoxStyle}" FontSize="16" Margin="0,0,0,10"/>
 
-                <TextBlock Grid.Row="0" Grid.Column="1" Text="Descripción:" Style="{StaticResource LabelStyle}"/>
-                <TextBox x:Name="txtDescripcion" Grid.Row="1" Grid.Column="1" Style="{StaticResource TextBoxStyle}"/>
+                    <TextBlock Text="Código de Barras:" Style="{StaticResource ModuleLabelStyle}" FontSize="16"/>
+                    <TextBox x:Name="txtCodigoBarra" Style="{StaticResource ModuleTextBoxStyle}" FontSize="16" Margin="0,0,0,10"/>
 
-                <!-- Fila 1: Precio y Stock (Usando los nuevos controles) -->
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Precio Venta:" Style="{StaticResource LabelStyle}" Margin="0,10,0,0"/>
-                <xctk:DecimalUpDown x:Name="numPrecioVenta" Grid.Row="2" Grid.Column="0" Style="{StaticResource DecimalUpDownStyle}" Margin="93,10,10,0"/>
+                    <TextBlock Text="Descripción / Nombre:" Style="{StaticResource ModuleLabelStyle}" FontSize="16"/>
+                    <TextBox x:Name="txtDescripcion" Style="{StaticResource ModuleTextBoxStyle}" FontSize="16" Margin="0,0,0,10"/>
 
-                <TextBlock Grid.Row="2" Grid.Column="1" Text="Stock Actual:" Style="{StaticResource LabelStyle}" Margin="0,10,0,0"/>
-                <xctk:IntegerUpDown x:Name="numStockActual" Grid.Row="2" Grid.Column="1" Style="{StaticResource IntegerUpDownStyle}" Margin="92,10,10,0"/>
+                    <TextBlock Text="Rubro / Categoría:" Style="{StaticResource ModuleLabelStyle}" FontSize="16"/>
+                    <ComboBox x:Name="cmbCategoria" Style="{StaticResource ModuleComboBoxStyle}" FontSize="16" IsEditable="True">
+                        <ComboBoxItem Content="Almacén"/>
+                        <ComboBoxItem Content="Bebidas"/>
+                        <ComboBoxItem Content="Limpieza"/>
+                        <ComboBoxItem Content="Kiosco"/>
+                        <ComboBoxItem Content="Varios"/>
+                    </ComboBox>
+                </StackPanel>
 
-                <!-- Botones (en la columna 2) -->
-                <StackPanel Grid.Row="0" Grid.Column="2" Grid.RowSpan="3" VerticalAlignment="Top" Margin="20,0,0,0">
-                    <Button x:Name="btnNuevo" Content="Nuevo" Style="{StaticResource ButtonStyle}" Margin="0,5,0,0" Click="btnNuevo_Click"/>
-                    <Button x:Name="btnGuardar" Content="Guardar" Style="{StaticResource ButtonStyle}" Margin="0,10,0,0" Click="btnGuardar_Click"/>
-                    <Button x:Name="btnEliminar" Content="Eliminar" Style="{StaticResource ButtonStyle}" Margin="0,10,0,0" Click="btnEliminar_Click"/>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Tipo de IVA:" Style="{StaticResource ModuleLabelStyle}" FontSize="16"/>
+                    <ComboBox x:Name="cmbTipoIVA" Style="{StaticResource ModuleComboBoxStyle}" FontSize="16" Margin="0,0,0,10">
+                        <ComboBoxItem Content="21% (General)" IsSelected="True"/>
+                        <ComboBoxItem Content="10.5% (Reducido)"/>
+                        <ComboBoxItem Content="27% (Servicios)"/>
+                        <ComboBoxItem Content="0% (Exento)"/>
+                    </ComboBox>
+
+                    <TextBlock Text="Costo ($):" Style="{StaticResource ModuleLabelStyle}" FontSize="16"/>
+                    <xctk:DecimalUpDown x:Name="numCosto" Style="{StaticResource ModuleNumericUpDownStyle}" FontSize="16" FormatString="N2" Margin="0,0,0,10"
+                                        ValueChanged="CalcularPrecio_ValueChanged"/>
+
+                    <TextBlock Text="% Ganancia:" Style="{StaticResource ModuleLabelStyle}" FontSize="16"/>
+                    <xctk:DecimalUpDown x:Name="numGanancia" Style="{StaticResource ModuleNumericUpDownStyle}" FontSize="16" Value="30" Minimum="0" Margin="0,0,0,10"
+                                        ValueChanged="CalcularPrecio_ValueChanged"/>
+
+                    <TextBlock Text="Imp. Internos ($):" Style="{StaticResource ModuleLabelStyle}" FontSize="16"/>
+                    <xctk:DecimalUpDown x:Name="numImpInterno" Style="{StaticResource ModuleNumericUpDownStyle}" FontSize="16" FormatString="N2" Margin="0,0,0,10"
+                                        ValueChanged="CalcularPrecio_ValueChanged"/>
+
+                    <TextBlock Text="PRECIO FINAL:" Style="{StaticResource ModuleLabelStyle}" FontSize="16" Foreground="#4CAF50"/>
+                    <xctk:DecimalUpDown x:Name="numPrecioFinal" Style="{StaticResource ModuleNumericUpDownStyle}" FontSize="18" FontWeight="Bold" FormatString="C2" Background="#E8F5E9"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="4">
+                    <Border BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1" CornerRadius="5" Height="120" Margin="0,0,0,10">
+                        <Image x:Name="imgProducto" Stretch="Uniform" Source="pack://application:,,,/SchettiniGestion.WPF;component/Resources/no-image.png"/>
+                    </Border>
+                    <Button x:Name="btnSeleccionarImagen" Content="📷 Subir Foto" Style="{StaticResource ActionButtonStyle}" Click="btnSeleccionarImagen_Click" Margin="0,0,0,20"/>
+
+                    <Button x:Name="btnImportarExcel" Content="📗 Importar Excel" 
+                            Style="{StaticResource ActionButtonStyle}" 
+                            Background="#1D6F42" Height="45" FontSize="16" Margin="0,0,0,10"
+                            Click="btnImportarExcel_Click"/>
+                    <Button x:Name="btnNuevo" Content="➕ Nuevo" Style="{StaticResource ActionButtonStyle}" Height="45" FontSize="16" Click="btnNuevo_Click"/>
+                    <Button x:Name="btnGuardar" Content="💾 Guardar" Style="{StaticResource ActionButtonStyle}" Height="45" FontSize="16" Background="#00A86B" Click="btnGuardar_Click"/>
+                    <Button x:Name="btnEliminar" Content="❌ Eliminar" Style="{StaticResource DeleteButtonStyle}" Height="45" FontSize="16" Click="btnEliminar_Click" IsEnabled="False"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- 2. GRILLA DE PRODUCTOS (Fila 1) -->
-        <!-- ¡RECUERDA TU CAMBIO DE NOMBRE! -->
-        <DataGrid x:Name="dvgProductos" 
-                  Grid.Row="1" 
-                  Margin="0,15,0,0"
-                  AutoGenerateColumns="False" 
-                  IsReadOnly="True"
-                  SelectionMode="Single"
-                  SelectionChanged="dvgProductos_SelectionChanged">
+        <DataGrid x:Name="dgvProductos" Grid.Row="2" Style="{StaticResource ModuleDataGridStyle}" 
+                  AutoGenerateColumns="False" SelectionChanged="dgvProductos_SelectionChanged" FontSize="14">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="Auto"/>
-                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
-                <DataGridTextColumn Header="Precio Venta" Binding="{Binding PrecioVenta, StringFormat=C2}" Width="Auto"/>
-                <DataGridTextColumn Header="Stock" Binding="{Binding StockActual}" Width="Auto"/>
+                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="100" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Rubro" Binding="{Binding Categoria}" Width="120" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Costo" Binding="{Binding PrecioCosto, StringFormat=C2}" Width="100" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Venta" Binding="{Binding PrecioVenta, StringFormat=C2}" Width="100" IsReadOnly="True" FontWeight="Bold"/>
+                <DataGridTextColumn Header="Stock" Binding="{Binding StockActual}" Width="80" IsReadOnly="True"/>
             </DataGrid.Columns>
         </DataGrid>
 

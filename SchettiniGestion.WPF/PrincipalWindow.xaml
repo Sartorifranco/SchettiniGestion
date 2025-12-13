@@ -5,11 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SchettiniGestion.WPF"
         mc:Ignorable="d"
-        Title="SchettiniGestion - Menú Principal" Height="600" Width="900"
+        Title="SchettiniGestion" Height="720" Width="1280"
         WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
-        Closing="Window_Closing">
+        Closing="Window_Closing"
+        Background="#F0F0F0"
+        Loaded="Window_Loaded">
 
+<<<<<<< HEAD
     <DockPanel>
 
         <Menu DockPanel.Dock="Top" FontSize="14" MinHeight="30">
@@ -55,6 +58,103 @@
                        VerticalAlignment="Center"
                        Foreground="#777"/>
         </ContentControl>
+=======
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-    </DockPanel>
+        <Border Grid.Column="0" Background="#2E333A" RenderTransformOrigin="0.509,0.498">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                          HorizontalScrollBarVisibility="Disabled"
+                          PanningMode="VerticalOnly"
+                          CanContentScroll="True">
+
+                <StackPanel Width="230" Margin="0,0,0,20">
+
+                    <TextBlock Text="SCHETTINI GESTIÓN" 
+                               Foreground="White" FontSize="18" FontWeight="Bold" 
+                               HorizontalAlignment="Center" Margin="0,20,0,20"/>
+                    <Separator Background="#444" Margin="0,0,0,10"/>
+
+                    <Button x:Name="btnInicio" Content="🏠  Inicio" Style="{StaticResource MenuButton}" Click="btnInicio_Click"/>
+                    <Button x:Name="btnFacturacion" Content="🛒  Facturación" Style="{StaticResource MenuButton}" Click="btnFacturacion_Click"/>
+
+                    <TextBlock x:Name="headerReportes" Text="Operaciones" Style="{StaticResource MenuHeader}"/>
+                    <Button x:Name="btnVentas" Content="📈  Ventas Realizadas" Style="{StaticResource MenuButton}" Click="btnVentas_Click"/>
+                    <Button x:Name="btnReportesAvanzados" Content="📊  Reportes y Excel" Style="{StaticResource MenuButton}" Click="btnReportesAvanzados_Click"/>
+>>>>>>> 1507ba100efa8b3956af38cfc06c17be61c7bf61
+
+                    <Button x:Name="btnPresupuestos" Content="📄  Nuevo Presupuesto" Style="{StaticResource MenuButton}" Click="btnPresupuestos_Click"/>
+                    <Button x:Name="btnReportePresupuestos" Content="📋  Hist. Presupuestos" Style="{StaticResource MenuButton}" Click="btnReportePresupuestos_Click" Margin="20,0,0,0" FontSize="15"/>
+
+                    <TextBlock x:Name="headerGestion" Text="Gestión" Style="{StaticResource MenuHeader}"/>
+
+                    <Button x:Name="btnCaja" Content="💰  Caja" Style="{StaticResource MenuButton}" Click="btnCaja_Click"/>
+                    <Button x:Name="btnCtaCte" Content="📒  Cta. Corriente" Style="{StaticResource MenuButton}" Click="btnCtaCte_Click"/>
+                    <Button x:Name="btnPrecios" Content="💲  Precios" Style="{StaticResource MenuButton}" Click="btnPrecios_Click"/>
+                    <Button x:Name="btnListasPrecios" Content="🏷️  Listas de Precios" Style="{StaticResource MenuButton}" Click="btnListasPrecios_Click"/>
+                    <Button x:Name="btnCompras" Content="📥  Compras" Style="{StaticResource MenuButton}" Click="btnCompras_Click"/>
+                    <Button x:Name="btnStock" Content="📊  Stock" Style="{StaticResource MenuButton}" Click="btnStock_Click"/>
+
+                    <TextBlock Text="Tablas" Style="{StaticResource MenuHeader}"/>
+                    <Button x:Name="btnProductos" Content="📦  Productos" Style="{StaticResource MenuButton}" Click="productosMenuItem_Click"/>
+                    <Button x:Name="btnClientes" Content="👥  Clientes" Style="{StaticResource MenuButton}" Click="clientesMenuItem_Click"/>
+                    <Button x:Name="btnProveedores" Content="🚚  Proveedores" Style="{StaticResource MenuButton}" Click="btnProveedores_Click"/>
+
+                    <TextBlock x:Name="headerAdministracion" Text="Administración" Style="{StaticResource MenuHeader}"/>
+                    <Button x:Name="btnUsuarios" Content="👤  Usuarios" Style="{StaticResource MenuButton}" Click="usuariosMenuItem_Click"/>
+                    <Button x:Name="btnPermisos" Content="⚙️  Permisos" Style="{StaticResource MenuButton}" Click="btnPermisos_Click"/>
+
+                    <Button x:Name="btnConfiguracion" Content="⚙️  Configuración" Style="{StaticResource MenuButton}" Click="btnConfiguracion_Click"/>
+                    <Button x:Name="btnSalir" Content="🚪  Salir" Margin="0,30,0,20" Click="salirMenuItem_Click">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource MenuButton}">
+                                <Setter Property="Background" Value="#B90202"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#8F0000"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <Grid Grid.Column="1" Background="{StaticResource ModuleBackgroundBrush}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <ContentControl x:Name="mainContentArea" Grid.Row="0">
+                <TextBlock Text="¡Bienvenido a SchettiniGestion!"
+                           FontSize="48"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource BodyForegroundBrush}"/>
+            </ContentControl>
+
+            <StatusBar Grid.Row="1" Background="#EEEEEE" MinHeight="30">
+                <StatusBar.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                        </Grid>
+                    </ItemsPanelTemplate>
+                </StatusBar.ItemsPanel>
+
+                <StatusBarItem Grid.Column="1" HorizontalAlignment="Right">
+                    <Button x:Name="btnTeclado" Content="⌨️  Abrir Teclado" MinHeight="26" MinWidth="120" Margin="0,0,10,0" Click="btnTeclado_Click"/>
+                </StatusBarItem>
+            </StatusBar>
+        </Grid>
+    </Grid>
 </Window>

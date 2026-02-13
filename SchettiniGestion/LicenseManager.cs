@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Configuration;
+using System.IO;
 using System.Text;
-using System.Windows.Forms;
 using Newtonsoft.Json;
 
 namespace SchettiniGestion
@@ -17,11 +18,44 @@ namespace SchettiniGestion
 
 		private static LicenseData _licenciaActual;
 
+		/// <summary>
+		/// Mensaje de error cuando ValidarLicencia() devuelve false (para mostrar en la UI desde la capa WPF).
+		/// </summary>
+		public static string UltimoMensajeError { get; private set; }
+
+		/// <summary>
+		/// Obtiene la clave de licencia: primero desde archivo (RutaLicencia en appSettings o "licencia.key"),
+		/// luego desde appSettings "LicenciaBase64", y por último valor por defecto embebido.
+		/// </summary>
+		private static string ObtenerClaveLicencia()
+		{
+			string baseDir = AppDomain.CurrentDomain.BaseDirectory ?? "";
+			// 1) Archivo de licencia
+			string rutaRelativa = null;
+			try { rutaRelativa = ConfigurationManager.AppSettings["RutaLicencia"]; } catch { }
+			if (string.IsNullOrWhiteSpace(rutaRelativa)) rutaRelativa = "licencia.key";
+			string pathCompleto = Path.IsPathRooted(rutaRelativa) ? rutaRelativa : Path.Combine(baseDir, rutaRelativa);
+			if (File.Exists(pathCompleto))
+			{
+				try { return File.ReadAllText(pathCompleto).Trim(); } catch { }
+			}
+			// 2) appSettings LicenciaBase64
+			try
+			{
+				string base64 = ConfigurationManager.AppSettings["LicenciaBase64"];
+				if (!string.IsNullOrWhiteSpace(base64)) return base64.Trim();
+			}
+			catch { }
+			// 3) Valor por defecto (compatibilidad)
+			return "eyJDdWl0Q2xpZW50ZSI6IjIwLTMzNDQ1NTY2LTUiLCJGZWNoYUV4cGlyYWNpb24iOiIyMDI2LTEyLTMxVDIzOjU5OjU5IiwiTW9kdWxvc1Blcm1pdGlkb3MiOlsiQUNDRVNPX0ZBQ1RVUkFDSU9OIiwiQUNDRVNPX1BST0RVQ1RPUyIsIkFDQ0VTT19DTElFTlRFUyIsIkFDQ0VTT19WRU5UQVMiLCJBQ0NFU09fU1RPQ0siLCJBQ0NFU09fVVNVQVJJT1MiLCJBQ0NFU09fUEVSTUlTT1MiLCJBQ0NFU09fUFJPVkVFRE9SRVMiLCJBQ0NFU09fQ09NUFJBUyIsIkFDQ0VTT19QUkVDSU9TIiwiQUNDRVNPX0NBSkEiLCJBQ0NFU09fUFJFU1VQVUVTVE9TIiwiQUNDRVNPX0NVRU5UQVNDT1JSSUVOVEVTIiwiQUNDRVNPX0xJU1RBU1BSRUNJT1MiXX0=";
+		}
+
 		private static bool CargarLicencia()
 		{
 			try
 			{
-				string claveLicencia = "eyJDdWl0Q2xpZW50ZSI6IjIwLTMzNDQ1NTY2LTUiLCJGZWNoYUV4cGlyYWNpb24iOiIyMDI2LTEyLTMxVDIzOjU5OjU5IiwiTW9kdWxvc1Blcm1pdGlkb3MiOlsiQUNDRVNPX0ZBQ1RVUkFDSU9OIiwiQUNDRVNPX1BST0RVQ1RPUyIsIkFDQ0VTT19DTElFTlRFUyIsIkFDQ0VTT19WRU5UQVMiLCJBQ0NFU09fU1RPQ0siLCJBQ0NFU09fVVNVQVJJT1MiLCJBQ0NFU09fUEVSTUlTT1MiLCJBQ0NFU09fUFJPVkVFRE9SRVMiLCJBQ0NFU09fQ09NUFJBUyIsIkFDQ0VTT19QUkVDSU9TIiwiQUNDRVNPX0NBSkEiLCJBQ0NFU09fUFJFU1VQVUVTVE9TIiwiQUNDRVNPX0NVRU5UQVNDT1JSSUVOVEVTIiwiQUNDRVNPX0xJU1RBU1BSRUNJT1MiXX0=";
+				string claveLicencia = ObtenerClaveLicencia();
+				if (string.IsNullOrWhiteSpace(claveLicencia)) return false;
 				byte[] bytesLicencia = Convert.FromBase64String(claveLicencia);
 				string jsonLicencia = Encoding.UTF8.GetString(bytesLicencia);
 				_licenciaActual = JsonConvert.DeserializeObject<LicenseData>(jsonLicencia);
@@ -34,10 +68,15 @@ namespace SchettiniGestion
 
 		public static bool ValidarLicencia()
 		{
-			if (!CargarLicencia()) return false;
+			UltimoMensajeError = null;
+			if (!CargarLicencia())
+			{
+				UltimoMensajeError = "No se pudo cargar la licencia. Verifique el archivo de licencia o la configuración.";
+				return false;
+			}
 			if (DateTime.Now > _licenciaActual.FechaExpiracion)
 			{
-				MessageBox.Show("Licencia Expirada.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				UltimoMensajeError = "Licencia expirada.";
 				return false;
 			}
 			return true;

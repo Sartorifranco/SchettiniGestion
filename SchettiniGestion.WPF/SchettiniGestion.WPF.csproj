@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\EntityFramework.6.4.4\build\EntityFramework.props" Condition="Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -78,12 +77,6 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.dll</HintPath>
-    </Reference>
-    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.SqlServer.dll</HintPath>
-    </Reference>
     <Reference Include="EPPlus, Version=7.2.1.0, Culture=neutral, PublicKeyToken=ea159fdaa78159a1, processorArchitecture=MSIL">
       <HintPath>..\packages\EPPlus.7.2.1\lib\net462\EPPlus.dll</HintPath>
     </Reference>
@@ -112,15 +105,6 @@
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Data.SQLite, Version=1.0.119.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <HintPath>..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\lib\net46\System.Data.SQLite.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Data.SQLite.EF6, Version=1.0.119.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Data.SQLite.EF6.1.0.119.0\lib\net46\System.Data.SQLite.EF6.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Data.SQLite.Linq, Version=1.0.119.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Data.SQLite.Linq.1.0.119.0\lib\net46\System.Data.SQLite.Linq.dll</HintPath>
-    </Reference>
     <Reference Include="System.Drawing" />
     <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
@@ -173,8 +157,8 @@
     <Compile Include="ComprasControl.xaml.cs">
       <DependentUpon>ComprasControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ConfirguracionControl.xaml.cs">
-      <DependentUpon>ConfirguracionControl.xaml</DependentUpon>
+    <Compile Include="ConfiguracionControl.xaml.cs">
+      <DependentUpon>ConfiguracionControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="CuentasCorrientesControl.xaml.cs">
       <DependentUpon>CuentasCorrientesControl.xaml</DependentUpon>
@@ -233,26 +217,12 @@
     <Page Include="ClientesControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
-<<<<<<< HEAD
-    </ApplicationDefinition>
-    <Compile Include="ClientesControl.xaml.cs">
-      <DependentUpon>ClientesControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="KeyboardHelper.cs" />
-    <Compile Include="ProductosControl.xaml.cs">
-      <DependentUpon>ProductosControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UsuariosControl.xaml.cs">
-      <DependentUpon>UsuariosControl.xaml</DependentUpon>
-    </Compile>
-    <Page Include="ClientesControl.xaml">
-=======
     </Page>
     <Page Include="ComprasControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="ConfirguracionControl.xaml">
+    <Page Include="ConfiguracionControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -277,7 +247,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ListasPreciosControl.xaml">
->>>>>>> 1507ba100efa8b3956af38cfc06c17be61c7bf61
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -329,11 +298,19 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Compile Include="ClientesControl.xaml.cs">
+      <DependentUpon>ClientesControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="FacturacionControl.xaml.cs">
       <DependentUpon>FacturacionControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="KeyboardHelper.cs" />
-    <Compile Include="UsuariosControl.xaml.cs" />
+    <Compile Include="ProductosControl.xaml.cs">
+      <DependentUpon>ProductosControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UsuariosControl.xaml.cs">
+      <DependentUpon>UsuariosControl.xaml</DependentUpon>
+    </Compile>
     <Page Include="VentasControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -344,10 +321,12 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClientesControl.xaml.cs" />
-    <Compile Include="MainWindow.xaml.cs" />
-    <Compile Include="PrincipalWindow.xaml.cs" />
-    <Compile Include="ProductosControl.xaml.cs" />
+    <Compile Include="MainWindow.xaml.cs">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PrincipalWindow.xaml.cs">
+      <DependentUpon>PrincipalWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -398,14 +377,4 @@
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>Este proyecto hace referencia a los paquetes NuGet que faltan en este equipo. Use la restauración de paquetes NuGet para descargarlos. Para obtener más información, consulte http://go.microsoft.com/fwlink/?LinkID=322105. El archivo que falta es {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\EntityFramework.6.4.4\build\EntityFramework.props'))" />
-    <Error Condition="!Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\EntityFramework.6.4.4\build\EntityFramework.targets'))" />
-    <Error Condition="!Exists('..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets'))" />
-  </Target>
-  <Import Project="..\packages\EntityFramework.6.4.4\build\EntityFramework.targets" Condition="Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.targets')" />
-  <Import Project="..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets" Condition="Exists('..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets')" />
 </Project>

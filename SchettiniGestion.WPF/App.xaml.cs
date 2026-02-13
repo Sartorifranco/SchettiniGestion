@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -24,16 +24,25 @@ namespace SchettiniGestion.WPF
             // 2. Validar Licencia del Sistema
             bool licenciaValida = LicenseManager.ValidarLicencia();
 
-            if (licenciaValida)
+            if (!licenciaValida)
             {
-                // 3. Inicializar y Actualizar Base de Datos
-                // Esto ejecutará los "ALTER TABLE" para agregar las columnas nuevas (Código de Barras, etc.)
-                DatabaseService.InitializeDatabase();
-            }
-            else
-            {
-                CustomMessageBox.Show("Error de licencia. La aplicación se cerrará.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                string mensaje = SchettiniGestion.LicenseManager.UltimoMensajeError ?? "Error de licencia. La aplicación se cerrará.";
+                CustomMessageBox.Show(mensaje, "Error de licencia", MessageBoxButton.OK, MessageBoxImage.Error);
                 Application.Current.Shutdown();
+                return;
+            }
+
+            // 3. Probar conexión a la base de datos
+            bool conexionOk = DatabaseService.InitializeDatabase();
+            if (!conexionOk)
+            {
+                CustomMessageBox.Show(
+                    "No se pudo conectar a la base de datos. Verifique que SQL Server esté en ejecución y que la cadena de conexión en App.config (SchPosDB) sea correcta.",
+                    "Error de conexión",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                Application.Current.Shutdown();
+                return;
             }
         }
     }

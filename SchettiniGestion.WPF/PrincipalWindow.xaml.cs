@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,14 +11,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-<<<<<<< HEAD
-// --- ¡BORRAMOS LOS USINGS VIEJOS! ---
-// (Ya no necesitamos System.Diagnostics ni System.IO aquí)
-=======
 using System.Diagnostics;
 using System.IO;
 using SchettiniGestion;
->>>>>>> 1507ba100efa8b3956af38cfc06c17be61c7bf61
 
 namespace SchettiniGestion.WPF
 {
@@ -299,19 +294,9 @@ namespace SchettiniGestion.WPF
             Application.Current.Shutdown();
         }
 
-<<<<<<< HEAD
-        // --- ¡INICIO DE LA MODIFICACIÓN (LA BUENA)! ---
-        private void btnTeclado_Click(object sender, RoutedEventArgs e)
-        {
-            // ¡Llamamos a nuestro nuevo ayudante!
-            KeyboardHelper.ShowOnScreenKeyboard();
-        }
-        // --- ¡FIN DE LA MODIFICACIÓN (LA BUENA)! ---
-=======
         private void btnTeclado_Click(object sender, RoutedEventArgs e)
         {
             KeyboardHelper.ShowOnScreenKeyboard();
         }
->>>>>>> 1507ba100efa8b3956af38cfc06c17be61c7bf61
     }
 }

@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.IO;
 using System.Security.Cryptography;
@@ -40,12 +41,23 @@ namespace SchettiniGestion
     // ==========================================
     // SERVICIO DE BASE DE DATOS (SQL SERVER)
     // ==========================================
-    public static class DatabaseService
+    public static partial class DatabaseService
     {
-        // CONEXIÓN A SchPosDB
-        // Cambiamos 'Server' por 'Data Source' y usamos 'localhost' que suele ser más compatible
-        private static string _connectionString = "Data Source=SIS5\\SQLEXPRESS;Initial Catalog=SchPosDB;Integrated Security=True;TrustServerCertificate=True;";
-        
+        // CONEXIÓN A SchPosDB: se lee desde App.config (connectionStrings["SchPosDB"]). Valor por defecto si no está configurado.
+        private static readonly string _connectionString = ObtenerConnectionString();
+
+        private static string ObtenerConnectionString()
+        {
+            try
+            {
+                var cs = ConfigurationManager.ConnectionStrings["SchPosDB"];
+                if (cs != null && !string.IsNullOrWhiteSpace(cs.ConnectionString))
+                    return cs.ConnectionString;
+            }
+            catch { /* ignorar si no hay config */ }
+            return "Data Source=SIS5\\SQLEXPRESS;Initial Catalog=SchPosDB;Integrated Security=True;TrustServerCertificate=True;";
+        }
+
         public static Action<string> OnDbError;
 
         // Constantes de Permisos
@@ -69,92 +81,25 @@ namespace SchettiniGestion
             OnDbError?.Invoke(mensaje);
         }
 
-        public static void InitializeDatabase()
+        /// <summary>
+        /// Prueba la conexión a la base de datos. Devuelve true si la conexión fue exitosa.
+        /// </summary>
+        public static bool InitializeDatabase()
         {
             try
             {
-                // Solo probamos conexión, las tablas ya se crearon con el script SQL
                 using (var conn = new SqlConnection(_connectionString))
                 {
                     conn.Open();
                 }
+                return true;
             }
             catch (Exception ex)
             {
                 NotificarError($"Error conectando a SQL Server (SchPosDB): {ex.Message}");
+                return false;
             }
         }
-
-        #region Dashboard
-        public static int GetCantidadVentasHoy()
-        {
-            try
-            {
-                using (var c = new SqlConnection(_connectionString))
-                {
-                    c.Open();
-                    var res = new SqlCommand("SELECT COUNT(*) FROM Facturas WHERE CAST(Fecha AS DATE) = CAST(GETDATE() AS DATE)", c).ExecuteScalar();
-                    return Convert.ToInt32(res);
-                }
-            }
-            catch { return 0; }
-        }
-
-        public static decimal GetTotalVentasHoy()
-        {
-            try
-            {
-                using (var c = new SqlConnection(_connectionString))
-                {
-                    c.Open();
-                    var res = new SqlCommand("SELECT SUM(Total) FROM Facturas WHERE CAST(Fecha AS DATE) = CAST(GETDATE() AS DATE)", c).ExecuteScalar();
-                    return res != DBNull.Value ? Convert.ToDecimal(res) : 0;
-                }
-            }
-            catch { return 0; }
-        }
-
-        public static int GetCantidadProductos()
-        {
-            try
-            {
-                using (var c = new SqlConnection(_connectionString))
-                {
-                    c.Open();
-                    return Convert.ToInt32(new SqlCommand("SELECT COUNT(*) FROM Productos", c).ExecuteScalar());
-                }
-            }
-            catch { return 0; }
-        }
-
-        public static int GetCantidadClientes()
-        {
-            try
-            {
-                using (var c = new SqlConnection(_connectionString))
-                {
-                    c.Open();
-                    return Convert.ToInt32(new SqlCommand("SELECT COUNT(*) FROM Clientes", c).ExecuteScalar());
-                }
-            }
-            catch { return 0; }
-        }
-
-        public static decimal GetRentabilidadHoy()
-        {
-            try
-            {
-                using (var c = new SqlConnection(_connectionString))
-                {
-                    c.Open();
-                    string sql = @"SELECT SUM((fd.PrecioUnitario - p.PrecioCosto) * fd.Cantidad) FROM FacturaDetalle fd JOIN Facturas f ON fd.FacturaID = f.FacturaID JOIN Productos p ON fd.ProductoID = p.ProductoID WHERE CAST(f.Fecha AS DATE) = CAST(GETDATE() AS DATE)";
-                    var res = new SqlCommand(sql, c).ExecuteScalar();
-                    return res != DBNull.Value ? Convert.ToDecimal(res) : 0;
-                }
-            }
-            catch { return 0; }
-        }
-        #endregion
 
         // Configuración
         public static DataRow GetConfiguracion()

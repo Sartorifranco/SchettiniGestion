@@ -1,4 +1,4 @@
-﻿using SchettiniGestion;
+using SchettiniGestion;
 using System;
 using System.Data;
 using System.IO;

@@ -165,7 +165,10 @@ namespace SchettiniGestion.WPF
 
         private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            MessageBox.Show("Error UI: " + e.Exception.Message);
+            string detalle = e.Exception.Message;
+            if (e.Exception.StackTrace != null)
+                detalle += "\n\nUbicación:\n" + e.Exception.StackTrace.Split(new[] { '\r', '\n' })[0];
+            MessageBox.Show("Error UI: " + detalle);
             e.Handled = true;
         }
 

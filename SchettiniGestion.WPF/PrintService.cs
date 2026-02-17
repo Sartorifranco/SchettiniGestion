@@ -4,13 +4,12 @@ using SchettiniGestion;
 using System;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using System.Windows.Media; // WPF Media
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
-
-// Alias para evitar confusiones
 using WinDrawing = System.Drawing;
 using WinPrinting = System.Drawing.Printing;
 
@@ -20,341 +19,285 @@ namespace SchettiniGestion.WPF
     {
         private static bool USAR_MOTOR_GRAFICO_PARA_TICKETS = true;
 
-        #region Métodos Públicos
-
-        public static void ImprimirPresupuesto(int presupuestoID, string clienteNombre, DateTime fecha, DataTable items, decimal total)
+        #region MÉTODOS PÚBLICOS
+        public static void ImprimirPresupuesto(int presupuestoID)
         {
-            ImprimirDocumentoWPF("PRESUPUESTO", presupuestoID.ToString(), clienteNombre, fecha, items, total, "Válido por 7 días", "X", "", "", true);
+            try
+            {
+                DataRow cabecera = DatabaseService.GetPresupuestoPorID(presupuestoID);
+                if (cabecera == null) { MessageBox.Show("Error: No se encontró el presupuesto."); return; }
+                DataTable items = DatabaseService.GetPresupuestoDetalle(presupuestoID);
+                GenerarDocumentoA4_Presupuesto(cabecera, items);
+            }
+            catch (Exception ex) { MessageBox.Show("Error crítico al imprimir: " + ex.Message); }
         }
 
-        public static void ImprimirTicketVenta(string tipoComprobante, int nroComprobante, string clienteNombre, DateTime fecha, DataTable items, decimal total, string condicionVenta)
+        // --- ACTUALIZADO: PARAMETROS CAE Y VTO ---
+        public static void ImprimirTicketVenta(string tipo, int nro, string cli, DateTime fec, DataTable items, decimal tot, string cond, string cae = "", string vtoCae = "")
         {
             string letra = "X";
-            if (tipoComprobante != null)
+            if (tipo != null) { if (tipo.Contains("A")) letra = "A"; if (tipo.Contains("B")) letra = "B"; if (tipo.Contains("C")) letra = "C"; }
+
+            string tit = tipo?.ToUpper() ?? "TICKET";
+            string nroStr = nro > 0 ? nro.ToString("D8") : "(Pendiente)";
+
+            // Armar Pie Fiscal
+            string pie = "";
+            // Si venía en cond (versión vieja) o en parámetro nuevo
+            if (cond != null && cond.Contains("CAE:"))
             {
-                if (tipoComprobante.Contains("Factura A")) letra = "A";
-                if (tipoComprobante.Contains("Factura B")) letra = "B";
-                if (tipoComprobante.Contains("Factura C")) letra = "C";
+                string[] p = cond.Split(new[] { "CAE:" }, StringSplitOptions.None);
+                cond = p[0].Trim();
+                if (p.Length > 1) pie = "CAE: " + p[1].Trim();
             }
-
-            string titulo = tipoComprobante?.ToUpper() ?? "TICKET";
-            string nroStr = nroComprobante > 0 ? nroComprobante.ToString("D8") : "(Pendiente)";
-            string pieFiscal = "", cae = "";
-
-            if (condicionVenta != null && condicionVenta.Contains("CAE:"))
+            else if (!string.IsNullOrEmpty(cae))
             {
-                string[] partes = condicionVenta.Split(new[] { "CAE:" }, StringSplitOptions.None);
-                condicionVenta = partes[0].Trim();
-                if (partes.Length > 1)
-                {
-                    string resto = partes[1].Trim();
-                    pieFiscal = resto;
-                    var datosCae = resto.Split(new[] { "VTO:" }, StringSplitOptions.None);
-                    if (datosCae.Length > 0) cae = datosCae[0].Trim();
-                }
+                pie = $"CAE: {cae}\nVto CAE: {vtoCae}";
             }
 
             if (USAR_MOTOR_GRAFICO_PARA_TICKETS)
-            {
-                ImprimirTicketGrafico(titulo, nroStr, clienteNombre, fecha, items, total, condicionVenta, letra, pieFiscal, cae);
-            }
+                ImprimirTicketGrafico(tit, nroStr, cli, fec, items, tot, cond, letra, pie);
             else
-            {
-                ImprimirDocumentoWPF(titulo, nroStr, clienteNombre, fecha, items, total, condicionVenta, letra, pieFiscal, cae, false);
-            }
+                MessageBox.Show("Motor A4 no activo.");
         }
 
-        #endregion
-
-        #region MOTOR 1: System.Drawing (Tickets Térmicos OPTIMIZADO)
-
-        private static void ImprimirTicketGrafico(string titulo, string numero, string cliente, DateTime fecha, DataTable items, decimal total, string extra, string letra, string pie, string cae)
+        // --- NUEVO: IMPRIMIR CIERRE DE CAJA (Z) ---
+        public static void ImprimirCierreZ(DateTime fecha, System.Collections.Generic.Dictionary<string, decimal> totales, decimal totalFinal)
         {
             try
             {
                 WinPrinting.PrintDocument doc = new WinPrinting.PrintDocument();
                 doc.PrintController = new WinPrinting.StandardPrintController();
-
-                doc.PrintPage += (sender, e) =>
+                doc.PrintPage += (s, e) =>
                 {
-                    DibujarTicketGDI(e.Graphics, titulo, numero, cliente, fecha, items, total, extra, letra, pie, cae);
+                    var g = e.Graphics;
+                    float w = 290; float y = 0;
+                    WinDrawing.Font fT = new WinDrawing.Font("Arial", 12, WinDrawing.FontStyle.Bold);
+                    WinDrawing.Font fN = new WinDrawing.Font("Consolas", 9);
+                    WinDrawing.Font fB = new WinDrawing.Font("Arial", 14, WinDrawing.FontStyle.Bold);
+
+                    DibujarTextoCentrado(g, "CIERRE DE CAJA (Z)", fT, w, ref y);
+                    g.DrawString($"Fecha: {fecha:dd/MM/yyyy}", fN, WinDrawing.Brushes.Black, 0, y); y += 15;
+                    g.DrawString($"Impreso: {DateTime.Now:HH:mm}", fN, WinDrawing.Brushes.Black, 0, y); y += 15;
+                    DibujarLinea(g, ref y, w);
+
+                    foreach (var item in totales)
+                    {
+                        g.DrawString(item.Key, fN, WinDrawing.Brushes.Black, 0, y);
+                        g.DrawString(item.Value.ToString("C2"), fN, WinDrawing.Brushes.Black, w - 70, y);
+                        y += 20;
+                    }
+
+                    DibujarLinea(g, ref y, w);
+                    y += 5;
+                    g.DrawString("TOTAL RECAUDADO:", fT, WinDrawing.Brushes.Black, 0, y); y += 25;
+                    DibujarTextoCentrado(g, totalFinal.ToString("C2"), fB, w, ref y);
+                    y += 20;
+                    DibujarTextoCentrado(g, ".", fN, w, ref y);
                 };
 
                 System.Windows.Forms.PrintDialog pd = new System.Windows.Forms.PrintDialog();
                 pd.Document = doc;
-                doc.Print();
+                if (pd.ShowDialog() == System.Windows.Forms.DialogResult.OK) doc.Print();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error al imprimir ticket: " + ex.Message);
-            }
+            catch (Exception ex) { MessageBox.Show("Error imprimiendo Z: " + ex.Message); }
         }
-
-        private static void DibujarTicketGDI(WinDrawing.Graphics g, string tit, string nro, string cli, DateTime fec, DataTable its, decimal tot, string extra, string let, string pie, string cae)
-        {
-            // CALIDAD
-            g.InterpolationMode = WinDrawing.Drawing2D.InterpolationMode.NearestNeighbor;
-            g.PixelOffsetMode = WinDrawing.Drawing2D.PixelOffsetMode.HighQuality;
-            g.SmoothingMode = WinDrawing.Drawing2D.SmoothingMode.None;
-            g.TextRenderingHint = WinDrawing.Text.TextRenderingHint.ClearTypeGridFit;
-
-            // MEDIDAS
-            float anchoPapel = g.VisibleClipBounds.Width;
-            if (anchoPapel > 300) anchoPapel = 290;
-
-            float y = 0;
-            float margen = 2;
-            float xRight = anchoPapel - margen;
-
-            // FUENTES
-            WinDrawing.Font fTitulo = new WinDrawing.Font("Arial", 10, WinDrawing.FontStyle.Bold);
-            WinDrawing.Font fLetraGrande = new WinDrawing.Font("Arial", 12, WinDrawing.FontStyle.Bold);
-            WinDrawing.Font fNormal = new WinDrawing.Font("Consolas", 9, WinDrawing.FontStyle.Regular);
-            WinDrawing.Font fNegrita = new WinDrawing.Font("Consolas", 9, WinDrawing.FontStyle.Bold);
-            WinDrawing.Font fChica = new WinDrawing.Font("Consolas", 8, WinDrawing.FontStyle.Regular);
-            WinDrawing.SolidBrush brocha = new WinDrawing.SolidBrush(WinDrawing.Color.Black);
-
-            WinDrawing.StringFormat centro = new WinDrawing.StringFormat() { Alignment = WinDrawing.StringAlignment.Center };
-            WinDrawing.StringFormat derecha = new WinDrawing.StringFormat() { Alignment = WinDrawing.StringAlignment.Far };
-            WinDrawing.StringFormat izquierda = new WinDrawing.StringFormat() { Alignment = WinDrawing.StringAlignment.Near };
-
-            // 1. ENCABEZADO
-            DataRow conf = DatabaseService.GetConfiguracion();
-            string fantasia = conf != null ? conf["NombreFantasia"].ToString() : "MI NEGOCIO";
-            string direccion = conf != null ? conf["Direccion"].ToString() : "";
-            string cuitEmp = conf != null ? conf["CUIT"].ToString() : "";
-
-            DibujarTextoCentrado(g, fantasia.ToUpper(), fTitulo, anchoPapel, ref y);
-            DibujarTextoCentrado(g, direccion, fChica, anchoPapel, ref y);
-            DibujarTextoCentrado(g, "CUIT: " + cuitEmp, fChica, anchoPapel, ref y);
-
-            DibujarLinea(g, ref y, anchoPapel);
-
-            // 2. DATOS COMPROBANTE
-            if (let != "X")
-            {
-                g.DrawString($"[{let}]", fLetraGrande, brocha, anchoPapel / 2, y, centro);
-                y += 18;
-            }
-
-            string tituloCompleto = $"{tit} N° {nro}";
-            g.DrawString(tituloCompleto, fNegrita, brocha, anchoPapel / 2, y, centro);
-            y += 14;
-
-            g.DrawString("Fecha: " + fec.ToString("dd/MM/yyyy  HH:mm") + "hs", fNormal, brocha, margen, y);
-            y += 14;
-
-            DibujarLinea(g, ref y, anchoPapel);
-
-            // 3. CLIENTE
-            if (!string.IsNullOrEmpty(cli) && cli != "Consumidor Final")
-            {
-                g.DrawString("Cliente: " + cli, fNormal, brocha, margen, y);
-                y += 14;
-                if (!string.IsNullOrEmpty(extra)) { g.DrawString(extra, fChica, brocha, margen, y); y += 12; }
-                DibujarLinea(g, ref y, anchoPapel);
-            }
-
-            // 4. ÍTEMS (CON CÁLCULO DE IVA + DISEÑO ADAPTATIVO)
-            float wCant = 35;
-            float wTot = 70;
-            float wDesc = anchoPapel - wCant - wTot - (margen * 2) - 5;
-
-            float xCant = margen;
-            float xDesc = margen + wCant;
-            float xTotStart = anchoPapel - margen - wTot;
-
-            g.DrawString("CNT", fChica, brocha, xCant, y);
-            g.DrawString("DESCRIPCION", fChica, brocha, xDesc, y);
-            g.DrawString("TOTAL", fChica, brocha, xRight, y, derecha);
-            y += 14;
-
-            // Variables para acumular IVA
-            decimal acumuladoNeto = 0;
-            decimal acumuladoIva21 = 0;
-            decimal acumuladoIva105 = 0;
-
-            foreach (DataRow row in its.Rows)
-            {
-                decimal q = Convert.ToDecimal(row["Cantidad"]);
-                string d = row.Table.Columns.Contains("Descripcion") ? row["Descripcion"].ToString() : row["Producto"].ToString();
-                decimal s = Convert.ToDecimal(row["Subtotal"]);
-
-                // --- CÁLCULO DE IVA ---
-                decimal alicuota = 21m; // Default
-                if (row.Table.Columns.Contains("Alicuota") && row["Alicuota"] != DBNull.Value) decimal.TryParse(row["Alicuota"].ToString(), out alicuota);
-                else if (row.Table.Columns.Contains("IVA") && row["IVA"] != DBNull.Value) decimal.TryParse(row["IVA"].ToString(), out alicuota);
-
-                decimal netoItem = s / (1 + (alicuota / 100));
-                decimal ivaItem = s - netoItem;
-
-                acumuladoNeto += netoItem;
-                if (alicuota == 10.5m) acumuladoIva105 += ivaItem;
-                else acumuladoIva21 += ivaItem;
-
-                // --- DIBUJO ---
-                g.DrawString(q.ToString("0.#"), fNormal, brocha, xCant, y);
-
-                WinDrawing.RectangleF rectTotal = new WinDrawing.RectangleF(xTotStart, y, wTot, 20);
-                g.DrawString(s.ToString("N2"), fNormal, brocha, rectTotal, derecha);
-
-                WinDrawing.RectangleF rectDesc = new WinDrawing.RectangleF(xDesc, y, wDesc, 500);
-                g.DrawString(d, fNormal, brocha, rectDesc);
-
-                WinDrawing.SizeF size = g.MeasureString(d, fNormal, (int)wDesc);
-                y += Math.Max(14, size.Height);
-            }
-
-            DibujarLinea(g, ref y, anchoPapel);
-
-            // 5. TOTALES Y DISCRIMINACIÓN
-            y += 5;
-
-            if (let == "A")
-            {
-                // FACTURA A: Desglose ANTES del total
-                g.DrawString($"Subtotal Neto: ${acumuladoNeto:N2}", fNormal, brocha, xRight, y, derecha); y += 12;
-                if (acumuladoIva21 > 0) { g.DrawString($"IVA (21%): ${acumuladoIva21:N2}", fNormal, brocha, xRight, y, derecha); y += 12; }
-                if (acumuladoIva105 > 0) { g.DrawString($"IVA (10.5%): ${acumuladoIva105:N2}", fNormal, brocha, xRight, y, derecha); y += 12; }
-
-                DibujarLinea(g, ref y, anchoPapel);
-                g.DrawString("TOTAL: $" + tot.ToString("N2"), fTitulo, brocha, xRight, y, derecha); y += 20;
-            }
-            else
-            {
-                // FACTURA B: Total y luego Transparencia
-                g.DrawString("TOTAL: $" + tot.ToString("N2"), fTitulo, brocha, xRight, y, derecha); y += 20;
-
-                if (let == "B")
-                {
-                    y += 5;
-                    DibujarTextoCentrado(g, "TRANSPARENCIA FISCAL", fChica, anchoPapel, ref y);
-                    if (acumuladoIva21 > 0) { g.DrawString($"IVA Contenido (21%): ${acumuladoIva21:N2}", fChica, brocha, xRight, y, derecha); y += 10; }
-                    if (acumuladoIva105 > 0) { g.DrawString($"IVA Contenido (10.5%): ${acumuladoIva105:N2}", fChica, brocha, xRight, y, derecha); y += 10; }
-                    g.DrawString("Otros Impuestos: $0,00", fChica, brocha, xRight, y, derecha); y += 15;
-                    DibujarLinea(g, ref y, anchoPapel);
-                }
-            }
-
-            // 6. PIE FISCAL / QR
-            if (!string.IsNullOrEmpty(cae) && let != "X")
-            {
-                WinDrawing.Image qrImg = GenerarQrGDI(fec, nro, tot, let, cae, cuitEmp);
-                if (qrImg != null)
-                {
-                    float qrSize = 110;
-                    float xQr = (anchoPapel - qrSize) / 2;
-                    g.DrawImage(qrImg, xQr, y, qrSize, qrSize);
-                    y += qrSize + 5;
-                }
-
-                string vto = "";
-                if (pie.Contains("VTO:"))
-                {
-                    var partes = pie.Split(new[] { "VTO:" }, StringSplitOptions.RemoveEmptyEntries);
-                    if (partes.Length > 1) vto = partes[1].Trim();
-                }
-
-                DibujarTextoCentrado(g, "CAE: " + cae, fChica, anchoPapel, ref y);
-                if (!string.IsNullOrEmpty(vto)) DibujarTextoCentrado(g, "VTO: " + vto, fChica, anchoPapel, ref y);
-            }
-
-            y += 5;
-            DibujarTextoCentrado(g, "Gracias por su compra", fNormal, anchoPapel, ref y);
-            DibujarTextoCentrado(g, "Schettini Gestión", fChica, anchoPapel, ref y);
-        }
-
-        private static void DibujarLinea(WinDrawing.Graphics g, ref float y, float ancho)
-        {
-            y += 3;
-            WinDrawing.Pen p = new WinDrawing.Pen(WinDrawing.Color.Black, 1);
-            p.DashStyle = WinDrawing.Drawing2D.DashStyle.Dash;
-            g.DrawLine(p, 2, y, ancho - 2, y);
-            y += 5;
-        }
-
-        private static void DibujarTextoCentrado(WinDrawing.Graphics g, string texto, WinDrawing.Font fuente, float anchoPapel, ref float y)
-        {
-            if (string.IsNullOrEmpty(texto)) return;
-            WinDrawing.SizeF size = g.MeasureString(texto, fuente);
-            float x = (anchoPapel - size.Width) / 2;
-            g.DrawString(texto, fuente, new WinDrawing.SolidBrush(WinDrawing.Color.Black), x, y);
-            y += size.Height;
-        }
-
-        private static WinDrawing.Image GenerarQrGDI(DateTime fecha, string nroComprobante, decimal total, string letra, string cae, string cuitEmp)
-        {
-            try
-            {
-                long cuit = long.Parse(cuitEmp.Replace("-", "").Replace(" ", ""));
-                int pto = 1;
-                try { DataRow c = DatabaseService.GetConfiguracion(); pto = int.Parse(c["PuntoVenta"].ToString()); } catch { }
-
-                int tipo = 0;
-                if (letra == "A") tipo = 1; else if (letra == "B") tipo = 6; else if (letra == "C") tipo = 11;
-                int nro = int.TryParse(nroComprobante, out int n) ? n : 0;
-
-                var datos = new { ver = 1, fecha = fecha.ToString("yyyy-MM-dd"), cuit = cuit, ptoVta = pto, tipoCmp = tipo, nroCmp = nro, importe = total, moneda = "PES", ctz = 1, tipoDocRec = 99, nroDocRec = 0, tipoCodAut = "E", codAut = long.Parse(cae) };
-
-                string json = JsonConvert.SerializeObject(datos);
-                string base64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
-                string url = $"https://www.afip.gob.ar/fe/qr/?p={base64}";
-
-                QRCodeGenerator qrGen = new QRCodeGenerator();
-                QRCodeData qrData = qrGen.CreateQrCode(url, QRCodeGenerator.ECCLevel.M);
-                QRCode qrCode = new QRCode(qrData);
-                return qrCode.GetGraphic(20, WinDrawing.Color.Black, WinDrawing.Color.White, true);
-            }
-            catch { return null; }
-        }
-
+        // ------------------------------------------
         #endregion
 
-        #region MOTOR 2: WPF (Para A4)
-        private static void ImprimirDocumentoWPF(string tituloDoc, string numeroDoc, string cliente, DateTime fecha, DataTable items, decimal total, string infoExtra, string letra, string pieFiscal, string cae, bool forzarA4)
+        private static void GenerarDocumentoA4_Presupuesto(DataRow cabecera, DataTable items)
         {
             try
             {
+                FlowDocument doc = new FlowDocument();
+                doc.PagePadding = new Thickness(40);
+                doc.ColumnWidth = double.PositiveInfinity;
+                doc.FontFamily = new FontFamily("Arial");
+                doc.FontSize = 11;
+                doc.PageWidth = 793;
+
+                Table headerTable = new Table();
+                headerTable.CellSpacing = 0;
+                headerTable.Columns.Add(new TableColumn() { Width = new GridLength(450) });
+                headerTable.Columns.Add(new TableColumn() { Width = new GridLength(250) });
+
+                TableRowGroup headerGroup = new TableRowGroup();
+                TableRow rowH = new TableRow();
+
+                TableCell cellLogo = new TableCell();
+                string rutaLogo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logo.png");
+
+                if (File.Exists(rutaLogo))
+                {
+                    try
+                    {
+                        BitmapImage bi = new BitmapImage();
+                        bi.BeginInit();
+                        bi.UriSource = new Uri(rutaLogo);
+                        bi.CacheOption = BitmapCacheOption.OnLoad;
+                        bi.EndInit();
+                        Image img = new Image();
+                        img.Source = bi;
+                        img.Width = 90;
+                        img.HorizontalAlignment = HorizontalAlignment.Left;
+                        img.Stretch = Stretch.Uniform;
+                        cellLogo.Blocks.Add(new BlockUIContainer(img));
+                    }
+                    catch { cellLogo.Blocks.Add(new Paragraph(new Run("SchTec"))); }
+                }
+                else
+                {
+                    cellLogo.Blocks.Add(new Paragraph(new Run("SchTec")) { FontSize = 30, FontWeight = FontWeights.Bold, Foreground = Brushes.DarkBlue });
+                }
+                rowH.Cells.Add(cellLogo);
+
+                Paragraph pDatos = new Paragraph();
+                pDatos.TextAlignment = TextAlignment.Right;
+                pDatos.Inlines.Add(new Run("PRESUPUESTO") { FontSize = 18, FontWeight = FontWeights.Bold });
+                pDatos.Inlines.Add(new LineBreak());
+                pDatos.Inlines.Add(new Run($"Nº: {int.Parse(cabecera["PresupuestoID"].ToString()):D8}") { FontSize = 14, FontWeight = FontWeights.Bold });
+                pDatos.Inlines.Add(new LineBreak());
+                pDatos.Inlines.Add(new Run($"Fecha: {Convert.ToDateTime(cabecera["Fecha"]):dd/MM/yyyy}") { FontSize = 12 });
+                rowH.Cells.Add(new TableCell(pDatos));
+
+                headerGroup.Rows.Add(rowH);
+                headerTable.RowGroups.Add(headerGroup);
+                doc.Blocks.Add(headerTable);
+
+                doc.Blocks.Add(new BlockUIContainer(new Separator { Margin = new Thickness(0, 10, 0, 10), Background = Brushes.Black, Height = 1 }));
+
+                Paragraph pCliente = new Paragraph();
+                pCliente.FontSize = 11;
+                pCliente.Inlines.Add(new Run("CLIENTE: ") { FontWeight = FontWeights.Bold });
+                pCliente.Inlines.Add(new Run(cabecera["ClienteNombre"].ToString().ToUpper()));
+                pCliente.Inlines.Add(new LineBreak());
+                pCliente.Inlines.Add(new Run($"CUIT: {cabecera["ClienteCUIT"]}    |    IVA: {cabecera["ClienteIVA"]}"));
+                string dir = cabecera["ClienteDireccion"].ToString();
+                if (dir != "-") pCliente.Inlines.Add(new Run($"    |    Dir: {dir}"));
+                doc.Blocks.Add(pCliente);
+
+                doc.Blocks.Add(new BlockUIContainer(new Separator { Margin = new Thickness(0, 5, 0, 15), Background = Brushes.LightGray }));
+
+                Table table = new Table();
+                table.CellSpacing = 0;
+                table.BorderBrush = Brushes.Gray;
+                table.BorderThickness = new Thickness(0, 1, 0, 1);
+                table.Margin = new Thickness(0, 0, 0, 15);
+                table.Columns.Add(new TableColumn() { Width = new GridLength(50) });
+                table.Columns.Add(new TableColumn() { Width = new GridLength(360) });
+                table.Columns.Add(new TableColumn() { Width = new GridLength(100) });
+                table.Columns.Add(new TableColumn() { Width = new GridLength(100) });
+
+                TableRowGroup groupData = new TableRowGroup();
+                TableRow rowTitulos = new TableRow();
+                rowTitulos.Background = Brushes.LightGray;
+                rowTitulos.Cells.Add(CrearCelda("CANT", TextAlignment.Center, true));
+                rowTitulos.Cells.Add(CrearCelda("DESCRIPCIÓN", TextAlignment.Left, true));
+                rowTitulos.Cells.Add(CrearCelda("UNITARIO", TextAlignment.Right, true));
+                rowTitulos.Cells.Add(CrearCelda("TOTAL", TextAlignment.Right, true));
+                groupData.Rows.Add(rowTitulos);
+
+                foreach (DataRow item in items.Rows)
+                {
+                    TableRow r = new TableRow();
+                    r.Cells.Add(CrearCelda(item["Cantidad"].ToString(), TextAlignment.Center));
+                    r.Cells.Add(CrearCelda(item["Descripcion"].ToString(), TextAlignment.Left));
+                    r.Cells.Add(CrearCelda(Convert.ToDecimal(item["PrecioUnitario"]).ToString("C2"), TextAlignment.Right));
+                    r.Cells.Add(CrearCelda(Convert.ToDecimal(item["Subtotal"]).ToString("C2"), TextAlignment.Right));
+                    groupData.Rows.Add(r);
+                }
+                table.RowGroups.Add(groupData);
+                doc.Blocks.Add(table);
+
+                Paragraph pTotal = new Paragraph();
+                pTotal.TextAlignment = TextAlignment.Right;
+                pTotal.Margin = new Thickness(0, 10, 0, 0);
+                pTotal.Inlines.Add(new Run("TOTAL:  ") { FontSize = 14, FontWeight = FontWeights.SemiBold });
+                pTotal.Inlines.Add(new Run(Convert.ToDecimal(cabecera["Total"]).ToString("C2")) { FontSize = 22, FontWeight = FontWeights.Bold });
+                doc.Blocks.Add(pTotal);
+
+                Paragraph pPie = new Paragraph(new Run("Documento no válido como factura fiscal.")) { TextAlignment = TextAlignment.Center, FontSize = 10, Foreground = Brushes.Gray, Margin = new Thickness(0, 40, 0, 0) };
+                doc.Blocks.Add(pPie);
+
                 PrintDialog pd = new PrintDialog();
                 if (pd.ShowDialog() == true)
                 {
-                    double anchoImpresora = pd.PrintableAreaWidth;
-                    FlowDocument doc = new FlowDocument();
-                    doc.FontFamily = new FontFamily("Arial");
-                    doc.TextAlignment = TextAlignment.Left;
-
-                    if (anchoImpresora > 500 || forzarA4)
-                    {
-                        double anchoA4 = 793;
-                        doc.PageWidth = anchoA4;
-                        doc.ColumnWidth = anchoA4;
-                        doc.PagePadding = new Thickness(40);
-                        Image imgQR = null;
-                        DibujarFacturaA4(doc, anchoA4, tituloDoc, numeroDoc, cliente, fecha, items, total, infoExtra, letra, pieFiscal, imgQR);
-                    }
-                    else
-                    {
-                        doc.Blocks.Add(new Paragraph(new Run("Para Tickets use el Motor Gráfico.")));
-                    }
-                    IDocumentPaginatorSource dps = doc;
-                    pd.PrintDocument(dps.DocumentPaginator, $"Impresion_{tituloDoc}");
+                    doc.PageHeight = pd.PrintableAreaHeight; doc.PageWidth = pd.PrintableAreaWidth;
+                    doc.PagePadding = new Thickness(40); doc.ColumnGap = 0; doc.ColumnWidth = pd.PrintableAreaWidth;
+                    IDocumentPaginatorSource dps = doc; pd.PrintDocument(dps.DocumentPaginator, $"Presupuesto_{cabecera["PresupuestoID"]}");
                 }
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            catch (Exception ex) { MessageBox.Show("Error generando PDF: " + ex.Message); }
         }
 
-        private static void DibujarFacturaA4(FlowDocument doc, double anchoPagina, string tit, string nro, string cli, DateTime fec, DataTable its, decimal tot, string extra, string let, string pie, Image qr)
+        private static TableCell CrearCelda(string texto, TextAlignment alineacion, bool negrita = false)
         {
-            doc.FontFamily = new FontFamily("Arial"); doc.FontSize = 10;
-            Paragraph p = new Paragraph(new Run($"DOCUMENTO: {tit} {nro}\nCLIENTE: {cli}\nTOTAL: {tot:C2}"));
-            doc.Blocks.Add(p);
+            var p = new Paragraph(new Run(texto)); p.TextAlignment = alineacion; if (negrita) p.FontWeight = FontWeights.Bold;
+            return new TableCell(p) { Padding = new Thickness(5) };
         }
 
-        private static string GetValor(DataRow r, string c, string def = "") { if (r.Table.Columns.Contains(c) && r[c] != DBNull.Value) return r[c].ToString(); return def; }
-        private static decimal GetValorDecimal(DataRow r, string c) { if (r.Table.Columns.Contains(c) && r[c] != DBNull.Value && decimal.TryParse(r[c].ToString(), out decimal d)) return d; return 0; }
-        private static string GetCodigoComprobante(string l) { return l == "A" ? "001" : (l == "B" ? "006" : "000"); }
-        private static Image ObtenerImagenLogo() { return null; }
-        private static Image IntentarGenerarQRWPF(DateTime f, string n, decimal t, string l, string c) { return null; }
-        #endregion
+        private static void ImprimirTicketGrafico(string t, string n, string c, DateTime f, DataTable i, decimal tot, string extra, string l, string pie)
+        {
+            try
+            {
+                WinPrinting.PrintDocument doc = new WinPrinting.PrintDocument();
+                doc.PrintController = new WinPrinting.StandardPrintController();
+                doc.PrintPage += (s, e) => { DibujarTicketGDI(e.Graphics, t, n, c, f, i, tot, extra, l, pie); };
+                System.Windows.Forms.PrintDialog pd = new System.Windows.Forms.PrintDialog();
+                pd.Document = doc;
+                if (pd.ShowDialog() == System.Windows.Forms.DialogResult.OK) doc.Print();
+            }
+            catch (Exception x) { MessageBox.Show("Error Ticket: " + x.Message); }
+        }
+
+        private static void DibujarTicketGDI(WinDrawing.Graphics g, string tit, string nro, string cli, DateTime fec, DataTable its, decimal tot, string extra, string let, string pie)
+        {
+            g.InterpolationMode = WinDrawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            float w = 290; float y = 0;
+            WinDrawing.Font fT = new WinDrawing.Font("Arial", 10, WinDrawing.FontStyle.Bold);
+            WinDrawing.Font fN = new WinDrawing.Font("Consolas", 8);
+            WinDrawing.Font fC = new WinDrawing.Font("Consolas", 7);
+            WinDrawing.Font fB = new WinDrawing.Font("Arial", 14, WinDrawing.FontStyle.Bold);
+
+            DataRow conf = DatabaseService.GetConfiguracion();
+            string fan = conf != null ? conf["NombreFantasia"].ToString() : "SchTec";
+            DibujarTextoCentrado(g, fan.ToUpper(), fT, w, ref y);
+            DibujarLinea(g, ref y, w);
+
+            g.DrawString($"{tit} Letra: {let}", fN, WinDrawing.Brushes.Black, 0, y); y += 15;
+            g.DrawString($"Nro: {nro}", fN, WinDrawing.Brushes.Black, 0, y); y += 15;
+            g.DrawString($"Fecha: {fec:dd/MM/yyyy HH:mm}", fN, WinDrawing.Brushes.Black, 0, y); y += 15;
+            if (cli.Length > 35) cli = cli.Substring(0, 35);
+            g.DrawString($"Cli: {cli}", fN, WinDrawing.Brushes.Black, 0, y); y += 15;
+            DibujarLinea(g, ref y, w);
+
+            foreach (DataRow r in its.Rows)
+            {
+                string d = r.Table.Columns.Contains("Descripcion") ? r["Descripcion"].ToString() : r["Producto"].ToString();
+                if (d.Length > 22) d = d.Substring(0, 22);
+                g.DrawString($"{r["Cantidad"]} x {d}", fN, WinDrawing.Brushes.Black, 0, y);
+                g.DrawString(Convert.ToDecimal(r["Subtotal"]).ToString("N2"), fN, WinDrawing.Brushes.Black, w - 50, y);
+                y += 15;
+            }
+            DibujarLinea(g, ref y, w);
+
+            y += 5; g.DrawString("TOTAL:", fT, WinDrawing.Brushes.Black, 10, y);
+            g.DrawString($"${tot:N2}", fB, WinDrawing.Brushes.Black, 130, y - 2); y += 30;
+
+            if (!string.IsNullOrEmpty(extra))
+            {
+                if (extra.Length > 35) { g.DrawString("Pago: " + extra.Substring(0, 35), fC, WinDrawing.Brushes.Black, 0, y); y += 12; g.DrawString(extra.Substring(35), fC, WinDrawing.Brushes.Black, 0, y); y += 12; }
+                else { g.DrawString("Pago: " + extra, fC, WinDrawing.Brushes.Black, 0, y); y += 15; }
+            }
+
+            if (!string.IsNullOrEmpty(pie)) { DibujarLinea(g, ref y, w); DibujarTextoCentrado(g, pie, fC, w, ref y); }
+
+            y += 10;
+            DibujarTextoCentrado(g, "Gracias por su compra", fC, w, ref y);
+            DibujarTextoCentrado(g, ".", fC, w, ref y);
+        }
+
+        private static void DibujarLinea(WinDrawing.Graphics g, ref float y, float w) { y += 3; g.DrawLine(new WinDrawing.Pen(WinDrawing.Color.Black) { DashStyle = WinDrawing.Drawing2D.DashStyle.Dash }, 2, y, w - 2, y); y += 5; }
+        private static void DibujarTextoCentrado(WinDrawing.Graphics g, string t, WinDrawing.Font f, float w, ref float y) { WinDrawing.SizeF s = g.MeasureString(t, f); g.DrawString(t, f, WinDrawing.Brushes.Black, (w - s.Width) / 2, y); y += s.Height; }
     }
 }

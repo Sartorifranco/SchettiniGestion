@@ -40,6 +40,8 @@ namespace SchettiniGestion.WPF
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            ThemeManager.LoadSavedTheme();
+            ActualizarBotonTema();
             ActualizarHeaderUsuario();
             AplicarPermisos();
         }
@@ -317,6 +319,22 @@ namespace SchettiniGestion.WPF
         }
 
         private void btnTeclado_Click(object sender, RoutedEventArgs e) { KeyboardHelper.ShowOnScreenKeyboard(); }
+
+        private void btnTema_Click(object sender, RoutedEventArgs e)
+        {
+            ThemeManager.ToggleTheme();
+            ActualizarBotonTema();
+        }
+
+        private void ActualizarBotonTema()
+        {
+            try
+            {
+                if (txtIconoTema != null) txtIconoTema.Text = ThemeManager.IsDark ? "\u263E" : "\u263C";
+                if (txtTema != null) txtTema.Text = ThemeManager.IsDark ? "Tema oscuro" : "Tema claro";
+            }
+            catch { }
+        }
 
         // Eventos de botones del menú
         private void usuariosMenuItem_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_USUARIOS)) mainContentArea.Content = new UsuariosControl(); }

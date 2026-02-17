@@ -1,4 +1,4 @@
-﻿using SchettiniGestion;
+using SchettiniGestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace SchettiniGestion.WPF
 {
@@ -21,12 +22,21 @@ namespace SchettiniGestion.WPF
         private DataRow _productoSeleccionado;
         private bool _ignorarPerdidaFoco = false;
         private bool _cargandoListas = false;
+        private DispatcherTimer _timerVerificacionMP;
+        private string _referenciaPagoMP = "";
+        private bool _esperandoPagoMP = false;
+
+        private const decimal IVA_PORCENTAJE = 21m;
+
+        /// <summary>Si se asigna (ej. "Remito", "Pedido"), preselecciona ese tipo al cargar. Usado cuando se abre desde Nuevo Remito/Pedido.</summary>
+        public string TipoComprobanteInicial { get; set; }
 
         public FacturacionControl()
         {
             InitializeComponent();
             CarritoDeVenta = new ObservableCollection<FacturaItem>();
             dgvFactura.ItemsSource = CarritoDeVenta;
+            icCardsFactura.ItemsSource = CarritoDeVenta;
 
             CustomerScreenService.OnClienteEligioPago += ProcesarPagoCliente;
             this.Unloaded += FacturacionControl_Unloaded;
@@ -39,215 +49,64 @@ namespace SchettiniGestion.WPF
             CustomerScreenService.Iniciar();
             CustomerScreenService.Resetear();
             LimpiarFormulario();
-            // Inicializamos el control de vuelto
             cmbCondicionVenta_SelectionChanged(null, null);
+            var w = Window.GetWindow(this);
+            if (w != null) w.PreviewKeyDown += Ventana_PreviewKeyDown;
+
+            if (!string.IsNullOrEmpty(TipoComprobanteInicial))
+            {
+                for (int i = 0; i < cmbTipoComprobante.Items.Count; i++)
+                {
+                    if ((cmbTipoComprobante.Items[i] as System.Windows.Controls.ComboBoxItem)?.Content?.ToString() == TipoComprobanteInicial)
+                    {
+                        cmbTipoComprobante.SelectedIndex = i;
+                        break;
+                    }
+                }
+                if (tabFacturacion != null) tabFacturacion.SelectedIndex = 0;
+            }
         }
 
         private void FacturacionControl_Unloaded(object sender, RoutedEventArgs e)
         {
             CustomerScreenService.OnClienteEligioPago -= ProcesarPagoCliente;
+            var w = Window.GetWindow(this);
+            if (w != null) w.PreviewKeyDown -= Ventana_PreviewKeyDown;
+            CancelarModoQR();
         }
 
-        private void cmbCondicionVenta_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void Ventana_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            // *** INICIO DEL CHEQUEO CRÍTICO ***
-            // 1. Si el panel de vuelto no está inicializado, salimos inmediatamente para evitar el NRE.
-            // Esto sucede en la carga inicial del control.
-            if (pnlCalculoEfectivo == null)
-            {
-                return;
-            }
-            // *** FIN DEL CHEQUEO CRÍTICO ***
-
-            string condicion = null;
-
-            // 2. Verificación de elemento seleccionado (la corrección anterior)
-            if (cmbCondicionVenta.SelectedItem == null)
-            {
-                pnlCalculoEfectivo.Visibility = Visibility.Collapsed;
-                return;
-            }
-
-            if (cmbCondicionVenta.SelectedItem is ComboBoxItem selectedItem)
-            {
-                condicion = selectedItem.Content?.ToString();
-            }
-
-            if (string.IsNullOrEmpty(condicion))
-            {
-                pnlCalculoEfectivo.Visibility = Visibility.Collapsed;
-                return;
-            }
-
-            // 3. Lógica para mostrar/ocultar
-            if (condicion == "Contado")
-            {
-                pnlCalculoEfectivo.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                pnlCalculoEfectivo.Visibility = Visibility.Collapsed;
-                // Limpiamos los campos al ocultar para que no interfieran
-                txtMontoPagado.Text = "";
-                lblVuelto.Text = "$ 0,00";
-            }
+            if (e.Key == Key.F1) { new AyudaAtajosWindow().ShowDialog(); e.Handled = true; }
         }
 
-        // --- LÓGICA DE CÁLCULO DE VUELTO ---
-
-        private void txtMontoPagado_TextChanged(object sender, TextChangedEventArgs e)
+        // --- LÓGICA DE CANTIDAD (+ / -) ---
+        private void btnRestar_Click(object sender, RoutedEventArgs e)
         {
-            // Definimos la cultura regional para el parseo (usaremos la cultura actual de Windows/Argentina)
-            CultureInfo culture = CultureInfo.CurrentCulture;
-
-            // 1. Obtener el total de la venta de lblTotal
-            // Intentamos parsear el texto de lblTotal usando la cultura actual (esto maneja el "$", el separador de miles y el separador decimal)
-            if (decimal.TryParse(lblTotal.Text, NumberStyles.Currency, culture, out decimal totalVenta))
-            {
-                // 2. Obtener el monto que el cliente paga del TextBox
-                // Usamos la misma cultura para asegurar que "100,50" se lea como 100.50
-                if (decimal.TryParse(txtMontoPagado.Text, NumberStyles.Number, culture, out decimal montoPagado))
-                {
-                    if (montoPagado >= totalVenta)
-                    {
-                        // Cálculo correcto del Vuelto
-                        decimal vuelto = montoPagado - totalVenta;
-                        lblVuelto.Text = vuelto.ToString("C2", culture);
-                        lblVuelto.Foreground = Brushes.LightGreen;
-                    }
-                    else
-                    {
-                        // Faltante
-                        decimal faltante = totalVenta - montoPagado;
-                        lblVuelto.Text = $"- {faltante.ToString("C2", culture)} (Falta)";
-                        lblVuelto.Foreground = Brushes.OrangeRed;
-                    }
-                }
-                else
-                {
-                    // El campo de pago está vacío o inválido (comportamiento opcional)
-                    lblVuelto.Text = "$ 0,00";
-                    lblVuelto.Foreground = Brushes.Yellow;
-                }
-            }
-            // Si lblTotal no se pudo parsear (lo cual sería un error grave), no hacemos nada.
+            int cant = 1;
+            int.TryParse(txtCantidad.Text, out cant);
+            if (cant > 1) cant--;
+            txtCantidad.Text = cant.ToString();
         }
 
-        // Validador para asegurar que solo se ingresen números y un punto/coma decimal
-        private void NumberValidationTextBox(object sender, TextCompositionEventArgs e)
+        private void btnSumar_Click(object sender, RoutedEventArgs e)
         {
-            Regex regex = new Regex("[^0-9,.]+"); // Excluye dígitos, coma y punto
-            e.Handled = regex.IsMatch(e.Text);
-
-            // Permite solo un punto o coma decimal
-            if (e.Text == "." || e.Text == ",")
-            {
-                if (((TextBox)sender).Text.Contains(".") || ((TextBox)sender).Text.Contains(","))
-                {
-                    e.Handled = true;
-                }
-            }
+            int cant = 1;
+            int.TryParse(txtCantidad.Text, out cant);
+            cant++;
+            txtCantidad.Text = cant.ToString();
         }
 
-        // --- FIN LÓGICA DE CÁLCULO DE VUELTO ---
-
-        // --- LÓGICA DE PAGO (QR / TACTIL) ---
-
-        // 1. Si el EMPLEADO hace clic en el botón QR
-        private void btnPagoQR_Click(object sender, RoutedEventArgs e)
-        {
-            if (CarritoDeVenta.Count == 0) { CustomMessageBox.Show("No hay productos para cobrar."); return; }
-
-            // Calculamos total y mostramos QR atrás
-            decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
-            CustomerScreenService.PantallaQR(total);
-
-            // Seleccionamos "Mercado Pago" en el combo del empleado para ahorrar tiempo
-            foreach (ComboBoxItem item in cmbCondicionVenta.Items)
-            {
-                if (item.Content.ToString() == "Mercado Pago")
-                {
-                    cmbCondicionVenta.SelectedItem = item;
-                    break;
-                }
-            }
-
-            CustomMessageBox.Show("El Código QR se está mostrando en la pantalla del cliente.\nEspere la confirmación del pago.", "Esperando Pago", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        // 2. Si el CLIENTE toca la pantalla
-        private void ProcesarPagoCliente(string opcion)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                // Usamos el Dispatcher para asegurar que el evento se ejecute en el hilo principal de la UI
-
-                // Primero, seleccionamos la opción en el ComboBox del empleado
-                foreach (ComboBoxItem item in cmbCondicionVenta.Items)
-                {
-                    if (item.Content.ToString().Replace(" ", "").ToUpper() == opcion.ToUpper())
-                    {
-                        cmbCondicionVenta.SelectedItem = item;
-                        break;
-                    }
-                }
-
-                if (opcion == "MERCADOPAGO")
-                {
-                    // Llama al botón QR automáticamente
-                    btnPagoQR_Click(null, null);
-                }
-                else if (opcion == "TARJETA")
-                {
-                    CustomMessageBox.Show("El cliente eligió Tarjeta. (Proceder con el posnet).", "Atención");
-                }
-                else // EFECTIVO/CONTADO
-                {
-                    // El combo ya fue seleccionado, el cajero procede con el cálculo de vuelto manual.
-                    txtMontoPagado.Focus();
-                }
-            });
-        }
-        // ------------------------------------
-
-        private void CargarListasPrecios() { try { _cargandoListas = true; DataTable dt = DatabaseService.GetListasPrecios(); if (this.FindName("cmbListaPrecios") != null) { cmbListaPrecios.ItemsSource = dt.DefaultView; if (dt.Rows.Count > 0) cmbListaPrecios.SelectedValue = 1; } _cargandoListas = false; } catch { } }
-        private void CargarClientePorDefecto() { try { _clienteSeleccionado = DatabaseService.BuscarCliente("00-00000000-0"); if (_clienteSeleccionado != null) lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString(); } catch { } }
-        private void cmbListaPrecios_SelectionChanged(object sender, SelectionChangedEventArgs e) { if (_cargandoListas) return; RecalcularCarritoConNuevaLista(); }
-        private decimal ObtenerPorcentajeLista() { if (this.FindName("cmbListaPrecios") != null && cmbListaPrecios.SelectedItem is DataRowView row) return Convert.ToDecimal(row["Porcentaje"]); return 0; }
-
-        private void RecalcularCarritoConNuevaLista()
-        {
-            decimal porcentaje = ObtenerPorcentajeLista();
-            foreach (var item in CarritoDeVenta)
-            {
-                if (item.Codigo == "VAR") continue;
-                DataRow prod = DatabaseService.BuscarProducto(item.Codigo);
-                if (prod != null)
-                {
-                    decimal precioBase = Convert.ToDecimal(prod["PrecioVenta"]);
-                    item.PrecioUnitario = precioBase * (1 + (porcentaje / 100));
-                }
-            }
-            dgvFactura.Items.Refresh();
-            ActualizarTotal();
-        }
-
-        private void txtBuscarCliente_TextChanged(object sender, TextChangedEventArgs e) { if (txtBuscarCliente.Text.Length < 2) { popupCliente.IsOpen = false; return; } try { DataTable dt = DatabaseService.BuscarClientesMultiples(txtBuscarCliente.Text); lstSugerenciasCliente.ItemsSource = dt.DefaultView; popupCliente.IsOpen = dt.Rows.Count > 0; } catch { } }
-        private void SeleccionarCliente(DataRowView row) { _clienteSeleccionado = row.Row; _ignorarPerdidaFoco = true; txtBuscarCliente.Text = _clienteSeleccionado["RazonSocial"].ToString(); lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString(); _ignorarPerdidaFoco = false; popupCliente.IsOpen = false; txtBuscarProducto.Focus(); }
-        private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e) { if (_ignorarPerdidaFoco) return; if (txtBuscarProducto.Text.Length < 2) { popupProducto.IsOpen = false; _productoSeleccionado = null; return; } try { DataTable dt = DatabaseService.BuscarProductosMultiples_ParaVenta(txtBuscarProducto.Text); lstSugerenciasProducto.ItemsSource = dt.DefaultView; popupProducto.IsOpen = dt.Rows.Count > 0; } catch { } }
-        private void SeleccionarProducto(DataRowView row) { _productoSeleccionado = row.Row; _ignorarPerdidaFoco = true; txtBuscarProducto.Text = _productoSeleccionado["Descripcion"].ToString(); _ignorarPerdidaFoco = false; popupProducto.IsOpen = false; numCantidad.Focus(); }
-        private void lstSugerenciasCliente_MouseUp(object sender, MouseButtonEventArgs e) { if (lstSugerenciasCliente.SelectedItem is DataRowView r) SeleccionarCliente(r); }
-        private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e) { if (lstSugerenciasProducto.SelectedItem is DataRowView r) SeleccionarProducto(r); }
-        private async void txtBuscar_LostFocus(object sender, RoutedEventArgs e) { if (_ignorarPerdidaFoco) return; await Task.Delay(150); if (!lstSugerenciasCliente.IsFocused && !lstSugerenciasProducto.IsFocused) { popupCliente.IsOpen = false; popupProducto.IsOpen = false; } }
-        private void txtBuscar_PreviewKeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Down) { if (popupCliente.IsOpen) { lstSugerenciasCliente.SelectedIndex = 0; lstSugerenciasCliente.Focus(); } else if (popupProducto.IsOpen) { lstSugerenciasProducto.SelectedIndex = 0; lstSugerenciasProducto.Focus(); } } else if (e.Key == Key.Escape) { popupCliente.IsOpen = false; popupProducto.IsOpen = false; } else if (e.Key == Key.Enter && sender == txtBuscarProducto) { if (!popupProducto.IsOpen) { AbrirVentanaVarios(); e.Handled = true; } } }
-        private void lstSugerencias_PreviewKeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Enter) { if (sender == lstSugerenciasCliente && lstSugerenciasCliente.SelectedItem is DataRowView c) SeleccionarCliente(c); else if (sender == lstSugerenciasProducto && lstSugerenciasProducto.SelectedItem is DataRowView p) SeleccionarProducto(p); } }
-
+        // --- LÓGICA AGREGAR PRODUCTO ---
         private void btnAgregarProducto_Click(object sender, RoutedEventArgs e)
         {
             if (_productoSeleccionado == null) { AbrirVentanaVarios(); return; }
 
             int id = Convert.ToInt32(_productoSeleccionado["ProductoID"]);
-            int cant = (int)numCantidad.Value;
+            int cant = 1;
+            int.TryParse(txtCantidad.Text, out cant);
+            if (cant < 1) cant = 1;
+
             decimal precioBase = Convert.ToDecimal(_productoSeleccionado["PrecioVenta"]);
             decimal porcentaje = ObtenerPorcentajeLista();
             decimal precioFinal = precioBase * (1 + (porcentaje / 100));
@@ -272,13 +131,303 @@ namespace SchettiniGestion.WPF
             ActualizarTotal();
         }
 
+        // --- MERCADO PAGO QR ---
+        private async void btnPagoQR_Click(object sender, RoutedEventArgs e)
+        {
+            if (_esperandoPagoMP)
+            {
+                if (CustomMessageBox.Show("¿Cancelar el cobro con QR?", "Cancelar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                    CancelarModoQR();
+                return;
+            }
+
+            if (CarritoDeVenta.Count == 0) { CustomMessageBox.Show("No hay productos."); return; }
+
+            decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
+
+            btnPagoQR.Content = "⏳ Cancelar QR";
+            btnGuardarFactura.IsEnabled = false;
+            _esperandoPagoMP = true;
+            _referenciaPagoMP = "SchTec_" + DateTime.Now.Ticks.ToString();
+
+            try
+            {
+                var respuesta = await Task.Run(() => MercadoPagoService.CrearOrdenQR(total, "Compra Local", _referenciaPagoMP));
+
+                if (respuesta.Exito)
+                {
+                    CustomerScreenService.PantallaQR(respuesta.QRData, total);
+
+                    if (_timerVerificacionMP == null)
+                    {
+                        _timerVerificacionMP = new DispatcherTimer();
+                        _timerVerificacionMP.Interval = TimeSpan.FromSeconds(3);
+                        _timerVerificacionMP.Tick += TimerVerificacionMP_Tick;
+                    }
+                    _timerVerificacionMP.Start();
+                }
+                else
+                {
+                    CustomMessageBox.Show("Error MP: " + respuesta.Error);
+                    CancelarModoQR();
+                }
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show("Error: " + ex.Message);
+                CancelarModoQR();
+            }
+        }
+
+        private async void TimerVerificacionMP_Tick(object sender, EventArgs e)
+        {
+            try
+            {
+                var info = await Task.Run(() => MercadoPagoService.VerificarEstadoPago(_referenciaPagoMP));
+
+                if (info.Estado == "approved")
+                {
+                    _timerVerificacionMP.Stop();
+                    _esperandoPagoMP = false;
+                    _referenciaPagoMP = info.IdOperacion;
+
+                    CustomerScreenService.ActualizarMensajeQR("¡PAGO APROBADO!", Brushes.LightGreen);
+                    await Task.Delay(1500);
+
+                    SeleccionarCondicionMP();
+                    btnGuardarFactura.IsEnabled = true;
+                    btnGuardarFactura_Click(sender, new RoutedEventArgs());
+
+                    btnPagoQR.Content = "📱 Mercado Pago QR";
+                }
+                else if (info.Estado == "in_process") CustomerScreenService.ActualizarMensajeQR("Procesando...", Brushes.Yellow);
+                else if (info.Estado == "rejected") CustomerScreenService.ActualizarMensajeQR("Pago Rechazado.", Brushes.Red);
+            }
+            catch { }
+        }
+
+        private void CancelarModoQR()
+        {
+            _esperandoPagoMP = false;
+            if (_timerVerificacionMP != null) _timerVerificacionMP.Stop();
+
+            btnPagoQR.Content = "📱 Mercado Pago QR";
+            btnGuardarFactura.IsEnabled = true;
+
+            decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
+            CustomerScreenService.Actualizar(CarritoDeVenta.ToList(), total);
+        }
+
+        // --- MÉTODOS AUXILIARES ---
+        private void ProcesarPagoCliente(string opcion)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                SeleccionarCondicion(opcion);
+                if (opcion == "MERCADOPAGO") btnPagoQR_Click(null, null);
+                else if (opcion == "TARJETA") CustomMessageBox.Show("Usar Posnet.", "Info");
+                else txtMontoPagado.Focus();
+            });
+        }
+
+        private void SeleccionarCondicionMP() { SeleccionarCondicion("MERCADOPAGO"); }
+
+        private void SeleccionarCondicion(string tag)
+        {
+            foreach (ComboBoxItem item in cmbCondicionVenta.Items)
+            {
+                if (item.Content.ToString().Replace(" ", "").ToUpper().Contains(tag))
+                {
+                    cmbCondicionVenta.SelectedItem = item;
+                    break;
+                }
+            }
+        }
+
+        private void cmbCondicionVenta_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (pnlCalculoEfectivo == null) return;
+            string cond = (cmbCondicionVenta.SelectedItem as ComboBoxItem)?.Content.ToString();
+
+            if (cond == "Contado")
+            {
+                pnlCalculoEfectivo.Visibility = Visibility.Visible;
+                txtMontoPagado.Focus();
+            }
+            else
+            {
+                pnlCalculoEfectivo.Visibility = Visibility.Collapsed;
+                txtMontoPagado.Text = "";
+                lblVuelto.Text = "$ 0,00";
+            }
+        }
+
+        private async void btnGuardarFactura_Click(object sender, RoutedEventArgs e)
+        {
+            if (CarritoDeVenta.Count == 0) { CustomMessageBox.Show("Agregue productos."); return; }
+            if (_clienteSeleccionado == null) { CustomMessageBox.Show("Seleccione cliente."); return; }
+
+            // 1. Obtener Configuración
+            DataRow config = DatabaseService.GetConfiguracion();
+            int puntoVentaConfig = 1;
+            if (config != null && config["PuntoVenta"] != DBNull.Value)
+            {
+                puntoVentaConfig = Convert.ToInt32(config["PuntoVenta"]);
+            }
+
+            // 2. Determinar Tipo AFIP
+            decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
+            string tipoCompTexto = (cmbTipoComprobante.SelectedItem as ComboBoxItem).Content.ToString();
+
+            int tipoAfip = 0;
+            if (tipoCompTexto == "Factura")
+            {
+                string cuitStr = _clienteSeleccionado["CUIT"].ToString();
+                if (cuitStr.Length >= 11 && !cuitStr.Contains("00-00000000")) tipoAfip = 1;
+                else tipoAfip = 6;
+            }
+            else if (tipoCompTexto == "Ticket") tipoAfip = 6;
+
+            // Validación Factura A
+            if (tipoAfip == 1)
+            {
+                string cuitStr = _clienteSeleccionado["CUIT"].ToString();
+                if (cuitStr.Length < 11 || cuitStr.Contains("00-00000000"))
+                {
+                    CustomMessageBox.Show("Error: Para Factura A, el cliente debe tener CUIT válido.");
+                    return;
+                }
+            }
+
+            btnGuardarFactura.IsEnabled = false;
+            try
+            {
+                string cae = null;
+                string vtoCae = null;
+                int nroComprobante = 0;
+
+                if (tipoAfip > 0)
+                {
+                    CustomerScreenService.ActualizarMensajeQR("Facturando AFIP...", Brushes.Orange);
+                    string cuitLimpio = _clienteSeleccionado["CUIT"].ToString().Replace("-", "").Trim();
+                    long cuitCliente = 0;
+                    long.TryParse(cuitLimpio, out cuitCliente);
+                    var resultadoAfip = await AfipService.FacturarAsync(tipoAfip, puntoVentaConfig, (double)total, cuitCliente, CarritoDeVenta.ToList());
+                    if (resultadoAfip.Exito)
+                    {
+                        cae = resultadoAfip.CAE;
+                        vtoCae = resultadoAfip.Vencimiento;
+                        nroComprobante = resultadoAfip.NumeroComprobante;
+                    }
+                    else
+                    {
+                        CustomMessageBox.Show("❌ ERROR AFIP: " + resultadoAfip.Error);
+                        btnGuardarFactura.IsEnabled = true;
+                        return;
+                    }
+                }
+
+                var win = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
+                var cobroModal = new CobroModalWindow(win, total);
+                if (cobroModal.ShowDialog() != true)
+                {
+                    btnGuardarFactura.IsEnabled = true;
+                    return;
+                }
+
+                string condicionTicket = string.Join(" + ", cobroModal.Cobranzas.Select(c => $"{c.nombreMedio} {c.monto:C2}"));
+                int cliID = Convert.ToInt32(_clienteSeleccionado["ClienteID"]);
+                int? listaId = cmbListaPrecios.SelectedItem is DataRowView lr ? (int?)Convert.ToInt32(lr["ListaID"]) : null;
+
+                int fid = DatabaseService.GuardarFactura(cliID, tipoCompTexto, total, CarritoDeVenta.ToList(), condicionTicket, cae, vtoCae, nroComprobante, listaId, cobroModal.Cobranzas);
+
+                if (fid > 0)
+                {
+                    CustomerScreenService.PantallaGracias();
+                    string msgExito = "Venta Guardada.";
+                    if (!string.IsNullOrEmpty(cae)) msgExito += "\n¡Factura Electrónica Aprobada!";
+                    if (CustomMessageBox.Show($"{msgExito}\n¿Imprimir comprobante?", "Éxito", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                    {
+                        DataTable dt = new DataTable();
+                        dt.Columns.Add("Codigo"); dt.Columns.Add("Descripcion"); dt.Columns.Add("Cantidad"); dt.Columns.Add("Subtotal");
+                        foreach (var item in CarritoDeVenta) dt.Rows.Add(item.Codigo, item.Descripcion, item.Cantidad, item.Subtotal);
+                        PrintService.ImprimirTicketVenta(tipoCompTexto, nroComprobante, _clienteSeleccionado["RazonSocial"].ToString(), DateTime.Now, dt, total, condicionTicket, cae, vtoCae);
+                    }
+                    await Task.Delay(2000);
+                    LimpiarFormulario();
+                }
+                else
+                    CustomMessageBox.Show("No se pudo guardar la factura.");
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show("ERROR: " + ex.Message);
+            }
+            finally
+            {
+                btnGuardarFactura.IsEnabled = true;
+            }
+        }
+
+        private void LimpiarFormulario()
+        {
+            CarritoDeVenta.Clear();
+            ActualizarTotal();
+            CargarClientePorDefecto();
+            _referenciaPagoMP = "";
+            CancelarModoQR();
+            LimpiarProducto();
+        }
+
+        private void LimpiarProducto()
+        {
+            _productoSeleccionado = null;
+            txtBuscarProducto.Text = "";
+            txtCantidad.Text = "1";
+            txtBuscarProducto.Focus();
+        }
+
+        private void ActualizarTotal()
+        {
+            decimal subtotal = CarritoDeVenta.Sum(x => x.Cantidad * x.PrecioUnitario);
+            decimal totalConDescRec = CarritoDeVenta.Sum(x => x.Subtotal);
+            decimal dtoRec = subtotal - totalConDescRec;
+            decimal neto = totalConDescRec / (1 + IVA_PORCENTAJE / 100);
+            decimal iva = totalConDescRec - neto;
+
+            lblSubtotal.Text = subtotal.ToString("C2");
+            lblDescuentos.Text = dtoRec != 0 ? dtoRec.ToString("C2") + (dtoRec > 0 ? " (Dto)" : " (Rec)") : "$ 0,00";
+            lblNeto.Text = neto.ToString("C2");
+            lblIVA.Text = iva.ToString("C2");
+            lblTotal.Text = totalConDescRec.ToString("C2");
+            CustomerScreenService.Actualizar(CarritoDeVenta.ToList(), totalConDescRec);
+
+            dgvFactura.Items.Refresh();
+            icCardsFactura.Items.Refresh();
+        }
+
+        // --- SOPORTE UI ---
+        private void txtMontoPagado_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
+            decimal pagado = 0;
+            decimal.TryParse(txtMontoPagado.Text, out pagado);
+            decimal vuelto = pagado - total;
+            lblVuelto.Text = vuelto >= 0 ? vuelto.ToString("C2") : "Falta";
+            lblVuelto.Foreground = vuelto >= 0 ? Brushes.Yellow : Brushes.Red;
+        }
+
+        private void btnEliminarItem_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.DataContext is FacturaItem item) { CarritoDeVenta.Remove(item); ActualizarTotal(); }
+        }
+
+        private void btnCancelarFactura_Click(object sender, RoutedEventArgs e) { LimpiarFormulario(); }
+
         private void AbrirVentanaVarios()
         {
             var ventanaVarios = new ProductoVarioWindow();
-            if (Application.Current.MainWindow != null) Application.Current.MainWindow.Opacity = 0.8;
             ventanaVarios.ShowDialog();
-            if (Application.Current.MainWindow != null) Application.Current.MainWindow.Opacity = 1;
-
             if (ventanaVarios.Confirmado)
             {
                 CarritoDeVenta.Add(new FacturaItem
@@ -296,97 +445,104 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        private void btnEliminarItem_Click(object sender, RoutedEventArgs e)
+        private void CargarListasPrecios() { try { cmbListaPrecios.ItemsSource = DatabaseService.GetListasPrecios().DefaultView; cmbListaPrecios.SelectedIndex = 0; } catch { } }
+        private void CargarClientePorDefecto() { _clienteSeleccionado = DatabaseService.BuscarCliente("00-00000000-0"); if (_clienteSeleccionado != null) lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString(); }
+        private decimal ObtenerPorcentajeLista() { if (cmbListaPrecios.SelectedItem is DataRowView row) return Convert.ToDecimal(row["Porcentaje"]); return 0; }
+        private void RecalcularCarritoConNuevaLista()
         {
-            if ((sender as Button)?.DataContext is FacturaItem item) { CarritoDeVenta.Remove(item); ActualizarTotal(); }
-        }
-
-        private void ActualizarTotal()
-        {
-            decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
-            lblTotal.Text = $"{total:C2}";
-
-            // Re-ejecutamos el cálculo de vuelto para actualizar el monto final
-            txtMontoPagado_TextChanged(null, null);
-
-            if (CarritoDeVenta.Count > 0)
-                CustomerScreenService.Actualizar(CarritoDeVenta.ToList(), total);
-            else
-                CustomerScreenService.Resetear();
-        }
-
-        private void LimpiarProducto() { _productoSeleccionado = null; txtBuscarProducto.Text = ""; numCantidad.Value = 1; txtBuscarProducto.Focus(); }
-        private void LimpiarFormulario() { CargarClientePorDefecto(); cmbTipoComprobante.SelectedIndex = 0; cmbCondicionVenta.SelectedIndex = 0; if (this.FindName("cmbListaPrecios") != null && cmbListaPrecios.Items.Count > 0) cmbListaPrecios.SelectedValue = 1; CarritoDeVenta.Clear(); ActualizarTotal(); LimpiarProducto(); txtBuscarCliente.Focus(); }
-        private void btnCancelarFactura_Click(object sender, RoutedEventArgs e) { if (CustomMessageBox.Show("¿Cancelar venta?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes) LimpiarFormulario(); }
-
-        private async void btnGuardarFactura_Click(object sender, RoutedEventArgs e)
-        {
-            if (CarritoDeVenta.Count == 0) { CustomMessageBox.Show("Agregue productos."); return; }
-            if (_clienteSeleccionado == null) { CustomMessageBox.Show("Seleccione cliente."); return; }
-
-            // Si es Contado, verificamos el vuelto (es opcional, pero avisamos si falta dinero)
-            string condicion = cmbCondicionVenta.Text;
-            if (condicion == "Contado")
+            decimal porcentaje = ObtenerPorcentajeLista();
+            foreach (var item in CarritoDeVenta)
             {
-                if (lblVuelto.Text.Contains("(Falta)"))
+                if (item.Codigo == "VAR") continue;
+                DataRow prod = DatabaseService.BuscarProducto(item.Codigo);
+                if (prod != null) item.PrecioUnitario = Convert.ToDecimal(prod["PrecioVenta"]) * (1 + (porcentaje / 100));
+            }
+            dgvFactura.Items.Refresh();
+            ActualizarTotal();
+        }
+        private void cmbListaPrecios_SelectionChanged(object sender, SelectionChangedEventArgs e) { if (!_cargandoListas) RecalcularCarritoConNuevaLista(); }
+        private void txtBuscarCliente_TextChanged(object sender, TextChangedEventArgs e) { if (txtBuscarCliente.Text.Length < 2) { popupCliente.IsOpen = false; return; } try { DataTable dt = DatabaseService.BuscarClientesMultiples(txtBuscarCliente.Text); lstSugerenciasCliente.ItemsSource = dt.DefaultView; popupCliente.IsOpen = true; } catch { } }
+        private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e) { if (_ignorarPerdidaFoco) return; if (txtBuscarProducto.Text.Length < 1) { popupProducto.IsOpen = false; _productoSeleccionado = null; return; } try { DataTable dt = DatabaseService.BuscarProductosMultiples_ParaVenta(txtBuscarProducto.Text); lstSugerenciasProducto.ItemsSource = dt.DefaultView; popupProducto.IsOpen = dt.Rows.Count > 0; } catch { } }
+        private void SeleccionarCliente(DataRowView row) { _clienteSeleccionado = row.Row; _ignorarPerdidaFoco = true; txtBuscarCliente.Text = _clienteSeleccionado["RazonSocial"].ToString(); lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString(); _ignorarPerdidaFoco = false; popupCliente.IsOpen = false; txtBuscarProducto.Focus(); }
+        private void lstSugerenciasCliente_MouseUp(object sender, MouseButtonEventArgs e) { if (lstSugerenciasCliente.SelectedItem is DataRowView r) SeleccionarCliente(r); }
+        private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e) { if (lstSugerenciasProducto.SelectedItem is DataRowView r) { _productoSeleccionado = r.Row; _ignorarPerdidaFoco = true; txtBuscarProducto.Text = _productoSeleccionado["Descripcion"].ToString(); _ignorarPerdidaFoco = false; popupProducto.IsOpen = false; txtCantidad.Focus(); txtCantidad.SelectAll(); } }
+        private async void txtBuscar_LostFocus(object sender, RoutedEventArgs e) { if (_ignorarPerdidaFoco) return; await Task.Delay(150); if (!lstSugerenciasCliente.IsFocused && !lstSugerenciasProducto.IsFocused) { popupCliente.IsOpen = false; popupProducto.IsOpen = false; } }
+        private void txtBuscar_PreviewKeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Down) { if (popupCliente.IsOpen) { lstSugerenciasCliente.SelectedIndex = 0; lstSugerenciasCliente.Focus(); } else if (popupProducto.IsOpen) { lstSugerenciasProducto.SelectedIndex = 0; lstSugerenciasProducto.Focus(); } } else if (e.Key == Key.Escape) { popupCliente.IsOpen = false; popupProducto.IsOpen = false; } else if (e.Key == Key.Enter && sender == txtBuscarProducto) { if (!popupProducto.IsOpen) { AbrirVentanaVarios(); e.Handled = true; } } }
+        private void lstSugerencias_PreviewKeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Enter) { if (sender == lstSugerenciasCliente && lstSugerenciasCliente.SelectedItem is DataRowView c) SeleccionarCliente(c); else if (sender == lstSugerenciasProducto && lstSugerenciasProducto.SelectedItem is DataRowView p) { _productoSeleccionado = p.Row; _ignorarPerdidaFoco = true; txtBuscarProducto.Text = _productoSeleccionado["Descripcion"].ToString(); _ignorarPerdidaFoco = false; popupProducto.IsOpen = false; txtCantidad.Focus(); txtCantidad.SelectAll(); } } }
+        private void NumberValidationTextBox(object sender, TextCompositionEventArgs e) { e.Handled = new Regex("[^0-9,.]+").IsMatch(e.Text); }
+
+        // --- Vista Cards/Lista ---
+        private void btnVistaLista_Click(object sender, RoutedEventArgs e)
+        {
+            dgvFactura.Visibility = Visibility.Visible;
+            svCardsFactura.Visibility = Visibility.Collapsed;
+            btnVistaLista.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#007ACC"));
+            btnVistaCards.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#444"));
+        }
+        private void btnVistaCards_Click(object sender, RoutedEventArgs e)
+        {
+            dgvFactura.Visibility = Visibility.Collapsed;
+            svCardsFactura.Visibility = Visibility.Visible;
+            btnVistaCards.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#007ACC"));
+            btnVistaLista.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#444"));
+        }
+
+        // --- Cliente: Crear ---
+        private void btnCrearCliente_Click(object sender, RoutedEventArgs e)
+        {
+            string texto = txtBuscarCliente.Text.Trim();
+            if (string.IsNullOrEmpty(texto)) { CustomMessageBox.Show("Escriba el nombre o razón social del cliente."); return; }
+            var modal = new ClienteRapidoModalWindow(texto);
+            if (modal.ShowDialog() == true && modal.ClienteID > 0)
+            {
+                _clienteSeleccionado = DatabaseService.BuscarClientePorID(modal.ClienteID);
+                if (_clienteSeleccionado != null)
                 {
-                    CustomMessageBox.Show("El monto ingresado es insuficiente. Revise el campo 'Paga con'.", "Error de Pago", MessageBoxButton.OK, MessageBoxImage.Error);
-                    txtMontoPagado.Focus();
-                    return;
+                    lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
+                    txtBuscarCliente.Text = _clienteSeleccionado["RazonSocial"].ToString();
+                    popupCliente.IsOpen = false;
+                    txtBuscarProducto.Focus();
                 }
             }
+        }
 
-
-            if (CustomMessageBox.Show("¿Confirmar venta?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+        // --- Mini botones: Descuento, Recargo, Editar, Eliminar ---
+        private void btnDescuentoItem_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.DataContext is FacturaItem item)
             {
-                try
+                var win = new InputWindow("Descuento", "Porcentaje de descuento:", item.DescuentoPorcentaje.ToString("N0"));
+                if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 100)
                 {
-                    if (string.IsNullOrEmpty(condicion)) condicion = "Contado";
-
-                    string tipoComp = (cmbTipoComprobante.SelectedItem as ComboBoxItem).Content.ToString();
-                    decimal totalVenta = CarritoDeVenta.Sum(i => i.Subtotal);
-                    int clienteID = Convert.ToInt32(_clienteSeleccionado["ClienteID"]);
-                    string clienteNombre = _clienteSeleccionado["RazonSocial"].ToString();
-                    string caeObtenido = "", vtoCae = "";
-                    int nroComprobante = 0;
-
-                    if (tipoComp.Contains("Factura"))
-                    {
-                        if (CustomMessageBox.Show("¿Confirmar FACTURA ELECTRÓNICA?", "AFIP", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
-                        {
-                            DataRow config = DatabaseService.GetConfiguracion();
-                            int ptoVenta = config != null ? Convert.ToInt32(config["PuntoVenta"]) : 1;
-                            int tipoAfip = tipoComp == "Factura A" ? 1 : 6;
-                            long cuitCliente = 0;
-                            long.TryParse(_clienteSeleccionado["CUIT"].ToString().Replace("-", ""), out cuitCliente);
-                            var res = await AfipService.FacturarAsync(tipoAfip, ptoVenta, (double)totalVenta, cuitCliente, CarritoDeVenta.ToList());
-                            if (!res.Exito) { CustomMessageBox.Show("Error AFIP: " + res.Error); return; }
-                            caeObtenido = res.CAE; vtoCae = res.Vencimiento; nroComprobante = res.NumeroComprobante;
-                        }
-                    }
-
-                    bool exito = DatabaseService.GuardarFactura(clienteID, tipoComp, totalVenta, CarritoDeVenta.ToList(), condicion);
-
-                    if (exito)
-                    {
-                        CustomerScreenService.PantallaGracias(); // Mostrar agradecimiento
-
-                        if (CustomMessageBox.Show("¿Imprimir?", "Éxito", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                        {
-                            DataTable dt = new DataTable();
-                            dt.Columns.Add("Codigo"); dt.Columns.Add("Descripcion"); dt.Columns.Add("Cantidad"); dt.Columns.Add("Subtotal");
-                            foreach (var i in CarritoDeVenta) dt.Rows.Add(i.Codigo, i.Descripcion, i.Cantidad, i.Subtotal);
-                            string infoExtra = condicion;
-                            if (!string.IsNullOrEmpty(caeObtenido)) infoExtra += $" CAE:{caeObtenido} VTO:{vtoCae}";
-                            PrintService.ImprimirTicketVenta(tipoComp, nroComprobante, clienteNombre, DateTime.Now, dt, totalVenta, infoExtra);
-                        }
-
-                        await Task.Delay(3000); // Dar tiempo al cliente de ver el Gracias
-                        LimpiarFormulario();
-                    }
+                    item.DescuentoPorcentaje = pct;
+                    ActualizarTotal();
                 }
-                catch (Exception ex) { CustomMessageBox.Show(ex.Message); }
             }
         }
+        private void btnRecargoItem_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.DataContext is FacturaItem item)
+            {
+                var win = new InputWindow("Recargo", "Porcentaje de recargo:", item.RecargoPorcentaje.ToString("N0"));
+                if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 100)
+                {
+                    item.RecargoPorcentaje = pct;
+                    ActualizarTotal();
+                }
+            }
+        }
+        private void btnEditarItem_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.DataContext is FacturaItem item)
+            {
+                var winCant = new InputWindow("Editar cantidad", "Nueva cantidad:", item.Cantidad.ToString());
+                if (winCant.ShowDialog() == true && int.TryParse(winCant.ResponseText, out int cant) && cant > 0) { item.Cantidad = cant; ActualizarTotal(); return; }
+                var winPrecio = new InputWindow("Editar precio", "Nuevo precio unitario:", item.PrecioUnitario.ToString("N2"));
+                if (winPrecio.ShowDialog() == true && decimal.TryParse(winPrecio.ResponseText?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal prec) && prec >= 0) { item.PrecioUnitario = prec; ActualizarTotal(); }
+            }
+        }
+
+        // --- AYUDA ATAJOS ---
+        private void btnAyudaAtajos_Click(object sender, RoutedEventArgs e) { new AyudaAtajosWindow().ShowDialog(); }
     }
 }

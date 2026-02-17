@@ -3,70 +3,76 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:SchettiniGestion.WPF"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1000"
-             Background="{StaticResource ModuleBackgroundBrush}"
+             Background="{StaticResource BackgroundDark}"
              Loaded="UserControl_Loaded">
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="5"/>
-            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Historial de Presupuestos" FontSize="24" FontWeight="Bold" Foreground="{StaticResource HeaderForegroundBrush}" Margin="0,0,0,20"/>
+        <TextBlock Text="Historial de Presupuestos" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,20"/>
 
-        <Border Grid.Row="1" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="15" Margin="0,0,0,20">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Desde:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <DatePicker x:Name="dpDesde" Width="120" VerticalContentAlignment="Center"/>
+        <UniformGrid Grid.Row="1" Columns="5" Margin="0,0,0,20">
+            <Button x:Name="btnHoy" Content="📅 HOY" Click="btnFiltroRapido_Click" Tag="Hoy" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Height="45"/>
+            <Button x:Name="btnAyer" Content="⬅ AYER" Click="btnFiltroRapido_Click" Tag="Ayer" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Height="45"/>
+            <Button x:Name="btnSemana" Content="📅 7 DÍAS" Click="btnFiltroRapido_Click" Tag="Semana" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Height="45"/>
+            <Button x:Name="btnMes" Content="📅 ESTE MES" Click="btnFiltroRapido_Click" Tag="Mes" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Height="45"/>
+            <Button x:Name="btnTodos" Content="♾️ HISTÓRICO" Click="btnFiltroRapido_Click" Tag="Todo" Style="{StaticResource SecondaryButtonStyle}" Height="45"/>
+        </UniformGrid>
 
-                <TextBlock Text="Hasta:" Style="{StaticResource ModuleLabelStyle}" VerticalAlignment="Center" Margin="20,0,10,0"/>
-                <DatePicker x:Name="dpHasta" Width="120" VerticalContentAlignment="Center"/>
+        <Border Grid.Row="2" Background="{StaticResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                <Button x:Name="btnBuscar" Content="🔍 Buscar" Style="{StaticResource ActionButtonStyle}" Width="120" Margin="30,0,0,0" Click="btnBuscar_Click"/>
-            </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="DESDE" Style="{StaticResource LabelStyle}"/>
+                    <DatePicker x:Name="dtpDesde" Height="35" Width="140" FontSize="14" VerticalContentAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="HASTA" Style="{StaticResource LabelStyle}"/>
+                    <DatePicker x:Name="dtpHasta" Height="35" Width="140" FontSize="14" VerticalContentAlignment="Center"/>
+                </StackPanel>
+
+                <Button x:Name="btnBuscar" Grid.Column="4" Content="🔍 BUSCAR" Style="{StaticResource ButtonStyle}" Width="120" VerticalAlignment="Bottom" Height="35" Click="btnBuscar_Click"/>
+            </Grid>
         </Border>
 
-        <DataGrid x:Name="dgvPresupuestos" Grid.Row="2" 
-                  Style="{StaticResource ModuleDataGridStyle}" 
-                  AutoGenerateColumns="False" IsReadOnly="True"
-                  SelectionChanged="dgvPresupuestos_SelectionChanged">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Nro" Binding="{Binding PresupuestoID}" Width="60"/>
-                <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha}" Width="150"/>
-                <DataGridTextColumn Header="Cliente" Binding="{Binding RazonSocial}" Width="*"/>
-                <DataGridTextColumn Header="Estado" Binding="{Binding Estado}" Width="100"/>
-                <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C2}" Width="120" FontWeight="Bold"/>
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <GridSplitter Grid.Row="3" HorizontalAlignment="Stretch" Background="{StaticResource BorderDarkBrush}"/>
-
-        <DockPanel Grid.Row="4" Margin="0,10,0,0">
-            <TextBlock DockPanel.Dock="Top" Text="Detalle del Presupuesto Seleccionado" Style="{StaticResource ModuleLabelStyle}" Margin="0,0,0,5"/>
-            <DataGrid x:Name="dgvDetalle" 
-                      Style="{StaticResource ModuleDataGridStyle}" 
-                      AutoGenerateColumns="False" IsReadOnly="True">
+        <Border Grid.Row="3" Background="{StaticResource SurfaceDark}" CornerRadius="8" Padding="1">
+            <DataGrid x:Name="dgvPresupuestos" Style="{StaticResource {x:Type DataGrid}}" AutoGenerateColumns="False" IsReadOnly="True" RowHeight="40">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="100"/>
-                    <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
-                    <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" Width="80"/>
-                    <DataGridTextColumn Header="Precio Unit." Binding="{Binding PrecioUnitario, StringFormat=C2}" Width="100"/>
-                    <DataGridTextColumn Header="Subtotal" Binding="{Binding Subtotal, StringFormat=C2}" Width="100"/>
+                    <DataGridTextColumn Header="NRO" Binding="{Binding PresupuestoID, StringFormat=D8}" Width="100"/>
+                    <DataGridTextColumn Header="FECHA" Binding="{Binding Fecha, StringFormat='dd/MM/yyyy HH:mm'}" Width="160"/>
+                    <DataGridTextColumn Header="CLIENTE" Binding="{Binding RazonSocial}" Width="*"/>
+                    <DataGridTextColumn Header="ESTADO" Binding="{Binding Estado}" Width="120"/>
+                    <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, StringFormat=C2}" Width="120" FontWeight="Bold" Foreground="{StaticResource SuccessColor}"/>
+
+                    <DataGridTemplateColumn Width="140">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="👁️" ToolTip="Ver Detalle" Style="{StaticResource SecondaryButtonStyle}" Padding="0" Height="30" Width="40" Click="btnVer_Click" Margin="0,0,5,0"/>
+                                    <Button Content="🖨️" ToolTip="Imprimir / PDF" Style="{StaticResource SecondaryButtonStyle}" Padding="0" Height="30" Width="40" Click="btnImprimir_Click" Margin="0,0,5,0"/>
+                                    <Button Content="🗑️" ToolTip="Eliminar" Style="{StaticResource DeleteButtonStyle}" Padding="0" Height="30" Width="40" Click="btnEliminar_Click"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
-        </DockPanel>
-
-        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button x:Name="btnEliminar" Content="🗑 Eliminar" Style="{StaticResource DeleteButtonStyle}" Margin="0,0,10,0" Click="btnEliminar_Click"/>
-            <Button x:Name="btnImprimir" Content="🖨 Imprimir / PDF" Style="{StaticResource ActionButtonStyle}" Click="btnImprimir_Click"/>
-        </StackPanel>
-
+        </Border>
     </Grid>
 </UserControl>

@@ -1,14 +1,11 @@
-﻿using SchettiniGestion;
+﻿using Microsoft.Win32; // Necesario para el guardado de archivos
 using System;
 using System.Data;
+using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.IO;
-using OfficeOpenXml; // EPPlus
-using System.Linq;
-using System.Collections.Generic;
-using Microsoft.Win32;
-using System.Diagnostics; // ¡Necesario para abrir el Excel!
+using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
 {
@@ -17,171 +14,149 @@ namespace SchettiniGestion.WPF
         public ReportesControl()
         {
             InitializeComponent();
-            // Licencia EPPlus (Importante)
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         }
 
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        private void ReportesControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Por defecto mostramos el mes actual
+            EstablecerFechas("Mes");
+        }
+
+        // --- FILTROS RÁPIDOS (TOUCH) ---
+        private void btnFiltroRapido_Click(object sender, RoutedEventArgs e)
+        {
+            string opcion = (sender as Button).Tag.ToString();
+            EstablecerFechas(opcion);
+        }
+
+        private void EstablecerFechas(string opcion)
         {
             DateTime hoy = DateTime.Today;
-            DateTime inicioMes = new DateTime(hoy.Year, hoy.Month, 1);
 
-            dpDesdeRanking.SelectedDate = inicioMes;
-            dpHastaRanking.SelectedDate = hoy;
-
-            dpDesdeIVA.SelectedDate = inicioMes;
-            dpHastaIVA.SelectedDate = hoy;
-        }
-
-        // --- RANKING ---
-        private void btnActualizarRanking_Click(object sender, RoutedEventArgs e)
-        {
-            try
+            switch (opcion)
             {
-                DataTable dt = DatabaseService.GetRankingVentas(dpDesdeRanking.SelectedDate ?? DateTime.Now, dpHastaRanking.SelectedDate ?? DateTime.Now);
-                dgvRanking.ItemsSource = dt.DefaultView;
+                case "Hoy":
+                    dtpDesde.SelectedDate = hoy;
+                    dtpHasta.SelectedDate = hoy;
+                    break;
+                case "Ayer":
+                    dtpDesde.SelectedDate = hoy.AddDays(-1);
+                    dtpHasta.SelectedDate = hoy.AddDays(-1);
+                    break;
+                case "Semana":
+                    dtpDesde.SelectedDate = hoy.AddDays(-7);
+                    dtpHasta.SelectedDate = hoy;
+                    break;
+                case "Mes":
+                    dtpDesde.SelectedDate = new DateTime(hoy.Year, hoy.Month, 1);
+                    dtpHasta.SelectedDate = dtpDesde.SelectedDate.Value.AddMonths(1).AddDays(-1);
+                    break;
+                case "Anio":
+                    dtpDesde.SelectedDate = new DateTime(hoy.Year, 1, 1);
+                    dtpHasta.SelectedDate = new DateTime(hoy.Year, 12, 31);
+                    break;
             }
-            catch (Exception ex) { CustomMessageBox.Show(ex.Message); }
+            CargarReporte();
         }
 
-        private void btnExportarRanking_Click(object sender, RoutedEventArgs e)
+        // --- GENERAR REPORTE ---
+        private void btnBuscar_Click(object sender, RoutedEventArgs e)
         {
-            ExportarGrillaAExcel(dgvRanking.ItemsSource as DataView, "Ranking_Ventas");
+            CargarReporte();
         }
 
-        // --- LIBRO IVA ---
-        private void btnActualizarIVA_Click(object sender, RoutedEventArgs e)
+        private void CargarReporte()
+        {
+            if (dtpDesde.SelectedDate == null || dtpHasta.SelectedDate == null) return;
+
+            try
+            {
+                DateTime desde = dtpDesde.SelectedDate.Value;
+                // Ajustamos la hora final para incluir todo el día hasta las 23:59:59
+                DateTime hasta = dtpHasta.SelectedDate.Value.Date.AddDays(1).AddSeconds(-1);
+
+                DataTable dt = DatabaseService.GetRankingVentas(desde, hasta);
+                dgvReporte.ItemsSource = dt.DefaultView;
+
+                // Calcular Total General del reporte
+                decimal total = 0;
+                foreach (DataRow row in dt.Rows)
+                {
+                    total += Convert.ToDecimal(row["TotalVendido"]);
+                }
+                lblTotalGeneral.Text = total.ToString("C2");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al generar reporte: " + ex.Message);
+            }
+        }
+
+        // --- EXPORTAR A EXCEL (LÓGICA NUEVA) ---
+        private void btnExportarExcel_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // 1. Obtenemos los datos crudos
-                DataTable rawData = DatabaseService.GetVentasParaLibroIVA(dpDesdeIVA.SelectedDate ?? DateTime.Now, dpHastaIVA.SelectedDate ?? DateTime.Now);
-
-                // 2. Procesamos en memoria
-                DataTable processedData = new DataTable();
-                processedData.Columns.Add("Fecha");
-                processedData.Columns.Add("TipoComprobante");
-                processedData.Columns.Add("NroComprobante");
-                processedData.Columns.Add("Cliente");
-                processedData.Columns.Add("CUIT");
-                processedData.Columns.Add("CondicionIVA");
-                processedData.Columns.Add("Neto21", typeof(decimal));
-                processedData.Columns.Add("IVA21", typeof(decimal));
-                processedData.Columns.Add("Neto105", typeof(decimal));
-                processedData.Columns.Add("IVA105", typeof(decimal));
-                processedData.Columns.Add("TotalFactura", typeof(decimal));
-
-                var facturas = rawData.AsEnumerable()
-                    .GroupBy(row => row.Field<long>("NroComprobante"));
-
-                foreach (var grupo in facturas)
+                // 1. Verificar si hay datos
+                if (dgvReporte.ItemsSource == null)
                 {
-                    DataRow firstRow = grupo.First();
-                    DataRow newRow = processedData.NewRow();
-
-                    newRow["Fecha"] = Convert.ToDateTime(firstRow["Fecha"]).ToString("dd/MM/yyyy");
-                    newRow["TipoComprobante"] = firstRow["TipoComprobante"];
-                    newRow["NroComprobante"] = firstRow["NroComprobante"];
-                    newRow["Cliente"] = firstRow["Cliente"];
-                    newRow["CUIT"] = firstRow["CUIT"];
-                    newRow["CondicionIVA"] = firstRow["CondicionIVA"];
-                    newRow["TotalFactura"] = Convert.ToDecimal(firstRow["Total"]);
-
-                    decimal neto21 = 0, iva21 = 0, neto105 = 0, iva105 = 0;
-
-                    foreach (var item in grupo)
-                    {
-                        string alicuotaStr = item["AlicuotaProducto"].ToString();
-                        decimal precioUnit = Convert.ToDecimal(item["PrecioUnitario"]);
-                        int cantidad = Convert.ToInt32(item["Cantidad"]);
-                        decimal totalItem = precioUnit * cantidad;
-
-                        if (alicuotaStr.Contains("21"))
-                        {
-                            decimal neto = totalItem / 1.21m;
-                            neto21 += neto;
-                            iva21 += (totalItem - neto);
-                        }
-                        else if (alicuotaStr.Contains("10.5"))
-                        {
-                            decimal neto = totalItem / 1.105m;
-                            neto105 += neto;
-                            iva105 += (totalItem - neto);
-                        }
-                    }
-
-                    newRow["Neto21"] = Math.Round(neto21, 2);
-                    newRow["IVA21"] = Math.Round(iva21, 2);
-                    newRow["Neto105"] = Math.Round(neto105, 2);
-                    newRow["IVA105"] = Math.Round(iva105, 2);
-
-                    processedData.Rows.Add(newRow);
+                    MessageBox.Show("No hay datos para exportar. Genere el reporte primero.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
 
-                dgvIVA.ItemsSource = processedData.DefaultView;
-            }
-            catch (Exception ex) { CustomMessageBox.Show("Error al procesar IVA: " + ex.Message); }
-        }
+                DataView view = (DataView)dgvReporte.ItemsSource;
+                DataTable dt = view.Table;
 
-        private void btnExportarIVA_Click(object sender, RoutedEventArgs e)
-        {
-            ExportarGrillaAExcel(dgvIVA.ItemsSource as DataView, "Libro_IVA_Ventas");
-        }
-
-        // --- EXPORTACIÓN GENÉRICA CORREGIDA ---
-        private void ExportarGrillaAExcel(DataView view, string nombreArchivo)
-        {
-            if (view == null || view.Count == 0) { CustomMessageBox.Show("No hay datos para exportar."); return; }
-
-            SaveFileDialog sfd = new SaveFileDialog
-            {
-                Filter = "Excel Files|*.xlsx",
-                FileName = $"{nombreArchivo}_{DateTime.Now:yyyyMMdd}.xlsx"
-            };
-
-            if (sfd.ShowDialog() == true)
-            {
-                try
+                if (dt.Rows.Count == 0)
                 {
-                    // Borramos el archivo si ya existe para evitar conflictos
-                    if (File.Exists(sfd.FileName)) File.Delete(sfd.FileName);
+                    MessageBox.Show("La lista está vacía.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
-                    using (ExcelPackage p = new ExcelPackage(new FileInfo(sfd.FileName)))
+                // 2. Configurar el diálogo de guardado
+                SaveFileDialog sfd = new SaveFileDialog();
+                sfd.Filter = "Archivo CSV (Excel)|*.csv";
+                sfd.FileName = $"Reporte_Ventas_{DateTime.Now:yyyyMMdd_HHmm}.csv";
+
+                if (sfd.ShowDialog() == true)
+                {
+                    // 3. Generar el contenido del archivo (Formato CSV compatible con Excel en Español)
+                    StringBuilder sb = new StringBuilder();
+
+                    // Encabezados
+                    string[] columnNames = { "CÓDIGO", "PRODUCTO", "RUBRO", "UNIDADES", "TOTAL VENDIDO" };
+                    sb.AppendLine(string.Join(";", columnNames));
+
+                    // Filas
+                    foreach (DataRow row in dt.Rows)
                     {
-                        ExcelWorksheet ws = p.Workbook.Worksheets.Add("Reporte");
-
-                        // Cargar datos
-                        ws.Cells["A1"].LoadFromDataTable(view.Table, true);
-
-                        // Formato de cabecera
-                        using (var range = ws.Cells[1, 1, 1, view.Table.Columns.Count])
-                        {
-                            range.Style.Font.Bold = true;
-                            range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                            range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
-                        }
-
-                        // ELIMINADO: ws.Cells.AutoFitColumns(); 
-                        // (Esta línea causaba el error en la imagen image_a38c61.png)
-
-                        p.Save();
-                    }
-
-                    // ABRIR EL ARCHIVO AUTOMÁTICAMENTE
-                    if (CustomMessageBox.Show("¡Exportación exitosa!\n¿Desea abrir el archivo ahora?", "Éxito", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
-                    {
-                        var p = new Process();
-                        p.StartInfo = new ProcessStartInfo(sfd.FileName)
-                        {
-                            UseShellExecute = true
+                        string[] fields = {
+                            row["Codigo"].ToString(),
+                            "\"" + row["Descripcion"].ToString() + "\"", // Comillas para evitar problemas si el nombre tiene ;
+                            row["Rubro"].ToString(),
+                            row["UnidadesVendidas"].ToString(),
+                            Convert.ToDecimal(row["TotalVendido"]).ToString("F2") // Formato número
                         };
-                        p.Start();
+                        sb.AppendLine(string.Join(";", fields));
+                    }
+
+                    // 4. Guardar archivo
+                    File.WriteAllText(sfd.FileName, sb.ToString(), Encoding.UTF8);
+
+                    // 5. Confirmar y abrir
+                    if (MessageBox.Show("¡Reporte exportado correctamente!\n\n¿Desea abrirlo ahora?", "Éxito", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = sfd.FileName,
+                            UseShellExecute = true
+                        });
                     }
                 }
-                catch (Exception ex)
-                {
-                    CustomMessageBox.Show($"Error al exportar: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al exportar: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

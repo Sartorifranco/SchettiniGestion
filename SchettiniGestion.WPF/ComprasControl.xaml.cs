@@ -1,194 +1,232 @@
-﻿using SchettiniGestion;
+using SchettiniGestion;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Data;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Threading.Tasks;
 
 namespace SchettiniGestion.WPF
 {
     public partial class ComprasControl : UserControl
     {
-        private ObservableCollection<FacturaItem> CarritoDeCompra;
-        private DataRow _proveedorSeleccionado;
-        private DataRow _productoSeleccionado;
-        private bool _ignorarPerdidaFoco = false;
-
         public ComprasControl()
         {
             InitializeComponent();
-            CarritoDeCompra = new ObservableCollection<FacturaItem>();
-            dgvCarrito.ItemsSource = CarritoDeCompra;
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            LimpiarFormulario();
+            CargarFacturasCompras();
+            CargarRecepciones();
+            CargarNotas();
+            CargarGastos();
+            CargarPagos();
+            CargarOrdenes();
         }
 
-        // --- PROVEEDOR ---
-        private void btnBuscarProveedor_Click(object sender, RoutedEventArgs e)
+        // ========== FACTURAS DE COMPRAS ==========
+        private void CargarFacturasCompras()
         {
-            popupOverlay.Visibility = Visibility.Visible;
-            txtBuscarProveedorPopup.Text = "";
-            lstProveedores.ItemsSource = null;
-            txtBuscarProveedorPopup.Focus();
-        }
-
-        private void popupOverlay_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (e.Source == popupOverlay) popupOverlay.Visibility = Visibility.Collapsed;
-        }
-
-        private void txtBuscarProveedorPopup_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter || e.Key == Key.Down)
-            {
-                try
-                {
-                    DataTable dt = DatabaseService.BuscarProveedoresMultiples(txtBuscarProveedorPopup.Text);
-                    lstProveedores.ItemsSource = dt.DefaultView;
-                    if (dt.Rows.Count > 0)
-                    {
-                        lstProveedores.SelectedIndex = 0;
-                        lstProveedores.Focus();
-                    }
-                }
-                catch { }
-            }
-        }
-
-        private void SeleccionarProveedor()
-        {
-            if (lstProveedores.SelectedItem is DataRowView drv)
-            {
-                _proveedorSeleccionado = drv.Row;
-                txtProveedor.Text = _proveedorSeleccionado["RazonSocial"].ToString();
-                popupOverlay.Visibility = Visibility.Collapsed;
-                txtBuscarProducto.Focus();
-            }
-        }
-
-        private void lstProveedores_SelectionChanged(object sender, SelectionChangedEventArgs e) { SeleccionarProveedor(); }
-        private void lstProveedores_KeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Enter) SeleccionarProveedor(); }
-
-        // --- PRODUCTO ---
-        private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (_ignorarPerdidaFoco) return;
-            if (txtBuscarProducto.Text.Length < 2) { popupProductos.IsOpen = false; _productoSeleccionado = null; return; }
-
             try
             {
-                DataTable dt = DatabaseService.BuscarProductosMultiples_ParaCompra(txtBuscarProducto.Text);
-                lstSugerenciasProducto.ItemsSource = dt.DefaultView;
-                popupProductos.IsOpen = dt.Rows.Count > 0;
+                string filtro = txtFiltroFacturas?.Text?.Trim() ?? "";
+                dgvFacturasCompras.ItemsSource = DatabaseService.GetCompras(filtro).DefaultView;
             }
-            catch { }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
-
-        private void SeleccionarProducto(DataRow drv)
+        private void txtFiltroFacturas_TextChanged(object sender, TextChangedEventArgs e) => CargarFacturasCompras();
+        private void btnNuevaFacturaCompra_Click(object sender, RoutedEventArgs e)
         {
-            _productoSeleccionado = drv;
-            _ignorarPerdidaFoco = true;
-            lblProductoSeleccionado.Text = _productoSeleccionado["Descripcion"].ToString();
-            txtBuscarProducto.Text = _productoSeleccionado["Descripcion"].ToString();
-            numPrecioCosto.Value = Convert.ToDecimal(_productoSeleccionado["PrecioCosto"]);
-            numCantidad.Value = 1;
-            btnAgregar.IsEnabled = true;
-            popupProductos.IsOpen = false;
-            _ignorarPerdidaFoco = false;
-            numPrecioCosto.Focus();
+            var modal = new CompraModalWindow(Window.GetWindow(this), CargarFacturasCompras);
+            modal.ShowDialog();
         }
-
-        private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e)
+        private void btnEditarFacturaCompra_Click(object sender, RoutedEventArgs e)
         {
-            if (lstSugerenciasProducto.SelectedItem is DataRowView drv) SeleccionarProducto(drv.Row);
+            int? id = ObtenerId(dgvFacturasCompras, "CompraID");
+            if (!id.HasValue) { MessageBox.Show("Seleccione una factura.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            var modal = new CompraModalWindow(Window.GetWindow(this), CargarFacturasCompras, id.Value);
+            modal.ShowDialog();
         }
-
-        private void lstSugerencias_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void btnEliminarFacturaCompra_Click(object sender, RoutedEventArgs e)
         {
-            if (e.Key == Key.Enter && lstSugerenciasProducto.SelectedItem is DataRowView drv) SeleccionarProducto(drv.Row);
-        }
-
-        private void txtBuscar_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Down && popupProductos.IsOpen)
-            {
-                lstSugerenciasProducto.SelectedIndex = 0;
-                lstSugerenciasProducto.Focus();
-            }
-            else if (e.Key == Key.Escape) popupProductos.IsOpen = false;
-        }
-
-        private async void txtBuscarProducto_LostFocus(object sender, RoutedEventArgs e)
-        {
-            await Task.Delay(150);
-            if (!lstSugerenciasProducto.IsFocused) popupProductos.IsOpen = false;
-        }
-
-        // --- CARRITO ---
-        private void btnAgregar_Click(object sender, RoutedEventArgs e)
-        {
-            if (_productoSeleccionado == null) return;
-            int pid = Convert.ToInt32(_productoSeleccionado["ProductoID"]);
-            var item = CarritoDeCompra.FirstOrDefault(x => x.ProductoID == pid);
-
-            if (item != null) { item.Cantidad += (int)numCantidad.Value; item.PrecioUnitario = (decimal)numPrecioCosto.Value; }
-            else
-            {
-                CarritoDeCompra.Add(new FacturaItem
-                {
-                    ProductoID = pid,
-                    Codigo = _productoSeleccionado["Codigo"].ToString(),
-                    Descripcion = _productoSeleccionado["Descripcion"].ToString(),
-                    Cantidad = (int)numCantidad.Value,
-                    PrecioUnitario = (decimal)numPrecioCosto.Value
-                });
-            }
-            dgvCarrito.Items.Refresh();
-
-            _productoSeleccionado = null;
-            lblProductoSeleccionado.Text = "Producto:";
-            txtBuscarProducto.Text = "";
-            btnAgregar.IsEnabled = false;
-            txtBuscarProducto.Focus();
-            lblTotal.Text = $"TOTAL: {CarritoDeCompra.Sum(x => x.Subtotal):C2}";
-        }
-
-        private void btnEliminarItem_Click(object sender, RoutedEventArgs e)
-        {
-            if ((sender as Button)?.CommandParameter is FacturaItem item) { CarritoDeCompra.Remove(item); lblTotal.Text = $"TOTAL: {CarritoDeCompra.Sum(x => x.Subtotal):C2}"; }
-        }
-
-        // --- GUARDAR ---
-        private void LimpiarFormulario()
-        {
-            _proveedorSeleccionado = null;
-            txtProveedor.Text = "Proveedor Varios";
-            txtTipoComprobante.Text = "Factura A";
-            cmbCondicionCompra.SelectedIndex = 0;
-            CarritoDeCompra.Clear();
-            lblTotal.Text = "TOTAL: $0.00";
-            btnBuscarProveedor.Focus();
-        }
-
-        private void btnGuardarCompra_Click(object sender, RoutedEventArgs e)
-        {
-            if (CarritoDeCompra.Count == 0) { CustomMessageBox.Show("Carrito vacío."); return; }
-            if (_proveedorSeleccionado == null) { CustomMessageBox.Show("Seleccione proveedor."); return; }
-
+            int? id = ObtenerId(dgvFacturasCompras, "CompraID");
+            if (!id.HasValue) { MessageBox.Show("Seleccione una factura.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (MessageBox.Show("¿Eliminar esta compra? Se revertirá stock y movimientos.", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
             try
             {
-                string cond = (cmbCondicionCompra.SelectedItem as ComboBoxItem).Content.ToString();
-                bool ok = DatabaseService.GuardarCompra(Convert.ToInt32(_proveedorSeleccionado["ProveedorID"]), txtTipoComprobante.Text, CarritoDeCompra.Sum(x => x.Subtotal), CarritoDeCompra.ToList(), cond);
-                if (ok) { CustomMessageBox.Show("Guardado."); LimpiarFormulario(); }
+                if (DatabaseService.EliminarCompra(id.Value)) { MessageBox.Show("Compra eliminada.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information); CargarFacturasCompras(); }
+                else MessageBox.Show("No se pudo eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            catch (Exception ex) { CustomMessageBox.Show(ex.Message); }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+        private void dgvFacturasCompras_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            int? id = ObtenerId(dgvFacturasCompras, "CompraID");
+            if (!id.HasValue) return;
+            var modal = new CompraModalWindow(Window.GetWindow(this), CargarFacturasCompras, id.Value);
+            modal.ShowDialog();
+        }
+
+        // ========== RECEPCIONES ==========
+        private void CargarRecepciones()
+        {
+            try { dgvRecepciones.ItemsSource = DatabaseService.GetRecepcionesCompra(txtFiltroRecepciones?.Text?.Trim() ?? "").DefaultView; }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+        private void txtFiltroRecepciones_TextChanged(object sender, TextChangedEventArgs e) => CargarRecepciones();
+        private void btnNuevaRecepcion_Click(object sender, RoutedEventArgs e)
+        {
+            var modal = new RecepcionCompraModalWindow(Window.GetWindow(this), 0, CargarRecepciones);
+            modal.ShowDialog();
+        }
+        private void btnEditarRecepcion_Click(object sender, RoutedEventArgs e)
+        {
+            int? id = ObtenerId(dgvRecepciones, "RecepcionID");
+            if (!id.HasValue) { MessageBox.Show("Seleccione una recepción.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            var modal = new RecepcionCompraModalWindow(Window.GetWindow(this), id.Value, CargarRecepciones);
+            modal.ShowDialog();
+        }
+        private void btnEliminarRecepcion_Click(object sender, RoutedEventArgs e)
+        {
+            int? id = ObtenerId(dgvRecepciones, "RecepcionID");
+            if (!id.HasValue) { MessageBox.Show("Seleccione una recepción.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (MessageBox.Show("¿Eliminar esta recepción?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            if (DatabaseService.EliminarRecepcionCompra(id.Value)) { MessageBox.Show("Recepción eliminada.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information); CargarRecepciones(); }
+            else MessageBox.Show("Error al eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        // ========== NOTAS CRÉDITO/DÉBITO ==========
+        private void CargarNotas()
+        {
+            try { dgvNotas.ItemsSource = DatabaseService.GetNotasCreditoDebitoCompras(txtFiltroNotas?.Text?.Trim() ?? "").DefaultView; }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+        private void txtFiltroNotas_TextChanged(object sender, TextChangedEventArgs e) => CargarNotas();
+        private void btnNuevaNota_Click(object sender, RoutedEventArgs e)
+        {
+            var modal = new NotaCreditoDebitoModalWindow(Window.GetWindow(this), 0, CargarNotas);
+            modal.ShowDialog();
+        }
+        private void btnEditarNota_Click(object sender, RoutedEventArgs e)
+        {
+            int? id = ObtenerId(dgvNotas, "NotaID");
+            if (!id.HasValue) { MessageBox.Show("Seleccione una nota.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            var modal = new NotaCreditoDebitoModalWindow(Window.GetWindow(this), id.Value, CargarNotas);
+            modal.ShowDialog();
+        }
+        private void btnEliminarNota_Click(object sender, RoutedEventArgs e)
+        {
+            int? id = ObtenerId(dgvNotas, "NotaID");
+            if (!id.HasValue) { MessageBox.Show("Seleccione una nota.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (MessageBox.Show("¿Eliminar esta nota?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            if (DatabaseService.EliminarNotaCreditoDebitoCompra(id.Value)) { MessageBox.Show("Nota eliminada.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information); CargarNotas(); }
+            else MessageBox.Show("Error al eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        // ========== GASTOS RÁPIDOS ==========
+        private void CargarGastos()
+        {
+            try { dgvGastos.ItemsSource = DatabaseService.GetGastosRapidos(txtFiltroGastos?.Text?.Trim() ?? "").DefaultView; }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+        private void txtFiltroGastos_TextChanged(object sender, TextChangedEventArgs e) => CargarGastos();
+        private void btnNuevoGasto_Click(object sender, RoutedEventArgs e)
+        {
+            var modal = new GastoRapidoModalWindow(Window.GetWindow(this), 0, CargarGastos);
+            modal.ShowDialog();
+        }
+        private void btnEditarGasto_Click(object sender, RoutedEventArgs e)
+        {
+            int? id = ObtenerId(dgvGastos, "GastoID");
+            if (!id.HasValue) { MessageBox.Show("Seleccione un gasto.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            var modal = new GastoRapidoModalWindow(Window.GetWindow(this), id.Value, CargarGastos);
+            modal.ShowDialog();
+        }
+        private void btnEliminarGasto_Click(object sender, RoutedEventArgs e)
+        {
+            int? id = ObtenerId(dgvGastos, "GastoID");
+            if (!id.HasValue) { MessageBox.Show("Seleccione un gasto.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (MessageBox.Show("¿Eliminar este gasto?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            if (DatabaseService.EliminarGastoRapido(id.Value)) { MessageBox.Show("Gasto eliminado.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information); CargarGastos(); }
+            else MessageBox.Show("Error al eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        // ========== PAGOS ==========
+        private void CargarPagos()
+        {
+            try { dgvPagos.ItemsSource = DatabaseService.GetPagosProveedores(txtFiltroPagos?.Text?.Trim() ?? "").DefaultView; }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+        private void txtFiltroPagos_TextChanged(object sender, TextChangedEventArgs e) => CargarPagos();
+        private void btnNuevoPago_Click(object sender, RoutedEventArgs e)
+        {
+            var modal = new PagoProveedorModalWindow(Window.GetWindow(this), 0, CargarPagos);
+            modal.ShowDialog();
+        }
+        private void btnEditarPago_Click(object sender, RoutedEventArgs e)
+        {
+            int? id = ObtenerId(dgvPagos, "PagoID");
+            if (!id.HasValue) { MessageBox.Show("Seleccione un pago.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            var modal = new PagoProveedorModalWindow(Window.GetWindow(this), id.Value, CargarPagos);
+            modal.ShowDialog();
+        }
+        private void btnEliminarPago_Click(object sender, RoutedEventArgs e)
+        {
+            int? id = ObtenerId(dgvPagos, "PagoID");
+            if (!id.HasValue) { MessageBox.Show("Seleccione un pago.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (MessageBox.Show("¿Eliminar este pago? Se revertirá el saldo del proveedor.", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            if (DatabaseService.EliminarPagoProveedor(id.Value)) { MessageBox.Show("Pago eliminado.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information); CargarPagos(); }
+            else MessageBox.Show("Error al eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        // ========== ÓRDENES DE COMPRA ==========
+        private void CargarOrdenes()
+        {
+            try { dgvOrdenes.ItemsSource = DatabaseService.GetOrdenesCompra(txtFiltroOrdenes?.Text?.Trim() ?? "").DefaultView; }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+        private void txtFiltroOrdenes_TextChanged(object sender, TextChangedEventArgs e) => CargarOrdenes();
+        private void btnNuevaOrden_Click(object sender, RoutedEventArgs e)
+        {
+            var modal = new OrdenCompraModalWindow(Window.GetWindow(this), 0, CargarOrdenes);
+            modal.ShowDialog();
+        }
+        private void btnEditarOrden_Click(object sender, RoutedEventArgs e)
+        {
+            int? id = ObtenerId(dgvOrdenes, "OrdenCompraID");
+            if (!id.HasValue) { MessageBox.Show("Seleccione una orden.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            var modal = new OrdenCompraModalWindow(Window.GetWindow(this), id.Value, CargarOrdenes);
+            modal.ShowDialog();
+        }
+        private void btnEliminarOrden_Click(object sender, RoutedEventArgs e)
+        {
+            int? id = ObtenerId(dgvOrdenes, "OrdenCompraID");
+            if (!id.HasValue) { MessageBox.Show("Seleccione una orden.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (MessageBox.Show("¿Eliminar esta orden?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            if (DatabaseService.EliminarOrdenCompra(id.Value)) { MessageBox.Show("Orden eliminada.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information); CargarOrdenes(); }
+            else MessageBox.Show("Error al eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        private void dgvOrdenes_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            int? id = ObtenerId(dgvOrdenes, "OrdenCompraID");
+            if (!id.HasValue) return;
+            try
+            {
+                var det = DatabaseService.GetOrdenCompraDetalle(id.Value);
+                string msg = "Detalle Orden:\n\n";
+                decimal total = 0;
+                foreach (DataRow r in det.Rows) { decimal st = Convert.ToDecimal(r["Cantidad"]) * Convert.ToDecimal(r["PrecioUnitario"]); total += st; msg += $"{r["Codigo"]} - {r["Descripcion"]}: {r["Cantidad"]} x ${Convert.ToDecimal(r["PrecioUnitario"]):N2} = ${st:N2}\n"; }
+                msg += $"\nTotal: ${total:N2}";
+                MessageBox.Show(msg, "Detalle Orden #" + id, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private int? ObtenerId(DataGrid dg, string colName)
+        {
+            if (dg?.SelectedItem is DataRowView drv && drv.Row.Table.Columns.Contains(colName) && drv.Row[colName] != DBNull.Value)
+                return Convert.ToInt32(drv.Row[colName]);
+            return null;
         }
     }
 }

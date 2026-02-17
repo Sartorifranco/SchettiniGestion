@@ -6,27 +6,29 @@
              StartupUri="MainWindow.xaml">
 
     <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+        <!-- Tipografía Inter: similar a Mercado Pago (limpia, moderna, profesional) -->
+        <FontFamily x:Key="AppFontFamily">pack://application:,,,/SchettiniGestion.WPF;component/Fonts/Inter-Regular.ttf#Inter</FontFamily>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+        </Style>
+        <Style TargetType="Control">
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+        </Style>
+
         <SolidColorBrush x:Key="PrimaryColor" Color="#2563EB"/>
         <SolidColorBrush x:Key="PrimaryHover" Color="#1D4ED8"/>
         <SolidColorBrush x:Key="SuccessColor" Color="#10B981"/>
         <SolidColorBrush x:Key="DangerColor" Color="#EF4444"/>
         <SolidColorBrush x:Key="WarningColor" Color="#F59E0B"/>
 
-        <SolidColorBrush x:Key="BackgroundDark" Color="#0F172A"/>
-        <SolidColorBrush x:Key="SurfaceDark" Color="#1E293B"/>
-        <SolidColorBrush x:Key="BorderColor" Color="#334155"/>
-
-        <SolidColorBrush x:Key="TextPrimary" Color="#F1F5F9"/>
-        <SolidColorBrush x:Key="TextSecondary" Color="#94A3B8"/>
-
-        <SolidColorBrush x:Key="ModuleBackgroundBrush" Color="#0F172A"/>
-        <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#1E293B"/>
-        <SolidColorBrush x:Key="HeaderForegroundBrush" Color="#F1F5F9"/>
-        <SolidColorBrush x:Key="BodyForegroundBrush" Color="#94A3B8"/>
-        <SolidColorBrush x:Key="BorderDarkBrush" Color="#334155"/>
-
         <Style TargetType="TextBlock" x:Key="LabelStyle">
-            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,0,0,5"/>
@@ -38,7 +40,8 @@
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="MinHeight" Value="44"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
@@ -55,7 +58,7 @@
                                 <Setter TargetName="border" Property="Opacity" Value="0.9"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Background" Value="#334155"/>
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource BorderColor}"/>
                                 <Setter TargetName="border" Property="Opacity" Value="0.5"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -65,12 +68,13 @@
         </Style>
 
         <Style TargetType="Button" x:Key="SecondaryButtonStyle" BasedOn="{StaticResource ButtonStyle}">
-            <Setter Property="Background" Value="{StaticResource SurfaceDark}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#334155"/>
+                    <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -93,14 +97,14 @@
         </Style>
 
         <Style TargetType="TextBox" x:Key="ModernTextBox">
-            <Setter Property="Background" Value="{StaticResource SurfaceDark}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="CaretBrush" Value="White"/>
-            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="MinHeight" Value="44"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -120,14 +124,14 @@
         <Style TargetType="TextBox" x:Key="ModuleTextBoxStyle" BasedOn="{StaticResource ModernTextBox}"/>
 
         <Style TargetType="PasswordBox" x:Key="PasswordBoxStyle">
-            <Setter Property="Background" Value="{StaticResource SurfaceDark}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="CaretBrush" Value="White"/>
-            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="MinHeight" Value="44"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -147,40 +151,40 @@
         <Style TargetType="PasswordBox" x:Key="ModulePasswordBoxStyle" BasedOn="{StaticResource PasswordBoxStyle}"/>
 
         <Style TargetType="ComboBox" x:Key="ModuleComboBoxStyle">
-            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinHeight" Value="44"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="Foreground" Value="#1E293B"/>
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}"/>
+            <Setter Property="Background" Value="{DynamicResource ComboBoxBackground}"/>
             <Setter Property="ItemContainerStyle">
                 <Setter.Value>
                     <Style TargetType="ComboBoxItem">
-                        <Setter Property="Foreground" Value="#1E293B"/>
-                        <Setter Property="Background" Value="White"/>
+                        <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}"/>
+                        <Setter Property="Background" Value="{DynamicResource ComboBoxBackground}"/>
                     </Style>
                 </Setter.Value>
             </Setter>
         </Style>
 
         <Style TargetType="DataGrid">
-            <Setter Property="Background" Value="{StaticResource SurfaceDark}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-            <Setter Property="RowBackground" Value="{StaticResource SurfaceDark}"/>
-            <Setter Property="AlternatingRowBackground" Value="#253045"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="RowBackground" Value="{DynamicResource SurfaceDark}"/>
+            <Setter Property="AlternatingRowBackground" Value="{DynamicResource AlternatingRowBackground}"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="RowHeight" Value="45"/>
             <Setter Property="ColumnHeaderStyle">
                 <Setter.Value>
                     <Style TargetType="DataGridColumnHeader">
-                        <Setter Property="Background" Value="{StaticResource BackgroundDark}"/>
-                        <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+                        <Setter Property="Background" Value="{DynamicResource BackgroundDark}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
                         <Setter Property="FontWeight" Value="Bold"/>
                         <Setter Property="Padding" Value="10,10"/>
                         <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                        <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
                         <Setter Property="HorizontalContentAlignment" Value="Left"/>
                     </Style>
                 </Setter.Value>
@@ -211,8 +215,8 @@
         </Style>
 
         <Style TargetType="DataGridRow">
-            <Setter Property="Background" Value="{StaticResource SurfaceDark}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
@@ -220,7 +224,7 @@
                     <Setter Property="Foreground" Value="White"/>
                 </Trigger>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#334155"/>
+                    <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -228,17 +232,25 @@
         <Style TargetType="DataGrid" x:Key="ModuleDataGridStyle" BasedOn="{StaticResource {x:Type DataGrid}}"/>
 
         <Style TargetType="xctk:DecimalUpDown" x:Key="ModuleNumericUpDownStyle">
-            <Setter Property="Background" Value="{StaticResource SurfaceDark}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
             <Setter Property="MinHeight" Value="40"/>
         </Style>
         <Style TargetType="xctk:IntegerUpDown" x:Key="ModuleIntegerUpDownStyle">
-            <Setter Property="Background" Value="{StaticResource SurfaceDark}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
             <Setter Property="MinHeight" Value="40"/>
         </Style>
 
+        <Style TargetType="DatePicker">
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,5"/>
+        </Style>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

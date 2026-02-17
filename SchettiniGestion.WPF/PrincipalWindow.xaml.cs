@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -34,14 +34,22 @@ namespace SchettiniGestion.WPF
                 CustomerScreenService.Resetear();
             }
             catch { /* Ignorar errores de pantalla secundaria */ }
-
-            // NOTA: NO llamamos a btnInicio_Click aquí para evitar que explote si no hay DB conectada.
-            // Lo llamaremos en AplicarPermisos solo si todo está bien.
         }
+
+        private bool _volviendoALogin = false;
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            ActualizarHeaderUsuario();
             AplicarPermisos();
+        }
+
+        private void ActualizarHeaderUsuario()
+        {
+            if (txtUsuarioLogueado != null)
+                txtUsuarioLogueado.Text = SesionUsuario.NombreUsuario ?? "Usuario";
+            if (txtRolLogueado != null)
+                txtRolLogueado.Text = SesionUsuario.NombreRol != null ? $"{SesionUsuario.NombreRol} • En línea" : "En línea";
         }
 
         private void AplicarPermisos()
@@ -49,7 +57,6 @@ namespace SchettiniGestion.WPF
             try
             {
                 // 1. Validamos Licencia / Conexión de forma segura
-                // Usamos un try-catch interno por si la DB no responde (IP Incorrecta)
                 bool licenciaValida = false;
                 try
                 {
@@ -63,24 +70,20 @@ namespace SchettiniGestion.WPF
                 // 2. Si falla (Sin red, IP mal configurada o Licencia Vencida)
                 if (!licenciaValida)
                 {
-                    // Mostramos aviso pero NO cerramos la app
                     MessageBox.Show("No se detectó una licencia válida o no hay conexión con el Servidor.\n\n" +
                                     "El sistema entró en MODO MANTENIMIENTO.\n" +
                                     "Vaya a CONFIGURACIÓN > RED para corregir la IP o cargar la licencia.",
                                     "Aviso de Sistema", MessageBoxButton.OK, MessageBoxImage.Warning);
 
-                    // Ocultamos TODO excepto Configuración
                     OcultarTodoPorFalloLicencia();
 
-                    // Forzamos visible el botón de Configuración para que puedas arreglarlo
                     if (this.FindName("btnConfiguracion") != null) btnConfiguracion.Visibility = Visibility.Visible;
                     if (this.FindName("btnPermisos") != null) btnPermisos.Visibility = Visibility.Visible;
 
-                    // IMPORTANTE: Return aquí para NO cargar el Dashboard y evitar el crash
                     return;
                 }
 
-                // 3. Si llegamos acá, TODO ESTÁ BIEN -> Cargamos Dashboard y Botones
+                // 3. Si llegamos acá, TODO ESTÁ BIEN -> Cargamos Inicio y Botones
                 btnInicio_Click(null, null);
 
                 // --- LÓGICA DE BOTONES SEGÚN MÓDULOS ---
@@ -91,19 +94,14 @@ namespace SchettiniGestion.WPF
                 else
                     btnFacturacion.Visibility = Visibility.Visible;
 
-                // REPORTES (Ventas)
+                // REPORTES (Ventas) - sin Reportes avanzados (va a Informes)
                 bool puedeVerReportes = false;
                 if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_VENTAS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS))
                 {
                     puedeVerReportes = true;
                     btnVentas.Visibility = Visibility.Visible;
-                    if (this.FindName("btnReportesAvanzados") != null) btnReportesAvanzados.Visibility = Visibility.Visible;
                 }
-                else
-                {
-                    btnVentas.Visibility = Visibility.Collapsed;
-                    if (this.FindName("btnReportesAvanzados") != null) btnReportesAvanzados.Visibility = Visibility.Collapsed;
-                }
+                else btnVentas.Visibility = Visibility.Collapsed;
 
                 // PRESUPUESTOS
                 if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRESUPUESTOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRESUPUESTOS))
@@ -120,24 +118,35 @@ namespace SchettiniGestion.WPF
 
                 if (!puedeVerReportes) headerReportes.Visibility = Visibility.Collapsed;
 
-                // GESTIÓN
-                bool puedeVerGestion = false;
-
-                // CAJA
+                // TESORERÍA
+                bool puedeVerTesoreria = false;
                 if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_CAJA))
                 {
-                    puedeVerGestion = true;
-                    btnCaja.Visibility = Visibility.Visible;
+                    puedeVerTesoreria = true;
+                    if (this.FindName("btnCobranzas") != null) btnCobranzas.Visibility = Visibility.Visible;
+                    if (this.FindName("btnIngresosEgresos") != null) btnIngresosEgresos.Visibility = Visibility.Visible;
+                    if (this.FindName("btnMovimientos") != null) btnMovimientos.Visibility = Visibility.Visible;
+                    if (this.FindName("btnCuponesTarjetas") != null) btnCuponesTarjetas.Visibility = Visibility.Visible;
+                    if (this.FindName("btnAperturaCaja") != null) btnAperturaCaja.Visibility = Visibility.Visible;
+                    if (this.FindName("btnCierreCaja") != null) btnCierreCaja.Visibility = Visibility.Visible;
+                    if (this.FindName("btnConsultaCaja") != null) btnConsultaCaja.Visibility = Visibility.Visible;
+                    if (this.FindName("btnPlanillaDiaria") != null) btnPlanillaDiaria.Visibility = Visibility.Visible;
                 }
-                else btnCaja.Visibility = Visibility.Collapsed;
-
-                // CUENTAS CORRIENTES
-                if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CUENTASCORRIENTES) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_CUENTASCORRIENTES))
+                else
                 {
-                    puedeVerGestion = true;
-                    btnCtaCte.Visibility = Visibility.Visible;
+                    if (this.FindName("btnCobranzas") != null) btnCobranzas.Visibility = Visibility.Collapsed;
+                    if (this.FindName("btnIngresosEgresos") != null) btnIngresosEgresos.Visibility = Visibility.Collapsed;
+                    if (this.FindName("btnMovimientos") != null) btnMovimientos.Visibility = Visibility.Collapsed;
+                    if (this.FindName("btnCuponesTarjetas") != null) btnCuponesTarjetas.Visibility = Visibility.Collapsed;
+                    if (this.FindName("btnAperturaCaja") != null) btnAperturaCaja.Visibility = Visibility.Collapsed;
+                    if (this.FindName("btnCierreCaja") != null) btnCierreCaja.Visibility = Visibility.Collapsed;
+                    if (this.FindName("btnConsultaCaja") != null) btnConsultaCaja.Visibility = Visibility.Collapsed;
+                    if (this.FindName("btnPlanillaDiaria") != null) btnPlanillaDiaria.Visibility = Visibility.Collapsed;
                 }
-                else btnCtaCte.Visibility = Visibility.Collapsed;
+                if (!puedeVerTesoreria && this.FindName("headerTesoreria") != null) headerTesoreria.Visibility = Visibility.Collapsed;
+
+                // GESTIÓN (sin Caja, Cierre Caja, Ctas Corrientes - movidos a Tesorería e Informes)
+                bool puedeVerGestion = false;
 
                 // PRECIOS
                 if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRECIOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRECIOS))
@@ -200,6 +209,16 @@ namespace SchettiniGestion.WPF
                 // ADMINISTRACIÓN
                 bool puedeVerAdmin = false;
 
+                // INFORMES - visible si tiene Ventas, Ctas Corrientes o Permisos (admin)
+                if ((LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_VENTAS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS)) ||
+                    (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CUENTASCORRIENTES) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_CUENTASCORRIENTES)) ||
+                    (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_PERMISOS)))
+                {
+                    puedeVerAdmin = true;
+                    if (this.FindName("btnInformes") != null) btnInformes.Visibility = Visibility.Visible;
+                }
+                else if (this.FindName("btnInformes") != null) btnInformes.Visibility = Visibility.Collapsed;
+
                 // USUARIOS
                 if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_USUARIOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_USUARIOS))
                 {
@@ -218,7 +237,6 @@ namespace SchettiniGestion.WPF
                 else
                 {
                     btnPermisos.Visibility = Visibility.Collapsed;
-                    // Configuración la dejamos visible si falla la licencia, pero aquí (flujo normal) depende del permiso
                     if (this.FindName("btnConfiguracion") != null) btnConfiguracion.Visibility = Visibility.Collapsed;
                 }
 
@@ -226,21 +244,25 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                // Si falla algo inesperado, mostramos error pero NO cerramos la app
                 MessageBox.Show("Error al iniciar interfaz: " + ex.Message);
             }
         }
 
         private void OcultarTodoPorFalloLicencia()
         {
-            // Método para limpiar la pantalla en caso de error
             btnFacturacion.Visibility = Visibility.Collapsed;
             btnVentas.Visibility = Visibility.Collapsed;
             btnPresupuestos.Visibility = Visibility.Collapsed;
             btnReportePresupuestos.Visibility = Visibility.Collapsed;
-            if (this.FindName("btnReportesAvanzados") != null) btnReportesAvanzados.Visibility = Visibility.Collapsed;
-            btnCaja.Visibility = Visibility.Collapsed;
-            btnCtaCte.Visibility = Visibility.Collapsed;
+            if (this.FindName("btnCobranzas") != null) btnCobranzas.Visibility = Visibility.Collapsed;
+            if (this.FindName("btnIngresosEgresos") != null) btnIngresosEgresos.Visibility = Visibility.Collapsed;
+            if (this.FindName("btnMovimientos") != null) btnMovimientos.Visibility = Visibility.Collapsed;
+            if (this.FindName("btnCuponesTarjetas") != null) btnCuponesTarjetas.Visibility = Visibility.Collapsed;
+            if (this.FindName("btnAperturaCaja") != null) btnAperturaCaja.Visibility = Visibility.Collapsed;
+            if (this.FindName("btnCierreCaja") != null) btnCierreCaja.Visibility = Visibility.Collapsed;
+            if (this.FindName("btnConsultaCaja") != null) btnConsultaCaja.Visibility = Visibility.Collapsed;
+            if (this.FindName("btnPlanillaDiaria") != null) btnPlanillaDiaria.Visibility = Visibility.Collapsed;
+            if (this.FindName("btnInformes") != null) btnInformes.Visibility = Visibility.Collapsed;
             btnPrecios.Visibility = Visibility.Collapsed;
             if (this.FindName("btnListasPrecios") != null) btnListasPrecios.Visibility = Visibility.Collapsed;
             btnCompras.Visibility = Visibility.Collapsed;
@@ -251,22 +273,47 @@ namespace SchettiniGestion.WPF
             btnUsuarios.Visibility = Visibility.Collapsed;
 
             headerReportes.Visibility = Visibility.Collapsed;
+            if (this.FindName("headerTesoreria") != null) headerTesoreria.Visibility = Visibility.Collapsed;
             headerGestion.Visibility = Visibility.Collapsed;
-            // headerAdministracion queda visible para acceder a Configuración
         }
 
         // --- EVENTOS CLIC ---
         private void btnConfiguracion_Click(object sender, RoutedEventArgs e) { if (mainContentArea.Content is ConfiguracionControl) return; mainContentArea.Content = new ConfiguracionControl(); }
-        private void salirMenuItem_Click(object sender, RoutedEventArgs e) { this.Close(); }
 
-        // Dashboard se carga aquí
-        private void btnInicio_Click(object sender, RoutedEventArgs e) { mainContentArea.Content = new DashboardControl(); }
+        private void btnCerrarSesion_Click(object sender, RoutedEventArgs e)
+        {
+            _volviendoALogin = true;
+            SesionUsuario.Cerrar();
+            CustomerScreenService.Cerrar();
+            var login = new MainWindow();
+            Application.Current.MainWindow = login;
+            login.Show();
+            this.Close();
+        }
 
+        private void btnSalirSistema_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show("¿Cerrar completamente el sistema?", "Salir", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            {
+                _volviendoALogin = false;
+                SesionUsuario.Cerrar();
+                CustomerScreenService.Cerrar();
+                Application.Current.Shutdown();
+            }
+        }
+
+        private void btnInicio_Click(object sender, RoutedEventArgs e)
+        {
+            mainContentArea.Content = new InicioControl();
+        }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             CustomerScreenService.Cerrar();
-            SesionUsuario.Cerrar();
-            Application.Current.Shutdown();
+            if (!_volviendoALogin)
+            {
+                SesionUsuario.Cerrar();
+                Application.Current.Shutdown();
+            }
         }
 
         private void btnTeclado_Click(object sender, RoutedEventArgs e) { KeyboardHelper.ShowOnScreenKeyboard(); }
@@ -279,14 +326,22 @@ namespace SchettiniGestion.WPF
         private void btnVentas_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_VENTAS)) mainContentArea.Content = new VentasControl(); }
         private void btnPresupuestos_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRESUPUESTOS)) mainContentArea.Content = new PresupuestosControl(); }
         private void btnReportePresupuestos_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRESUPUESTOS)) { ReportePresupuestosControl control = new ReportePresupuestosControl(); mainContentArea.Content = control; } }
-        private void btnReportesAvanzados_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_VENTAS)) mainContentArea.Content = new ReportesControl(); }
         private void btnStock_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_STOCK)) mainContentArea.Content = new StockControl(); }
         private void btnProveedores_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PROVEEDORES)) mainContentArea.Content = new ProveedoresControl(); }
         private void btnCompras_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_COMPRAS)) mainContentArea.Content = new ComprasControl(); }
-        private void btnPrecios_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRECIOS)) mainContentArea.Content = new PreciosControl(); }
-        private void btnListasPrecios_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_LISTASPRECIOS)) mainContentArea.Content = new ListasPreciosControl(); }
-        private void btnCaja_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA)) mainContentArea.Content = new CajaControl(); }
-        private void btnCtaCte_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CUENTASCORRIENTES)) mainContentArea.Content = new CuentasCorrientesControl(); }
+        private void btnPrecios_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRECIOS)) mainContentArea.Content = new ListasPreciosControl(1); }
+        private void btnListasPrecios_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_LISTASPRECIOS)) mainContentArea.Content = new ListasPreciosControl(0); }
+
+        private void btnInformes_Click(object sender, RoutedEventArgs e) { mainContentArea.Content = new InformesControl(); }
+
+        private void btnCobranzas_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA)) mainContentArea.Content = new CobranzasPendientesControl(); }
+        private void btnIngresosEgresos_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA)) mainContentArea.Content = new CajaControl(); }
+        private void btnMovimientos_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA)) mainContentArea.Content = new MovimientosCajaControl(); }
+        private void btnCuponesTarjetas_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA)) mainContentArea.Content = new CuponesTarjetasControl(); }
+        private void btnAperturaCaja_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA)) mainContentArea.Content = new CajaControl(); }
+        private void btnCierreCaja_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA)) mainContentArea.Content = new CierreCajaControl(); }
+        private void btnConsultaCaja_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA)) mainContentArea.Content = new ConsultaCajaControl(); }
+        private void btnPlanillaDiaria_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA)) mainContentArea.Content = new PlanillaDiariaControl(); }
         private void btnPermisos_Click(object sender, RoutedEventArgs e) { if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS)) mainContentArea.Content = new GestionPermisos(); }
     }
 }

@@ -1,74 +1,89 @@
-﻿<UserControl x:Class="SchettiniGestion.WPF.ProveedoresControl"
+<UserControl x:Class="SchettiniGestion.WPF.ProveedoresControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:SchettiniGestion.WPF"
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="1000"
-             Background="{StaticResource ModuleBackgroundBrush}"
              Loaded="ProveedoresControl_Loaded">
 
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <Grid Margin="15">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3.5*" MinWidth="300" MaxWidth="450"/>
+            <ColumnDefinition Width="20"/>
+            <ColumnDefinition Width="6.5*"/>
+        </Grid.ColumnDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Gestión de Proveedores" FontSize="24" FontWeight="Bold" Foreground="{StaticResource HeaderForegroundBrush}" Margin="0,0,0,20"/>
-
-        <Border Grid.Row="1" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="20">
+        <Border Grid.Column="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="20">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                    <TextBlock Text="CUIT:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <TextBox x:Name="txtCuit" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,10"/>
+                <TextBlock Text="Proveedores" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,20"/>
 
-                    <TextBlock Text="Razón Social:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <TextBox x:Name="txtRazonSocial" Style="{StaticResource ModuleTextBoxStyle}"/>
-                </StackPanel>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="CUIT / CUIL" Style="{DynamicResource LabelStyle}"/>
+                        <TextBox x:Name="txtCuit" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,15"/>
 
-                <StackPanel Grid.Column="1" Margin="10,0,10,0">
-                    <TextBlock Text="Teléfono:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <TextBox x:Name="txtTelefono" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,10"/>
+                        <TextBlock Text="RAZÓN SOCIAL" Style="{DynamicResource LabelStyle}"/>
+                        <TextBox x:Name="txtRazonSocial" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,15"/>
 
-                    <TextBlock Text="Email:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <TextBox x:Name="txtEmail" Style="{StaticResource ModuleTextBoxStyle}"/>
-                </StackPanel>
+                        <TextBlock Text="DOMICILIO" Style="{DynamicResource LabelStyle}"/>
+                        <TextBox x:Name="txtDireccion" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,15"/>
 
-                <StackPanel Grid.Column="2" Margin="10,0,0,0">
-                    <TextBlock Text="Dirección:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <TextBox x:Name="txtDireccion" Style="{StaticResource ModuleTextBoxStyle}"/>
-                </StackPanel>
+                        <TextBlock Text="CATEGORÍA FISCAL" Style="{DynamicResource LabelStyle}"/>
+                        <ComboBox x:Name="cmbCategoriaFiscal" Style="{DynamicResource ModuleComboBoxStyle}" Margin="0,0,0,15">
+                            <ComboBoxItem Content=""/>
+                            <ComboBoxItem Content="RI"/>
+                            <ComboBoxItem Content="Mono"/>
+                            <ComboBoxItem Content="Exento"/>
+                            <ComboBoxItem Content="Cons final"/>
+                        </ComboBox>
 
-                <StackPanel Grid.Column="3" VerticalAlignment="Bottom" Margin="20,0,0,0">
-                    <Button x:Name="btnNuevo" Content="➕ Nuevo" Style="{StaticResource ActionButtonStyle}" Click="btnNuevo_Click" Margin="0,0,0,5"/>
-                    <Button x:Name="btnGuardar" Content="💾 Guardar" Style="{StaticResource ActionButtonStyle}" Click="btnGuardar_Click" Margin="0,0,0,5"/>
-                    <Button x:Name="btnEliminar" Content="❌ Eliminar" Style="{StaticResource DeleteButtonStyle}" Click="btnEliminar_Click" IsEnabled="False"/>
+                        <TextBlock Text="PERSONA DE CONTACTO (Vendedor)" Style="{DynamicResource LabelStyle}"/>
+                        <TextBox x:Name="txtPersonaContacto" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="TELÉFONO" Style="{DynamicResource LabelStyle}"/>
+                        <TextBox x:Name="txtTelefono" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="PÁGINA WEB" Style="{DynamicResource LabelStyle}"/>
+                        <TextBox x:Name="txtPaginaWeb" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="EMAIL" Style="{DynamicResource LabelStyle}"/>
+                        <TextBox x:Name="txtEmail" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,15"/>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,20,0,0">
+                    <Button x:Name="btnNuevo" Content="✨ NUEVO" Style="{DynamicResource SecondaryButtonStyle}" Click="btnNuevo_Click" Margin="0,0,0,10"/>
+                    <Button x:Name="btnGuardar" Content="💾 GUARDAR" Style="{DynamicResource ButtonStyle}" Click="btnGuardar_Click" Margin="0,0,0,10" Height="45"/>
+                    <Button x:Name="btnEliminar" Content="🗑️ ELIMINAR" Style="{DynamicResource DeleteButtonStyle}" Click="btnEliminar_Click"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <DataGrid x:Name="dgvProveedores" Grid.Row="2" 
-                  Style="{StaticResource ModuleDataGridStyle}" 
-                  Margin="0,20,0,0"
-                  AutoGenerateColumns="False" 
-                  SelectionChanged="dgvProveedores_SelectionChanged">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding ProveedorID}" Width="60" IsReadOnly="True"/>
-                <DataGridTextColumn Header="CUIT" Binding="{Binding CUIT}" Width="150" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Razón Social" Binding="{Binding RazonSocial}" Width="*" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Teléfono" Binding="{Binding Telefono}" Width="150" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="180" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Dirección" Binding="{Binding Direccion}" Width="200" IsReadOnly="True"/>
-            </DataGrid.Columns>
-        </DataGrid>
+        <Border Grid.Column="2" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Text="Buscar por CUIT o Razón Social" Style="{DynamicResource LabelStyle}"/>
+                <TextBox x:Name="txtFiltroProveedores" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,10" TextChanged="txtFiltroProveedores_TextChanged"/>
+                <DataGrid x:Name="dgvProveedores" Grid.Row="1" Style="{DynamicResource {x:Type DataGrid}}" AutoGenerateColumns="False" SelectionChanged="dgvProveedores_SelectionChanged" IsReadOnly="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="CUIT" Binding="{Binding CUIT}" Width="Auto" MinWidth="100"/>
+                    <DataGridTextColumn Header="RAZÓN SOCIAL" Binding="{Binding RazonSocial}" Width="*"/>
+                    <DataGridTextColumn Header="CAT. FISCAL" Binding="{Binding CategoriaFiscal}" Width="Auto" MinWidth="90"/>
+                    <DataGridTextColumn Header="CONTACTO" Binding="{Binding PersonaContacto}" Width="Auto" MinWidth="100"/>
+                    <DataGridTextColumn Header="TEL" Binding="{Binding Telefono}" Width="Auto"/>
+                </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

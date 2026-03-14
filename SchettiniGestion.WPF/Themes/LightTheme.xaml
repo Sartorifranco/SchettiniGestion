@@ -1,0 +1,17 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="BackgroundDark" Color="#F8FAFC"/>
+    <SolidColorBrush x:Key="SurfaceDark" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="BorderColor" Color="#E2E8F0"/>
+    <SolidColorBrush x:Key="TextPrimary" Color="#0F172A"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#475569"/>
+    <SolidColorBrush x:Key="ModuleBackgroundBrush" Color="#F1F5F9"/>
+    <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="HeaderForegroundBrush" Color="#0F172A"/>
+    <SolidColorBrush x:Key="BodyForegroundBrush" Color="#475569"/>
+    <SolidColorBrush x:Key="BorderDarkBrush" Color="#E2E8F0"/>
+    <SolidColorBrush x:Key="HoverBackground" Color="#E2E8F0"/>
+    <SolidColorBrush x:Key="AlternatingRowBackground" Color="#F8FAFC"/>
+    <SolidColorBrush x:Key="ComboBoxBackground" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ComboBoxForeground" Color="#0F172A"/>
+</ResourceDictionary>

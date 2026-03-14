@@ -1,8 +1,8 @@
-﻿using SchettiniGestion;
 using System;
 using System.Data;
 using System.Windows;
 using System.Windows.Controls;
+using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
 {
@@ -15,106 +15,114 @@ namespace SchettiniGestion.WPF
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            // Fechas por defecto: Hoy
-            dpDesde.SelectedDate = DateTime.Today;
-            dpHasta.SelectedDate = DateTime.Today;
-            CargarPresupuestos();
+            EstablecerFechas("Mes");
+        }
+
+        // --- FILTROS RÁPIDOS ---
+        private void btnFiltroRapido_Click(object sender, RoutedEventArgs e)
+        {
+            string opcion = (sender as Button).Tag.ToString();
+            EstablecerFechas(opcion);
+        }
+
+        private void EstablecerFechas(string opcion)
+        {
+            DateTime hoy = DateTime.Today;
+
+            switch (opcion)
+            {
+                case "Hoy":
+                    dtpDesde.SelectedDate = hoy;
+                    dtpHasta.SelectedDate = hoy;
+                    break;
+                case "Ayer":
+                    dtpDesde.SelectedDate = hoy.AddDays(-1);
+                    dtpHasta.SelectedDate = hoy.AddDays(-1);
+                    break;
+                case "Semana":
+                    dtpDesde.SelectedDate = hoy.AddDays(-7);
+                    dtpHasta.SelectedDate = hoy;
+                    break;
+                case "Mes":
+                    dtpDesde.SelectedDate = new DateTime(hoy.Year, hoy.Month, 1);
+                    dtpHasta.SelectedDate = dtpDesde.SelectedDate.Value.AddMonths(1).AddDays(-1);
+                    break;
+                case "Todo":
+                    dtpDesde.SelectedDate = new DateTime(2020, 1, 1);
+                    dtpHasta.SelectedDate = hoy;
+                    break;
+            }
+            CargarDatos();
         }
 
         private void btnBuscar_Click(object sender, RoutedEventArgs e)
         {
-            CargarPresupuestos();
+            CargarDatos();
         }
 
-        private void CargarPresupuestos()
+        public void Refrescar() { CargarDatos(); }
+
+        private void CargarDatos()
         {
+            if (dtpDesde.SelectedDate == null || dtpHasta.SelectedDate == null) return;
+
             try
             {
-                DateTime desde = dpDesde.SelectedDate ?? DateTime.Today;
-                DateTime hasta = dpHasta.SelectedDate ?? DateTime.Today;
+                DateTime desde = dtpDesde.SelectedDate.Value;
+                // Ajuste crítico para que aparezcan los registros de hoy a la tarde
+                DateTime hasta = dtpHasta.SelectedDate.Value.Date.AddDays(1).AddSeconds(-1);
 
-                // Traemos los datos usando el método que ya existe en DatabaseService
                 DataTable dt = DatabaseService.GetPresupuestos(desde, hasta);
                 dgvPresupuestos.ItemsSource = dt.DefaultView;
-
-                // Limpiar detalle
-                dgvDetalle.ItemsSource = null;
             }
             catch (Exception ex)
             {
-                CustomMessageBox.Show($"Error al cargar historial: {ex.Message}");
+                MessageBox.Show("Error al cargar lista: " + ex.Message);
             }
         }
 
-        private void dgvPresupuestos_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        // --- ACCIONES ---
+        private void btnVer_Click(object sender, RoutedEventArgs e)
         {
-            if (dgvPresupuestos.SelectedItem is DataRowView row)
+            if (sender is Button btn && btn.DataContext is DataRowView row)
             {
                 int id = Convert.ToInt32(row["PresupuestoID"]);
-                CargarDetalle(id);
-            }
-        }
+                string cliente = row["RazonSocial"].ToString();
 
-        private void CargarDetalle(int presupuestoID)
-        {
-            try
-            {
-                DataTable dt = DatabaseService.GetPresupuestoDetalle(presupuestoID);
-                dgvDetalle.ItemsSource = dt.DefaultView;
-            }
-            catch (Exception ex)
-            {
-                CustomMessageBox.Show($"Error al cargar detalle: {ex.Message}");
-            }
-        }
-
-        private void btnEliminar_Click(object sender, RoutedEventArgs e)
-        {
-            if (dgvPresupuestos.SelectedItem is DataRowView row)
-            {
-                if (CustomMessageBox.Show("¿Eliminar este presupuesto permanentemente?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
-                {
-                    int id = Convert.ToInt32(row["PresupuestoID"]);
-                    if (DatabaseService.EliminarPresupuesto(id))
-                    {
-                        CustomMessageBox.Show("Eliminado correctamente.");
-                        CargarPresupuestos(); // Recargar lista
-                    }
-                }
-            }
-            else
-            {
-                CustomMessageBox.Show("Seleccione un presupuesto para eliminar.");
+                // ABRIMOS LA VENTANA MODERNA EN MODO PRESUPUESTO
+                DetalleVentaWindow detalle = new DetalleVentaWindow(id, cliente, "Presupuesto");
+                detalle.ShowDialog();
             }
         }
 
         private void btnImprimir_Click(object sender, RoutedEventArgs e)
         {
-            if (dgvPresupuestos.SelectedItem is DataRowView row)
+            if (sender is Button btn && btn.DataContext is DataRowView row)
             {
-                // 1. Recuperar datos del presupuesto seleccionado
                 int id = Convert.ToInt32(row["PresupuestoID"]);
-                string cliente = row["RazonSocial"].ToString();
-                DateTime fecha = Convert.ToDateTime(row["Fecha"]);
-                decimal total = Convert.ToDecimal(row["Total"]);
 
-                // 2. Recuperar los productos de la base de datos
-                // (Usamos el mismo método que ya usamos para mostrar el detalle en pantalla)
-                DataTable items = DatabaseService.GetPresupuestoDetalle(id);
-
-                if (items.Rows.Count > 0)
-                {
-                    // 3. ¡Llamar al Motor de Impresión!
-                    PrintService.ImprimirPresupuesto(id, cliente, fecha, items, total);
-                }
-                else
-                {
-                    CustomMessageBox.Show("El presupuesto está vacío.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
+                // CORRECCIÓN: Llamamos al servicio unificado PrintService
+                PrintService.ImprimirPresupuesto(id);
             }
-            else
+        }
+
+        private void btnEliminar_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.DataContext is DataRowView row)
             {
-                CustomMessageBox.Show("Seleccione un presupuesto de la lista para imprimir.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                int id = Convert.ToInt32(row["PresupuestoID"]);
+
+                if (MessageBox.Show($"¿Eliminar Presupuesto #{id}?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                {
+                    if (DatabaseService.EliminarPresupuesto(id))
+                    {
+                        CargarDatos();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Error al eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
             }
         }
     }

@@ -3,81 +3,56 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:SchettiniGestion.WPF"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1000"
-             Loaded="UsuariosControl_Loaded"
-             Background="{StaticResource ModuleBackgroundBrush}">
+             Loaded="UsuariosControl_Loaded">
 
-    <Grid Background="{StaticResource ModuleBackgroundBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <Grid Margin="15">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3.5*" MinWidth="300" MaxWidth="450"/>
+            <ColumnDefinition Width="20"/>
+            <ColumnDefinition Width="6.5*"/>
+        </Grid.ColumnDefinitions>
 
-        <!-- 1. Panel de Controles (arriba) -->
-        <Border Grid.Row="0" 
-                Background="{StaticResource PanelBackgroundBrush}" 
-                CornerRadius="5" Margin="20,20,20,10" Padding="20"
-                BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+        <Border Grid.Column="0" Background="{StaticResource SurfaceDark}" CornerRadius="8" Padding="20">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <!-- Columna 0: Nombre de Usuario -->
-                <StackPanel Margin="0,0,10,0">
-                    <TextBlock Text="Nombre de Usuario:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <TextBox x:Name="txtNombreUsuario" Style="{StaticResource ModuleTextBoxStyle}" MaxLength="50"/>
-                </StackPanel>
+                <TextBlock Text="Gestión de Usuarios" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,20"/>
 
-                <!-- Columna 1: Contraseña -->
-                <StackPanel Grid.Column="1" Margin="10,0,10,0">
-                    <TextBlock Text="Contraseña:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <PasswordBox x:Name="txtPassword" Style="{StaticResource ModulePasswordBoxStyle}" MaxLength="50"
-                                 ToolTip="Dejar en blanco para no cambiar"/>
-                </StackPanel>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="NOMBRE DE USUARIO" Style="{StaticResource LabelStyle}"/>
+                        <TextBox x:Name="txtNombreUsuario" Style="{StaticResource ModernTextBox}" Margin="0,0,0,15"/>
 
-                <!-- Columna 2: Rol (¡MODIFICADO!) -->
-                <StackPanel Grid.Column="2" Margin="10,0,0,0">
-                    <TextBlock Text="Rol:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <!-- 
-                    ¡CAMBIOS! 
-                    1. Quitamos los <ComboBoxItem> de adentro.
-                    2. Añadimos DisplayMemberPath y SelectedValuePath para conectarlo a la DB.
-                    -->
-                    <ComboBox x:Name="cmbRol" 
-                              Style="{StaticResource ModuleComboBoxStyle}"
-                              DisplayMemberPath="NombreRol"
-                              SelectedValuePath="RolID"/>
-                </StackPanel>
+                        <TextBlock Text="CONTRASEÑA" Style="{StaticResource LabelStyle}"/>
+                        <PasswordBox x:Name="txtPassword" Style="{StaticResource PasswordBoxStyle}" Margin="0,0,0,15"/>
 
-                <!-- Columna 3: Botones -->
-                <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20,0,0,0">
-                    <Button x:Name="btnNuevo" Content="➕ Nuevo" Style="{StaticResource ActionButtonStyle}" Click="btnNuevo_Click" Margin="5"/>
-                    <Button x:Name="btnGuardar" Content="💾 Guardar" Style="{StaticResource ActionButtonStyle}" Click="btnGuardar_Click" Margin="5"/>
-                    <Button x:Name="btnEliminar" Content="🗑️ Eliminar" Style="{StaticResource DeleteButtonStyle}" Click="btnEliminar_Click" Margin="5"/>
+                        <TextBlock Text="ROL / PERMISOS" Style="{StaticResource LabelStyle}"/>
+                        <ComboBox x:Name="cmbRoles" Style="{StaticResource ModuleComboBoxStyle}" 
+                                  DisplayMemberPath="Nombre" SelectedValuePath="RolId" 
+                                  Margin="0,0,0,15"/>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,20,0,0">
+                    <Button x:Name="btnNuevo" Content="✨ NUEVO" Style="{StaticResource SecondaryButtonStyle}" Click="btnNuevo_Click" Margin="0,0,0,10"/>
+                    <Button x:Name="btnGuardar" Content="💾 GUARDAR" Style="{StaticResource ButtonStyle}" Click="btnGuardar_Click" Margin="0,0,0,10" Height="45"/>
+                    <Button x:Name="btnEliminar" Content="🗑️ ELIMINAR" Style="{StaticResource DeleteButtonStyle}" Click="btnEliminar_Click"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- 2. Grilla de Datos (abajo) -->
-        <Border Grid.Row="1" 
-                Background="{StaticResource PanelBackgroundBrush}" 
-                CornerRadius="5" Margin="20,0,20,20" Padding="5"
-                BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
-            <DataGrid x:Name="dgvUsuarios" 
-                      Style="{StaticResource ModuleDataGridStyle}"
-                      SelectionChanged="dgvUsuarios_SelectionChanged">
+        <Border Grid.Column="2" Background="{StaticResource SurfaceDark}" CornerRadius="8" Padding="1">
+            <DataGrid x:Name="dgvUsuarios" Style="{StaticResource {x:Type DataGrid}}" AutoGenerateColumns="False" IsReadOnly="True" SelectionChanged="dgvUsuarios_SelectionChanged">
                 <DataGrid.Columns>
-                    <!-- ¡CAMBIO! Ahora usamos 'NombreRol' que viene de la DB -->
-                    <DataGridTextColumn Header="Nombre de Usuario" Binding="{Binding NombreUsuario}" Width="*" IsReadOnly="True" />
-                    <DataGridTextColumn Header="Rol" Binding="{Binding NombreRol}" Width="Auto" IsReadOnly="True" />
-                    <!-- ¡NUEVO! Columna oculta para guardar el RolID -->
-                    <DataGridTextColumn Header="RolID" Binding="{Binding RolID}" Visibility="Hidden"/>
+                    <DataGridTextColumn Header="ID" Binding="{Binding UsuarioID}" Width="60"/>
+                    <DataGridTextColumn Header="USUARIO" Binding="{Binding NombreUsuario}" Width="*"/>
+                    <DataGridTextColumn Header="ROL" Binding="{Binding NombreRol}" Width="Auto" MinWidth="100"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

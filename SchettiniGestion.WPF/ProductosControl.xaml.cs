@@ -1,20 +1,19 @@
-﻿using SchettiniGestion;
+using Microsoft.Win32;
 using System;
 using System.Data;
+using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Imaging;
-using Microsoft.Win32;
-using System.IO;
-using OfficeOpenXml;
+using System.Windows.Input;
+using SchettiniGestion;
+using System.Globalization;
 
 namespace SchettiniGestion.WPF
 {
     public partial class ProductosControl : UserControl
     {
-        private int _productoID = 0;
-        private string _rutaImagenActual = "";
-        private bool _cargandoDatos = false;
+        private DataTable _dtProductos;
 
         public ProductosControl()
         {
@@ -23,164 +22,174 @@ namespace SchettiniGestion.WPF
 
         private void ProductosControl_Loaded(object sender, RoutedEventArgs e)
         {
-            CargarLista();
-            Limpiar();
+            CargarProductos();
         }
 
-        private void CargarLista()
+        private void CargarProductos()
         {
-            try { dgvProductos.ItemsSource = DatabaseService.GetProductos().DefaultView; } catch { }
+            try
+            {
+                _dtProductos = DatabaseService.GetProductos("");
+                dgvProductos.ItemsSource = _dtProductos.DefaultView;
+                AplicarFiltro();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al cargar lista: " + ex.Message);
+            }
         }
 
-        private void Limpiar()
+        private void AplicarFiltro()
         {
-            _cargandoDatos = true;
-            _productoID = 0;
-            _rutaImagenActual = "";
-            txtCodigo.Text = "";
-            txtCodigoBarra.Text = "";
-            txtDescripcion.Text = "";
-            cmbCategoria.Text = "";
-            cmbTipoIVA.SelectedIndex = 0;
-            numCosto.Value = 0;
-            numGanancia.Value = 30;
-            numImpInterno.Value = 0;
-            numPrecioFinal.Value = 0;
-            imgProducto.Source = null;
-            btnGuardar.Content = "💾 Guardar";
-            btnEliminar.IsEnabled = false;
-            _cargandoDatos = false;
-            txtCodigo.Focus();
+            if (_dtProductos == null) return;
+            string t = (txtFiltro?.Text ?? "").Trim();
+            if (string.IsNullOrEmpty(t))
+            {
+                _dtProductos.DefaultView.RowFilter = "";
+                return;
+            }
+            string esc = t.Replace("'", "''");
+            var sb = new System.Text.StringBuilder();
+            string[] cols = { "Codigo", "CodigoBarra", "Descripcion", "Categoria", "SubRubro", "Marca", "Proveedor" };
+            foreach (string col in cols)
+            {
+                if (_dtProductos.Columns.Contains(col))
+                {
+                    if (sb.Length > 0) sb.Append(" OR ");
+                    sb.Append($"({col} IS NOT NULL AND {col} LIKE '%{esc}%')");
+                }
+            }
+            _dtProductos.DefaultView.RowFilter = sb.Length > 0 ? sb.ToString() : "";
+        }
+
+        private void txtFiltro_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            AplicarFiltro();
+        }
+
+        private void btnNuevo_Click(object sender, RoutedEventArgs e)
+        {
+            var modal = new ProductoModalWindow(0, false, CargarProductos);
+            modal.Owner = Window.GetWindow(this);
+            modal.ShowDialog();
         }
 
         private void dgvProductos_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // La edición se abre con doble clic
+        }
+
+        private void dgvProductos_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            AbrirEditar();
+        }
+
+        private void MenuItemEditar_Click(object sender, RoutedEventArgs e)
+        {
+            AbrirEditar();
+        }
+
+        private void MenuItemDuplicar_Click(object sender, RoutedEventArgs e)
+        {
+            AbrirDuplicar();
+        }
+
+        private void AbrirEditar()
+        {
             if (dgvProductos.SelectedItem is DataRowView row)
             {
-                _cargandoDatos = true;
-                try
-                {
-                    _productoID = Convert.ToInt32(row["ProductoID"]);
-                    txtCodigo.Text = row["Codigo"].ToString();
-                    if (row.Row.Table.Columns.Contains("CodigoBarra")) txtCodigoBarra.Text = row["CodigoBarra"].ToString();
-                    txtDescripcion.Text = row["Descripcion"].ToString();
-                    if (row.Row.Table.Columns.Contains("Categoria")) cmbCategoria.Text = row["Categoria"].ToString();
-
-                    decimal costo = 0; if (row.Row.Table.Columns.Contains("PrecioCosto")) decimal.TryParse(row["PrecioCosto"].ToString(), out costo);
-                    numCosto.Value = costo;
-
-                    decimal ganancia = 0; if (row.Row.Table.Columns.Contains("Ganancia")) decimal.TryParse(row["Ganancia"].ToString(), out ganancia);
-                    numGanancia.Value = ganancia;
-
-                    decimal imp = 0; if (row.Row.Table.Columns.Contains("ImpuestoInterno")) decimal.TryParse(row["ImpuestoInterno"].ToString(), out imp);
-                    numImpInterno.Value = imp;
-
-                    decimal venta = 0; if (row.Row.Table.Columns.Contains("PrecioVenta")) decimal.TryParse(row["PrecioVenta"].ToString(), out venta);
-                    numPrecioFinal.Value = venta;
-
-                    imgProducto.Source = null;
-                    if (row.Row.Table.Columns.Contains("ImagenPath") && !string.IsNullOrEmpty(row["ImagenPath"].ToString()))
-                    {
-                        try { imgProducto.Source = new BitmapImage(new Uri(row["ImagenPath"].ToString())); } catch { }
-                    }
-                    btnGuardar.Content = "Modificar";
-                    btnEliminar.IsEnabled = true;
-                }
-                catch (Exception ex) { CustomMessageBox.Show("Error al leer datos: " + ex.Message); }
-                _cargandoDatos = false;
+                int id = Convert.ToInt32(row["ProductoID"]);
+                var modal = new ProductoModalWindow(id, false, CargarProductos);
+                modal.Owner = Window.GetWindow(this);
+                modal.ShowDialog();
             }
         }
 
-        private void CalcularPrecio_ValueChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        private void AbrirDuplicar()
         {
-            if (_cargandoDatos) return;
-            CalcularPrecioVenta();
+            if (dgvProductos.SelectedItem is DataRowView row)
+            {
+                int id = Convert.ToInt32(row["ProductoID"]);
+                var modal = new ProductoModalWindow(id, true, CargarProductos);
+                modal.Owner = Window.GetWindow(this);
+                modal.ShowDialog();
+            }
         }
 
-        private void CalcularPrecioVenta()
+        private void btnDescargarPlantilla_Click(object sender, RoutedEventArgs e)
         {
-            if (numCosto == null || numGanancia == null || numImpInterno == null || numPrecioFinal == null) return;
-            decimal costo = numCosto.Value ?? 0;
-            decimal ganancia = numGanancia.Value ?? 0;
-            decimal impuestos = numImpInterno.Value ?? 0;
-            decimal venta = costo * (1 + (ganancia / 100)) + impuestos;
-            numPrecioFinal.Value = Math.Round(venta, 2);
+            var sfd = new SaveFileDialog { Filter = "Archivo CSV (Excel)|*.csv", FileName = "Plantilla_Carga_Productos.csv" };
+            if (sfd.ShowDialog() == true)
+            {
+                try
+                {
+                    string contenido = "CODIGO;CODIGO_BARRAS;DESCRIPCION;CATEGORIA;SUB_RUBRO;MARCA;PROVEEDOR;COSTO;PRECIO_VENTA;STOCK\n" +
+                                       "COCA15;779123456;Coca Cola 1.5 Litros;Bebidas;Gaseosas;Coca-Cola;Coca-Cola;1000;1500;50\n" +
+                                       "PAN001;;Pan Frances Kg;Almacen;Panaderia;Varios;;800;1200;10";
+                    File.WriteAllText(sfd.FileName, contenido, Encoding.UTF8);
+                    MessageBox.Show("Plantilla guardada.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
+            }
         }
 
         private void btnImportarExcel_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog dlg = new OpenFileDialog { Filter = "Archivos Excel|*.xlsx;*.xls" };
-            if (dlg.ShowDialog() == true)
+            var ofd = new OpenFileDialog { Filter = "Archivo CSV (Excel)|*.csv" };
+            if (ofd.ShowDialog() == true)
+            {
+                try { ProcesarImportacionCSV(ofd.FileName); }
+                catch (Exception ex) { MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+            }
+        }
+
+        private void ProcesarImportacionCSV(string ruta)
+        {
+            var lineas = File.ReadAllLines(ruta, Encoding.UTF8);
+            int importados = 0, errores = 0;
+
+            for (int i = 1; i < lineas.Length; i++)
             {
                 try
                 {
-                    using (ExcelPackage package = new ExcelPackage(new FileInfo(dlg.FileName)))
-                    {
-                        ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
-                        int rowCount = worksheet.Dimension.Rows;
-                        int contador = 0;
-                        for (int row = 2; row <= rowCount; row++)
-                        {
-                            string codigo = worksheet.Cells[row, 1].Text;
-                            if (string.IsNullOrWhiteSpace(codigo)) continue;
-                            string barras = worksheet.Cells[row, 2].Text;
-                            string descripcion = worksheet.Cells[row, 3].Text;
-                            string rubro = worksheet.Cells[row, 4].Text;
-                            decimal costo = 0; decimal.TryParse(worksheet.Cells[row, 5].Text, out costo);
-                            decimal ganancia = 30; decimal.TryParse(worksheet.Cells[row, 6].Text, out ganancia);
-                            int stock = 0; int.TryParse(worksheet.Cells[row, 7].Text, out stock);
-                            decimal venta = costo * (1 + (ganancia / 100));
+                    string linea = lineas[i];
+                    if (string.IsNullOrWhiteSpace(linea)) continue;
 
-                            DatabaseService.GuardarProducto(0, codigo, barras, descripcion, rubro, "21% (General)", costo, ganancia, 0, venta, stock, "");
-                            contador++;
-                        }
-                        CustomMessageBox.Show($"¡Importación Exitosa! {contador} productos.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                        CargarLista();
-                    }
+                    string[] datos = linea.Split(';');
+                    if (datos.Length < 6) { errores++; continue; }
+
+                    string codigo = datos[0].Trim();
+                    string codigoBarra = datos.Length > 1 ? datos[1].Trim() : "";
+                    string descripcion = datos.Length > 2 ? datos[2].Trim() : "";
+                    string categoria = datos.Length > 3 ? datos[3].Trim() : "";
+                    string subRubro = datos.Length > 4 ? datos[4].Trim() : "";
+                    string marca = datos.Length > 5 ? datos[5].Trim() : "";
+                    string proveedor = datos.Length > 6 ? datos[6].Trim() : "";
+
+                    string costoStr = (datos.Length > 7 ? datos[7] : "0").Trim().Replace(",", ".");
+                    string ventaStr = (datos.Length > 8 ? datos[8] : "0").Trim().Replace(",", ".");
+                    decimal.TryParse(costoStr, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal costo);
+                    decimal.TryParse(ventaStr, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal venta);
+
+                    int stock = 0;
+                    if (datos.Length > 9) int.TryParse(datos[9].Trim(), out stock);
+
+                    if (string.IsNullOrEmpty(codigoBarra)) codigoBarra = codigo;
+
+                    decimal ganancia = costo > 0 ? ((venta - costo) / costo) * 100 : 0;
+
+                    int idProd = 0;
+                    var existente = DatabaseService.BuscarProducto(codigo);
+                    if (existente != null) idProd = Convert.ToInt32(existente["ProductoID"]);
+
+                    DatabaseService.GuardarProducto(idProd, codigo, codigoBarra, descripcion, categoria, subRubro, marca, proveedor, "21.0", costo, ganancia, 0, venta, stock, null);
+                    importados++;
                 }
-                catch (Exception ex) { CustomMessageBox.Show($"Error al importar: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+                catch { errores++; }
             }
-        }
 
-        private void btnSeleccionarImagen_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog dlg = new OpenFileDialog { Filter = "Imágenes|*.jpg;*.png;*.jpeg" };
-            if (dlg.ShowDialog() == true)
-            {
-                _rutaImagenActual = dlg.FileName;
-                imgProducto.Source = new BitmapImage(new Uri(_rutaImagenActual));
-            }
-        }
-
-        private void btnNuevo_Click(object sender, RoutedEventArgs e) { Limpiar(); }
-
-        private void btnGuardar_Click(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(txtCodigo.Text) || string.IsNullOrWhiteSpace(txtDescripcion.Text))
-            {
-                CustomMessageBox.Show("Código y Descripción son obligatorios.");
-                return;
-            }
-            decimal venta = numPrecioFinal.Value ?? 0;
-            if (venta == 0 && (numCosto.Value ?? 0) > 0)
-            {
-                decimal costo = numCosto.Value ?? 0;
-                decimal ganancia = numGanancia.Value ?? 0;
-                decimal impuestos = numImpInterno.Value ?? 0;
-                venta = costo * (1 + (ganancia / 100)) + impuestos;
-            }
-            bool ok = DatabaseService.GuardarProducto(_productoID, txtCodigo.Text, txtCodigoBarra.Text, txtDescripcion.Text, cmbCategoria.Text, cmbTipoIVA.Text, numCosto.Value ?? 0, numGanancia.Value ?? 0, numImpInterno.Value ?? 0, venta, 0, _rutaImagenActual);
-            if (ok) { CustomMessageBox.Show("Guardado."); CargarLista(); Limpiar(); }
-        }
-
-        private void btnEliminar_Click(object sender, RoutedEventArgs e)
-        {
-            if (CustomMessageBox.Show("¿Eliminar?", "Confirma", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-            {
-                DatabaseService.EliminarProducto(_productoID);
-                CargarLista();
-                Limpiar();
-            }
+            MessageBox.Show($"Procesados: {importados}\nErrores: {errores}", "Importación", MessageBoxButton.OK, MessageBoxImage.Information);
+            CargarProductos();
         }
     }
 }

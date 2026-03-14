@@ -1,47 +1,26 @@
-﻿using SchettiniGestion; // <-- ¡Nuestro Cerebro!
-using System;
-using System.Data; // <-- Para usar DataTable
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Windows;
 using System.Windows.Controls;
-using System.Collections.Generic; // <-- ¡Importante para List<Rol>!
+using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
 {
-    /// <summary>
-    /// Lógica de interacción para UsuariosControl.xaml
-    /// </summary>
     public partial class UsuariosControl : UserControl
     {
-        private int _usuarioIDSeleccionado = 0;
+        private int _usuarioIdSeleccionado = 0;
 
         public UsuariosControl()
         {
             InitializeComponent();
         }
 
-        // --- 1. MÉTODOS DE CARGA (MODIFICADOS) ---
-
         private void UsuariosControl_Loaded(object sender, RoutedEventArgs e)
         {
-            CargarRoles(); // ¡Llama al nuevo método!
             CargarUsuarios();
-            LimpiarCampos();
-        }
-
-        // Método de Carga de Roles (corregido para usar List<Rol>)
-        private void CargarRoles()
-        {
-            try
-            {
-                List<Rol> listaRoles = DatabaseService.GetRoles();
-                cmbRol.ItemsSource = listaRoles;
-                cmbRol.DisplayMemberPath = "Nombre";
-                cmbRol.SelectedValuePath = "RolId";
-            }
-            catch (Exception ex)
-            {
-                CustomMessageBox.Show($"Error al cargar roles: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            CargarRoles();
+            Limpiar();
         }
 
         private void CargarUsuarios()
@@ -53,107 +32,137 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                CustomMessageBox.Show($"Error al cargar usuarios: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Error al cargar usuarios: " + ex.Message);
             }
         }
 
-        // --- 2. LÓGICA DE LOS BOTONES (MODIFICADA) ---
+        private void CargarRoles()
+        {
+            try
+            {
+                // Obtenemos la lista actualizada de roles (incluyendo los nuevos creados en GestiónPermisos)
+                List<Rol> roles = DatabaseService.GetRoles();
+
+                cmbRoles.ItemsSource = null; // Limpiar para refrescar
+                cmbRoles.ItemsSource = roles;
+
+                // Si la lista tiene elementos, seleccionar el primero por defecto (opcional)
+                if (roles.Count > 0) cmbRoles.SelectedIndex = -1;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error cargando roles: " + ex.Message);
+            }
+        }
+
+        private void Limpiar()
+        {
+            _usuarioIdSeleccionado = 0;
+            txtNombreUsuario.Text = "";
+            txtPassword.Password = "";
+            cmbRoles.SelectedIndex = -1;
+            btnEliminar.IsEnabled = false;
+            txtNombreUsuario.Focus();
+        }
 
         private void btnNuevo_Click(object sender, RoutedEventArgs e)
         {
-            LimpiarCampos();
+            Limpiar();
         }
 
-        // --- ¡INICIO DE CÓDIGO MODIFICADO (ERROR NOT NULL)! ---
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtNombreUsuario.Text))
+            // Validaciones básicas
+            if (string.IsNullOrWhiteSpace(txtNombreUsuario.Text) || cmbRoles.SelectedItem == null)
             {
-                CustomMessageBox.Show("El nombre de usuario no puede estar vacío.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-            if (cmbRol.SelectedItem == null)
-            {
-                CustomMessageBox.Show("Debe seleccionar un rol para el usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Complete el nombre de usuario y seleccione un rol.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            string usuario = txtNombreUsuario.Text.Trim();
-            string password = txtPassword.Password;
-
-            // Obtenemos el ID del rol (ej: 1, 2)
-            int rolID = (int)cmbRol.SelectedValue;
-
-            // ¡NUEVO! Obtenemos también el TEXTO del rol (ej: "Admin")
-            string rolTexto = (cmbRol.SelectedItem as Rol).Nombre;
-
-            // Llamamos al servicio de base de datos (¡el método modificado!)
-            bool exito = DatabaseService.GuardarUsuario(_usuarioIDSeleccionado, usuario, password, rolID, rolTexto);
-
-            if (exito)
+            // Si es nuevo, la contraseña es obligatoria
+            if (_usuarioIdSeleccionado == 0 && string.IsNullOrWhiteSpace(txtPassword.Password))
             {
-                CustomMessageBox.Show("Usuario guardado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                CargarUsuarios();
-                LimpiarCampos();
-            }
-        }
-        // --- ¡FIN DE CÓDIGO MODIFICADO (ERROR NOT NULL)! ---
-
-        private void btnEliminar_Click(object sender, RoutedEventArgs e)
-        {
-            if (_usuarioIDSeleccionado == 0)
-            {
-                CustomMessageBox.Show("Por favor, seleccione un usuario de la grilla para eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("La contraseña es obligatoria para nuevos usuarios.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            if (txtNombreUsuario.Text.ToLower() == "admin")
+            try
             {
-                CustomMessageBox.Show("No se puede eliminar al usuario 'admin' principal.", "Acción no permitida", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
+                Rol rolSeleccionado = (Rol)cmbRoles.SelectedItem;
 
-            MessageBoxResult confirmacion = CustomMessageBox.Show($"¿Está seguro de que desea eliminar al usuario '{txtNombreUsuario.Text}'?",
-                                                  "Confirmar eliminación",
-                                                  MessageBoxButton.YesNo,
-                                                  MessageBoxImage.Warning);
-
-            if (confirmacion == MessageBoxResult.Yes)
-            {
-                bool exito = DatabaseService.EliminarUsuario(_usuarioIDSeleccionado);
+                bool exito = DatabaseService.GuardarUsuario(
+                    _usuarioIdSeleccionado,
+                    txtNombreUsuario.Text.Trim(),
+                    txtPassword.Password, // Se envía tal cual, DatabaseService se encarga del Hash
+                    rolSeleccionado.RolId,
+                    rolSeleccionado.Nombre
+                );
 
                 if (exito)
                 {
-                    CustomMessageBox.Show("Usuario eliminado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Usuario guardado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                     CargarUsuarios();
-                    LimpiarCampos();
+                    Limpiar();
+                }
+                else
+                {
+                    MessageBox.Show("Error al guardar en base de datos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error crítico: " + ex.Message);
+            }
+        }
+
+        private void btnEliminar_Click(object sender, RoutedEventArgs e)
+        {
+            if (_usuarioIdSeleccionado == 0) return;
+
+            // Evitar que se borre a sí mismo o al admin principal si se llama 'admin'
+            if (txtNombreUsuario.Text.ToLower() == "admin")
+            {
+                MessageBox.Show("No se puede eliminar al super-administrador.", "Prohibido", MessageBoxButton.OK, MessageBoxImage.Stop);
+                return;
+            }
+
+            if (MessageBox.Show($"¿Eliminar el usuario '{txtNombreUsuario.Text}'?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                if (DatabaseService.EliminarUsuario(_usuarioIdSeleccionado))
+                {
+                    CargarUsuarios();
+                    Limpiar();
+                }
+                else
+                {
+                    MessageBox.Show("No se pudo eliminar el usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
 
-        // --- 3. MÉTODOS AYUDANTES (MODIFICADOS) ---
-
-        private void LimpiarCampos()
-        {
-            _usuarioIDSeleccionado = 0;
-            txtNombreUsuario.Text = "";
-            txtPassword.Password = "";
-            cmbRol.SelectedIndex = -1;
-            dgvUsuarios.UnselectAll();
-        }
-
-
         private void dgvUsuarios_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (dgvUsuarios.SelectedItem is DataRowView filaSeleccionada)
+            if (dgvUsuarios.SelectedItem is DataRowView row)
             {
-                _usuarioIDSeleccionado = Convert.ToInt32(filaSeleccionada["UsuarioID"]);
-                txtNombreUsuario.Text = filaSeleccionada["NombreUsuario"].ToString();
+                _usuarioIdSeleccionado = Convert.ToInt32(row["UsuarioID"]);
+                txtNombreUsuario.Text = row["NombreUsuario"].ToString();
+                txtPassword.Password = ""; // Por seguridad, no traemos el Hash
 
-                // Asignamos el RolID (ej: 1) al ComboBox
-                cmbRol.SelectedValue = filaSeleccionada["RolID"];
+                // Seleccionar el rol correspondiente en el ComboBox
+                int rolId = 0;
+                if (row["RolID"] != DBNull.Value)
+                    rolId = Convert.ToInt32(row["RolID"]);
 
-                txtPassword.Password = "";
+                foreach (Rol r in cmbRoles.Items)
+                {
+                    if (r.RolId == rolId)
+                    {
+                        cmbRoles.SelectedItem = r;
+                        break;
+                    }
+                }
+
+                btnEliminar.IsEnabled = true;
             }
         }
     }

@@ -1,121 +1,140 @@
-using SchettiniGestion;
 using System;
 using System.Data;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Xceed.Wpf.Toolkit;
-// Alias para evitar conflictos
-using WinForms = System.Windows.Forms;
+using System.Text.RegularExpressions;
+using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
 {
     public partial class PreciosControl : UserControl
     {
-        private DataRow _productoSeleccionado;
-        private Control _activeNumericControl = null;
+        private TextBox _ultimoTextBoxFoco;
 
         public PreciosControl()
         {
             InitializeComponent();
+            _ultimoTextBoxFoco = txtBuscar;
         }
 
         private void PreciosControl_Loaded(object sender, RoutedEventArgs e)
         {
-            LimpiarCampos();
+            CargarProductos();
+            txtBuscar.Focus();
         }
 
-        private void LimpiarCampos()
+        private void CargarProductos(string filtro = "")
         {
-            _productoSeleccionado = null;
-            txtBuscarProducto.Text = "";
-            lblProductoSeleccionado.Text = "Seleccione un producto...";
-            numPrecioCosto.Value = 0;
-            numPrecioVenta.Value = 0;
-            numPorcentaje.Value = 0;
-            panelPrecios.IsEnabled = false;
-            txtBuscarProducto.Focus();
-            _activeNumericControl = txtBuscarProducto;
-        }
-
-        // --- BÚSQUEDA ---
-        private void txtBuscarProducto_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter) BuscarProducto(txtBuscarProducto.Text);
-            else if (e.Key == Key.Down && popupProducto.IsOpen) { lstSugerenciasProducto.SelectedIndex = 0; lstSugerenciasProducto.Focus(); }
-            else if (e.Key == Key.Escape) popupProducto.IsOpen = false;
-        }
-
-        private void BuscarProducto(string query)
-        {
-            if (string.IsNullOrWhiteSpace(query)) { popupProducto.IsOpen = false; return; }
             try
             {
-                DataRow prod = DatabaseService.BuscarProducto(query);
-                if (prod != null) SeleccionarProducto(prod);
+                DataTable dt = DatabaseService.GetProductos(filtro);
+                gridProductos.ItemsSource = dt.DefaultView;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al cargar productos: " + ex.Message);
+            }
+        }
+
+        private void gridProductos_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (gridProductos.SelectedItem is DataRowView row)
+            {
+                txtDescripcion.Text = row["Descripcion"].ToString();
+
+                if (row.Row.Table.Columns.Contains("PrecioCosto"))
+                    txtCosto.Text = row["PrecioCosto"].ToString();
                 else
+                    txtCosto.Text = "0";
+
+                txtPrecioVenta.Text = row["PrecioVenta"].ToString();
+                txtPrecioVenta.Focus();
+            }
+        }
+
+        private void btnGuardar_Click(object sender, RoutedEventArgs e)
+        {
+            if (gridProductos.SelectedItem is DataRowView row)
+            {
+                try
                 {
-                    DataTable dt = DatabaseService.BuscarProductosMultiples_ParaCompra(query);
-                    lstSugerenciasProducto.ItemsSource = dt.DefaultView;
-                    if (dt.Rows.Count > 0) { popupProducto.IsOpen = true; lstSugerenciasProducto.Focus(); }
-                    else { popupProducto.IsOpen = false; }
+                    int id = Convert.ToInt32(row["ProductoID"]);
+                    decimal.TryParse(txtCosto.Text, out decimal costo);
+                    decimal.TryParse(txtPrecioVenta.Text, out decimal venta);
+
+                    if (DatabaseService.ActualizarPreciosProducto(id, costo, venta))
+                    {
+                        CargarProductos(txtBuscar.Text);
+                        LimpiarInputsMenosBuscador();
+                        MessageBox.Show("Precio actualizado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show("No se pudo actualizar el precio.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error: " + ex.Message);
                 }
             }
-            catch (Exception ex) { System.Windows.MessageBox.Show(ex.Message); }
-        }
-
-        private void SeleccionarProducto(DataRow row)
-        {
-            _productoSeleccionado = row;
-            lblProductoSeleccionado.Text = row["Descripcion"].ToString();
-            numPrecioCosto.Value = Convert.ToDecimal(row["PrecioCosto"]);
-            numPrecioVenta.Value = Convert.ToDecimal(row["PrecioVenta"]);
-            panelPrecios.IsEnabled = true;
-            popupProducto.IsOpen = false;
-            numPrecioVenta.Focus();
-            _activeNumericControl = numPrecioVenta;
-        }
-
-        private void lstSugerencias_MouseUp(object sender, MouseButtonEventArgs e) { if (lstSugerenciasProducto.SelectedItem is DataRowView r) SeleccionarProducto(r.Row); }
-        private void lstSugerencias_KeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Enter && lstSugerenciasProducto.SelectedItem is DataRowView r) SeleccionarProducto(r.Row); }
-        private async void txtBuscar_LostFocus(object sender, RoutedEventArgs e) { await Task.Delay(150); if (!lstSugerenciasProducto.IsFocused) popupProducto.IsOpen = false; }
-
-        // --- GUARDADO ---
-        private void btnGuardarPrecios_Click(object sender, RoutedEventArgs e)
-        {
-            if (_productoSeleccionado == null) return;
-            try
+            else
             {
-                int id = Convert.ToInt32(_productoSeleccionado["ProductoID"]);
-                bool ok = DatabaseService.ActualizarPreciosProducto(id, numPrecioCosto.Value ?? 0, numPrecioVenta.Value ?? 0);
-                if (ok) { System.Windows.MessageBox.Show("Precio actualizado."); LimpiarCampos(); }
+                MessageBox.Show("Seleccione un producto de la lista primero.");
             }
-            catch (Exception ex) { System.Windows.MessageBox.Show(ex.Message); }
         }
 
-        private void btnAplicarPorcentaje_Click(object sender, RoutedEventArgs e)
+        private void txtBuscar_KeyUp(object sender, KeyEventArgs e)
         {
-            if (numPrecioCosto.Value > 0)
-                numPrecioVenta.Value = numPrecioCosto.Value * (1 + (numPorcentaje.Value / 100));
+            CargarProductos(txtBuscar.Text);
         }
 
-        // --- TECLADO NUMÉRICO ---
-        private void NumericInput_GotFocus(object sender, RoutedEventArgs e)
+        private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
-            _activeNumericControl = sender as Control;
+            _ultimoTextBoxFoco = sender as TextBox;
         }
 
-        private void numericKeyboard_KeyPressed(object sender, string key)
+        private void BtnNum_Click(object sender, RoutedEventArgs e)
         {
-            if (_activeNumericControl != null)
+            if (_ultimoTextBoxFoco == null) return;
+            Button btn = sender as Button;
+            string numero = btn.Content.ToString();
+            int index = _ultimoTextBoxFoco.CaretIndex;
+            _ultimoTextBoxFoco.Text = _ultimoTextBoxFoco.Text.Insert(index, numero);
+            _ultimoTextBoxFoco.CaretIndex = index + 1;
+        }
+
+        private void BtnBorrar_Click(object sender, RoutedEventArgs e)
+        {
+            if (_ultimoTextBoxFoco == null || _ultimoTextBoxFoco.Text.Length == 0) return;
+            int index = _ultimoTextBoxFoco.CaretIndex;
+            if (index > 0)
             {
-                _activeNumericControl.Focus();
-
-                if (key == "BACKSPACE") WinForms.SendKeys.SendWait("{BACKSPACE}");
-                else if (key == "ENTER") WinForms.SendKeys.SendWait("{ENTER}");
-                else WinForms.SendKeys.SendWait(key);
+                _ultimoTextBoxFoco.Text = _ultimoTextBoxFoco.Text.Remove(index - 1, 1);
+                _ultimoTextBoxFoco.CaretIndex = index - 1;
             }
+        }
+
+        private void BtnClear_Click(object sender, RoutedEventArgs e)
+        {
+            if (_ultimoTextBoxFoco != null)
+            {
+                _ultimoTextBoxFoco.Text = "";
+                _ultimoTextBoxFoco.Focus();
+            }
+        }
+
+        private void SoloNumeros(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !Regex.IsMatch(e.Text, @"^[0-9,\.]+$");
+        }
+
+        private void LimpiarInputsMenosBuscador()
+        {
+            txtDescripcion.Text = "";
+            txtCosto.Text = "";
+            txtPrecioVenta.Text = "";
         }
     }
 }

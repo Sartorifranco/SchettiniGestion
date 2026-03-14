@@ -1,143 +1,111 @@
-﻿using System;
+using System;
 using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input; // Necesario para el evento KeyDown
+using System.Windows.Input;
 using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
 {
-    /// <summary>
-    /// Lógica de interacción para ClientesControl.xaml
-    /// </summary>
     public partial class ClientesControl : UserControl
     {
-        // Guardaremos el ID del cliente seleccionado
-        private int _clienteIDSeleccionado = 0;
+        private int _clienteIdSeleccionado = 0;
+        private DataTable _dtClientesOriginal;
 
         public ClientesControl()
         {
             InitializeComponent();
         }
 
-        // --- MÉTODOS DE CARGA ---
-
         private void ClientesControl_Loaded(object sender, RoutedEventArgs e)
         {
-            CargarCondicionIVA();
             CargarClientes();
-            ConfigurarGrilla();
             LimpiarCampos();
-        }
-
-        private void CargarCondicionIVA()
-        {
-            cmbCondicionIVA.Items.Clear();
-            cmbCondicionIVA.Items.Add("Responsable Inscripto");
-            cmbCondicionIVA.Items.Add("Monotributo");
-            cmbCondicionIVA.Items.Add("Consumidor Final");
-            cmbCondicionIVA.Items.Add("Exento");
-            cmbCondicionIVA.SelectedIndex = 2; // "Consumidor Final" por defecto
         }
 
         private void CargarClientes()
         {
             try
             {
-                DataTable dt = DatabaseService.GetClientes();
-                dgvClientes.ItemsSource = dt.DefaultView;
+                _dtClientesOriginal = DatabaseService.GetClientes();
+                dgvClientes.ItemsSource = _dtClientesOriginal.DefaultView;
+                AplicarFiltro();
             }
             catch (Exception ex)
             {
-                CustomMessageBox.Show($"Error al cargar clientes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Error al cargar clientes: " + ex.Message);
             }
         }
 
-        private void ConfigurarGrilla()
+        private void AplicarFiltro()
         {
-            // La grilla se autogenera, aquí podrías ajustar anchos si quisieras.
+            if (_dtClientesOriginal == null) return;
+            string t = (txtFiltroClientes?.Text ?? "").Trim();
+            if (string.IsNullOrEmpty(t))
+                _dtClientesOriginal.DefaultView.RowFilter = "";
+            else
+                _dtClientesOriginal.DefaultView.RowFilter = $"RazonSocial LIKE '%{t.Replace("'", "''")}%' OR CUIT LIKE '%{t.Replace("'", "''")}%'";
         }
 
-        // --- MÉTODOS DE LA INTERFAZ ---
-
-        private void LimpiarCampos()
+        private void txtFiltroClientes_TextChanged(object sender, TextChangedEventArgs e)
         {
-            _clienteIDSeleccionado = 0;
-            txtCuit.Text = "";
-            txtRazonSocial.Text = "";
-            cmbCondicionIVA.SelectedIndex = 2; // "Consumidor Final"
-            dgvClientes.SelectedItem = null;
-            txtCuit.Focus(); // Pone el foco en el CUIT para empezar rápido
+            AplicarFiltro();
         }
 
-        private void dgvClientes_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void chkPermiteCtaCte_Changed(object sender, RoutedEventArgs e)
         {
-            if (dgvClientes.SelectedItem is DataRowView filaSeleccionada)
-            {
-                _clienteIDSeleccionado = Convert.ToInt32(filaSeleccionada["ClienteID"]);
-                txtCuit.Text = filaSeleccionada["CUIT"].ToString();
-                txtRazonSocial.Text = filaSeleccionada["RazonSocial"].ToString();
-                cmbCondicionIVA.Text = filaSeleccionada["CondicionIVA"].ToString();
-            }
+            txtMontoLimiteCtaCte.IsEnabled = chkPermiteCtaCte.IsChecked == true;
         }
 
-        // --- MAGIA DE AFIP: AUTOCOMPLETAR ---
-        // Asegúrate de que en tu XAML el TextBox txtCuit tenga el evento: KeyDown="txtCuit_KeyDown"
         private async void txtCuit_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter)
+            if (e.Key != Key.Enter || string.IsNullOrWhiteSpace(txtCuit.Text)) return;
+            e.Handled = true;
+
+            btnGuardar.IsEnabled = false;
+            btnNuevo.IsEnabled = false;
+            try
             {
-                string cuitTexto = txtCuit.Text.Replace("-", "").Trim();
-
-                // Validación simple de longitud
-                if (long.TryParse(cuitTexto, out long cuit))
+                var persona = await AfipService.ObtenerPersonaPorCuitAsync(txtCuit.Text);
+                if (persona.Exito)
                 {
-                    // Feedback visual: Ponemos el cursor en espera
-                    this.Cursor = Cursors.Wait;
-
-                    try
-                    {
-                        // Llamamos al servicio (Simulado o Real)
-                        var datos = await AfipService.ObtenerDatosPersonaAsync(cuit);
-
-                        if (datos.Exito)
-                        {
-                            // ¡Éxito! Llenamos los campos
-                            txtRazonSocial.Text = datos.RazonSocial.ToUpper();
-
-                            // Intentamos seleccionar la condición de IVA en el combo
-                            // (Debe coincidir el texto exacto, ej: "Responsable Inscripto")
-                            cmbCondicionIVA.Text = datos.CondicionIVA;
-
-                            // Si tuvieras campo Dirección en la DB, iría aquí:
-                            // txtDireccion.Text = datos.Domicilio; 
-
-                            // Pasamos el foco al siguiente campo para que confirme
-                            txtRazonSocial.Focus();
-                        }
-                        else
-                        {
-                            CustomMessageBox.Show("No se encontraron datos en AFIP o hubo un error: " + datos.Error, "Aviso AFIP", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        CustomMessageBox.Show("Error de conexión: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                    finally
-                    {
-                        // Restauramos el cursor
-                        this.Cursor = Cursors.Arrow;
-                    }
+                    txtRazonSocial.Text = persona.RazonSocial;
+                    EstablecerCondicionIVA(persona.CondicionIVA);
+                    txtRazonSocial.Focus();
                 }
                 else
                 {
-                    CustomMessageBox.Show("El CUIT ingresado no es válido (solo números).", "Formato Inválido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(persona.Error ?? "No se encontró el CUIT en AFIP. Ingrese los datos manualmente.", "AFIP", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al consultar AFIP: " + ex.Message + "\n\nIngrese los datos manualmente.", "AFIP", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            finally
+            {
+                btnGuardar.IsEnabled = true;
+                btnNuevo.IsEnabled = true;
             }
         }
 
-        // --- LÓGICA DE BOTONES (ABM) ---
+        private void LimpiarCampos()
+        {
+            _clienteIdSeleccionado = 0;
+            txtCuit.Text = "";
+            txtRazonSocial.Text = "";
+            cmbCondicionIVA.SelectedIndex = 0;
+            txtTelefono.Text = "";
+            txtDireccion.Text = "";
+            txtEmail.Text = "";
+            chkPermiteCtaCte.IsChecked = false;
+            txtMontoLimiteCtaCte.Text = "";
+            txtMontoLimiteCtaCte.IsEnabled = false;
+            btnEliminar.IsEnabled = false;
+            txtCuit.Focus();
+        }
 
         private void btnNuevo_Click(object sender, RoutedEventArgs e)
         {
@@ -146,58 +114,80 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Validaciones
             if (string.IsNullOrWhiteSpace(txtCuit.Text) || string.IsNullOrWhiteSpace(txtRazonSocial.Text))
             {
-                CustomMessageBox.Show("El CUIT y la Razón Social no pueden estar vacíos.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-            if (cmbCondicionIVA.SelectedItem == null)
-            {
-                CustomMessageBox.Show("Por favor, seleccione una Condición de IVA.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Complete CUIT y Razón Social.");
                 return;
             }
 
-            // 2. Obtener valores
-            string cuit = txtCuit.Text.Trim();
-            string razonSocial = txtRazonSocial.Text.Trim();
-            string condicionIVA = cmbCondicionIVA.Text;
+            string condIva = (cmbCondicionIVA.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+            bool permiteCtaCte = chkPermiteCtaCte.IsChecked == true;
+            decimal? montoLimite = null;
+            if (permiteCtaCte && decimal.TryParse(txtMontoLimiteCtaCte.Text?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal ml))
+                montoLimite = ml;
 
-            // 3. Guardar en la DB
-            bool exito = DatabaseService.GuardarCliente(_clienteIDSeleccionado, cuit, razonSocial, condicionIVA);
-
-            if (exito)
+            if (DatabaseService.GuardarCliente(_clienteIdSeleccionado, txtCuit.Text.Trim(), txtRazonSocial.Text.Trim(), condIva, txtDireccion.Text.Trim(), txtTelefono.Text.Trim(), txtEmail.Text.Trim(), permiteCtaCte, montoLimite))
             {
-                CustomMessageBox.Show("Cliente guardado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Cliente guardado.");
                 CargarClientes();
                 LimpiarCampos();
+            }
+            else
+            {
+                MessageBox.Show("Error al guardar.");
             }
         }
 
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
-            if (_clienteIDSeleccionado == 0)
+            if (_clienteIdSeleccionado != 0 && MessageBox.Show("¿Eliminar?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
-                CustomMessageBox.Show("Por favor, seleccione un cliente de la grilla para eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                DatabaseService.EliminarCliente(_clienteIdSeleccionado);
+                CargarClientes();
+                LimpiarCampos();
             }
+        }
 
-            MessageBoxResult confirmacion = CustomMessageBox.Show($"¿Está seguro de que desea eliminar al cliente '{txtRazonSocial.Text}'?",
-                                                                "Confirmar eliminación",
-                                                                MessageBoxButton.YesNo,
-                                                                MessageBoxImage.Warning);
-
-            if (confirmacion == MessageBoxResult.Yes)
+        private void dgvClientes_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (dgvClientes.SelectedItem is DataRowView row)
             {
-                bool exito = DatabaseService.EliminarCliente(_clienteIDSeleccionado);
+                _clienteIdSeleccionado = Convert.ToInt32(row["ClienteID"]);
+                txtCuit.Text = ValorCol(row, "CUIT");
+                txtRazonSocial.Text = ValorCol(row, "RazonSocial");
+                EstablecerCondicionIVA(ValorCol(row, "CondicionIVA"));
+                txtTelefono.Text = ValorCol(row, "Telefono");
+                txtDireccion.Text = ValorCol(row, "Direccion");
+                txtEmail.Text = ValorCol(row, "Email");
+                chkPermiteCtaCte.IsChecked = row.Row.Table.Columns.Contains("PermiteCuentaCorriente") && row["PermiteCuentaCorriente"] != DBNull.Value && Convert.ToBoolean(row["PermiteCuentaCorriente"]);
+                txtMontoLimiteCtaCte.Text = ValorCol(row, "MontoLimiteCtaCte");
+                txtMontoLimiteCtaCte.IsEnabled = chkPermiteCtaCte.IsChecked == true;
+                btnEliminar.IsEnabled = true;
+            }
+        }
 
-                if (exito)
+        private static string ValorCol(DataRowView row, string col)
+        {
+            if (!row.Row.Table.Columns.Contains(col)) return "";
+            var o = row[col];
+            return o == null || o == DBNull.Value ? "" : o.ToString();
+        }
+
+        private void EstablecerCondicionIVA(string valor)
+        {
+            if (string.IsNullOrWhiteSpace(valor)) { cmbCondicionIVA.SelectedIndex = 0; return; }
+            var valorTrim = valor.Trim();
+            for (int i = 0; i < cmbCondicionIVA.Items.Count; i++)
+            {
+                var item = cmbCondicionIVA.Items[i] as ComboBoxItem;
+                if (item?.Content?.ToString()?.Equals(valorTrim, StringComparison.OrdinalIgnoreCase) == true)
                 {
-                    CustomMessageBox.Show("Cliente eliminado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                    CargarClientes();
-                    LimpiarCampos();
+                    cmbCondicionIVA.SelectedIndex = i;
+                    return;
                 }
             }
+            cmbCondicionIVA.Items.Add(new ComboBoxItem { Content = valorTrim });
+            cmbCondicionIVA.SelectedIndex = cmbCondicionIVA.Items.Count - 1;
         }
     }
 }

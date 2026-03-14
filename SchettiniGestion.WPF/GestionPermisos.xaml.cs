@@ -1,4 +1,4 @@
-using SchettiniGestion; // Para usar DatabaseService y las clases
+using SchettiniGestion;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,15 +10,13 @@ namespace SchettiniGestion.WPF
 {
     public partial class GestionPermisos : UserControl
     {
-        // Guardamos los datos cargados para usarlos fácilmente
         private List<Rol> roles;
         private List<Permiso> todosLosPermisos;
-        private Dictionary<int, List<int>> permisosPorRol; // RolID -> Lista de PermisoID
+        private Dictionary<int, List<int>> permisosPorRol;
 
         public GestionPermisos()
         {
             InitializeComponent();
-            // Carga los datos cuando el control esté listo
             this.Loaded += GestionPermisos_Loaded;
         }
 
@@ -31,18 +29,19 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                // 1. Obtener todos los datos de la BD
+                // 1. Obtener datos frescos de la BD
                 roles = DatabaseService.GetRoles();
                 todosLosPermisos = DatabaseService.GetPermisos();
                 permisosPorRol = DatabaseService.GetPermisosPorRol();
 
-                // 2. Llenar la lista de Roles (Columna 1)
+                // 2. Llenar la lista de Roles
+                RolesListBox.ItemsSource = null;
                 RolesListBox.ItemsSource = roles;
-                RolesListBox.DisplayMemberPath = "Nombre"; // Muestra la propiedad "Nombre" del objeto Rol
+                RolesListBox.DisplayMemberPath = "Nombre";
             }
             catch (Exception ex)
             {
-                CustomMessageBox.Show($"Error al cargar datos de permisos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error al cargar datos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -50,46 +49,96 @@ namespace SchettiniGestion.WPF
         {
             if (RolesListBox.SelectedItem == null)
             {
-                // Si no hay nada seleccionado, ocultar todo
+                // Ocultar panel si no hay selección
                 PermisosHelpText.Visibility = Visibility.Visible;
                 PermisosStackPanel.Visibility = Visibility.Collapsed;
                 GuardarButton.IsEnabled = false;
+                btnEliminarRol.IsEnabled = false;
                 return;
             }
 
-            // Mostrar el panel de checkboxes y ocultar el texto de ayuda
+            // Mostrar panel
             PermisosHelpText.Visibility = Visibility.Collapsed;
             PermisosStackPanel.Visibility = Visibility.Visible;
             GuardarButton.IsEnabled = true;
+            btnEliminarRol.IsEnabled = true;
 
-            // Limpiar checkboxes anteriores
+            // Limpiar visualmente los checkboxes
             PermisosStackPanel.Children.Clear();
 
-            // 1. Obtener el Rol seleccionado
             Rol rolSeleccionado = (Rol)RolesListBox.SelectedItem;
 
-            // 2. Obtener la lista de permisos que ESTE rol ya tiene
+            // Obtener permisos actuales de este rol
             List<int> permisosDelRol = new List<int>();
             if (permisosPorRol.ContainsKey(rolSeleccionado.RolId))
             {
                 permisosDelRol = permisosPorRol[rolSeleccionado.RolId];
             }
 
-            // 3. Crear un CheckBox por CADA permiso que existe en el sistema
+            // Generar CheckBox por cada permiso disponible
             foreach (var permiso in todosLosPermisos)
             {
+                // Limpiamos el nombre para que se vea bonito (Ej: ACCESO_VENTAS -> VENTAS)
+                string nombreLimpio = permiso.Nombre.Replace("ACCESO_", "").Replace("_", " ");
+
                 CheckBox cb = new CheckBox
                 {
-                    Content = permiso.Nombre, // "ACCESO_USUARIOS"
-                    Tag = permiso.PermisoId,  // Guardamos el ID en el Tag
-                    Foreground = (System.Windows.Media.SolidColorBrush)FindResource("BodyForegroundBrush"), // Estilo
+                    Content = nombreLimpio,
+                    Tag = permiso.PermisoId, // Guardamos el ID oculto
+                    Foreground = System.Windows.Media.Brushes.White,
                     FontSize = 14,
-                    Margin = new Thickness(0, 8, 0, 8),
-                    // Marcar el checkbox si el rol tiene este permiso
-                    IsChecked = permisosDelRol.Contains(permiso.PermisoId)
+                    Margin = new Thickness(0, 5, 0, 5),
+                    IsChecked = permisosDelRol.Contains(permiso.PermisoId) // Marcar si ya lo tiene
                 };
-
                 PermisosStackPanel.Children.Add(cb);
+            }
+        }
+
+        private void btnNuevoRol_Click(object sender, RoutedEventArgs e)
+        {
+            // 1. Abrimos la ventanita para pedir el nombre
+            InputWindow input = new InputWindow("Crear Nuevo Rol");
+            if (input.ShowDialog() == true)
+            {
+                string nuevoNombre = input.ResponseText.Trim();
+
+                if (string.IsNullOrEmpty(nuevoNombre))
+                {
+                    MessageBox.Show("El nombre no puede estar vacío.");
+                    return;
+                }
+
+                // 2. Insertamos el rol en la Base de Datos
+                try
+                {
+                    using (var conn = new SqlConnection(DatabaseService.ConnectionString))
+                    {
+                        conn.Open();
+                        // Evitar roles duplicados (insensible a mayúsculas/espacios)
+                        var cmdCheck = new SqlCommand("SELECT COUNT(*) FROM Roles WHERE LOWER(LTRIM(RTRIM(NombreRol))) = LOWER(LTRIM(RTRIM(@n)))", conn);
+                        cmdCheck.Parameters.AddWithValue("@n", nuevoNombre);
+                        if (Convert.ToInt32(cmdCheck.ExecuteScalar()) > 0)
+                        {
+                            MessageBox.Show($"Ya existe un rol con el nombre '{nuevoNombre}'.\nElija otro nombre.", "Rol duplicado", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            return;
+                        }
+
+                        string sql = "INSERT INTO Roles (NombreRol) VALUES (@n)";
+                        using (var cmd = new SqlCommand(sql, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@n", nuevoNombre);
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+
+                    // 3. Recargamos la lista para que aparezca el nuevo rol
+                    CargarDatosIniciales();
+                    MessageBox.Show($"Rol '{nuevoNombre}' creado exitosamente.\nAhora selecciónelo y asígnele permisos.", "Éxito");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al crear rol: " + ex.Message);
+                }
             }
         }
 
@@ -98,34 +147,65 @@ namespace SchettiniGestion.WPF
             if (RolesListBox.SelectedItem == null) return;
 
             Rol rolSeleccionado = (Rol)RolesListBox.SelectedItem;
+            List<int> nuevosPermisos = new List<int>();
 
-            // 1. Crear la nueva lista de permisos para este rol
-            List<int> nuevosPermisosParaEsteRol = new List<int>();
-
-            // 2. Recorrer todos los checkboxes que creamos
+            // Recorrer los checkboxes marcados
             foreach (CheckBox cb in PermisosStackPanel.Children.OfType<CheckBox>())
             {
-                // Si está marcado...
                 if (cb.IsChecked == true)
                 {
-                    // ...agregamos el ID (que guardamos en el Tag) a la lista
-                    nuevosPermisosParaEsteRol.Add((int)cb.Tag);
+                    nuevosPermisos.Add((int)cb.Tag);
                 }
             }
 
             try
             {
-                // 3. Enviar la lista completa a la BD
-                DatabaseService.ActualizarPermisosParaRol(rolSeleccionado.RolId, nuevosPermisosParaEsteRol);
+                // Guardar en BD
+                DatabaseService.ActualizarPermisosParaRol(rolSeleccionado.RolId, nuevosPermisos);
 
-                // 4. Actualizar nuestro "caché" local para que la próxima selección sea correcta
-                permisosPorRol[rolSeleccionado.RolId] = nuevosPermisosParaEsteRol;
+                // Actualizar memoria local
+                permisosPorRol[rolSeleccionado.RolId] = nuevosPermisos;
 
-                CustomMessageBox.Show("Permisos actualizados correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Permisos guardados correctamente.", "Guardado", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                CustomMessageBox.Show($"Error al guardar los permisos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error al guardar: {ex.Message}", "Error");
+            }
+        }
+
+        private void btnEliminarRol_Click(object sender, RoutedEventArgs e)
+        {
+            if (RolesListBox.SelectedItem == null) return;
+            Rol rol = (Rol)RolesListBox.SelectedItem;
+
+            // Seguridad: No borrar al Admin
+            if (rol.Nombre.ToUpper().Contains("ADMIN"))
+            {
+                MessageBox.Show("No se puede eliminar el rol de Administrador.", "Bloqueado", MessageBoxButton.OK, MessageBoxImage.Stop);
+                return;
+            }
+
+            if (MessageBox.Show($"¿Está seguro de eliminar el rol '{rol.Nombre}'?\nLos usuarios con este rol perderán sus accesos.", "Confirmar Eliminación", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    using (var conn = new SqlConnection(DatabaseService.ConnectionString))
+                    {
+                        conn.Open();
+                        // Primero borrar los permisos asociados
+                        new SqlCommand($"DELETE FROM Roles_Permisos WHERE RolID={rol.RolId}", conn).ExecuteNonQuery();
+                        // Luego borrar el rol
+                        new SqlCommand($"DELETE FROM Roles WHERE RolID={rol.RolId}", conn).ExecuteNonQuery();
+
+                        // Opcional: Dejar usuarios huérfanos con rol NULL o por defecto (no implementado aquí para simplificar)
+                    }
+                    CargarDatosIniciales();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error eliminando rol: " + ex.Message);
+                }
             }
         }
     }

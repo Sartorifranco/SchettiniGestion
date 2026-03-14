@@ -55,7 +55,9 @@ namespace SchettiniGestion
                     return cs.ConnectionString;
             }
             catch { /* ignorar si no hay config */ }
-            return "Data Source=SIS5\\SQLEXPRESS;Initial Catalog=SchPosDB;Integrated Security=True;TrustServerCertificate=True;";
+
+            // Línea de emergencia corregida: apunta a tu PC actual y sin encriptación obligatoria
+            return "Data Source=localhost\\SQLEXPRESS;Initial Catalog=SchPosDB;Integrated Security=True;Encrypt=False;";
         }
 
         public static Action<string> OnDbError;

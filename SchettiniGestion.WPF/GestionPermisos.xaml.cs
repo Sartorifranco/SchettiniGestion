@@ -1,8 +1,7 @@
-﻿using SchettiniGestion; // Para usar DatabaseService y las clases
+using SchettiniGestion; // Para usar DatabaseService y las clases
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity.Core.Common.CommandTrees.ExpressionBuilder;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;

@@ -1,4 +1,4 @@
-﻿using SchettiniGestion;
+using SchettiniGestion;
 using System;
 using System.Data;
 using System.Threading.Tasks;
@@ -14,7 +14,6 @@ namespace SchettiniGestion.WPF
     public partial class PreciosControl : UserControl
     {
         private DataRow _productoSeleccionado;
-        private bool _ignorarPerdidaFoco = false;
         private Control _activeNumericControl = null;
 
         public PreciosControl()
@@ -59,7 +58,7 @@ namespace SchettiniGestion.WPF
                 {
                     DataTable dt = DatabaseService.BuscarProductosMultiples_ParaCompra(query);
                     lstSugerenciasProducto.ItemsSource = dt.DefaultView;
-                    if (dt.Rows.Count > 0) { popupProducto.IsOpen = true; _ignorarPerdidaFoco = true; lstSugerenciasProducto.Focus(); }
+                    if (dt.Rows.Count > 0) { popupProducto.IsOpen = true; lstSugerenciasProducto.Focus(); }
                     else { popupProducto.IsOpen = false; }
                 }
             }
@@ -74,7 +73,6 @@ namespace SchettiniGestion.WPF
             numPrecioVenta.Value = Convert.ToDecimal(row["PrecioVenta"]);
             panelPrecios.IsEnabled = true;
             popupProducto.IsOpen = false;
-            _ignorarPerdidaFoco = false;
             numPrecioVenta.Focus();
             _activeNumericControl = numPrecioVenta;
         }

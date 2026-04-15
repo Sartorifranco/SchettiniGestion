@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:SchettiniGestion.WPF"
         mc:Ignorable="d"
         Title="SchTec - Sistema de Gestión" 
-        Icon="schtec.ico"
+        Icon="Resources/logo.png"
         Height="768" Width="1280"
         WindowState="Maximized" WindowStartupLocation="CenterScreen"
         Background="{DynamicResource ModuleBackgroundBrush}"
@@ -38,8 +38,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bdr" Property="Background" Value="#253045"/>
-                                <Setter TargetName="bdr" Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                                <Setter TargetName="bdr" Property="Background" Value="{DynamicResource MenuSidebarHoverBackground}"/>
+                                <Setter TargetName="bdr" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

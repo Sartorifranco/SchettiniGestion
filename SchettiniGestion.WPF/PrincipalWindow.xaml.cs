@@ -40,7 +40,6 @@ namespace SchettiniGestion.WPF
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            ThemeManager.LoadSavedTheme();
             ActualizarBotonTema();
             ActualizarHeaderUsuario();
             AplicarPermisos();

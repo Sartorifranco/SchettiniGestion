@@ -151,6 +151,85 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AfipService.cs" />
+    <Compile Include="NumericBox.cs" />
+    <Compile Include="ProductoModalWindow.xaml.cs">
+      <DependentUpon>ProductoModalWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ThemeManager.cs" />
+    <Compile Include="InputWindow.xaml.cs" />
+    <Compile Include="CompraModalWindow.xaml.cs">
+      <DependentUpon>CompraModalWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="RecepcionCompraModalWindow.xaml.cs">
+      <DependentUpon>RecepcionCompraModalWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="NotaCreditoDebitoModalWindow.xaml.cs">
+      <DependentUpon>NotaCreditoDebitoModalWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="GastoRapidoModalWindow.xaml.cs">
+      <DependentUpon>GastoRapidoModalWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PagoProveedorModalWindow.xaml.cs">
+      <DependentUpon>PagoProveedorModalWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="OrdenCompraModalWindow.xaml.cs">
+      <DependentUpon>OrdenCompraModalWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DetalleVentaWindow.xaml.cs">
+      <DependentUpon>DetalleVentaWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="CobroModalWindow.xaml.cs">
+      <DependentUpon>CobroModalWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ClienteRapidoModalWindow.xaml.cs">
+      <DependentUpon>ClienteRapidoModalWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PrimerUsoWindow.xaml.cs">
+      <DependentUpon>PrimerUsoWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="AyudaAtajosWindow.xaml.cs">
+      <DependentUpon>AyudaAtajosWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ActivationWindow.xaml.cs">
+      <DependentUpon>ActivationWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="BackupService.cs" />
+    <Compile Include="FacturacionPresupuestosTab.cs">
+      <DependentUpon>FacturacionPresupuestosTab.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="FacturacionRemitosTab.cs">
+      <DependentUpon>FacturacionRemitosTab.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="FacturacionPedidosTab.cs">
+      <DependentUpon>FacturacionPedidosTab.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="FacturacionNotasCreditoDebitoTab.cs">
+      <DependentUpon>FacturacionNotasCreditoDebitoTab.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="InformesControl.xaml.cs">
+      <DependentUpon>InformesControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="CobranzasPendientesControl.xaml.cs">
+      <DependentUpon>CobranzasPendientesControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MovimientosCajaControl.xaml.cs">
+      <DependentUpon>MovimientosCajaControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="CuponesTarjetasControl.xaml.cs">
+      <DependentUpon>CuponesTarjetasControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="CierreCajaControl.xaml.cs">
+      <DependentUpon>CierreCajaControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ConsultaCajaControl.xaml.cs">
+      <DependentUpon>ConsultaCajaControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PlanillaDiariaControl.xaml.cs">
+      <DependentUpon>PlanillaDiariaControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="InicioControl.xaml.cs">
+      <DependentUpon>InicioControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CajaControl.xaml.cs">
       <DependentUpon>CajaControl.xaml</DependentUpon>
     </Compile>
@@ -164,6 +243,7 @@
       <DependentUpon>CuentasCorrientesControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="CustomerScreenService.cs" />
+    <Compile Include="Converters\PathToImageConverter.cs" />
     <Compile Include="CustomMessageBox.cs" />
     <Compile Include="CustomMessageBoxWindow.xaml.cs">
       <DependentUpon>CustomMessageBoxWindow.xaml</DependentUpon>
@@ -211,6 +291,118 @@
     </Compile>
     <Compile Include="VisualTreeHelpers.cs" />
     <Page Include="CajaControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MovimientosCajaControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ConsultaCajaControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CierreCajaControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PlanillaDiariaControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CobranzasPendientesControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CuponesTarjetasControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="InformesControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PrimerUsoWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AyudaAtajosWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ActivationWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="FacturacionPresupuestosTab.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="FacturacionRemitosTab.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="FacturacionPedidosTab.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="FacturacionNotasCreditoDebitoTab.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ProductoModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CobroModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DetalleVentaWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ClienteRapidoModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CompraModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="RecepcionCompraModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="NotaCreditoDebitoModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="GastoRapidoModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PagoProveedorModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="OrdenCompraModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="InicioControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Themes\SharedResources.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Themes\DarkTheme.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Themes\LightTheme.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

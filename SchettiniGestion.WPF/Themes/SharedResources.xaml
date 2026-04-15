@@ -13,8 +13,8 @@
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
     </Style>
 
-    <SolidColorBrush x:Key="PrimaryColor" Color="#2563EB"/>
-    <SolidColorBrush x:Key="PrimaryHover" Color="#1D4ED8"/>
+    <SolidColorBrush x:Key="PrimaryColor" Color="#1E88E5"/>
+    <SolidColorBrush x:Key="PrimaryHover" Color="#1565C0"/>
     <SolidColorBrush x:Key="SuccessColor" Color="#10B981"/>
     <SolidColorBrush x:Key="DangerColor" Color="#EF4444"/>
     <SolidColorBrush x:Key="WarningColor" Color="#F59E0B"/>

@@ -11,6 +11,9 @@ namespace SchettiniGestion.WPF
 
         public static bool IsDark { get; private set; } = true;
 
+        /// <summary>Se dispara cada vez que se aplica un diccionario de tema (toda la app).</summary>
+        public static event EventHandler ThemeChanged;
+
         public static void LoadSavedTheme()
         {
             try
@@ -60,6 +63,7 @@ namespace SchettiniGestion.WPF
                 }
             }
             appDicts.Add(dict);
+            ThemeChanged?.Invoke(null, EventArgs.Empty);
         }
     }
 }

@@ -93,5 +93,13 @@ namespace SchettiniGestion.WPF
         {
             if (_visor != null) { _visor.Close(); _visor = null; }
         }
+
+        /// <summary>Reaplica la configuración de visor (pantalla única vs. cliente en segundo monitor).</summary>
+        public static void RefrescarSegunConfiguracion()
+        {
+            Cerrar();
+            Iniciar();
+            Resetear();
+        }
     }
 }

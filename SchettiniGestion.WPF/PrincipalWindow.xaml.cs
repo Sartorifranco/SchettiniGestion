@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Windows;
 using System.Windows.Controls;
 using SchettiniGestion;
@@ -8,6 +9,7 @@ namespace SchettiniGestion.WPF
     public partial class PrincipalWindow : Window
     {
         private readonly EventHandler _themeChangedHandler;
+        private bool _sincronizandoModoPantalla;
 
         public PrincipalWindow()
         {
@@ -34,6 +36,7 @@ namespace SchettiniGestion.WPF
             ActualizarBotonTema();
             ActualizarHeaderUsuario();
             AplicarPermisosLite();
+            SincronizarModoPantallaDesdeBase();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -58,6 +61,51 @@ namespace SchettiniGestion.WPF
         private static Visibility Vis(bool mostrar)
         {
             return mostrar ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void SincronizarModoPantallaDesdeBase()
+        {
+            if (cmbModoPantalla == null) return;
+            _sincronizandoModoPantalla = true;
+            try
+            {
+                DataRow cfg = DatabaseService.GetConfiguracion();
+                bool dual = cfg != null
+                    && cfg.Table.Columns.Contains("UsaVisorCliente")
+                    && cfg["UsaVisorCliente"] != DBNull.Value
+                    && Convert.ToBoolean(cfg["UsaVisorCliente"]);
+                cmbModoPantalla.SelectedIndex = dual ? 1 : 0;
+            }
+            catch
+            {
+                cmbModoPantalla.SelectedIndex = 0;
+            }
+            finally
+            {
+                _sincronizandoModoPantalla = false;
+            }
+        }
+
+        private void cmbModoPantalla_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_sincronizandoModoPantalla || cmbModoPantalla == null || cmbModoPantalla.SelectedIndex < 0)
+                return;
+
+            bool modoDosPantallas = cmbModoPantalla.SelectedIndex == 1;
+            if (!DatabaseService.ActualizarUsaVisorCliente(modoDosPantallas))
+                return;
+
+            CustomerScreenService.RefrescarSegunConfiguracion();
+
+            if (modoDosPantallas && System.Windows.Forms.Screen.AllScreens.Length < 2)
+            {
+                MessageBox.Show(
+                    "Modo «dos pantallas» activado: el visor para el cliente se abrirá automáticamente cuando haya un segundo monitor conectado.\n\n" +
+                    "Con un solo monitor, el cajero trabaja solo en esta ventana.",
+                    "Pantalla cliente",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
         }
 
         private void AplicarPermisosLite()
@@ -104,6 +152,10 @@ namespace SchettiniGestion.WPF
                 if (btnCaja != null)
                     btnCaja.Visibility = Vis(LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_CAJA));
 
+                bool usuariosPermisos = (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_USUARIOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_USUARIOS))
+                    || (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_PERMISOS));
+                if (btnUsuariosPermisos != null) btnUsuariosPermisos.Visibility = Vis(usuariosPermisos);
+
                 if (btnConfiguracion != null)
                     btnConfiguracion.Visibility = Vis(LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_PERMISOS));
             }
@@ -119,6 +171,7 @@ namespace SchettiniGestion.WPF
             if (btnProductos != null) btnProductos.Visibility = Visibility.Collapsed;
             if (btnClientes != null) btnClientes.Visibility = Visibility.Collapsed;
             if (btnCaja != null) btnCaja.Visibility = Visibility.Collapsed;
+            if (btnUsuariosPermisos != null) btnUsuariosPermisos.Visibility = Visibility.Collapsed;
             if (btnInicio != null) btnInicio.Visibility = Visibility.Visible;
         }
 
@@ -186,6 +239,26 @@ namespace SchettiniGestion.WPF
         {
             if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_CAJA))
                 mainContentArea.Content = new CajaControl();
+        }
+
+        private void btnUsuariosPermisos_Click(object sender, RoutedEventArgs e)
+        {
+            bool puedeUsuarios = LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_USUARIOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_USUARIOS);
+            bool puedePermisos = LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_PERMISOS);
+
+            if (!puedeUsuarios && !puedePermisos)
+            {
+                MessageBox.Show("No tiene permiso para acceder a usuarios ni permisos.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var tabs = new System.Windows.Controls.TabControl { Margin = new Thickness(0) };
+            if (puedeUsuarios)
+                tabs.Items.Add(new System.Windows.Controls.TabItem { Header = "Usuarios", Content = new UsuariosControl() });
+            if (puedePermisos)
+                tabs.Items.Add(new System.Windows.Controls.TabItem { Header = "Permisos", Content = new GestionPermisos() });
+
+            mainContentArea.Content = tabs;
         }
 
         private void btnTeclado_Click(object sender, RoutedEventArgs e)

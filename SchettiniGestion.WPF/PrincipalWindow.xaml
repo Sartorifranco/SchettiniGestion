@@ -6,8 +6,8 @@
         mc:Ignorable="d"
         Title="SchettiniGestion · Versión Lite"
         Icon="Resources/logo.png"
-        MinWidth="960"
-        MinHeight="600"
+        MinWidth="880"
+        MinHeight="560"
         Height="768"
         Width="1280"
         WindowState="Maximized"
@@ -18,7 +18,7 @@
 
     <Window.Resources>
         <Style x:Key="LiteNavButton" TargetType="Button">
-            <Setter Property="MinHeight" Value="52"/>
+            <Setter Property="MinHeight" Value="48"/>
             <Setter Property="Padding" Value="16,12"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
@@ -34,7 +34,6 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="bdr"
                                 Background="{TemplateBinding Background}"
-                                BorderThickness="0,0,0,0"
                                 CornerRadius="10"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter VerticalAlignment="Center"/>
@@ -58,11 +57,11 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280" MinWidth="240"/>
+            <ColumnDefinition Width="280" MinWidth="220" MaxWidth="340"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- A. Sidebar -->
+        <!-- Sidebar -->
         <Border Grid.Column="0"
                 Background="{DynamicResource SurfaceDark}"
                 BorderBrush="{DynamicResource BorderColor}"
@@ -74,33 +73,34 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="0" Margin="20,24,20,16">
+                <StackPanel Grid.Row="0" Margin="16,20,16,12">
                     <Border Background="{DynamicResource PanelBackgroundBrush}"
                             CornerRadius="12"
-                            Padding="12"
+                            Padding="10"
                             BorderBrush="{DynamicResource BorderColor}"
                             BorderThickness="1">
                         <Image Source="Resources/logo.png"
-                               Height="56"
+                               Height="52"
                                Stretch="Uniform"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
                     </Border>
                     <TextBlock Text="Versión Lite"
                                Foreground="{DynamicResource TextSecondary}"
                                FontSize="12"
-                               Margin="0,12,0,0"
+                               Margin="0,10,0,0"
                                HorizontalAlignment="Center"/>
                 </StackPanel>
 
                 <ScrollViewer Grid.Row="1"
                               VerticalScrollBarVisibility="Auto"
-                              Padding="16,0,16,0">
+                              HorizontalScrollBarVisibility="Disabled"
+                              Padding="12,0,12,0">
                     <StackPanel>
                         <TextBlock Text="MENÚ"
                                    Foreground="{DynamicResource TextSecondary}"
                                    FontSize="11"
                                    FontWeight="Bold"
-                                   Margin="4,0,0,12"/>
+                                   Margin="4,0,0,10"/>
                         <Button x:Name="btnInicio"
                                 Content="🏠  Inicio"
                                 Style="{StaticResource LiteNavButton}"
@@ -121,6 +121,10 @@
                                 Content="💵  Caja"
                                 Style="{StaticResource LiteNavButton}"
                                 Click="btnCaja_Click"/>
+                        <Button x:Name="btnUsuariosPermisos"
+                                Content="👤  Usuarios y permisos"
+                                Style="{StaticResource LiteNavButton}"
+                                Click="btnUsuariosPermisos_Click"/>
                         <Button x:Name="btnConfiguracion"
                                 Content="⚙️  Configuración"
                                 Style="{StaticResource LiteNavButton}"
@@ -128,7 +132,7 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <StackPanel Grid.Row="2" Margin="16,12,16,20">
+                <StackPanel Grid.Row="2" Margin="12,10,12,16">
                     <Button x:Name="btnCerrarSesion"
                             Content="🚪  Cerrar sesión"
                             Style="{StaticResource LiteNavButton}"
@@ -140,14 +144,14 @@
                             Click="btnSalirSistema_Click"/>
                     <TextBlock Text="v1.0 · MVP"
                                HorizontalAlignment="Center"
-                               Margin="0,14,0,0"
+                               Margin="0,12,0,0"
                                Foreground="{DynamicResource TextSecondary}"
                                FontSize="11"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- B. Contenido + cabecera -->
+        <!-- Contenido -->
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -158,81 +162,110 @@
                     Background="{DynamicResource SurfaceDark}"
                     BorderBrush="{DynamicResource BorderColor}"
                     BorderThickness="0,0,0,1"
-                    Padding="20,14">
+                    Padding="12,10">
                 <Grid>
-                    <TextBlock VerticalAlignment="Center"
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
                                Foreground="{DynamicResource TextSecondary}"
-                               FontSize="13">
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,8">
                         <Run Text="Panel principal"/>
                         <Run Text=" · " Foreground="{DynamicResource BorderColor}"/>
                         <Run Text="SchettiniGestion" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                     </TextBlock>
 
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center">
-                        <Button x:Name="btnTema"
-                                Click="btnTema_Click"
-                                MinHeight="44"
-                                MinWidth="140"
-                                Margin="0,0,12,0"
-                                Padding="14,10"
-                                Cursor="Hand"
-                                ToolTip="Cambiar tema claro/oscuro (toda la aplicación)"
-                                Background="{DynamicResource HoverBackground}"
-                                BorderBrush="{DynamicResource BorderColor}"
-                                BorderThickness="1">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="10"/>
-                                </Style>
-                            </Button.Resources>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock x:Name="txtIconoTema" Text="&#9728;" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}"/>
-                                <TextBlock x:Name="txtTema" Text="Tema oscuro" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </Button>
+                    <ScrollViewer Grid.Row="1"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Disabled">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Pantalla:"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       FontSize="12"
+                                       Margin="0,0,8,0"/>
+                            <ComboBox x:Name="cmbModoPantalla"
+                                      MinHeight="40"
+                                      MinWidth="220"
+                                      MaxWidth="420"
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,16,0"
+                                      SelectionChanged="cmbModoPantalla_SelectionChanged"
+                                      ToolTip="Pantalla única: solo el monitor del cajero. Dos pantallas: visor del cliente en el segundo monitor (si está conectado).">
+                                <ComboBoxItem Content="Pantalla única (un monitor)" Tag="0"/>
+                                <ComboBoxItem Content="Cajero + pantalla cliente (dos monitores)" Tag="1"/>
+                            </ComboBox>
 
-                        <Button x:Name="btnTeclado"
-                                Click="btnTeclado_Click"
-                                MinHeight="44"
-                                Padding="14,10"
-                                Cursor="Hand"
-                                Background="{DynamicResource HoverBackground}"
-                                BorderBrush="{DynamicResource BorderColor}"
-                                BorderThickness="1"
-                                Foreground="{DynamicResource TextPrimary}">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="10"/>
-                                </Style>
-                            </Button.Resources>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="⌨" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Teclado" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </Button>
+                            <Button x:Name="btnTema"
+                                    Click="btnTema_Click"
+                                    MinHeight="44"
+                                    MinWidth="132"
+                                    Margin="0,0,10,0"
+                                    Padding="12,8"
+                                    Cursor="Hand"
+                                    ToolTip="Cambiar tema claro/oscuro (toda la aplicación)"
+                                    Background="{DynamicResource HoverBackground}"
+                                    BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1">
+                                <Button.Resources>
+                                    <Style TargetType="Border">
+                                        <Setter Property="CornerRadius" Value="10"/>
+                                    </Style>
+                                </Button.Resources>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="txtIconoTema" Text="&#9728;" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}"/>
+                                    <TextBlock x:Name="txtTema" Text="Tema oscuro" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Button>
 
-                        <Ellipse Width="36" Height="36" Fill="{StaticResource PrimaryColor}" Margin="16,0,12,0"/>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock x:Name="txtUsuarioLogueado"
-                                       Text="Usuario"
-                                       Foreground="{DynamicResource TextPrimary}"
-                                       FontWeight="Bold"
-                                       FontSize="14"/>
-                            <TextBlock x:Name="txtRolLogueado"
-                                       Text="En línea"
-                                       Foreground="{StaticResource SuccessColor}"
-                                       FontSize="11"/>
+                            <Button x:Name="btnTeclado"
+                                    Click="btnTeclado_Click"
+                                    MinHeight="44"
+                                    Padding="12,8"
+                                    Margin="0,0,16,0"
+                                    Cursor="Hand"
+                                    Background="{DynamicResource HoverBackground}"
+                                    BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1"
+                                    Foreground="{DynamicResource TextPrimary}">
+                                <Button.Resources>
+                                    <Style TargetType="Border">
+                                        <Setter Property="CornerRadius" Value="10"/>
+                                    </Style>
+                                </Button.Resources>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="⌨" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Teclado" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Ellipse Width="36" Height="36" Fill="{StaticResource PrimaryColor}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock x:Name="txtUsuarioLogueado"
+                                           Text="Usuario"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           FontWeight="Bold"
+                                           FontSize="14"/>
+                                <TextBlock x:Name="txtRolLogueado"
+                                           Text="En línea"
+                                           Foreground="{StaticResource SuccessColor}"
+                                           FontSize="11"/>
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </Border>
 
             <Border Grid.Row="1"
                     Background="{DynamicResource ModuleBackgroundBrush}"
-                    Padding="16">
-                <ContentControl x:Name="mainContentArea"/>
+                    Padding="12,12,16,16">
+                <ContentControl x:Name="mainContentArea"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"/>
             </Border>
         </Grid>
     </Grid>

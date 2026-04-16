@@ -4,48 +4,45 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Iniciar Sesión"
-        MinWidth="420"
-        MinHeight="520"
-        Width="520"
-        Height="620"
-        WindowStartupLocation="CenterScreen"
-        ResizeMode="CanResize"
-        Background="{DynamicResource ModuleBackgroundBrush}">
+        Title="Iniciar Sesión" Height="500" Width="800"
+        WindowStartupLocation="CenterScreen" WindowStyle="None"
+        ResizeMode="NoResize" Background="Transparent"
+        AllowsTransparency="True">
 
     <Window.Resources>
-        <Style x:Key="LiteLabel" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+        <SolidColorBrush x:Key="BackgroundDark" Color="#0F172A"/>
+        <SolidColorBrush x:Key="SurfaceDark" Color="#1E293B"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#334155"/>
+        <SolidColorBrush x:Key="PrimaryColor" Color="#2563EB"/>
+        <SolidColorBrush x:Key="PrimaryHover" Color="#1D4ED8"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#F1F5F9"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#94A3B8"/>
+
+        <Style x:Key="LabelStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
 
-        <Style x:Key="LiteTextBox" TargetType="TextBox">
-            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Style x:Key="ModernTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource SurfaceDark}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="14,12"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="CaretBrush" Value="White"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10"
-                                Padding="{TemplateBinding Padding}">
-                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False"/>
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
                                 <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
-                                <Setter TargetName="border" Property="BorderThickness" Value="2"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -53,31 +50,23 @@
             </Setter>
         </Style>
 
-        <Style x:Key="LitePasswordBox" TargetType="PasswordBox">
-            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Style x:Key="PasswordBoxStyle" TargetType="PasswordBox">
+            <Setter Property="Background" Value="{StaticResource SurfaceDark}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="14,12"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="PasswordBox">
-                        <Border x:Name="border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10"
-                                Padding="{TemplateBinding Padding}">
-                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False"/>
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
                                 <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
-                                <Setter TargetName="border" Property="BorderThickness" Value="2"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -85,26 +74,21 @@
             </Setter>
         </Style>
 
-        <Style x:Key="LitePrimaryButton" TargetType="Button">
+        <Style x:Key="ButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="MinHeight" Value="52"/>
-            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="10" Padding="20,12">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{StaticResource PrimaryHover}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="b" Property="Opacity" Value="0.92"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryHover}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -112,111 +96,49 @@
             </Setter>
         </Style>
 
-        <Style x:Key="LiteGhostButton" TargetType="Button">
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
-            <Setter Property="MinHeight" Value="44"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="8" Padding="8,4">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{DynamicResource HoverBackground}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#334155"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
     </Window.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <Border Background="{StaticResource BackgroundDark}" CornerRadius="15" BorderBrush="{StaticResource BorderColor}" BorderThickness="1">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.2*"/>
+                <ColumnDefinition Width="1.5*"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- Tarjeta central -->
-        <Border Grid.Row="1"
-                MaxWidth="400"
-                Margin="28,0"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Background="{DynamicResource PanelBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderColor}"
-                BorderThickness="1"
-                CornerRadius="16"
-                Padding="36,36,36,28">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="28" ShadowDepth="0" Opacity="0.22" Color="#000000"/>
-            </Border.Effect>
-
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <Button Content="✕"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Top"
-                        Margin="0,-8,-8,0"
-                        Style="{StaticResource LiteGhostButton}"
-                        Width="40"
-                        Height="40"
-                        FontSize="14"
-                        Click="btnSalir_Click"
-                        ToolTip="Salir"/>
-
-                <StackPanel Grid.Row="1">
-                    <TextBlock Text="SchettiniGestion"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               Foreground="{StaticResource PrimaryColor}"
-                               HorizontalAlignment="Center"
-                               Margin="0,0,0,4"/>
-                    <TextBlock Text="Iniciar sesión"
-                               FontSize="24"
-                               FontWeight="Bold"
-                               Foreground="{DynamicResource TextPrimary}"
-                               HorizontalAlignment="Center"
-                               Margin="0,0,0,8"/>
-                    <TextBlock Text="Ingrese sus credenciales para continuar."
-                               FontSize="13"
-                               Foreground="{DynamicResource TextSecondary}"
-                               TextWrapping="Wrap"
-                               TextAlignment="Center"
-                               Margin="0,0,0,28"/>
-
-                    <TextBlock Text="USUARIO" Style="{StaticResource LiteLabel}"/>
-                    <TextBox x:Name="txtUsuario"
-                             Style="{StaticResource LiteTextBox}"
-                             KeyDown="txtUsuario_KeyDown"/>
-
-                    <TextBlock Text="CONTRASEÑA" Style="{StaticResource LiteLabel}" Margin="0,18,0,8"/>
-                    <PasswordBox x:Name="txtPassword"
-                                 Style="{StaticResource LitePasswordBox}"
-                                 KeyDown="txtPassword_KeyDown"/>
-
-                    <Button x:Name="btnIngresar"
-                            Content="Ingresar"
-                            Style="{StaticResource LitePrimaryButton}"
-                            Margin="0,28,0,0"
-                            Click="btnIngresar_Click"/>
-
-                    <Button x:Name="btnSalir"
-                            Content="Salir del sistema"
-                            Style="{StaticResource LiteGhostButton}"
-                            Margin="0,12,0,0"
-                            Click="btnSalir_Click"/>
+            <Border Grid.Column="0" Background="{StaticResource SurfaceDark}" CornerRadius="15,0,0,15">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="SCHETTINI" FontSize="32" FontWeight="Black" Foreground="{StaticResource PrimaryColor}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="GESTIÓN POS" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center"/>
                 </StackPanel>
-            </Grid>
-        </Border>
-    </Grid>
+            </Border>
+
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="40">
+                <TextBlock Text="Bienvenido" FontSize="28" FontWeight="Bold" Foreground="White" Margin="0,0,0,5"/>
+                <TextBlock Text="Ingrese sus credenciales para continuar." FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,30"/>
+
+                <TextBlock Text="USUARIO" Style="{StaticResource LabelStyle}"/>
+                <TextBox x:Name="txtUsuario" Style="{StaticResource ModernTextBox}" Height="45" FontSize="16" Margin="0,0,0,20" KeyDown="txtUsuario_KeyDown"/>
+
+                <TextBlock Text="CONTRASEÑA" Style="{StaticResource LabelStyle}"/>
+                <PasswordBox x:Name="txtPassword" Style="{StaticResource PasswordBoxStyle}" Height="45" FontSize="16" Margin="0,0,0,30" KeyDown="txtPassword_KeyDown"/>
+
+                <Button x:Name="btnIngresar" Content="INGRESAR ➔" Click="btnIngresar_Click" Style="{StaticResource ButtonStyle}" Height="50" FontSize="16" Margin="0,0,0,15"/>
+
+                <Button x:Name="btnSalir" Content="Salir del Sistema" Click="btnSalir_Click" Style="{StaticResource SecondaryButtonStyle}" Height="40"/>
+            </StackPanel>
+
+            <Button Content="✕" Click="btnSalir_Click" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="15"
+                    Style="{StaticResource SecondaryButtonStyle}" Width="30" Height="30"/>
+        </Grid>
+    </Border>
 </Window>

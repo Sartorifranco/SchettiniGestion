@@ -1,0 +1,226 @@
+<Window x:Class="SchettiniGestion.WPF.DetalleVentaWindow"
+
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+
+        Title="Detalle de Comprobante" Width="700" Height="560"
+
+        WindowStartupLocation="CenterOwner"
+
+        ResizeMode="CanResize"
+
+        Background="{DynamicResource ModuleBackgroundBrush}">
+
+
+
+    <Window.Resources>
+
+        <Style x:Key="LabelKey" TargetType="TextBlock">
+
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+
+            <Setter Property="FontSize" Value="11"/>
+
+        </Style>
+
+        <Style x:Key="LabelValue" TargetType="TextBlock">
+
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+
+            <Setter Property="FontSize" Value="13"/>
+
+            <Setter Property="FontWeight" Value="SemiBold"/>
+
+        </Style>
+
+    </Window.Resources>
+
+
+
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+
+            <RowDefinition Height="Auto"/>
+
+            <RowDefinition Height="Auto"/>
+
+            <RowDefinition Height="*"/>
+
+            <RowDefinition Height="Auto"/>
+
+            <RowDefinition Height="Auto"/>
+
+        </Grid.RowDefinitions>
+
+
+
+        <TextBlock x:Name="lblTitulo" Grid.Row="0" FontSize="18" FontWeight="Bold"
+
+                   Foreground="{StaticResource PrimaryColor}" Margin="0,0,0,16" Text="Detalle de Comprobante"/>
+
+
+
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="16,12" Margin="0,0,0,14"
+
+                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+
+                    <ColumnDefinition Width="*"/>
+
+                    <ColumnDefinition Width="*"/>
+
+                    <ColumnDefinition Width="*"/>
+
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+
+                    <TextBlock Text="CLIENTE" Style="{StaticResource LabelKey}"/>
+
+                    <TextBlock x:Name="lblCliente" Style="{StaticResource LabelValue}"/>
+
+                    <TextBlock Text="TIPO" Style="{StaticResource LabelKey}" Margin="0,8,0,0"/>
+
+                    <TextBlock x:Name="lblTipo" Style="{StaticResource LabelValue}"/>
+
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+
+                    <TextBlock Text="FECHA" Style="{StaticResource LabelKey}"/>
+
+                    <TextBlock x:Name="lblFecha" Style="{StaticResource LabelValue}"/>
+
+                    <TextBlock Text="N° COMPROBANTE" Style="{StaticResource LabelKey}" Margin="0,8,0,0"/>
+
+                    <TextBlock x:Name="lblNumero" Style="{StaticResource LabelValue}"/>
+
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+
+                    <TextBlock Text="TOTAL" Style="{StaticResource LabelKey}"/>
+
+                    <TextBlock x:Name="lblTotal" FontSize="22" FontWeight="Bold" Foreground="{StaticResource SuccessColor}"/>
+
+                    <TextBlock Text="ESTADO" Style="{StaticResource LabelKey}" Margin="0,8,0,0"/>
+
+                    <TextBlock x:Name="lblEstado" Style="{StaticResource LabelValue}"/>
+
+                </StackPanel>
+
+            </Grid>
+
+        </Border>
+
+
+
+        <DataGrid x:Name="dgvDetalle" Grid.Row="2"
+
+                  Style="{StaticResource ModuleDataGridStyle}"
+
+                  AutoGenerateColumns="False"
+
+                  CanUserAddRows="False"
+
+                  IsReadOnly="True"
+
+                  FontSize="13"
+
+                  Margin="0,0,0,14">
+
+            <DataGrid.Columns>
+
+                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="90"/>
+
+                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
+
+                <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad}" Width="80">
+
+                    <DataGridTextColumn.ElementStyle>
+
+                        <Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style>
+
+                    </DataGridTextColumn.ElementStyle>
+
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="P. Unit." Binding="{Binding PrecioUnitarioFmt}" Width="100">
+
+                    <DataGridTextColumn.ElementStyle>
+
+                        <Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Right"/><Setter Property="Padding" Value="0,0,8,0"/></Style>
+
+                    </DataGridTextColumn.ElementStyle>
+
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Subtotal" Binding="{Binding SubtotalFmt}" Width="110">
+
+                    <DataGridTextColumn.ElementStyle>
+
+                        <Style TargetType="TextBlock">
+
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+
+                            <Setter Property="Padding" Value="0,0,8,0"/>
+
+                            <Setter Property="Foreground" Value="{StaticResource SuccessColor}"/>
+
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+
+                        </Style>
+
+                    </DataGridTextColumn.ElementStyle>
+
+                </DataGridTextColumn>
+
+            </DataGrid.Columns>
+
+        </DataGrid>
+
+
+
+        <Border x:Name="pnlCae" Grid.Row="3" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="6" Padding="12,8"
+
+                Margin="0,0,0,14" Visibility="Collapsed"
+
+                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+
+            <StackPanel Orientation="Horizontal">
+
+                <TextBlock Text="CAE: " Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
+
+                <TextBlock x:Name="lblCae" Foreground="{DynamicResource TextPrimary}" FontSize="12" Margin="4,0,16,0"/>
+
+                <TextBlock Text="Venc: " Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
+
+                <TextBlock x:Name="lblVtoCae" Foreground="{DynamicResource TextPrimary}" FontSize="12" Margin="4,0,0,0"/>
+
+            </StackPanel>
+
+        </Border>
+
+
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+
+            <Button x:Name="btnImprimir" Content="🖨 Imprimir" Style="{StaticResource ButtonStyle}"
+
+                    Margin="0,0,8,0" Click="btnImprimir_Click"/>
+
+            <Button Content="Cerrar" Style="{StaticResource SecondaryButtonStyle}"
+
+                    Click="btnCerrar_Click"/>
+
+        </StackPanel>
+
+    </Grid>
+
+</Window>
+

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace SchettiniGestion
@@ -18,6 +18,8 @@ namespace SchettiniGestion
         /// </summary>
         public static int RolID { get; private set; }
 
+        public static string NombreRol { get; private set; }
+
         /// <summary>
         /// La lista de permisos (ej: "ACCESO_USUARIOS", "ACCESO_FACTURACION").
         /// </summary>
@@ -30,6 +32,7 @@ namespace SchettiniGestion
         {
             NombreUsuario = nombreUsuario;
             RolID = rolId;
+            NombreRol = rolId == 1 ? "Administrador" : $"Rol {rolId}";
             // Usamos un HashSet para búsquedas de permisos ultra-rápidas
             Permisos = new HashSet<string>(permisos);
         }

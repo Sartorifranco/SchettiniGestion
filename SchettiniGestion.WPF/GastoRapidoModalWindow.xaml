@@ -1,0 +1,100 @@
+<Window x:Class="SchettiniGestion.WPF.GastoRapidoModalWindow"
+
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+
+        Title="Gasto Rápido" Width="440" Height="360"
+
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+
+        Background="{DynamicResource ModuleBackgroundBrush}">
+
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+
+            <RowDefinition Height="Auto"/>
+
+            <RowDefinition Height="*"/>
+
+            <RowDefinition Height="Auto"/>
+
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" x:Name="lblTitulo" Text="Nuevo Gasto Rápido" FontSize="16" FontWeight="Bold"
+
+                   Foreground="{StaticResource PrimaryColor}" Margin="0,0,0,16"/>
+
+        <StackPanel Grid.Row="1">
+
+            <TextBlock Text="Concepto *" Style="{StaticResource ModalCaptionTextStyle}"/>
+
+            <TextBox x:Name="txtConcepto" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,10"/>
+
+            <Grid>
+
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+
+                <StackPanel>
+
+                    <TextBlock Text="Categoría" Style="{StaticResource ModalCaptionTextStyle}"/>
+
+                    <ComboBox x:Name="cmbCategoria" Style="{StaticResource ModuleComboBoxStyle}" Margin="0,0,0,10">
+
+                        <ComboBoxItem Content="Servicios" IsSelected="True"/>
+
+                        <ComboBoxItem Content="Mantenimiento"/>
+
+                        <ComboBoxItem Content="Limpieza"/>
+
+                        <ComboBoxItem Content="Transporte"/>
+
+                        <ComboBoxItem Content="Alquiler"/>
+
+                        <ComboBoxItem Content="Impuestos"/>
+
+                        <ComboBoxItem Content="Otros"/>
+
+                    </ComboBox>
+
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+
+                    <TextBlock Text="Monto *" Style="{StaticResource ModalCaptionTextStyle}"/>
+
+                    <TextBox x:Name="txtMonto" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,10" Text="0"/>
+
+                </StackPanel>
+
+            </Grid>
+
+            <TextBlock Text="Medio de Pago" Style="{StaticResource ModalCaptionTextStyle}"/>
+
+            <ComboBox x:Name="cmbMedioPago" Style="{StaticResource ModuleComboBoxStyle}" Margin="0,0,0,10">
+
+                <ComboBoxItem Content="Efectivo" IsSelected="True"/>
+
+                <ComboBoxItem Content="Tarjeta Débito"/>
+
+                <ComboBoxItem Content="Tarjeta Crédito"/>
+
+                <ComboBoxItem Content="Transferencia"/>
+
+            </ComboBox>
+
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+
+            <Button Content="Cancelar" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="btnCancelar_Click"/>
+
+            <Button Content="✔ Guardar" Style="{StaticResource ButtonStyle}" Click="btnGuardar_Click"/>
+
+        </StackPanel>
+
+    </Grid>
+
+</Window>
+

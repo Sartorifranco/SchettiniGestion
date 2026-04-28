@@ -1,73 +1,134 @@
 ﻿<Window x:Class="SchettiniGestion.WPF.CustomMessageBoxWindow"
+
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+
         Title="Mensaje" Height="250" Width="500"
+
         WindowStartupLocation="CenterScreen"
+
         WindowStyle="None"
+
         ResizeMode="NoResize"
+
         AllowsTransparency="True"
+
         Background="Transparent">
 
-    <Border Background="#2E333A" 
-            BorderBrush="#444" 
-            BorderThickness="1" 
+
+
+    <Window.Resources>
+
+        <Style x:Key="MsgYesStyle" TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
+
+            <Setter Property="Background" Value="{StaticResource SuccessColor}"/>
+
+            <Style.Triggers>
+
+                <Trigger Property="IsMouseOver" Value="True">
+
+                    <Setter Property="Background" Value="#059669"/>
+
+                </Trigger>
+
+            </Style.Triggers>
+
+        </Style>
+
+        <Style x:Key="MsgNoStyle" TargetType="Button" BasedOn="{StaticResource DeleteButtonStyle}"/>
+
+        <Style x:Key="MsgOkStyle" TargetType="Button" BasedOn="{StaticResource ButtonStyle}"/>
+
+    </Window.Resources>
+
+
+
+    <Border Background="{DynamicResource PanelBackgroundBrush}"
+
+            BorderBrush="{DynamicResource BorderColor}"
+
+            BorderThickness="1"
+
             CornerRadius="10">
 
+
+
         <Grid Margin="20">
+
             <Grid.RowDefinitions>
+
                 <RowDefinition Height="Auto"/>
+
                 <RowDefinition Height="*"/>
+
                 <RowDefinition Height="Auto"/>
+
             </Grid.RowDefinitions>
 
-            <TextBlock x:Name="lblTitulo" Text="Título" 
-                       FontSize="22" FontWeight="Bold" 
-                       Foreground="White" Margin="0,0,0,15"/>
 
-            <TextBlock x:Name="lblMensaje" Grid.Row="1" 
-                       Text="Mensaje de confirmación..." 
-                       FontSize="18" Foreground="#DDD" 
-                       TextWrapping="Wrap" 
-                       VerticalAlignment="Center" 
-                       HorizontalAlignment="Center" 
+
+            <TextBlock x:Name="lblTitulo" Text="Título"
+
+                       FontSize="22" FontWeight="Bold"
+
+                       Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,15"/>
+
+
+
+            <TextBlock x:Name="lblMensaje" Grid.Row="1"
+
+                       Text="Mensaje de confirmación..."
+
+                       FontSize="18" Foreground="{DynamicResource TextSecondary}"
+
+                       TextWrapping="Wrap"
+
+                       VerticalAlignment="Center"
+
+                       HorizontalAlignment="Center"
+
                        TextAlignment="Center"/>
+
+
 
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
 
+
+
                 <Button x:Name="btnYes" Content="Sí" Click="btnYes_Click"
+
                         Width="150" Height="50" FontSize="18" FontWeight="Bold"
-                        Background="#00A86B" Foreground="White"
-                        BorderThickness="0" Margin="10,0">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="5"/>
-                        </Style>
-                    </Button.Resources>
-                </Button>
+
+                        Style="{StaticResource MsgYesStyle}"
+
+                        BorderThickness="0" Margin="10,0"/>
+
+
 
                 <Button x:Name="btnNo" Content="No" Click="btnNo_Click"
+
                         Width="150" Height="50" FontSize="18" FontWeight="Bold"
-                        Background="#B90202" Foreground="White"
-                        BorderThickness="0" Margin="10,0">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="5"/>
-                        </Style>
-                    </Button.Resources>
-                </Button>
+
+                        Style="{StaticResource MsgNoStyle}"
+
+                        BorderThickness="0" Margin="10,0"/>
+
+
 
                 <Button x:Name="btnOk" Content="Aceptar" Click="btnOk_Click"
+
                         Width="150" Height="50" FontSize="18" FontWeight="Bold"
-                        Background="#007ACC" Foreground="White"
-                        BorderThickness="0" Margin="10,0" Visibility="Collapsed">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="5"/>
-                        </Style>
-                    </Button.Resources>
-                </Button>
+
+                        Style="{StaticResource MsgOkStyle}"
+
+                        BorderThickness="0" Margin="10,0" Visibility="Collapsed"/>
 
             </StackPanel>
+
         </Grid>
+
     </Border>
+
 </Window>
+

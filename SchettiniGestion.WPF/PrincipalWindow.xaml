@@ -5,7 +5,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="SchettiniGestion · Versión Lite"
-        Icon="Resources/logo.png"
         MinWidth="880"
         MinHeight="560"
         Height="768"
@@ -79,7 +78,7 @@
                             Padding="10"
                             BorderBrush="{DynamicResource BorderColor}"
                             BorderThickness="1">
-                        <Image Source="Resources/logo.png"
+                        <Image x:Name="imgLogoSidebar"
                                Height="52"
                                Stretch="Uniform"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
@@ -195,7 +194,7 @@
                                       VerticalAlignment="Center"
                                       Margin="0,0,16,0"
                                       SelectionChanged="cmbModoPantalla_SelectionChanged"
-                                      ToolTip="Pantalla única: solo el monitor del cajero. Dos pantallas: visor del cliente en el segundo monitor (si está conectado).">
+                                      ToolTip="Pantalla única: solo el monitor del cajero (recomendado en una sola PC). Dos pantallas: visor del cliente en el segundo monitor si está conectado. Las promociones (carpeta de imágenes/videos) se configuran en Configuración › Negocio.">
                                 <ComboBoxItem Content="Pantalla única (un monitor)" Tag="0"/>
                                 <ComboBoxItem Content="Cajero + pantalla cliente (dos monitores)" Tag="1"/>
                             </ComboBox>

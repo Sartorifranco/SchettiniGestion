@@ -1,0 +1,67 @@
+<UserControl x:Class="SchettiniGestion.WPF.CierreCajaControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource BackgroundDark}"
+             Loaded="Control_Loaded">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="Cierre de Caja" FontSize="22" FontWeight="Bold"
+                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,15"/>
+
+        <!-- Resumen del turno -->
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="20,16" Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="SALDO APERTURA" Foreground="{DynamicResource TextSecondary}" FontSize="11"/>
+                    <TextBlock x:Name="lblSaldoApertura" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                    <TextBlock Text="INGRESOS" Foreground="{DynamicResource TextSecondary}" FontSize="11"/>
+                    <TextBlock x:Name="lblIngresos" FontSize="20" FontWeight="Bold" Foreground="{StaticResource SuccessColor}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                    <TextBlock Text="EGRESOS" Foreground="{DynamicResource TextSecondary}" FontSize="11"/>
+                    <TextBlock x:Name="lblEgresos" FontSize="20" FontWeight="Bold" Foreground="{StaticResource DangerColor}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="3" HorizontalAlignment="Right">
+                    <TextBlock Text="SALDO CIERRE" Foreground="{DynamicResource TextSecondary}" FontSize="11"/>
+                    <TextBlock x:Name="lblSaldoCierre" FontSize="22" FontWeight="Bold" Foreground="{StaticResource SuccessColor}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Detalle por medio de pago y movimientos -->
+        <DataGrid Grid.Row="2" x:Name="dgvMovimientos"
+                  Style="{StaticResource {x:Type DataGrid}}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  HeadersVisibility="Column" CanUserAddRows="False" Margin="0,0,0,14">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Hora" Binding="{Binding Fecha, StringFormat=HH:mm}" Width="70"/>
+                <DataGridTextColumn Header="Concepto" Binding="{Binding Concepto}" Width="*"/>
+                <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="90"/>
+                <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat=C2}" Width="120"/>
+                <DataGridTextColumn Header="Usuario" Binding="{Binding Usuario}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="3">
+            <TextBlock Text="Observaciones del cierre:" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,4"/>
+            <TextBox x:Name="txtObservaciones" Height="60" Background="{DynamicResource SurfaceDark}"
+                     Foreground="{DynamicResource TextPrimary}" BorderBrush="{DynamicResource BorderColor}"
+                     Padding="8" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,12"/>
+            <Button Content="🔒 Realizar Cierre de Caja" Style="{StaticResource ButtonStyle}"
+                    HorizontalAlignment="Right" Padding="16,10" FontSize="14" Click="btnCerrarCaja_Click"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -7,7 +7,7 @@
              d:DesignHeight="700" d:DesignWidth="1200"
              Background="{StaticResource BackgroundDark}">
 
-    <Grid Margin="15">
+    <Grid Margin="20">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="4*" MinWidth="300" MaxWidth="450"/>
             <ColumnDefinition Width="15"/>

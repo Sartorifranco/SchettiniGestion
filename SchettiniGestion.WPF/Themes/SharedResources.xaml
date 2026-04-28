@@ -27,6 +27,13 @@
     </Style>
     <Style TargetType="TextBlock" x:Key="ModuleLabelStyle" BasedOn="{StaticResource LabelStyle}"/>
 
+    <!-- Etiquetas de campo en ventanas modales (secundario del tema) -->
+    <Style x:Key="ModalCaptionTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Margin" Value="0,0,0,3"/>
+    </Style>
+
     <Style TargetType="Button" x:Key="ButtonStyle">
         <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
         <Setter Property="Foreground" Value="White"/>
@@ -76,6 +83,15 @@
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="#DC2626"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="Button" x:Key="SuccessButtonStyle" BasedOn="{StaticResource ButtonStyle}">
+        <Setter Property="Background" Value="{StaticResource SuccessColor}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#059669"/>
             </Trigger>
         </Style.Triggers>
     </Style>

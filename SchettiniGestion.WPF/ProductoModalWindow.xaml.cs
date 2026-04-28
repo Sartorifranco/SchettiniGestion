@@ -405,7 +405,7 @@ namespace SchettiniGestion.WPF
             if (ivaStr.Contains("%")) ivaStr = ivaStr.Split('%')[0].Trim();
 
             string tipoMoneda = (cmbTipoMoneda.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Pesos";
-            int stock = chkEsStockeable?.IsChecked == true ? (numStockDisponible?.Value ?? 0) : (_productoId != 0 ? _stockActual : 0);
+            int stock = chkEsStockeable?.IsChecked == true ? (int)(numStockDisponible?.Value ?? 0) : (_productoId != 0 ? _stockActual : 0);
 
             int productoId = DatabaseService.GuardarProducto(
                 _productoId,
@@ -526,6 +526,20 @@ namespace SchettiniGestion.WPF
                 }
                 else
                     System.Windows.MessageBox.Show("No se pudo eliminar.", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        private void btnCambiarImagen_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Imágenes|*.jpg;*.jpeg;*.png;*.bmp;*.gif",
+                Title = "Seleccionar imagen del producto"
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                _rutaImagen = dlg.FileName;
+                CargarImagen(_rutaImagen);
             }
         }
 

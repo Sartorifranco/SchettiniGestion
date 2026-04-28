@@ -18,6 +18,18 @@ namespace SchettiniGestion.WPF
 
             InitializeComponent();
 
+            try
+            {
+                var logo = SvgLogoHelper.LoadEmbeddedLogo();
+                if (logo != null)
+                {
+                    Icon = logo;
+                    if (imgLogoSidebar != null)
+                        imgLogoSidebar.Source = logo;
+                }
+            }
+            catch { /* icono / logo opcional */ }
+
             Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
             Application.Current.MainWindow = this;
 

@@ -1,0 +1,296 @@
+<Window x:Class="SchettiniGestion.WPF.AyudaAtajosWindow"
+
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+
+        Title="Atajos de Teclado"
+
+        Width="620" Height="500"
+
+        WindowStartupLocation="CenterOwner"
+
+        ResizeMode="NoResize"
+
+        Background="{DynamicResource ModuleBackgroundBrush}">
+
+    <Window.Resources>
+
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+
+            <Setter Property="FontSize" Value="13"/>
+
+            <Setter Property="FontWeight" Value="Bold"/>
+
+            <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
+
+            <Setter Property="Margin" Value="0,12,0,4"/>
+
+        </Style>
+
+        <Style x:Key="AtajoKey" TargetType="Border">
+
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+
+            <Setter Property="BorderThickness" Value="1"/>
+
+            <Setter Property="CornerRadius" Value="4"/>
+
+            <Setter Property="Padding" Value="6,2"/>
+
+            <Setter Property="Margin" Value="0,0,8,0"/>
+
+            <Setter Property="MinWidth" Value="60"/>
+
+        </Style>
+
+        <Style x:Key="AtajoDesc" TargetType="TextBlock">
+
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+
+            <Setter Property="FontSize" Value="12"/>
+
+            <Setter Property="VerticalAlignment" Value="Center"/>
+
+        </Style>
+
+    </Window.Resources>
+
+    <Grid>
+
+        <Grid.RowDefinitions>
+
+            <RowDefinition Height="Auto"/>
+
+            <RowDefinition Height="*"/>
+
+            <RowDefinition Height="Auto"/>
+
+        </Grid.RowDefinitions>
+
+
+
+        <Border Grid.Row="0" Background="{DynamicResource PanelBackgroundBrush}" Padding="20,14"
+
+                BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,0,0,1">
+
+            <StackPanel Orientation="Horizontal">
+
+                <TextBlock Text="⌨" FontSize="22" Foreground="{StaticResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                <StackPanel>
+
+                    <TextBlock Text="Atajos de Teclado" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+
+                    <TextBlock Text="Referencia rápida — Módulo de Facturación" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
+
+                </StackPanel>
+
+            </StackPanel>
+
+        </Border>
+
+
+
+        <ScrollViewer Grid.Row="1" Padding="20,6" VerticalScrollBarVisibility="Auto">
+
+            <StackPanel>
+
+                <TextBlock Style="{StaticResource SectionHeader}" Text="Navegación General"/>
+
+
+
+                <ItemsControl>
+
+                    <ItemsControl.Items>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,3">
+
+                            <Border Style="{StaticResource AtajoKey}">
+
+                                <TextBlock Text="F1" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="12" TextAlignment="Center"/>
+
+                            </Border>
+
+                            <TextBlock Text="Mostrar esta ayuda" Style="{StaticResource AtajoDesc}"/>
+
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,3">
+
+                            <Border Style="{StaticResource AtajoKey}">
+
+                                <TextBlock Text="Escape" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="12" TextAlignment="Center"/>
+
+                            </Border>
+
+                            <TextBlock Text="Cerrar popup de sugerencias" Style="{StaticResource AtajoDesc}"/>
+
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,3">
+
+                            <Border Style="{StaticResource AtajoKey}">
+
+                                <TextBlock Text="↓" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="14" TextAlignment="Center"/>
+
+                            </Border>
+
+                            <TextBlock Text="Navegar sugerencias (Cliente / Producto)" Style="{StaticResource AtajoDesc}"/>
+
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,3">
+
+                            <Border Style="{StaticResource AtajoKey}">
+
+                                <TextBlock Text="Enter" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="12" TextAlignment="Center"/>
+
+                            </Border>
+
+                            <TextBlock Text="En listas de sugerencias: confirma la fila seleccionada." Style="{StaticResource AtajoDesc}"/>
+
+                        </StackPanel>
+
+                    </ItemsControl.Items>
+
+                </ItemsControl>
+
+
+
+                <TextBlock Style="{StaticResource SectionHeader}" Text="Campo Producto"/>
+
+                <ItemsControl>
+
+                    <ItemsControl.Items>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,3">
+
+                            <Border Style="{StaticResource AtajoKey}">
+
+                                <TextBlock Text="Enter" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="12" TextAlignment="Center"/>
+
+                            </Border>
+
+                            <TextBlock Text="Con foco en el buscador: si el texto coincide exactamente con código o código de barras, o hay una sola sugerencia, agrega al carrito; si hay varias, pasa al listado; si no hay coincidencias, abre producto varios." Style="{StaticResource AtajoDesc}" TextWrapping="Wrap" MaxWidth="480"/>
+
+                        </StackPanel>
+
+                    </ItemsControl.Items>
+
+                </ItemsControl>
+
+
+
+                <TextBlock Style="{StaticResource SectionHeader}" Text="Comprobante"/>
+
+                <ItemsControl>
+
+                    <ItemsControl.Items>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,3">
+
+                            <Border Style="{StaticResource AtajoKey}">
+
+                                <TextBlock Text="Ctrl+G" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="12" TextAlignment="Center"/>
+
+                            </Border>
+
+                            <TextBlock Text="Guardar / Emitir comprobante" Style="{StaticResource AtajoDesc}"/>
+
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,3">
+
+                            <Border Style="{StaticResource AtajoKey}">
+
+                                <TextBlock Text="Ctrl+L" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="12" TextAlignment="Center"/>
+
+                            </Border>
+
+                            <TextBlock Text="Limpiar / Nuevo comprobante" Style="{StaticResource AtajoDesc}"/>
+
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,3">
+
+                            <Border Style="{StaticResource AtajoKey}">
+
+                                <TextBlock Text="Ctrl+P" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="12" TextAlignment="Center"/>
+
+                            </Border>
+
+                            <TextBlock Text="Imprimir último comprobante" Style="{StaticResource AtajoDesc}"/>
+
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,3">
+
+                            <Border Style="{StaticResource AtajoKey}">
+
+                                <TextBlock Text="Supr" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="12" TextAlignment="Center"/>
+
+                            </Border>
+
+                            <TextBlock Text="Eliminar ítem seleccionado del detalle" Style="{StaticResource AtajoDesc}"/>
+
+                        </StackPanel>
+
+                    </ItemsControl.Items>
+
+                </ItemsControl>
+
+
+
+                <TextBlock Style="{StaticResource SectionHeader}" Text="Consejos"/>
+
+                <Border Background="{DynamicResource SurfaceDark}" CornerRadius="6" Padding="14,10" Margin="0,4,0,0"
+
+                        BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+
+                    <StackPanel>
+
+                        <TextBlock Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap"
+
+                                   Text="• Escribir en el campo Cliente busca por nombre o CUIT en tiempo real."/>
+
+                        <TextBlock Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+
+                                   Text="• En Producto se busca por descripción, código interno o código de barras; un lector en modo teclado puede escribir y enviar Enter para agregar si hay coincidencia exacta o única."/>
+
+                        <TextBlock Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+
+                                   Text="• El campo Cantidad acepta el separador decimal coma (,) o punto (.)."/>
+
+                        <TextBlock Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+
+                                   Text="• Doble clic en un ítem del detalle lo selecciona para editar la cantidad."/>
+
+                    </StackPanel>
+
+                </Border>
+
+            </StackPanel>
+
+        </ScrollViewer>
+
+
+
+        <Border Grid.Row="2" Background="{DynamicResource PanelBackgroundBrush}" Padding="20,10"
+
+                BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,1,0,0">
+
+            <Button Content="Cerrar" Width="100" HorizontalAlignment="Right"
+
+                    Style="{StaticResource ButtonStyle}" Padding="0,8"
+
+                    Click="btnCerrar_Click"/>
+
+        </Border>
+
+    </Grid>
+
+</Window>
+

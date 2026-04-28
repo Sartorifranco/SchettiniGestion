@@ -7,7 +7,7 @@
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="1000"
-             Background="{StaticResource ModuleBackgroundBrush}"
+             Background="{DynamicResource ModuleBackgroundBrush}"
              Loaded="UserControl_Loaded">
 
     <Grid Margin="20">
@@ -17,9 +17,9 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Configuración de Listas de Precios" FontSize="24" FontWeight="Bold" Foreground="{StaticResource HeaderForegroundBrush}" Margin="0,0,0,20"/>
+        <TextBlock Grid.Row="0" Text="Configuración de Listas de Precios" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource HeaderForegroundBrush}" Margin="0,0,0,20"/>
 
-        <Border Grid.Row="1" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" Margin="0,0,0,20">
+        <Border Grid.Row="1" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" Margin="0,0,0,20">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="2*"/>
@@ -41,7 +41,7 @@
 
                 <StackPanel Grid.Column="2" VerticalAlignment="Bottom" Orientation="Horizontal">
                     <Button x:Name="btnNuevo" Content="Nuevo" Style="{StaticResource ActionButtonStyle}" Width="90" Click="btnNuevo_Click" Margin="0,0,10,0"/>
-                    <Button x:Name="btnGuardar" Content="Guardar" Style="{StaticResource ActionButtonStyle}" Width="90" Background="#00A86B" Click="btnGuardar_Click"/>
+                    <Button x:Name="btnGuardar" Content="Guardar" Style="{StaticResource SuccessButtonStyle}" Width="90" Click="btnGuardar_Click"/>
                 </StackPanel>
             </Grid>
         </Border>

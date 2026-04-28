@@ -227,7 +227,7 @@
 
         <!-- Contenido responsivo -->
         <Border Grid.Row="1"
-                Margin="16"
+                Margin="20"
                 Background="Transparent">
             <Border CornerRadius="12" ClipToBounds="True">
                 <Border.Effect>
@@ -337,7 +337,7 @@
                                         Width="140" Height="140"
                                         CornerRadius="70"
                                         ClipToBounds="True">
-                                    <Image Source="Resources/logo.png"
+                                    <Image x:Name="imgMarcaLogin"
                                            Stretch="UniformToFill"
                                            RenderOptions.BitmapScalingMode="HighQuality"/>
                                 </Border>

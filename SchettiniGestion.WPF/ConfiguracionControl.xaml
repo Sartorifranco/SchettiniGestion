@@ -36,7 +36,7 @@
 
             <TabItem Header="🏢 Negocio y AFIP">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="10">
+                    <StackPanel Margin="0">
                         <TextBlock Text="Datos de la Empresa" FontSize="18" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10" FontWeight="Bold"/>
 
                         <Grid>
@@ -94,6 +94,8 @@
                                 <TextBlock Text="Tipo de cambio USD (para precios en dólares):" Style="{StaticResource ModuleLabelStyle}"/>
                                 <TextBox x:Name="txtTipoCambioUSD" Style="{StaticResource ModuleTextBoxStyle}"/>
                                 <TextBlock Text="Ej: 1050 para $1050 por 1 USD" Foreground="{DynamicResource TextSecondary}" FontSize="10" Margin="0,-5,0,0"/>
+
+                                <CheckBox x:Name="chkAfipProduccion" Content="Ambiente AFIP: producción (no homologación)" Margin="0,12,0,0"/>
                             </StackPanel>
                         </Grid>
 
@@ -155,6 +157,24 @@
                             </StackPanel>
                         </Grid>
 
+                        <Separator Background="{DynamicResource BorderColor}" Margin="0,24,0,16"/>
+                        <TextBlock Text="Pantalla cliente (segundo monitor)" FontSize="18" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6" FontWeight="Bold"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"
+                                   Text="Si usa dos monitores y activó el modo en la barra principal, aquí puede indicar una carpeta con archivos para rotar en la pantalla del cliente mientras no hay venta en curso. Deje la carpeta vacía para mostrar solo el logo. Formatos: JPG, PNG, BMP, GIF animado y videos cortos (MP4, WMV, AVI)."/>
+
+                        <TextBlock Text="Carpeta de promociones (opcional):" Style="{StaticResource ModuleLabelStyle}"/>
+                        <DockPanel Margin="0,0,0,10">
+                            <Button x:Name="btnBuscarCarpetaPromo" DockPanel.Dock="Right" Content="📁" Width="44" Margin="8,0,0,0"
+                                    Click="btnBuscarCarpetaPromo_Click" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Elegir carpeta"/>
+                            <TextBox x:Name="txtVisorPromoCarpeta" Style="{StaticResource ModuleTextBoxStyle}" ToolTip="Ruta completa a la carpeta"/>
+                        </DockPanel>
+
+                        <TextBlock Text="Segundos entre cambios (imágenes estáticas, 3–120):" Style="{StaticResource ModuleLabelStyle}"/>
+                        <TextBox x:Name="txtVisorPromoIntervalo" Style="{StaticResource ModuleTextBoxStyle}" Width="100" HorizontalAlignment="Left" Text="8" Margin="0,0,0,12"/>
+
+                        <Button x:Name="btnGuardarPromoVisor" Content="💾 Guardar promociones del visor" Click="btnGuardarPromoVisor_Click"
+                                Style="{StaticResource SecondaryButtonStyle}" Padding="16,10" HorizontalAlignment="Left" Margin="0,0,0,8"/>
+
                         <Button x:Name="btnGuardar" Content="💾 GUARDAR DATOS DEL NEGOCIO" 
                                 Click="btnGuardar_Click"
                                 Background="#00A86B" Foreground="White" FontWeight="Bold" Height="50" Margin="0,30,0,0">
@@ -169,7 +189,7 @@
             </TabItem>
 
             <TabItem Header="📡 Red y Servidor">
-                <Grid Margin="10">
+                <Grid Margin="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
@@ -233,7 +253,7 @@
             </TabItem>
 
             <TabItem Header="🔑 Licencia">
-                <Grid Margin="10">
+                <Grid Margin="0">
                     <StackPanel MaxWidth="600" HorizontalAlignment="Left">
                         <TextBlock Text="ACTIVACIÓN DE PRODUCTO" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,20"/>
 
@@ -260,7 +280,7 @@
             </TabItem>
 
             <TabItem Header="🧰 Mantenimiento">
-                <Grid Margin="20">
+                <Grid Margin="0">
                     <StackPanel MaxWidth="600" HorizontalAlignment="Left">
                         <TextBlock Text="SEGURIDAD DE DATOS" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,20"/>
 
@@ -285,7 +305,7 @@
             </TabItem>
 
             <TabItem Header="💳 Medios de Pago">
-                <Grid Margin="20">
+                <Grid Margin="0">
                     <StackPanel>
                         <TextBlock Text="MEDIOS DE PAGO" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,15"/>
                         <TextBlock Text="Configure los medios de pago disponibles para cobros." Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10"/>

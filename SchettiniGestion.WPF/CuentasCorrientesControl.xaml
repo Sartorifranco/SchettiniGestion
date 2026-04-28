@@ -7,7 +7,7 @@
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1200"
-             Background="{StaticResource ModuleBackgroundBrush}"
+             Background="{DynamicResource ModuleBackgroundBrush}"
              Loaded="UserControl_Loaded">
 
     <Grid Margin="20">
@@ -18,13 +18,13 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Cuentas Corrientes" FontSize="24" FontWeight="Bold" Foreground="{StaticResource HeaderForegroundBrush}" Margin="0,0,0,20"/>
+        <TextBlock Grid.Row="0" Text="Cuentas Corrientes" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource HeaderForegroundBrush}" Margin="0,0,0,20"/>
 
-        <Border Grid.Row="1" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="15" Margin="0,0,0,20">
+        <Border Grid.Row="1" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5" Padding="15" Margin="0,0,0,20">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                    <RadioButton x:Name="rbClientes" Content="Clientes" GroupName="TipoEntidad" IsChecked="True" Foreground="White" FontSize="16" Margin="0,0,20,0" Checked="rbTipo_Checked"/>
-                    <RadioButton x:Name="rbProveedores" Content="Proveedores" GroupName="TipoEntidad" Foreground="White" FontSize="16" Checked="rbTipo_Checked"/>
+                    <RadioButton x:Name="rbClientes" Content="Clientes" GroupName="TipoEntidad" IsChecked="True" Foreground="{DynamicResource TextPrimary}" FontSize="16" Margin="0,0,20,0" Checked="rbTipo_Checked"/>
+                    <RadioButton x:Name="rbProveedores" Content="Proveedores" GroupName="TipoEntidad" Foreground="{DynamicResource TextPrimary}" FontSize="16" Checked="rbTipo_Checked"/>
                 </StackPanel>
 
                 <TextBlock Text="Buscar:" Style="{StaticResource ModuleLabelStyle}"/>
@@ -33,15 +33,15 @@
                          PreviewKeyDown="txtBuscar_PreviewKeyDown"/>
 
                 <Popup x:Name="popupBusqueda" PlacementTarget="{Binding ElementName=txtBuscar}" Placement="Bottom" StaysOpen="False">
-                    <Border Background="{StaticResource PanelBackgroundBrush}" BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1" CornerRadius="3" MinWidth="400">
+                    <Border Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderDarkBrush}" BorderThickness="1" CornerRadius="3" MinWidth="400">
                         <ListBox x:Name="lstResultados" MaxHeight="200" 
                                  MouseUp="lstResultados_MouseUp"
                                  PreviewKeyDown="lstResultados_PreviewKeyDown">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel>
-                                        <TextBlock Text="{Binding RazonSocial}" Foreground="White" FontSize="14" FontWeight="Bold"/>
-                                        <TextBlock Text="{Binding CUIT}" Foreground="#AAA" FontSize="12"/>
+                                        <TextBlock Text="{Binding RazonSocial}" Foreground="{DynamicResource TextPrimary}" FontSize="14" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding CUIT}" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
@@ -51,7 +51,7 @@
             </StackPanel>
         </Border>
 
-        <Border x:Name="panelSaldo" Grid.Row="2" Background="{StaticResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" Margin="0,0,0,20" Visibility="Collapsed">
+        <Border x:Name="panelSaldo" Grid.Row="2" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" Margin="0,0,0,20" Visibility="Collapsed">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -59,15 +59,15 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <TextBlock x:Name="lblNombreEntidad" Text="Nombre del Cliente" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock x:Name="lblNombreEntidad" Text="Nombre del Cliente" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                        <TextBlock Text="Saldo Deudor Actual: " FontSize="16" Foreground="#AAA" VerticalAlignment="Bottom" Margin="0,0,10,4"/>
-                        <TextBlock x:Name="lblSaldo" Text="$ 0,00" FontSize="32" FontWeight="Bold" Foreground="#FF5252"/>
+                        <TextBlock Text="Saldo Deudor Actual: " FontSize="16" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Bottom" Margin="0,0,10,4"/>
+                        <TextBlock x:Name="lblSaldo" Text="$ 0,00" FontSize="32" FontWeight="Bold" Foreground="{StaticResource DangerColor}"/>
                     </StackPanel>
                 </StackPanel>
 
                 <Button x:Name="btnAsentarPago" Grid.Column="1" Content="💵 Asentar Cobro/Pago" 
-                        Style="{StaticResource ActionButtonStyle}" Background="#2E7D32"
+                        Style="{StaticResource SuccessButtonStyle}"
                         FontSize="16" Height="50" Padding="20,0"
                         Click="btnAsentarPago_Click"/>
             </Grid>
@@ -82,8 +82,8 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <Grid x:Name="popupPago" Visibility="Collapsed" Background="#AA000000" Grid.RowSpan="4">
-            <Border Background="{StaticResource ModuleBackgroundBrush}" Width="400" Height="300" CornerRadius="10" BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+        <Grid x:Name="popupPago" Visibility="Collapsed" Background="{DynamicResource OverlayScrimBrush}" Grid.RowSpan="4">
+            <Border Background="{DynamicResource ModuleBackgroundBrush}" Width="400" Height="300" CornerRadius="10" BorderBrush="{DynamicResource BorderDarkBrush}" BorderThickness="1">
                 <Grid Margin="20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -91,7 +91,7 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Text="Registrar Pago" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Registrar Pago" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center"/>
 
                     <StackPanel Grid.Row="1" VerticalAlignment="Center">
                         <TextBlock Text="Monto a pagar:" Style="{StaticResource ModuleLabelStyle}"/>
@@ -99,7 +99,7 @@
                     </StackPanel>
 
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Cancelar" Style="{StaticResource DeleteButtonStyle}" Width="100" Margin="0,0,10,0" Click="btnCancelarPopup_Click"/>
+                        <Button Content="Cancelar" Style="{StaticResource SecondaryButtonStyle}" Width="100" Margin="0,0,10,0" Click="btnCancelarPopup_Click"/>
                         <Button Content="Confirmar" Style="{StaticResource ActionButtonStyle}" Width="100" Click="btnConfirmarPago_Click"/>
                     </StackPanel>
                 </Grid>

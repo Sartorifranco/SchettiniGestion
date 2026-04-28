@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Input;
 using SchettiniGestion;
 
@@ -10,6 +11,9 @@ namespace SchettiniGestion.WPF
         public LoginWindow()
         {
             InitializeComponent();
+            AutomationProperties.SetAutomationId(txtUsuario, "UITest_Usuario");
+            AutomationProperties.SetAutomationId(txtPassword, "UITest_Password");
+            AutomationProperties.SetAutomationId(btnIngresar, "UITest_Ingresar");
             txtUsuario.Focus();
         }
 

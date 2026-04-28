@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -25,8 +27,18 @@ namespace SchettiniGestion
         public decimal PrecioUnitario { get; set; }
         public decimal DescuentoPorcentaje { get; set; } = 0;
         public decimal RecargoPorcentaje { get; set; } = 0;
+        /// <summary>IVA aplicado sobre el precio (subtotal línea incluye este IVA), p. ej. 21 por 21%.</summary>
+        public decimal AlicuotaIvaPct { get; set; } = 21m;
         public decimal Subtotal { get { return Cantidad * PrecioUnitario * (1 - DescuentoPorcentaje / 100) * (1 + RecargoPorcentaje / 100); } }
         public string ImagenPath { get; set; }
+    }
+
+    /// <summary>Un medio de pago dentro de una venta (persistido en FacturasCobranza).</summary>
+    public class FacturaCobranzaParcela
+    {
+        public int MedioPagoID { get; set; }
+        public string NombreMedio { get; set; }
+        public decimal Monto { get; set; }
     }
 
     public class Rol
@@ -150,6 +162,79 @@ namespace SchettiniGestion
         }
 
         // Configuración
+        private static bool _columnasVisorPromoVerificadas;
+
+        private static readonly object _lockMigrLite = new object();
+        private static bool _columnasMigracionLiteOk;
+
+        private static void AsegurarMigracionLite(SqlConnection c)
+        {
+            if (_columnasMigracionLiteOk) return;
+            lock (_lockMigrLite)
+            {
+                if (_columnasMigracionLiteOk) return;
+                try
+                {
+                    using (var cmd = new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='TipoCambioUSD')
+  ALTER TABLE Configuracion ADD TipoCambioUSD DECIMAL(18,4) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='AfipProduccion')
+  ALTER TABLE Configuracion ADD AfipProduccion BIT NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='ListaID')
+  ALTER TABLE Facturas ADD ListaID INT NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='CondicionVenta')
+  ALTER TABLE Facturas ADD CondicionVenta NVARCHAR(100) NULL;", c))
+                        cmd.ExecuteNonQuery();
+                    _columnasMigracionLiteOk = true;
+                }
+                catch { /* sin permiso ALTER */ }
+            }
+        }
+
+        private static void AsegurarColumnasVisorPromo(SqlConnection c)
+        {
+            if (_columnasVisorPromoVerificadas) return;
+            try
+            {
+                AsegurarMigracionLite(c);
+                using (var cmd = new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='VisorPromoCarpeta')
+  ALTER TABLE Configuracion ADD VisorPromoCarpeta NVARCHAR(500) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='VisorPromoIntervaloSeg')
+  ALTER TABLE Configuracion ADD VisorPromoIntervaloSeg INT NULL;", c))
+                    cmd.ExecuteNonQuery();
+                _columnasVisorPromoVerificadas = true;
+            }
+            catch { /* BD sin tabla Configuracion o sin permisos ALTER */ }
+        }
+
+        /// <summary>Carpeta con archivos de promoción para la pantalla cliente (imágenes, GIF, videos cortos). Solo aplica si UsaVisorCliente está activo.</summary>
+        public static bool ActualizarVisorPromociones(string carpeta, int intervaloSegundos)
+        {
+            if (intervaloSegundos < 3) intervaloSegundos = 3;
+            if (intervaloSegundos > 120) intervaloSegundos = 120;
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarColumnasVisorPromo(c);
+                    using (var cmd = new SqlCommand("UPDATE Configuracion SET VisorPromoCarpeta=@p, VisorPromoIntervaloSeg=@i WHERE ID=1", c))
+                    {
+                        cmd.Parameters.AddWithValue("@p", string.IsNullOrWhiteSpace(carpeta) ? (object)DBNull.Value : carpeta.Trim());
+                        cmd.Parameters.AddWithValue("@i", intervaloSegundos);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                NotificarError(ex.Message);
+                return false;
+            }
+        }
+
         public static DataRow GetConfiguracion()
         {
             try
@@ -157,6 +242,7 @@ namespace SchettiniGestion
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    AsegurarColumnasVisorPromo(c);
                     var dt = new DataTable();
                     new SqlDataAdapter("SELECT TOP 1 * FROM Configuracion", c).Fill(dt);
                     if (dt.Rows.Count > 0) return dt.Rows[0];
@@ -297,13 +383,21 @@ namespace SchettiniGestion
                 {
                     c.Open();
                     int rid = 2;
-                    object r = new SqlCommand($"SELECT RolID FROM Usuarios WHERE NombreUsuario='{u}'", c).ExecuteScalar();
-                    if (r != null && r != DBNull.Value) rid = Convert.ToInt32(r);
+                    using (var cmdRol = new SqlCommand("SELECT RolID FROM Usuarios WHERE NombreUsuario=@u", c))
+                    {
+                        cmdRol.Parameters.AddWithValue("@u", u.Trim());
+                        object ro = cmdRol.ExecuteScalar();
+                        if (ro != null && ro != DBNull.Value) rid = Convert.ToInt32(ro);
+                    }
 
                     var p = new List<string>();
-                    using (var reader = new SqlCommand($"SELECT p.NombrePermiso FROM Roles_Permisos rp JOIN Permisos p ON rp.PermisoID=p.PermisoID WHERE rp.RolID={rid}", c).ExecuteReader())
+                    using (var cmdPm = new SqlCommand("SELECT p.NombrePermiso FROM Roles_Permisos rp JOIN Permisos p ON rp.PermisoID=p.PermisoID WHERE rp.RolID=@rid", c))
                     {
-                        while (reader.Read()) p.Add(reader.GetString(0));
+                        cmdPm.Parameters.AddWithValue("@rid", rid);
+                        using (var reader = cmdPm.ExecuteReader())
+                        {
+                            while (reader.Read()) p.Add(reader.GetString(0));
+                        }
                     }
                     SesionUsuario.Iniciar(u, rid, p);
                     return true;
@@ -457,7 +551,13 @@ namespace SchettiniGestion
                 {
                     c.Open();
                     var dt = new DataTable();
-                    new SqlDataAdapter($"SELECT TOP 1 * FROM Clientes WHERE CUIT='{q}' OR RazonSocial LIKE '%{q}%'", c).Fill(dt);
+                    string like = "%" + (q ?? "").Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
+                    using (var cmd = new SqlCommand("SELECT TOP 1 * FROM Clientes WHERE CUIT=@qExact OR RazonSocial LIKE @qLike", c))
+                    {
+                        cmd.Parameters.AddWithValue("@qExact", q ?? "");
+                        cmd.Parameters.AddWithValue("@qLike", like);
+                        new SqlDataAdapter(cmd).Fill(dt);
+                    }
                     if (dt.Rows.Count > 0) return dt.Rows[0];
                 }
             }
@@ -473,7 +573,12 @@ namespace SchettiniGestion
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    new SqlDataAdapter($"SELECT TOP 10 * FROM Clientes WHERE CUIT LIKE '%{q}%' OR RazonSocial LIKE '%{q}%'", c).Fill(dt);
+                    string like = "%" + (q ?? "").Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
+                    using (var cmd = new SqlCommand("SELECT TOP 10 * FROM Clientes WHERE CUIT LIKE @q OR RazonSocial LIKE @q", c))
+                    {
+                        cmd.Parameters.AddWithValue("@q", like);
+                        new SqlDataAdapter(cmd).Fill(dt);
+                    }
                 }
             }
             catch { }
@@ -542,7 +647,12 @@ namespace SchettiniGestion
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    new SqlDataAdapter($"SELECT TOP 10 * FROM Proveedores WHERE CUIT LIKE '%{q}%' OR RazonSocial LIKE '%{q}%'", c).Fill(dt);
+                    string like = "%" + (q ?? "").Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
+                    using (var cmd = new SqlCommand("SELECT TOP 10 * FROM Proveedores WHERE CUIT LIKE @q OR RazonSocial LIKE @q", c))
+                    {
+                        cmd.Parameters.AddWithValue("@q", like);
+                        new SqlDataAdapter(cmd).Fill(dt);
+                    }
                 }
             }
             catch { }
@@ -651,7 +761,36 @@ namespace SchettiniGestion
                 {
                     c.Open();
                     var dt = new DataTable();
-                    new SqlDataAdapter($"SELECT TOP 1 * FROM Productos WHERE Codigo='{q}' OR CodigoBarra='{q}' OR Descripcion LIKE '%{q}%'", c).Fill(dt);
+                    string like = "%" + (q ?? "").Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
+                    using (var cmd = new SqlCommand("SELECT TOP 1 * FROM Productos WHERE Codigo=@q OR CodigoBarra=@q OR Descripcion LIKE @qLike", c))
+                    {
+                        cmd.Parameters.AddWithValue("@q", q ?? "");
+                        cmd.Parameters.AddWithValue("@qLike", like);
+                        new SqlDataAdapter(cmd).Fill(dt);
+                    }
+                    if (dt.Rows.Count > 0) return dt.Rows[0];
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        /// <summary>Coincidencia exacta por código interno o código de barras; solo productos con stock &gt; 0 (venta).</summary>
+        public static DataRow BuscarProductoExactoCodigoOCodigoBarra(string q)
+        {
+            if (string.IsNullOrWhiteSpace(q)) return null;
+            q = q.Trim();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    var dt = new DataTable();
+                    using (var cmd = new SqlCommand("SELECT TOP 1 * FROM Productos WHERE (Codigo = @q OR CodigoBarra = @q) AND StockActual > 0", c))
+                    {
+                        cmd.Parameters.AddWithValue("@q", q);
+                        new SqlDataAdapter(cmd).Fill(dt);
+                    }
                     if (dt.Rows.Count > 0) return dt.Rows[0];
                 }
             }
@@ -667,7 +806,12 @@ namespace SchettiniGestion
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    new SqlDataAdapter($"SELECT TOP 10 * FROM Productos WHERE (Codigo LIKE '%{q}%' OR CodigoBarra LIKE '%{q}%' OR Descripcion LIKE '%{q}%') AND StockActual > 0", c).Fill(dt);
+                    string like = "%" + (q ?? "").Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
+                    using (var cmd = new SqlCommand("SELECT TOP 10 * FROM Productos WHERE (Codigo LIKE @p OR CodigoBarra LIKE @p OR Descripcion LIKE @p) AND StockActual > 0", c))
+                    {
+                        cmd.Parameters.AddWithValue("@p", like);
+                        new SqlDataAdapter(cmd).Fill(dt);
+                    }
                 }
             }
             catch { }
@@ -682,7 +826,12 @@ namespace SchettiniGestion
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    new SqlDataAdapter($"SELECT TOP 10 * FROM Productos WHERE (Codigo LIKE '%{q}%' OR CodigoBarra LIKE '%{q}%' OR Descripcion LIKE '%{q}%')", c).Fill(dt);
+                    string like = "%" + (q ?? "").Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
+                    using (var cmd = new SqlCommand("SELECT TOP 10 * FROM Productos WHERE Codigo LIKE @p OR CodigoBarra LIKE @p OR Descripcion LIKE @p", c))
+                    {
+                        cmd.Parameters.AddWithValue("@p", like);
+                        new SqlDataAdapter(cmd).Fill(dt);
+                    }
                 }
             }
             catch { }
@@ -896,72 +1045,192 @@ namespace SchettiniGestion
         }
 
         // --- TRANSACCIONES COMPLEJAS (Facturación / Compras) ---
-        public static int GuardarFactura(int cid, string tc, decimal t, List<FacturaItem> its, string cond,
-            string cae, string vtoCae, int nroComprobante, int? listaId, object cobranzas)
+        /// <summary>True si la condición elegida del POS es cuenta corriente (no efectivo/inmediato).</summary>
+        public static bool EsFacturaCondicionCuentaCorriente(string condicionVenta)
         {
-            bool ok = GuardarFactura(cid, tc, t, its, cond);
-            return ok ? 1 : 0;
+            if (string.IsNullOrWhiteSpace(condicionVenta)) return false;
+            string s = condicionVenta.Trim();
+            if (s.IndexOf("Corriente", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            return Regex.IsMatch(s, @"cta\s*\.?\s*cte", RegexOptions.IgnoreCase);
         }
 
-        public static bool GuardarFactura(int cid, string tc, decimal t, List<FacturaItem> its, string cond)
+        /// <returns>FacturaID insertado, o 0 si falló.</returns>
+        public static int GuardarFactura(int cid, string tc, decimal t, List<FacturaItem> its, string condicionVentaCombo,
+            string textoDetalleCobranzasOpcional,
+            string cae, string vtoCae, int nroComprobanteAfip, int? listaId,
+            List<FacturaCobranzaParcela> cobranzas)
         {
-            using (var c = new SqlConnection(_connectionString))
+            if (its == null || its.Count == 0) return 0;
+
+            string condVent = condicionVentaCombo ?? "";
+            bool cc = EsFacturaCondicionCuentaCorriente(condVent);
+
+            try
             {
-                c.Open();
-                using (var tr = c.BeginTransaction())
+                using (var c = new SqlConnection(_connectionString))
                 {
-                    try
+                    c.Open();
+                    AsegurarMigracionLite(c);
+
+                    bool tieneTabFc;
+                    using (var q = new SqlCommand("SELECT CASE WHEN OBJECT_ID(N'FacturasCobranza','U') IS NULL THEN 0 ELSE 1 END", c))
+                        tieneTabFc = Convert.ToInt32(q.ExecuteScalar()) == 1;
+
+                    using (var tr = c.BeginTransaction())
                     {
-                        // Insertar Factura y obtener ID
-                        string sqlFac = "INSERT INTO Facturas (ClienteID,Fecha,Total,TipoComprobante) VALUES (@cid,@f,@t,@tc); SELECT SCOPE_IDENTITY();";
-                        SqlCommand cmdFac = new SqlCommand(sqlFac, c, tr);
-                        cmdFac.Parameters.AddWithValue("@cid", cid);
-                        cmdFac.Parameters.AddWithValue("@f", DateTime.Now);
-                        cmdFac.Parameters.AddWithValue("@t", t);
-                        cmdFac.Parameters.AddWithValue("@tc", tc);
-                        int fid = Convert.ToInt32(cmdFac.ExecuteScalar());
-
-                        foreach (var i in its)
+                        try
                         {
-                            new SqlCommand($"INSERT INTO FacturaDetalle (FacturaID,ProductoID,Cantidad,PrecioUnitario) VALUES ({fid},{i.ProductoID},{i.Cantidad},{(double)i.PrecioUnitario})", c, tr).ExecuteNonQuery(); // Cast double para SQL decimal
-                            new SqlCommand($"UPDATE Productos SET StockActual=StockActual-{i.Cantidad} WHERE ProductoID={i.ProductoID}", c, tr).ExecuteNonQuery();
+                            DateTime fecha = DateTime.Now;
+                            string sqlFac = @"INSERT INTO Facturas 
+                                (ClienteID,Fecha,Total,TipoComprobante,CondicionVenta,CAE,VencimientoCAE,NumeroComprobanteAFIP,ListaID)
+                                VALUES (@cid,@f,@t,@tc,@cv,@cae,@vto,@nAfip,@lista);
+                                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+                            int fid = 0;
+                            using (var cmdFac = new SqlCommand(sqlFac, c, tr))
+                            {
+                                cmdFac.Parameters.AddWithValue("@cid", cid);
+                                cmdFac.Parameters.AddWithValue("@f", fecha);
+                                cmdFac.Parameters.AddWithValue("@t", t);
+                                cmdFac.Parameters.AddWithValue("@tc", tc ?? "");
+                                cmdFac.Parameters.AddWithValue("@cv", condVent);
+                                cmdFac.Parameters.AddWithValue("@cae", (object)cae ?? DBNull.Value);
+                                cmdFac.Parameters.AddWithValue("@vto", (object)vtoCae ?? DBNull.Value);
+                                cmdFac.Parameters.AddWithValue("@nAfip", nroComprobanteAfip <= 0 ? (object)DBNull.Value : nroComprobanteAfip);
+                                cmdFac.Parameters.AddWithValue("@lista", (object)listaId ?? DBNull.Value);
+                                fid = Convert.ToInt32(cmdFac.ExecuteScalar());
+                            }
 
-                            SqlCommand cmdStk = new SqlCommand("INSERT INTO MovimientosStock (ProductoID,FacturaID,Fecha,TipoMovimiento,Cantidad) VALUES (@pid,@fid,@f,'Venta',@cant)", c, tr);
-                            cmdStk.Parameters.AddWithValue("@pid", i.ProductoID);
-                            cmdStk.Parameters.AddWithValue("@fid", fid);
-                            cmdStk.Parameters.AddWithValue("@f", DateTime.Now);
-                            cmdStk.Parameters.AddWithValue("@cant", -i.Cantidad);
-                            cmdStk.ExecuteNonQuery();
+                                foreach (var i in its)
+                                {
+                                    using (var det = new SqlCommand(
+                                        "INSERT INTO FacturaDetalle (FacturaID,ProductoID,Cantidad,PrecioUnitario) VALUES (@fid,@pid,@cant,@prec)", c, tr))
+                                    {
+                                        det.Parameters.AddWithValue("@fid", fid);
+                                        det.Parameters.AddWithValue("@pid", i.ProductoID);
+                                        det.Parameters.AddWithValue("@cant", i.Cantidad);
+                                        det.Parameters.AddWithValue("@prec", i.PrecioUnitario);
+                                        det.ExecuteNonQuery();
+                                    }
+                                    using (var up = new SqlCommand(
+                                        "UPDATE Productos SET StockActual=StockActual-@cant WHERE ProductoID=@pid", c, tr))
+                                    {
+                                        up.Parameters.AddWithValue("@cant", i.Cantidad);
+                                        up.Parameters.AddWithValue("@pid", i.ProductoID);
+                                        up.ExecuteNonQuery();
+                                    }
+                                    using (var cmdStk = new SqlCommand(
+                                        "INSERT INTO MovimientosStock (ProductoID,FacturaID,Fecha,TipoMovimiento,Cantidad) VALUES (@pid,@fid,@f,'Venta',@cant)", c, tr))
+                                    {
+                                        cmdStk.Parameters.AddWithValue("@pid", i.ProductoID);
+                                        cmdStk.Parameters.AddWithValue("@fid", fid);
+                                        cmdStk.Parameters.AddWithValue("@f", fecha);
+                                        cmdStk.Parameters.AddWithValue("@cant", -i.Cantidad);
+                                        cmdStk.ExecuteNonQuery();
+                                    }
+                                }
+
+                                if (tieneTabFc && !cc && cobranzas != null)
+                                {
+                                    foreach (var p in cobranzas)
+                                    {
+                                        if (p == null || p.Monto <= 0m) continue;
+                                        using (var insP = new SqlCommand(
+                                            "INSERT INTO FacturasCobranza (FacturaID,MedioPagoID,NombreMedio,Monto,NroCuotas) VALUES (@fid,@mid,@nom,@mont,1)",
+                                            c, tr))
+                                        {
+                                            insP.Parameters.AddWithValue("@fid", fid);
+                                            insP.Parameters.AddWithValue("@mid", p.MedioPagoID > 0 ? p.MedioPagoID : (object)DBNull.Value);
+                                            insP.Parameters.AddWithValue("@nom", p.NombreMedio ?? "");
+                                            insP.Parameters.AddWithValue("@mont", p.Monto);
+                                            insP.ExecuteNonQuery();
+                                        }
+                                    }
+                                }
+
+                                string usuario = SesionUsuario.NombreUsuario ?? "";
+
+                                if (!cc)
+                                {
+                                    if (cobranzas != null && cobranzas.Count > 0)
+                                    {
+                                        foreach (var p in cobranzas)
+                                        {
+                                            if (p == null || p.Monto <= 0m) continue;
+                                            string medio = string.IsNullOrWhiteSpace(p.NombreMedio) ? "Pago" : p.NombreMedio.Trim();
+                                            string concepto = $"Venta #{fid} ({tc}) — {medio}";
+                                            if (!string.IsNullOrWhiteSpace(textoDetalleCobranzasOpcional))
+                                                concepto += " | " + textoDetalleCobranzasOpcional;
+                                            using (var cmdCaja = new SqlCommand(
+                                                "INSERT INTO MovimientosCaja (Fecha,Concepto,Tipo,Monto,Usuario) VALUES (@f,@con,'Ingreso',@m,@u)", c, tr))
+                                            {
+                                                cmdCaja.Parameters.AddWithValue("@f", fecha);
+                                                cmdCaja.Parameters.AddWithValue("@con", concepto.Length > 200 ? concepto.Substring(0, 200) : concepto);
+                                                cmdCaja.Parameters.AddWithValue("@m", p.Monto);
+                                                cmdCaja.Parameters.AddWithValue("@u", usuario);
+                                                cmdCaja.ExecuteNonQuery();
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        using (var cmdCaja = new SqlCommand(
+                                            "INSERT INTO MovimientosCaja (Fecha,Concepto,Tipo,Monto,Usuario) VALUES (@f,@con,'Ingreso',@m,@u)", c, tr))
+                                        {
+                                            cmdCaja.Parameters.AddWithValue("@f", fecha);
+                                            cmdCaja.Parameters.AddWithValue("@con", $"Venta #{fid} ({tc})");
+                                            cmdCaja.Parameters.AddWithValue("@m", t);
+                                            cmdCaja.Parameters.AddWithValue("@u", usuario);
+                                            cmdCaja.ExecuteNonQuery();
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    using (var upSal = new SqlCommand(
+                                        "UPDATE Clientes SET SaldoDeuda = SaldoDeuda + @m WHERE ClienteID=@cid", c, tr))
+                                    {
+                                        upSal.Parameters.AddWithValue("@m", t);
+                                        upSal.Parameters.AddWithValue("@cid", cid);
+                                        upSal.ExecuteNonQuery();
+                                    }
+                                    object sal;
+                                    using (var qsal = new SqlCommand("SELECT SaldoDeuda FROM Clientes WHERE ClienteID=@cid", c, tr))
+                                    {
+                                        qsal.Parameters.AddWithValue("@cid", cid);
+                                        sal = qsal.ExecuteScalar();
+                                    }
+
+                                    using (var cmdCC = new SqlCommand(
+                                        "INSERT INTO MovimientosCuentaCorriente (ClienteID,Fecha,Descripcion,Monto,SaldoHistorico) VALUES (@cid,@f,@desc,@m,@sal)", c, tr))
+                                    {
+                                        cmdCC.Parameters.AddWithValue("@cid", cid);
+                                        cmdCC.Parameters.AddWithValue("@f", fecha);
+                                        cmdCC.Parameters.AddWithValue("@desc", $"Venta #{fid} (Cta Cte)");
+                                        cmdCC.Parameters.AddWithValue("@m", t);
+                                        cmdCC.Parameters.AddWithValue("@sal", sal);
+                                        cmdCC.ExecuteNonQuery();
+                                    }
+                                }
+
+                                tr.Commit();
+                                return fid;
                         }
-
-                        if (cond == "Contado")
+                        catch (Exception ex)
                         {
-                            SqlCommand cmdCaja = new SqlCommand("INSERT INTO MovimientosCaja (Fecha,Concepto,Tipo,Monto,Usuario) VALUES (@f,@con,'Ingreso',@m,@u)", c, tr);
-                            cmdCaja.Parameters.AddWithValue("@f", DateTime.Now);
-                            cmdCaja.Parameters.AddWithValue("@con", $"Venta #{fid} ({tc})");
-                            cmdCaja.Parameters.AddWithValue("@m", t);
-                            cmdCaja.Parameters.AddWithValue("@u", SesionUsuario.NombreUsuario);
-                            cmdCaja.ExecuteNonQuery();
+                            try { tr.Rollback(); } catch { }
+                            NotificarError(ex.Message);
+                            return 0;
                         }
-                        else
-                        {
-                            new SqlCommand($"UPDATE Clientes SET SaldoDeuda=SaldoDeuda+{(double)t} WHERE ClienteID={cid}", c, tr).ExecuteNonQuery();
-                            object sal = new SqlCommand($"SELECT SaldoDeuda FROM Clientes WHERE ClienteID={cid}", c, tr).ExecuteScalar();
-
-                            SqlCommand cmdCC = new SqlCommand("INSERT INTO MovimientosCuentaCorriente (ClienteID,Fecha,Descripcion,Monto,SaldoHistorico) VALUES (@cid,@f,@desc,@m,@sal)", c, tr);
-                            cmdCC.Parameters.AddWithValue("@cid", cid);
-                            cmdCC.Parameters.AddWithValue("@f", DateTime.Now);
-                            cmdCC.Parameters.AddWithValue("@desc", $"Venta #{fid} (Cta Cte)");
-                            cmdCC.Parameters.AddWithValue("@m", t);
-                            cmdCC.Parameters.AddWithValue("@sal", sal);
-                            cmdCC.ExecuteNonQuery();
-                        }
-                        tr.Commit();
-                        return true;
                     }
-                    catch { tr.Rollback(); return false; }
                 }
             }
+            catch { return 0; }
+        }
+
+        /// <summary>Método corto para pruebas automatizadas: cond debe ser texto de forma de cobro («Contado» o «Cuenta Corriente»).</summary>
+        public static bool GuardarFactura(int cid, string tc, decimal t, List<FacturaItem> its, string condicionVenta)
+        {
+            return GuardarFactura(cid, tc, t, its, condicionVenta, null, null, null, 0, null, null) > 0;
         }
 
         public static DataTable GetCompraDetalle(int compraId)
@@ -1195,16 +1464,20 @@ namespace SchettiniGestion
                 {
                     c.Open();
                     string cidSql = clienteId.HasValue ? clienteId.Value.ToString() : "NULL";
-                    string fechaSql = fechaVencimiento.HasValue ? $"'{fechaVencimiento.Value:yyyy-MM-dd}'" : "NULL";
                     var cmd = new SqlCommand($@"INSERT INTO ReservasStock (ProductoID,ClienteID,Fecha,FechaVencimiento,Cantidad,Motivo,Estado,Usuario)
-                                               VALUES ({productoId},{cidSql},GETDATE(),{fechaSql},{cantidad},@mot,'Activa',@u)", c);
+                                               VALUES ({productoId},{cidSql},GETDATE(),@fv,{cantidad},@mot,'Activa',@u)", c);
+                    cmd.Parameters.AddWithValue("@fv", fechaVencimiento.HasValue ? (object)fechaVencimiento.Value.Date : DBNull.Value);
                     cmd.Parameters.AddWithValue("@mot", motivo ?? "");
                     cmd.Parameters.AddWithValue("@u", SesionUsuario.NombreUsuario ?? "");
                     cmd.ExecuteNonQuery();
                     return true;
                 }
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                NotificarError("GuardarReservaStock: " + ex.Message);
+                return false;
+            }
         }
 
         public static bool AnularReservaStock(int reservaId)
@@ -1979,43 +2252,99 @@ namespace SchettiniGestion
             catch { return false; }
         }
 
-        // --- Configuración del negocio ---
+        // --- Configuración del negocio (columnas coherentes con App.xaml.sql y MigracionLite: PasswordAfip, MPAccessToken…) ---
         public static bool GuardarConfiguracion(string nombreFantasia, string razonSocial, string cuit, string direccion, string telefono,
             string email, string logoPath, string certPath, string certPassword, int puntoVenta,
-            string mpToken, string mpUserId, string mpPosId, bool habilitarMP, decimal? tipoCambioUSD)
+            string mpToken, string mpUserId, string mpPosId, bool habilitarMP, decimal? tipoCambioUSD,
+            bool afipProduccion = false)
         {
             try
             {
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    string sql = @"IF EXISTS (SELECT 1 FROM Configuracion WHERE ID=1)
-                        UPDATE Configuracion SET NombreFantasia=@nf,RazonSocial=@rs,CUIT=@cuit,Direccion=@dir,Telefono=@tel,
-                            Email=@email,LogoPath=@logo,CertificadoPath=@cert,CertificadoPassword=@certpwd,
-                            PuntoVenta=@pv,MPToken=@mpt,MPUserID=@mpu,MPPosID=@mpp,TipoCambioUSD=@tc
-                        ELSE INSERT INTO Configuracion (ID,NombreFantasia,RazonSocial,CUIT,Direccion,Telefono,Email,
-                            LogoPath,CertificadoPath,CertificadoPassword,PuntoVenta,MPToken,MPUserID,MPPosID,TipoCambioUSD)
-                        VALUES (1,@nf,@rs,@cuit,@dir,@tel,@email,@logo,@cert,@certpwd,@pv,@mpt,@mpu,@mpp,@tc)";
-                    var cmd = new SqlCommand(sql, c);
-                    cmd.Parameters.AddWithValue("@nf", nombreFantasia ?? "");
-                    cmd.Parameters.AddWithValue("@rs", razonSocial ?? "");
-                    cmd.Parameters.AddWithValue("@cuit", cuit ?? "");
-                    cmd.Parameters.AddWithValue("@dir", direccion ?? "");
-                    cmd.Parameters.AddWithValue("@tel", telefono ?? "");
-                    cmd.Parameters.AddWithValue("@email", email ?? "");
-                    cmd.Parameters.AddWithValue("@logo", logoPath ?? "");
-                    cmd.Parameters.AddWithValue("@cert", certPath ?? "");
-                    cmd.Parameters.AddWithValue("@certpwd", certPassword ?? "");
-                    cmd.Parameters.AddWithValue("@pv", puntoVenta);
-                    cmd.Parameters.AddWithValue("@mpt", mpToken ?? "");
-                    cmd.Parameters.AddWithValue("@mpu", mpUserId ?? "");
-                    cmd.Parameters.AddWithValue("@mpp", mpPosId ?? "");
-                    cmd.Parameters.AddWithValue("@tc", (object)tipoCambioUSD ?? DBNull.Value);
-                    cmd.ExecuteNonQuery();
-                    return true;
+                    AsegurarMigracionLite(c);
+
+                    using (var update = new SqlCommand(@"
+UPDATE Configuracion SET
+  NombreFantasia=@nf, RazonSocial=@rs, CUIT=@cuit, Direccion=@dir, Telefono=@tel, Email=@email,
+  LogoPath=@logo, CertificadoPath=@cert, PasswordAfip=@pwd, PuntoVenta=@pv,
+  MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, TipoCambioUSD=@tc, AfipProduccion=@afip
+WHERE ID = 1", c))
+                    {
+                        update.Parameters.AddWithValue("@nf", nombreFantasia ?? "");
+                        update.Parameters.AddWithValue("@rs", razonSocial ?? "");
+                        update.Parameters.AddWithValue("@cuit", cuit ?? "");
+                        update.Parameters.AddWithValue("@dir", direccion ?? "");
+                        update.Parameters.AddWithValue("@tel", telefono ?? "");
+                        update.Parameters.AddWithValue("@email", email ?? "");
+                        update.Parameters.AddWithValue("@logo", logoPath ?? "");
+                        update.Parameters.AddWithValue("@cert", certPath ?? "");
+                        update.Parameters.AddWithValue("@pwd", certPassword ?? "");
+                        update.Parameters.AddWithValue("@pv", puntoVenta);
+                        update.Parameters.AddWithValue("@mpt", mpToken ?? "");
+                        update.Parameters.AddWithValue("@mpu", mpUserId ?? "");
+                        update.Parameters.AddWithValue("@mpp", mpPosId ?? "");
+                        update.Parameters.AddWithValue("@tc", (object)tipoCambioUSD ?? DBNull.Value);
+                        update.Parameters.AddWithValue("@afip", afipProduccion);
+                        int n = update.ExecuteNonQuery();
+                        if (n > 0) return true;
+                    }
+
+                    using (var insert = new SqlCommand(@"
+INSERT INTO Configuracion (
+  NombreFantasia,RazonSocial,CUIT,Direccion,Telefono,Email,LogoPath,CertificadoPath,PasswordAfip,PuntoVenta,
+  MPAccessToken,MPUserId,MPPosId,TipoCambioUSD,AfipProduccion
+) VALUES (
+  @nf,@rs,@cuit,@dir,@tel,@email,@logo,@cert,@pwd,@pv,@mpt,@mpu,@mpp,@tc,@afip)", c))
+                    {
+                        insert.Parameters.AddWithValue("@nf", nombreFantasia ?? "");
+                        insert.Parameters.AddWithValue("@rs", razonSocial ?? "");
+                        insert.Parameters.AddWithValue("@cuit", cuit ?? "");
+                        insert.Parameters.AddWithValue("@dir", direccion ?? "");
+                        insert.Parameters.AddWithValue("@tel", telefono ?? "");
+                        insert.Parameters.AddWithValue("@email", email ?? "");
+                        insert.Parameters.AddWithValue("@logo", logoPath ?? "");
+                        insert.Parameters.AddWithValue("@cert", certPath ?? "");
+                        insert.Parameters.AddWithValue("@pwd", certPassword ?? "");
+                        insert.Parameters.AddWithValue("@pv", puntoVenta);
+                        insert.Parameters.AddWithValue("@mpt", mpToken ?? "");
+                        insert.Parameters.AddWithValue("@mpu", mpUserId ?? "");
+                        insert.Parameters.AddWithValue("@mpp", mpPosId ?? "");
+                        insert.Parameters.AddWithValue("@tc", (object)tipoCambioUSD ?? DBNull.Value);
+                        insert.Parameters.AddWithValue("@afip", afipProduccion);
+                        insert.ExecuteNonQuery();
+                        return true;
+                    }
                 }
             }
             catch { return false; }
+        }
+
+        /// <summary>True = ambiente WSFE producción AFIP.</summary>
+        public static bool GetAfipAmbienteProduccion()
+        {
+            try
+            {
+                var dr = GetConfiguracion();
+                if (dr == null) return false;
+                if (!dr.Table.Columns.Contains("AfipProduccion")) return false;
+                if (dr["AfipProduccion"] == DBNull.Value || dr["AfipProduccion"] == null) return false;
+                return Convert.ToBoolean(dr["AfipProduccion"]);
+            }
+            catch { return false; }
+        }
+
+        /// <summary>Interpreta texto de tipo IVA guardado en productos (ej. «21», «10,5», «Exento»).</summary>
+        public static decimal ObtenerPctIvaPorTipoProducto(object tipoIvaCampo)
+        {
+            if (tipoIvaCampo == null || tipoIvaCampo == DBNull.Value) return 21m;
+            string raw = tipoIvaCampo.ToString();
+            if (string.IsNullOrWhiteSpace(raw)) return 21m;
+            string t = raw.Trim().ToUpperInvariant();
+            if (t.Contains("EXE") || t == "0" || t.Contains("NO GRAVA")) return 0m;
+            Match m = Regex.Match(raw.Replace(',', '.'), @"(\d+(?:\.\d+)?)");
+            return m.Success && decimal.TryParse(m.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal p) ? p : 21m;
         }
 
         // --- Clientes ---

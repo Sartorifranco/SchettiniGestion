@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using SqlConnection = System.Data.SqlClient.SqlConnection;
+using SqlCommand = System.Data.SqlClient.SqlCommand;
 using System.Windows;
 using System.Windows.Controls;
 

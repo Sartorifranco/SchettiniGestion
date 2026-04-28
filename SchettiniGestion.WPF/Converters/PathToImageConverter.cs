@@ -6,35 +6,29 @@ using System.Windows.Media.Imaging;
 
 namespace SchettiniGestion.WPF.Converters
 {
-    /// <summary>Convierte una ruta de archivo (o pack URI) en BitmapImage para mostrar en Image.Source.</summary>
     public class PathToImageConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             string path = value as string;
-            if (string.IsNullOrWhiteSpace(path)) return null;
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+                return null;
 
             try
             {
-                if (path.StartsWith("pack://") || File.Exists(path))
-                {
-                    var uri = new Uri(path, UriKind.RelativeOrAbsolute);
-                    var img = new BitmapImage();
-                    img.BeginInit();
-                    img.CacheOption = BitmapCacheOption.OnLoad;
-                    img.UriSource = uri;
-                    img.EndInit();
-                    img.Freeze();
-                    return img;
-                }
+                var imagen = new BitmapImage();
+                imagen.BeginInit();
+                imagen.UriSource = new Uri(path, UriKind.Absolute);
+                imagen.CacheOption = BitmapCacheOption.OnLoad;
+                imagen.EndInit();
+                return imagen;
             }
-            catch { }
-            return null;
+            catch
+            {
+                return null;
+            }
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
     }
 }

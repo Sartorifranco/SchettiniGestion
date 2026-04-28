@@ -50,6 +50,53 @@ namespace SchettiniGestion.WPF
 
                 if (dr.Table.Columns.Contains("TipoCambioUSD") && dr["TipoCambioUSD"] != DBNull.Value && dr["TipoCambioUSD"] != null)
                     txtTipoCambioUSD.Text = dr["TipoCambioUSD"].ToString();
+
+                if (dr.Table.Columns.Contains("AfipProduccion") && dr["AfipProduccion"] != DBNull.Value && chkAfipProduccion != null)
+                    chkAfipProduccion.IsChecked = Convert.ToBoolean(dr["AfipProduccion"]);
+                else if (chkAfipProduccion != null)
+                    chkAfipProduccion.IsChecked = false;
+
+                if (dr.Table.Columns.Contains("VisorPromoCarpeta") && dr["VisorPromoCarpeta"] != DBNull.Value)
+                    txtVisorPromoCarpeta.Text = dr["VisorPromoCarpeta"].ToString();
+                else if (txtVisorPromoCarpeta != null)
+                    txtVisorPromoCarpeta.Text = "";
+
+                if (dr.Table.Columns.Contains("VisorPromoIntervaloSeg") && dr["VisorPromoIntervaloSeg"] != DBNull.Value)
+                    txtVisorPromoIntervalo.Text = dr["VisorPromoIntervaloSeg"].ToString();
+                else if (txtVisorPromoIntervalo != null)
+                    txtVisorPromoIntervalo.Text = "8";
+            }
+        }
+
+        private void btnBuscarCarpetaPromo_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dlg = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dlg.Description = "Carpeta con imágenes o videos de promoción para la pantalla del cliente";
+                if (!string.IsNullOrWhiteSpace(txtVisorPromoCarpeta?.Text))
+                    dlg.SelectedPath = txtVisorPromoCarpeta.Text.Trim();
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    txtVisorPromoCarpeta.Text = dlg.SelectedPath;
+            }
+        }
+
+        private void btnGuardarPromoVisor_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int seg))
+                    seg = 8;
+                if (!DatabaseService.ActualizarVisorPromociones(txtVisorPromoCarpeta?.Text ?? "", seg))
+                {
+                    MessageBox.Show("No se pudo guardar la configuración del visor.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                MessageBox.Show("Promociones del visor guardadas. Si la pantalla cliente está abierta, se actualizará al volver al inicio de venta.", "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
+                try { CustomerScreenService.RefrescarSegunConfiguracion(); } catch { }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -185,7 +232,8 @@ namespace SchettiniGestion.WPF
                     txtMPUserId.Text.Trim(),
                     txtMPPosId.Text.Trim(),
                     true,
-                    tc
+                    tc,
+                    chkAfipProduccion?.IsChecked == true
                 );
 
                 if (exito) MessageBox.Show("¡Datos del negocio guardados correctamente!");

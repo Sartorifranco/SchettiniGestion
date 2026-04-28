@@ -1,0 +1,55 @@
+<UserControl x:Class="SchettiniGestion.WPF.PlanillaDiariaControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource BackgroundDark}"
+             Loaded="Control_Loaded">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="Planilla Diaria" FontSize="22" FontWeight="Bold"
+                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,15"/>
+
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="14,10" Margin="0,0,0,14">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Fecha:" Style="{StaticResource LabelStyle}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <DatePicker x:Name="dpFecha" Width="140" Height="35"/>
+                <Button Content="🔍 Ver Planilla" Style="{StaticResource ButtonStyle}" Margin="12,0,0,0" Padding="12,6" Click="btnVer_Click"/>
+                <Button Content="📄 Exportar CSV" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Padding="12,6" Click="btnExportar_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- KPIs del día -->
+        <Border Grid.Row="2" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="16,12" Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel><TextBlock Text="VENTAS" Foreground="{DynamicResource TextSecondary}" FontSize="11"/><TextBlock x:Name="lblVentas" FontSize="18" FontWeight="Bold" Foreground="{StaticResource SuccessColor}"/></StackPanel>
+                <StackPanel Grid.Column="1" HorizontalAlignment="Center"><TextBlock Text="COMPRAS" Foreground="{DynamicResource TextSecondary}" FontSize="11"/><TextBlock x:Name="lblCompras" FontSize="18" FontWeight="Bold" Foreground="{StaticResource DangerColor}"/></StackPanel>
+                <StackPanel Grid.Column="2" HorizontalAlignment="Center"><TextBlock Text="GASTOS" Foreground="{DynamicResource TextSecondary}" FontSize="11"/><TextBlock x:Name="lblGastos" FontSize="18" FontWeight="Bold" Foreground="{StaticResource DangerColor}"/></StackPanel>
+                <StackPanel Grid.Column="3" HorizontalAlignment="Center"><TextBlock Text="INGRESOS CAJA" Foreground="{DynamicResource TextSecondary}" FontSize="11"/><TextBlock x:Name="lblIngresosCaja" FontSize="18" FontWeight="Bold" Foreground="{StaticResource SuccessColor}"/></StackPanel>
+                <StackPanel Grid.Column="4" HorizontalAlignment="Right"><TextBlock Text="RESULTADO NETO" Foreground="{DynamicResource TextSecondary}" FontSize="11"/><TextBlock x:Name="lblNeto" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/></StackPanel>
+            </Grid>
+        </Border>
+
+        <DataGrid Grid.Row="3" x:Name="dgvMovimientos"
+                  Style="{StaticResource {x:Type DataGrid}}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  HeadersVisibility="Column" CanUserAddRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Hora" Binding="{Binding Fecha, StringFormat=HH:mm}" Width="70"/>
+                <DataGridTextColumn Header="Concepto" Binding="{Binding Concepto}" Width="*"/>
+                <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="90"/>
+                <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat=C2}" Width="120"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

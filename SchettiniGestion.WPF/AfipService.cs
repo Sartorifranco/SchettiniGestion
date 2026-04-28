@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -17,7 +17,6 @@ namespace SchettiniGestion.WPF
 {
     public static class AfipService
     {
-        private const bool ES_PRODUCCION = false; // MODO PRUEBA
         private const string ARCHIVO_TOKEN = "afip_token.xml";
         private const string ARCHIVO_TOKEN_PADRON = "afip_token_padron.xml";
 
@@ -35,6 +34,7 @@ namespace SchettiniGestion.WPF
 
             try
             {
+                bool prod = DatabaseService.GetAfipAmbienteProduccion();
                 DataRow config = DatabaseService.GetConfiguracion();
                 long cuitEmpresa = Convert.ToInt64(config["CUIT"].ToString().Replace("-", "").Trim());
                 string rutaCert = config["CertificadoPath"].ToString();
@@ -44,34 +44,55 @@ namespace SchettiniGestion.WPF
                 LoginTicket ticket;
                 try
                 {
-                    ticket = await ObtenerTicketAcceso(rutaCert, passCert, ES_PRODUCCION);
+                    ticket = await ObtenerTicketAcceso(rutaCert, passCert, prod);
                 }
                 catch
                 {
                     if (File.Exists(ARCHIVO_TOKEN)) File.Delete(ARCHIVO_TOKEN);
-                    ticket = await ObtenerTicketAcceso(rutaCert, passCert, ES_PRODUCCION);
+                    ticket = await ObtenerTicketAcceso(rutaCert, passCert, prod);
                 }
 
-                // 2. ÚLTIMO COMPROBANTE
-                int nroComprobante = await ObtenerUltimoComprobante(ticket, cuitEmpresa, puntoVenta, tipoComprobante, ES_PRODUCCION) + 1;
+                // 2. ├ÜLTIMO COMPROBANTE
+                int nroComprobante = await ObtenerUltimoComprobante(ticket, cuitEmpresa, puntoVenta, tipoComprobante, prod) + 1;
 
-                // 3. DATOS VENTA
-                double neto = Math.Round(importeTotal / 1.21, 2);
-                double iva = Math.Round(importeTotal - neto, 2);
-                if (Math.Abs((neto + iva) - importeTotal) > 0.009) iva = Math.Round(importeTotal - neto, 2);
-                if (tipoComprobante == 11) { neto = importeTotal; iva = 0; }
+                // 3. DATOS VENTA (neto / IVA según alícuota por ítem)
+                double neto = 0, iva = 0;
+                var lineas = items ?? new List<FacturaItem>();
+                if (tipoComprobante == 11)
+                {
+                    neto = importeTotal;
+                    iva = 0;
+                }
+                else
+                {
+                    foreach (var it in lineas)
+                    {
+                        double line = (double)it.Subtotal;
+                        double pct = (double)it.AlicuotaIvaPct;
+                        if (pct <= 0.01)
+                        {
+                            neto += line;
+                            continue;
+                        }
+                        double denom = 1 + pct / 100.0;
+                        double nl = Math.Round(line / denom, 2);
+                        double ivp = Math.Round(line - nl, 2);
+                        neto += nl;
+                        iva += ivp;
+                    }
+                }
 
-                // --- AJUSTE ANÓNIMO + RG 5616 ---
-                int docTipo = 99; // Consumidor Final (Anónimo)
+                // --- AJUSTE AN├ôNIMO + RG 5616 ---
+                int docTipo = 99; // Consumidor Final (An├│nimo)
                 long docNro = 0;
-                // Código 5 = Consumidor Final (Obligatorio por RG 5616 en Homologación)
+                // C├│digo 5 = Consumidor Final (Obligatorio por RG 5616 en Homologaci├│n)
                 int condicionIvaReceptor = 5;
 
-                if (ES_PRODUCCION && cuitCliente > 0)
+                if (prod && cuitCliente > 0)
                 {
                     docTipo = 80;
                     docNro = cuitCliente;
-                    // En producción con CUIT, la condición depende del cliente (ej: 1=Resp Inscripto)
+                    // En producci├│n con CUIT, la condici├│n depende del cliente (ej: 1=Resp Inscripto)
                     // Por ahora en modo prueba forzamos 5.
                 }
 
@@ -117,7 +138,7 @@ namespace SchettiniGestion.WPF
                         </FeCAEReq>
                     </FECAESolicitar>";
 
-                string respuestaXml = await EnviarSoap(ES_PRODUCCION ? URL_WSFE_PROD : URL_WSFE_HOMO, xmlBody, "http://ar.gov.afip.dif.FEV1/FECAESolicitar");
+                string respuestaXml = await EnviarSoap(prod ? URL_WSFE_PROD : URL_WSFE_HOMO, xmlBody, "http://ar.gov.afip.dif.FEV1/FECAESolicitar");
 
                 var doc = XDocument.Parse(respuestaXml);
                 XNamespace ns = "http://ar.gov.afip.dif.FEV1/";
@@ -145,7 +166,7 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        // --- MÉTODOS AUXILIARES ---
+        // --- M├ëTODOS AUXILIARES ---
         private static async Task<LoginTicket> ObtenerTicketAcceso(string rutaCert, string pass, bool produccion)
         {
             if (File.Exists(ARCHIVO_TOKEN)) { try { var doc = XDocument.Load(ARCHIVO_TOKEN); var expTime = DateTime.Parse(doc.Descendants("expirationTime").First().Value); if (expTime > DateTime.Now) return new LoginTicket { Token = doc.Descendants("token").First().Value, Sign = doc.Descendants("sign").First().Value }; } catch { } }
@@ -198,32 +219,33 @@ namespace SchettiniGestion.WPF
             return new string(cuit.Where(char.IsDigit).ToArray());
         }
 
-        // --- CONSULTA PADRÓN (CUIT en AFIP) ---
+        // --- CONSULTA PADR├ôN (CUIT en AFIP) ---
         public static async Task<PersonaAfip> ObtenerPersonaPorCuitAsync(string cuit)
         {
             var resultado = new PersonaAfip { Exito = false };
             try
             {
                 string cuitLimpio = LimpiarCuit(cuit);
-                if (string.IsNullOrEmpty(cuitLimpio) || cuitLimpio.Length < 10) { resultado.Error = "CUIT inválido (mínimo 10 dígitos)"; return resultado; }
-                if (!long.TryParse(cuitLimpio, out long idPersona)) { resultado.Error = "CUIT debe contener solo números"; return resultado; }
+                if (string.IsNullOrEmpty(cuitLimpio) || cuitLimpio.Length < 10) { resultado.Error = "CUIT inv├ílido (m├¡nimo 10 d├¡gitos)"; return resultado; }
+                if (!long.TryParse(cuitLimpio, out long idPersona)) { resultado.Error = "CUIT debe contener solo n├║meros"; return resultado; }
 
+                bool prod = DatabaseService.GetAfipAmbienteProduccion();
                 DataRow config = DatabaseService.GetConfiguracion();
-                if (config == null) { resultado.Error = "No hay configuración de negocio. Vaya a Configuración > Negocio y AFIP."; return resultado; }
+                if (config == null) { resultado.Error = "No hay configuraci├│n de negocio. Vaya a Configuraci├│n > Negocio y AFIP."; return resultado; }
                 string cuitEmpresaStr = LimpiarCuit(config["CUIT"]?.ToString());
                 if (string.IsNullOrEmpty(cuitEmpresaStr) || !long.TryParse(cuitEmpresaStr, out long cuitEmpresa))
                 {
-                    resultado.Error = "CUIT de la empresa no configurado o inválido. Configure el CUIT en Configuración > Negocio y AFIP.";
+                    resultado.Error = "CUIT de la empresa no configurado o inv├ílido. Configure el CUIT en Configuraci├│n > Negocio y AFIP.";
                     return resultado;
                 }
                 string rutaCert = config["CertificadoPath"]?.ToString();
                 string passCert = config["PasswordAfip"]?.ToString();
                 if (string.IsNullOrEmpty(rutaCert) || !File.Exists(rutaCert)) { resultado.Error = "Certificado AFIP no configurado o no encontrado"; return resultado; }
 
-                LoginTicket ticket = await ObtenerTicketAccesoPadron(rutaCert, passCert ?? "", ES_PRODUCCION);
-                string urlPadron = ES_PRODUCCION ? URL_PADRON_PROD : URL_PADRON_HOMO;
+                LoginTicket ticket = await ObtenerTicketAccesoPadron(rutaCert, passCert ?? "", prod);
+                string urlPadron = prod ? URL_PADRON_PROD : URL_PADRON_HOMO;
 
-                // SOAP getPersona para Padrón A4
+                // SOAP getPersona para Padr├│n A4
                 string ns = "http://ar.gov.afip.dif.sr_padron_a4/";
                 string xmlBody = $@"<getPersona xmlns=""{ns}""><token>{ticket.Token}</token><sign>{ticket.Sign}</sign><cuitRepresentada>{cuitEmpresa}</cuitRepresentada><idPersona>{idPersona}</idPersona></getPersona>";
                 string soapAction = $"\"{ns}getPersona\"";
@@ -243,7 +265,7 @@ namespace SchettiniGestion.WPF
                         var personaReturn = doc.Descendants().FirstOrDefault(n => n.Name.LocalName == "personaReturn");
                         if (personaReturn == null) { resultado.Error = "AFIP: Respuesta sin datos de persona"; return resultado; }
                         var persona = personaReturn.Descendants().FirstOrDefault(n => n.Name.LocalName == "persona" || n.Name.LocalName == "datosGenerales");
-                        if (persona == null) { resultado.Error = "AFIP: No se encontró el CUIT en el padrón"; return resultado; }
+                        if (persona == null) { resultado.Error = "AFIP: No se encontr├│ el CUIT en el padr├│n"; return resultado; }
 
                         string razonSocial = persona.Descendants().FirstOrDefault(n => n.Name.LocalName == "razonSocial")?.Value ?? persona.Descendants().FirstOrDefault(n => n.Name.LocalName == "denominacion")?.Value;
                         if (string.IsNullOrEmpty(razonSocial))
@@ -265,7 +287,7 @@ namespace SchettiniGestion.WPF
             {
                 string msg = ex.Message;
                 if (msg.Contains("no autorizado") || msg.Contains("Computador"))
-                    msg += "\n\nDebe autorizar su IP en AFIP: ingrese a afip.gob.ar con Clave Fiscal, vaya a Administración de Relaciones / Web Services, adhiera el servicio ws_sr_padron_a4 y registre la IP de su computadora.";
+                    msg += "\n\nDebe autorizar su IP en AFIP: ingrese a afip.gob.ar con Clave Fiscal, vaya a Administraci├│n de Relaciones / Web Services, adhiera el servicio ws_sr_padron_a4 y registre la IP de su computadora.";
                 resultado.Error = "Error: " + msg;
                 return resultado;
             }

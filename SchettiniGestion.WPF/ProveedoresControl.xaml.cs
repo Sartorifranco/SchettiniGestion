@@ -1,4 +1,4 @@
-﻿using SchettiniGestion; // ¡Importante!
+using SchettiniGestion; // ¡Importante!
 using System;
 using System.Data; // ¡Importante!
 using System.Windows;
@@ -124,6 +124,11 @@ namespace SchettiniGestion.WPF
                     LimpiarCampos();
                 }
             }
+        }
+
+        private void txtFiltroProveedores_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            CargarProveedores();
         }
     }
 }

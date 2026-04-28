@@ -11,6 +11,13 @@ namespace SchettiniGestion.WPF
         public MainWindow()
         {
             InitializeComponent();
+            try
+            {
+                var marca = SvgLogoHelper.LoadEmbeddedLogo();
+                if (marca != null && imgMarcaLogin != null)
+                    imgMarcaLogin.Source = marca;
+            }
+            catch { /* logo opcional */ }
             ThemeManager.ThemeChanged += ThemeManager_ThemeChanged;
             ActualizarSelectorTema();
 

@@ -8,7 +8,7 @@
              Background="{DynamicResource BackgroundDark}"
              Loaded="UserControl_Loaded">
 
-    <Grid Margin="15">
+    <Grid Margin="20">
         <TabControl x:Name="tabCompras" Background="Transparent" BorderThickness="0">
             <TabControl.Resources>
                 <Style TargetType="TabItem">

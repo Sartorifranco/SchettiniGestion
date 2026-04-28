@@ -470,7 +470,21 @@ namespace SchettiniGestion.WPF
                           ('ACCESO_FACTURACION'),('ACCESO_VENTAS'),('ACCESO_PRODUCTOS'),('ACCESO_CLIENTES'),
                           ('ACCESO_STOCK'),('ACCESO_COMPRAS'),('ACCESO_PROVEEDORES'),('ACCESO_PRECIOS'),
                           ('ACCESO_LISTASPRECIOS'),('ACCESO_CAJA'),('ACCESO_PRESUPUESTOS'),
-                          ('ACCESO_CUENTASCORRIENTES'),('ACCESO_USUARIOS'),('ACCESO_PERMISOS'),('ACCESO_TOTAL');"
+                          ('ACCESO_CUENTASCORRIENTES'),('ACCESO_USUARIOS'),('ACCESO_PERMISOS'),('ACCESO_TOTAL');",
+
+                    @"IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='VisorPromoCarpeta')
+                      ALTER TABLE Configuracion ADD VisorPromoCarpeta NVARCHAR(500) NULL;
+                      IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='VisorPromoIntervaloSeg')
+                      ALTER TABLE Configuracion ADD VisorPromoIntervaloSeg INT NULL;",
+
+                    @"IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='TipoCambioUSD')
+                      ALTER TABLE Configuracion ADD TipoCambioUSD DECIMAL(18,4) NULL;",
+
+                    @"IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='AfipProduccion')
+                      ALTER TABLE Configuracion ADD AfipProduccion BIT NOT NULL DEFAULT 0;",
+
+                    @"IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='ListaID')
+                      ALTER TABLE Facturas ADD ListaID INT NULL;"
                 };
 
                 foreach (string script in scriptsAdicionales)

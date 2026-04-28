@@ -125,19 +125,31 @@ namespace SchettiniGestion.WPF
                 TableRow rowH = new TableRow();
 
                 TableCell cellLogo = new TableCell();
-                string rutaLogo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logo.png");
+                ImageSource logoSource = SvgLogoHelper.LoadEmbeddedLogo();
+                if (logoSource == null)
+                {
+                    string rutaLogo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logo.png");
+                    if (File.Exists(rutaLogo))
+                    {
+                        try
+                        {
+                            BitmapImage bi = new BitmapImage();
+                            bi.BeginInit();
+                            bi.UriSource = new Uri(rutaLogo);
+                            bi.CacheOption = BitmapCacheOption.OnLoad;
+                            bi.EndInit();
+                            logoSource = bi;
+                        }
+                        catch { /* seguir sin logo en disco */ }
+                    }
+                }
 
-                if (File.Exists(rutaLogo))
+                if (logoSource != null)
                 {
                     try
                     {
-                        BitmapImage bi = new BitmapImage();
-                        bi.BeginInit();
-                        bi.UriSource = new Uri(rutaLogo);
-                        bi.CacheOption = BitmapCacheOption.OnLoad;
-                        bi.EndInit();
                         Image img = new Image();
-                        img.Source = bi;
+                        img.Source = logoSource;
                         img.Width = 90;
                         img.HorizontalAlignment = HorizontalAlignment.Left;
                         img.Stretch = Stretch.Uniform;

@@ -7,7 +7,7 @@
              d:DesignHeight="700" d:DesignWidth="1000"
              Loaded="UsuariosControl_Loaded">
 
-    <Grid Margin="15">
+    <Grid Margin="20">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="3.5*" MinWidth="300" MaxWidth="450"/>
             <ColumnDefinition Width="20"/>

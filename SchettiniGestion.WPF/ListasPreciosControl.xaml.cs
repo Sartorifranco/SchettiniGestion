@@ -1,4 +1,4 @@
-﻿using SchettiniGestion;
+using SchettiniGestion;
 using System;
 using System.Data;
 using System.Windows;
@@ -14,6 +14,8 @@ namespace SchettiniGestion.WPF
         {
             InitializeComponent();
         }
+
+        public ListasPreciosControl(object param) : this() { }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {

@@ -1,0 +1,48 @@
+<UserControl x:Class="SchettiniGestion.WPF.CuponesTarjetasControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource BackgroundDark}"
+             Loaded="Control_Loaded">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="Cupones y Tarjetas" FontSize="22" FontWeight="Bold"
+                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,15"/>
+
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="14,10" Margin="0,0,0,14">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Desde:" Style="{StaticResource LabelStyle}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <DatePicker x:Name="dpDesde" Width="130" Height="35" Margin="0,0,10,0"/>
+                <TextBlock Text="Hasta:" Style="{StaticResource LabelStyle}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <DatePicker x:Name="dpHasta" Width="130" Height="35" Margin="0,0,10,0"/>
+                <TextBox x:Name="txtFiltro" Style="{StaticResource ModernTextBox}" Width="200" Margin="0,0,10,0"/>
+                <Button Content="🔍 Buscar" Style="{StaticResource ButtonStyle}" Padding="12,6" Click="btnBuscar_Click"/>
+            </StackPanel>
+        </Border>
+
+        <DataGrid Grid.Row="2" x:Name="dgvCupones"
+                  Style="{StaticResource {x:Type DataGrid}}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  HeadersVisibility="Column" CanUserAddRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy}" Width="110"/>
+                <DataGridTextColumn Header="Factura" Binding="{Binding FacturaID}" Width="80"/>
+                <DataGridTextColumn Header="Medio de Pago" Binding="{Binding NombreMedio}" Width="140"/>
+                <DataGridTextColumn Header="Nro. Tarjeta" Binding="{Binding NroTarjeta}" Width="120"/>
+                <DataGridTextColumn Header="Cuotas" Binding="{Binding NroCuotas}" Width="70"/>
+                <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat=C2}" Width="120"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Border Grid.Row="3" Background="{DynamicResource SurfaceDark}" CornerRadius="6" Padding="14,10" Margin="0,10,0,0">
+            <Grid>
+                <TextBlock Text="TOTAL TARJETAS:" Foreground="{DynamicResource TextSecondary}" FontSize="13" VerticalAlignment="Center"/>
+                <TextBlock x:Name="lblTotal" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryColor}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

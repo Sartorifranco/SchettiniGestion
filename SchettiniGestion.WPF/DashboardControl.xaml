@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1200"
-             Background="{StaticResource ModuleBackgroundBrush}"
+             Background="{DynamicResource ModuleBackgroundBrush}"
              Loaded="UserControl_Loaded">
 
     <Grid Margin="20">
@@ -16,8 +16,8 @@
         </Grid.RowDefinitions>
 
         <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-            <TextBlock Text="Hola," FontSize="28" Foreground="White" FontWeight="Light"/>
-            <TextBlock x:Name="lblUsuario" Text=" Admin!" FontSize="28" Foreground="White" FontWeight="Bold"/>
+            <TextBlock Text="Hola," FontSize="28" Foreground="{DynamicResource TextPrimary}" FontWeight="Light"/>
+            <TextBlock x:Name="lblUsuario" Text=" Admin!" FontSize="28" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold"/>
         </StackPanel>
 
         <Button Grid.Row="1" Content="🔄 Actualizar Tablero" HorizontalAlignment="Right" Style="{StaticResource ActionButtonStyle}" Click="btnActualizar_Click" Width="180" Margin="0,0,0,20"/>

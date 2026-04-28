@@ -21,9 +21,10 @@ namespace SchettiniGestion.WPF
                 DataRow config = DatabaseService.GetConfiguracion();
                 if (config != null && config.Table.Columns.Contains("UsaVisorCliente"))
                 {
-                    return config["UsaVisorCliente"] != DBNull.Value ? Convert.ToBoolean(config["UsaVisorCliente"]) : true;
+                    if (config["UsaVisorCliente"] == DBNull.Value) return false;
+                    return Convert.ToBoolean(config["UsaVisorCliente"]);
                 }
-                return true;
+                return false;
             }
             catch { return false; }
         }

@@ -7,7 +7,7 @@
              d:DesignHeight="700" d:DesignWidth="1100"
              Loaded="ProductosControl_Loaded">
 
-    <Grid Margin="15">
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>

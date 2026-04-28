@@ -26,8 +26,6 @@ namespace SchettiniGestion.WPF
         private string _referenciaPagoMP = "";
         private bool _esperandoPagoMP = false;
 
-        private const decimal IVA_PORCENTAJE = 21m;
-
         /// <summary>Si se asigna (ej. "Remito", "Pedido"), preselecciona ese tipo al cargar. Usado cuando se abre desde Nuevo Remito/Pedido.</summary>
         public string TipoComprobanteInicial { get; set; }
 
@@ -101,6 +99,13 @@ namespace SchettiniGestion.WPF
         private void btnAgregarProducto_Click(object sender, RoutedEventArgs e)
         {
             if (_productoSeleccionado == null) { AbrirVentanaVarios(); return; }
+            AgregarProductoSeleccionadoAlCarrito();
+        }
+
+        /// <summary>Agrega al carrito el producto en <see cref="_productoSeleccionado"/> usando la cantidad del campo y la lista de precios.</summary>
+        private void AgregarProductoSeleccionadoAlCarrito()
+        {
+            if (_productoSeleccionado == null) return;
 
             int id = Convert.ToInt32(_productoSeleccionado["ProductoID"]);
             int cant = 1;
@@ -116,6 +121,8 @@ namespace SchettiniGestion.WPF
             if (item != null) item.Cantidad += cant;
             else
             {
+                decimal alicuota = DatabaseService.ObtenerPctIvaPorTipoProducto(
+                    _productoSeleccionado.Table.Columns.Contains("TipoIVA") ? _productoSeleccionado["TipoIVA"] : null);
                 CarritoDeVenta.Add(new FacturaItem
                 {
                     ProductoID = id,
@@ -123,12 +130,48 @@ namespace SchettiniGestion.WPF
                     Descripcion = _productoSeleccionado["Descripcion"].ToString(),
                     Cantidad = cant,
                     PrecioUnitario = precioFinal,
+                    AlicuotaIvaPct = alicuota,
                     ImagenPath = imgPath
                 });
             }
             dgvFactura.Items.Refresh();
+            popupProducto.IsOpen = false;
             LimpiarProducto();
             ActualizarTotal();
+        }
+
+        /// <summary>Enter en buscador: código/barras exacto o una sola sugerencia agrega al carrito; varias sugerencias baja al listado; si no hay coincidencias abre Varios.</summary>
+        private void txtBuscarProductoEnterAgregarSiCorresponde()
+        {
+            string texto = (txtBuscarProducto.Text ?? "").Trim();
+            if (string.IsNullOrEmpty(texto)) return;
+
+            DataRow exacto = DatabaseService.BuscarProductoExactoCodigoOCodigoBarra(texto);
+            if (exacto != null)
+            {
+                _productoSeleccionado = exacto;
+                AgregarProductoSeleccionadoAlCarrito();
+                return;
+            }
+
+            if (popupProducto.IsOpen)
+            {
+                if (lstSugerenciasProducto.Items.Count == 1 && lstSugerenciasProducto.Items[0] is DataRowView drvUnico)
+                {
+                    _productoSeleccionado = drvUnico.Row;
+                    AgregarProductoSeleccionadoAlCarrito();
+                    return;
+                }
+                if (lstSugerenciasProducto.Items.Count > 1)
+                {
+                    lstSugerenciasProducto.SelectedIndex = 0;
+                    lstSugerenciasProducto.Focus();
+                    return;
+                }
+            }
+
+            if (!popupProducto.IsOpen)
+                AbrirVentanaVarios();
         }
 
         // --- MERCADO PAGO QR ---
@@ -336,10 +379,19 @@ namespace SchettiniGestion.WPF
                 }
 
                 string condicionTicket = string.Join(" + ", cobroModal.Cobranzas.Select(c => $"{c.nombreMedio} {c.monto:C2}"));
+                string condVent = (cmbCondicionVenta.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Contado";
                 int cliID = Convert.ToInt32(_clienteSeleccionado["ClienteID"]);
                 int? listaId = cmbListaPrecios.SelectedItem is DataRowView lr ? (int?)Convert.ToInt32(lr["ListaID"]) : null;
 
-                int fid = DatabaseService.GuardarFactura(cliID, tipoCompTexto, total, CarritoDeVenta.ToList(), condicionTicket, cae, vtoCae, nroComprobante, listaId, cobroModal.Cobranzas);
+                var parcelas = cobroModal.Cobranzas.ConvertAll(ci => new FacturaCobranzaParcela
+                {
+                    MedioPagoID = ci.MedioPagoID,
+                    NombreMedio = ci.nombreMedio ?? "",
+                    Monto = ci.monto
+                });
+
+                int fid = DatabaseService.GuardarFactura(cliID, tipoCompTexto, total, CarritoDeVenta.ToList(),
+                    condVent, condicionTicket, cae, vtoCae, nroComprobante, listaId, parcelas);
 
                 if (fid > 0)
                 {
@@ -392,13 +444,27 @@ namespace SchettiniGestion.WPF
             decimal subtotal = CarritoDeVenta.Sum(x => x.Cantidad * x.PrecioUnitario);
             decimal totalConDescRec = CarritoDeVenta.Sum(x => x.Subtotal);
             decimal dtoRec = subtotal - totalConDescRec;
-            decimal neto = totalConDescRec / (1 + IVA_PORCENTAJE / 100);
-            decimal iva = totalConDescRec - neto;
+            decimal neto = 0, ivaTotal = 0;
+            foreach (var it in CarritoDeVenta)
+            {
+                decimal line = it.Subtotal;
+                decimal al = it.AlicuotaIvaPct;
+                if (al <= 0.01m)
+                {
+                    neto += line;
+                    continue;
+                }
+                decimal denominador = 1 + al / 100m;
+                decimal nl = Math.Round(line / denominador, 2);
+                decimal il = Math.Round(line - nl, 2);
+                neto += nl;
+                ivaTotal += il;
+            }
 
             lblSubtotal.Text = subtotal.ToString("C2");
             lblDescuentos.Text = dtoRec != 0 ? dtoRec.ToString("C2") + (dtoRec > 0 ? " (Dto)" : " (Rec)") : "$ 0,00";
             lblNeto.Text = neto.ToString("C2");
-            lblIVA.Text = iva.ToString("C2");
+            lblIVA.Text = ivaTotal.ToString("C2");
             lblTotal.Text = totalConDescRec.ToString("C2");
             CustomerScreenService.Actualizar(CarritoDeVenta.ToList(), totalConDescRec);
 
@@ -437,6 +503,7 @@ namespace SchettiniGestion.WPF
                     Descripcion = ventanaVarios.Descripcion,
                     Cantidad = 1,
                     PrecioUnitario = ventanaVarios.Precio,
+                    AlicuotaIvaPct = 21m,
                     ImagenPath = null
                 });
                 dgvFactura.Items.Refresh();
@@ -455,7 +522,11 @@ namespace SchettiniGestion.WPF
             {
                 if (item.Codigo == "VAR") continue;
                 DataRow prod = DatabaseService.BuscarProducto(item.Codigo);
-                if (prod != null) item.PrecioUnitario = Convert.ToDecimal(prod["PrecioVenta"]) * (1 + (porcentaje / 100));
+                if (prod != null)
+                {
+                    item.PrecioUnitario = Convert.ToDecimal(prod["PrecioVenta"]) * (1 + (porcentaje / 100));
+                    item.AlicuotaIvaPct = DatabaseService.ObtenerPctIvaPorTipoProducto(prod.Table.Columns.Contains("TipoIVA") ? prod["TipoIVA"] : null);
+                }
             }
             dgvFactura.Items.Refresh();
             ActualizarTotal();
@@ -467,7 +538,24 @@ namespace SchettiniGestion.WPF
         private void lstSugerenciasCliente_MouseUp(object sender, MouseButtonEventArgs e) { if (lstSugerenciasCliente.SelectedItem is DataRowView r) SeleccionarCliente(r); }
         private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e) { if (lstSugerenciasProducto.SelectedItem is DataRowView r) { _productoSeleccionado = r.Row; _ignorarPerdidaFoco = true; txtBuscarProducto.Text = _productoSeleccionado["Descripcion"].ToString(); _ignorarPerdidaFoco = false; popupProducto.IsOpen = false; txtCantidad.Focus(); txtCantidad.SelectAll(); } }
         private async void txtBuscar_LostFocus(object sender, RoutedEventArgs e) { if (_ignorarPerdidaFoco) return; await Task.Delay(150); if (!lstSugerenciasCliente.IsFocused && !lstSugerenciasProducto.IsFocused) { popupCliente.IsOpen = false; popupProducto.IsOpen = false; } }
-        private void txtBuscar_PreviewKeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Down) { if (popupCliente.IsOpen) { lstSugerenciasCliente.SelectedIndex = 0; lstSugerenciasCliente.Focus(); } else if (popupProducto.IsOpen) { lstSugerenciasProducto.SelectedIndex = 0; lstSugerenciasProducto.Focus(); } } else if (e.Key == Key.Escape) { popupCliente.IsOpen = false; popupProducto.IsOpen = false; } else if (e.Key == Key.Enter && sender == txtBuscarProducto) { if (!popupProducto.IsOpen) { AbrirVentanaVarios(); e.Handled = true; } } }
+        private void txtBuscar_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Down)
+            {
+                if (popupCliente.IsOpen) { lstSugerenciasCliente.SelectedIndex = 0; lstSugerenciasCliente.Focus(); }
+                else if (popupProducto.IsOpen) { lstSugerenciasProducto.SelectedIndex = 0; lstSugerenciasProducto.Focus(); }
+            }
+            else if (e.Key == Key.Escape)
+            {
+                popupCliente.IsOpen = false;
+                popupProducto.IsOpen = false;
+            }
+            else if (e.Key == Key.Enter && sender == txtBuscarProducto)
+            {
+                e.Handled = true;
+                txtBuscarProductoEnterAgregarSiCorresponde();
+            }
+        }
         private void lstSugerencias_PreviewKeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Enter) { if (sender == lstSugerenciasCliente && lstSugerenciasCliente.SelectedItem is DataRowView c) SeleccionarCliente(c); else if (sender == lstSugerenciasProducto && lstSugerenciasProducto.SelectedItem is DataRowView p) { _productoSeleccionado = p.Row; _ignorarPerdidaFoco = true; txtBuscarProducto.Text = _productoSeleccionado["Descripcion"].ToString(); _ignorarPerdidaFoco = false; popupProducto.IsOpen = false; txtCantidad.Focus(); txtCantidad.SelectAll(); } } }
         private void NumberValidationTextBox(object sender, TextCompositionEventArgs e) { e.Handled = new Regex("[^0-9,.]+").IsMatch(e.Text); }
 

@@ -1,0 +1,254 @@
+<Window x:Class="SchettiniGestion.WPF.CompraModalWindow"
+
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+
+        Title="Factura de Compra" Width="760" Height="650"
+
+        WindowStartupLocation="CenterOwner"
+
+        ResizeMode="CanResize"
+
+        Background="{DynamicResource ModuleBackgroundBrush}">
+
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+
+            <RowDefinition Height="Auto"/>
+
+            <RowDefinition Height="Auto"/>
+
+            <RowDefinition Height="Auto"/>
+
+            <RowDefinition Height="*"/>
+
+            <RowDefinition Height="Auto"/>
+
+            <RowDefinition Height="Auto"/>
+
+        </Grid.RowDefinitions>
+
+
+
+        <TextBlock Grid.Row="0" x:Name="lblTitulo" Text="Nueva Factura de Compra"
+
+                   FontSize="17" FontWeight="Bold" Foreground="{StaticResource PrimaryColor}" Margin="0,0,0,14"/>
+
+
+
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="7" Padding="14,10" Margin="0,0,0,10"
+
+                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="200"/></Grid.ColumnDefinitions>
+
+                <StackPanel>
+
+                    <TextBlock Text="Proveedor *" Style="{StaticResource ModalCaptionTextStyle}"/>
+
+                    <Grid>
+
+                        <TextBox x:Name="txtBuscarProveedor" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,10"
+
+                                 TextChanged="txtBuscarProveedor_TextChanged" Text="Buscar proveedor..."/>
+
+                        <Popup x:Name="popupProveedores" PlacementTarget="{Binding ElementName=txtBuscarProveedor}" Placement="Bottom" StaysOpen="False">
+
+                            <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" MaxHeight="180">
+
+                                <ListBox x:Name="lstProveedores" Background="{DynamicResource SurfaceDark}" Foreground="{DynamicResource TextPrimary}"
+
+                                         DisplayMemberPath="RazonSocial" MouseUp="lstProveedores_MouseUp"/>
+
+                            </Border>
+
+                        </Popup>
+
+                    </Grid>
+
+                    <TextBlock x:Name="lblProveedorSel" Foreground="{StaticResource SuccessColor}" FontSize="12" Margin="0,-6,0,0"/>
+
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+
+                    <TextBlock Text="Tipo Comprobante" Style="{StaticResource ModalCaptionTextStyle}"/>
+
+                    <ComboBox x:Name="cmbTipoComprobante" Style="{StaticResource ModuleComboBoxStyle}" Margin="0,0,0,10">
+
+                        <ComboBoxItem Content="Factura A" IsSelected="True"/>
+
+                        <ComboBoxItem Content="Factura B"/>
+
+                        <ComboBoxItem Content="Factura C"/>
+
+                        <ComboBoxItem Content="Ticket"/>
+
+                        <ComboBoxItem Content="Remito"/>
+
+                    </ComboBox>
+
+                </StackPanel>
+
+            </Grid>
+
+        </Border>
+
+
+
+        <Border Grid.Row="2" Background="{DynamicResource SurfaceDark}" CornerRadius="7" Padding="14,10" Margin="0,0,0,10"
+
+                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+
+                    <ColumnDefinition Width="*"/>
+
+                    <ColumnDefinition Width="14"/>
+
+                    <ColumnDefinition Width="100"/>
+
+                    <ColumnDefinition Width="14"/>
+
+                    <ColumnDefinition Width="130"/>
+
+                    <ColumnDefinition Width="14"/>
+
+                    <ColumnDefinition Width="Auto"/>
+
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+
+                    <TextBlock Text="Producto" Style="{StaticResource ModalCaptionTextStyle}"/>
+
+                    <Grid>
+
+                        <TextBox x:Name="txtBuscarProducto" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,10"
+
+                                 TextChanged="txtBuscarProducto_TextChanged"/>
+
+                        <Popup x:Name="popupProductos" PlacementTarget="{Binding ElementName=txtBuscarProducto}" Placement="Bottom" StaysOpen="False">
+
+                            <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" MaxHeight="180">
+
+                                <ListBox x:Name="lstProductos" Background="{DynamicResource SurfaceDark}" Foreground="{DynamicResource TextPrimary}"
+
+                                         DisplayMemberPath="Descripcion" MouseUp="lstProductos_MouseUp"/>
+
+                            </Border>
+
+                        </Popup>
+
+                    </Grid>
+
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+
+                    <TextBlock Text="Cantidad" Style="{StaticResource ModalCaptionTextStyle}"/>
+
+                    <TextBox x:Name="txtCantidad" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,10" Text="1"/>
+
+                </StackPanel>
+
+                <StackPanel Grid.Column="4">
+
+                    <TextBlock Text="Costo Unitario" Style="{StaticResource ModalCaptionTextStyle}"/>
+
+                    <TextBox x:Name="txtCosto" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,10" Text="0"/>
+
+                </StackPanel>
+
+                <Button Grid.Column="6" Content="+ Agregar" Style="{StaticResource ButtonStyle}"
+
+                        VerticalAlignment="Bottom" Margin="0,0,0,10"
+
+                        Click="btnAgregarItem_Click"/>
+
+            </Grid>
+
+        </Border>
+
+
+
+        <DataGrid Grid.Row="3" x:Name="dgvItems"
+
+                  Style="{StaticResource ModuleDataGridStyle}"
+
+                  AutoGenerateColumns="False"
+
+                  HeadersVisibility="Column" CanUserAddRows="False" IsReadOnly="True"
+
+                  FontSize="13" Margin="0,0,0,10">
+
+            <DataGrid.Columns>
+
+                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="90"/>
+
+                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
+
+                <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" Width="60"/>
+
+                <DataGridTextColumn Header="Costo Unit." Binding="{Binding CostoFmt}" Width="110"/>
+
+                <DataGridTextColumn Header="Subtotal" Binding="{Binding SubtotalFmt}" Width="110"/>
+
+                <DataGridTemplateColumn Header="" Width="40">
+
+                    <DataGridTemplateColumn.CellTemplate>
+
+                        <DataTemplate>
+
+                            <Button Content="✕" Style="{StaticResource DeleteButtonStyle}" Padding="4,2" FontSize="11"
+
+                                    Click="btnQuitarItem_Click"/>
+
+                        </DataTemplate>
+
+                    </DataGridTemplateColumn.CellTemplate>
+
+                </DataGridTemplateColumn>
+
+            </DataGrid.Columns>
+
+        </DataGrid>
+
+
+
+        <Border Grid.Row="4" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="6" Padding="14,8" Margin="0,0,0,14"
+
+                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+
+            <Grid>
+
+                <TextBlock Text="TOTAL:" Foreground="{DynamicResource TextSecondary}" FontSize="13" VerticalAlignment="Center"/>
+
+                <TextBlock x:Name="lblTotal" FontSize="20" FontWeight="Bold" Foreground="{StaticResource SuccessColor}"
+
+                           HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+            </Grid>
+
+        </Border>
+
+
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
+
+            <Button Content="Cancelar" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="btnCancelar_Click"/>
+
+            <Button Content="✔ Guardar Compra" Style="{StaticResource ButtonStyle}" Click="btnGuardar_Click"/>
+
+        </StackPanel>
+
+    </Grid>
+
+</Window>
+

@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:SchettiniGestion.WPF"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1200"
-             Background="{StaticResource ModuleBackgroundBrush}"
+             Background="{DynamicResource ModuleBackgroundBrush}"
              Loaded="PresupuestosControl_Loaded">
 
     <Grid>
@@ -16,15 +16,15 @@
         </Grid.ColumnDefinitions>
 
         <DockPanel Grid.Column="0" Margin="10,0,5,10">
-            <Border DockPanel.Dock="Top" Background="{StaticResource PanelBackgroundBrush}" 
+            <Border DockPanel.Dock="Top" Background="{DynamicResource PanelBackgroundBrush}" 
                     CornerRadius="5,5,0,0" Margin="10,10,10,0" Padding="15"
-                    BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1,1,1,0">
-                <TextBlock Text="NUEVO PRESUPUESTO" FontSize="20" FontWeight="Bold" Foreground="#FFB74D" HorizontalAlignment="Left"/>
+                    BorderBrush="{DynamicResource BorderDarkBrush}" BorderThickness="1,1,1,0">
+                <TextBlock Text="NUEVO PRESUPUESTO" FontSize="20" FontWeight="Bold" Foreground="{StaticResource WarningColor}" HorizontalAlignment="Left"/>
             </Border>
 
-            <Border Background="{StaticResource PanelBackgroundBrush}" 
+            <Border Background="{DynamicResource PanelBackgroundBrush}" 
                     CornerRadius="0,0,5,5" Margin="10,0,10,10" Padding="5"
-                    BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1,0,1,1">
+                    BorderBrush="{DynamicResource BorderDarkBrush}" BorderThickness="1,0,1,1">
 
                 <DataGrid x:Name="dgvPresupuesto" Style="{StaticResource ModuleDataGridStyle}"
                           AutoGenerateColumns="False" CanUserSortColumns="False" CanUserAddRows="False">
@@ -46,20 +46,20 @@
             </Border>
         </DockPanel>
 
-        <Border Grid.Column="1" Background="{StaticResource PanelBackgroundBrush}" 
+        <Border Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" 
                 CornerRadius="5" Margin="5,10,10,10" Padding="15"
-                BorderBrush="{StaticResource BorderDarkBrush}" BorderThickness="1">
+                BorderBrush="{DynamicResource BorderDarkBrush}" BorderThickness="1">
             <DockPanel>
 
                 <StackPanel DockPanel.Dock="Bottom" Margin="0,20,0,0">
-                    <Separator Background="#555"/>
-                    <TextBlock Text="TOTAL ESTIMADO" Foreground="White" FontSize="20" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0"/>
-                    <TextBlock x:Name="lblTotal" Text="$ 0,00" Foreground="#FFB74D" FontSize="40" FontWeight="Bold" HorizontalAlignment="Right"/>
+                    <Separator Background="{DynamicResource BorderColor}"/>
+                    <TextBlock Text="TOTAL ESTIMADO" Foreground="{DynamicResource TextPrimary}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0"/>
+                    <TextBlock x:Name="lblTotal" Text="$ 0,00" Foreground="{StaticResource WarningColor}" FontSize="40" FontWeight="Bold" HorizontalAlignment="Right"/>
 
                     <Button x:Name="btnGuardarPresupuesto" Content="Guardar Presupuesto" 
-                            Style="{StaticResource ActionButtonStyle}" 
+                            Style="{StaticResource SuccessButtonStyle}" 
                             MinHeight="60" FontSize="18" Margin="0,20,0,0"
-                            Background="#EF6C00" Click="btnGuardarPresupuesto_Click"/>
+                            Click="btnGuardarPresupuesto_Click"/>
 
                     <Button x:Name="btnCancelar" Content="Limpiar" 
                             Style="{StaticResource DeleteButtonStyle}" 
@@ -69,7 +69,7 @@
 
                 <StackPanel DockPanel.Dock="Top">
 
-                    <Border Background="{StaticResource ModuleBackgroundBrush}" CornerRadius="3" Padding="10" Margin="0,0,0,10">
+                    <Border Background="{DynamicResource ModuleBackgroundBrush}" CornerRadius="3" Padding="10" Margin="0,0,0,10">
                         <StackPanel>
                             <TextBlock Text="Cliente:" Style="{StaticResource ModuleLabelStyle}"/>
                             <TextBox x:Name="txtBuscarCliente" Style="{StaticResource ModuleTextBoxStyle}" 
@@ -78,18 +78,18 @@
                                      LostFocus="txtBuscar_LostFocus"/>
 
                             <Popup x:Name="popupCliente" PlacementTarget="{Binding ElementName=txtBuscarCliente}" Placement="Bottom" StaysOpen="False">
-                                <Border Background="{StaticResource PanelBackgroundBrush}" BorderBrush="#FFB74D" BorderThickness="1" MaxHeight="200">
+                                <Border Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{StaticResource WarningColor}" BorderThickness="1" MaxHeight="200">
                                     <ListBox x:Name="lstSugerenciasCliente" DisplayMemberPath="RazonSocial" 
                                              MouseUp="lstSugerenciasCliente_MouseUp"
                                              PreviewKeyDown="lstSugerencias_PreviewKeyDown"
-                                             Background="{StaticResource PanelBackgroundBrush}" Foreground="White"/>
+                                             Background="{DynamicResource PanelBackgroundBrush}" Foreground="{DynamicResource TextPrimary}"/>
                                 </Border>
                             </Popup>
-                            <TextBlock x:Name="lblClienteSeleccionado" Text="Consumidor Final" Foreground="White" FontSize="16" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                            <TextBlock x:Name="lblClienteSeleccionado" Text="Consumidor Final" Foreground="{DynamicResource TextPrimary}" FontSize="16" FontWeight="SemiBold" Margin="0,5,0,0"/>
                         </StackPanel>
                     </Border>
 
-                    <Border Background="{StaticResource ModuleBackgroundBrush}" CornerRadius="3" Padding="10">
+                    <Border Background="{DynamicResource ModuleBackgroundBrush}" CornerRadius="3" Padding="10">
                         <StackPanel>
                             <TextBlock Text="Producto:" Style="{StaticResource ModuleLabelStyle}"/>
                             <TextBox x:Name="txtBuscarProducto" Style="{StaticResource ModuleTextBoxStyle}" 
@@ -98,11 +98,11 @@
                                      LostFocus="txtBuscar_LostFocus"/>
 
                             <Popup x:Name="popupProducto" PlacementTarget="{Binding ElementName=txtBuscarProducto}" Placement="Bottom" StaysOpen="False">
-                                <Border Background="{StaticResource PanelBackgroundBrush}" BorderBrush="#FFB74D" BorderThickness="1" MaxHeight="200">
+                                <Border Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{StaticResource WarningColor}" BorderThickness="1" MaxHeight="200">
                                     <ListBox x:Name="lstSugerenciasProducto" DisplayMemberPath="Descripcion" 
                                              MouseUp="lstSugerenciasProducto_MouseUp"
                                              PreviewKeyDown="lstSugerencias_PreviewKeyDown"
-                                             Background="{StaticResource PanelBackgroundBrush}" Foreground="White"/>
+                                             Background="{DynamicResource PanelBackgroundBrush}" Foreground="{DynamicResource TextPrimary}"/>
                                 </Border>
                             </Popup>
 

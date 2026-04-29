@@ -36,8 +36,20 @@ namespace SchettiniGestion.Tester
                 return;
             }
 
-            // 2. Simular Sesión de Usuario (Bypass de admin)
-            DatabaseService.CargarSesionUsuario("admin");
+            // 2. Sesión (admin inicial si BD vacía + contraseña establecida)
+            DatabaseService.AsegurarUsuarioAdminInicial();
+            if (!DatabaseService.ValidarUsuario("admin", DatabaseService.UsuarioBootstrapAdminContraseña))
+            {
+                Registrar("❌ SEGURIDAD: Login admin falló (usuario/contraseña bootstrap).");
+                GenerarReporte();
+                return;
+            }
+            if (!DatabaseService.CargarSesionUsuario("admin"))
+            {
+                Registrar("❌ SEGURIDAD: No se pudo cargar sesión de usuario.");
+                GenerarReporte();
+                return;
+            }
             Registrar("✅ SEGURIDAD: Sesión de 'admin' iniciada correctamente.");
 
             // Tomar estado de caja ANTES de empezar
@@ -244,8 +256,9 @@ namespace SchettiniGestion.Tester
             else
                 Registrar("ℹ️ SESIÓN: Catálogo pequeño; omito prueba de permiso no asignado.");
 
+            DatabaseService.ValidarUsuario("admin", DatabaseService.UsuarioBootstrapAdminContraseña);
             DatabaseService.CargarSesionUsuario("admin");
-            Registrar("ℹ️ SESIÓN: Restaurado bypass 'admin' para salida del bot.");
+            Registrar("ℹ️ SESIÓN: Restaurado sesión 'admin' para salida del bot.");
 
             int uid = ObtenerUsuarioIdPorNombreExacto(uNom);
             if (uid == 0)

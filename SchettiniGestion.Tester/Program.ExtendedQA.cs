@@ -15,6 +15,8 @@ namespace SchettiniGestion.Tester
         {
             Registrar("");
             Registrar("--- MÓDULOS EXTENDIDOS (AUTO) ---");
+            DatabaseService.AsegurarUsuarioAdminInicial();
+            DatabaseService.ValidarUsuario("admin", DatabaseService.UsuarioBootstrapAdminContraseña);
             DatabaseService.CargarSesionUsuario("admin");
             AsegurarTablaReservasStockSiFalta();
 

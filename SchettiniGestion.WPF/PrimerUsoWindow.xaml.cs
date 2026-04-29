@@ -108,6 +108,7 @@ namespace SchettiniGestion.WPF
                     ?.Invoke(app, new object[] { _cadenaTesteada });
 
                 DatabaseService.InitializeDatabase();
+                DatabaseService.AsegurarUsuarioAdminInicial();
 
                 SetTestStatus("✔", "¡Base de datos configurada!", "El sistema está listo para usar.", "success");
 

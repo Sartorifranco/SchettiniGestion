@@ -55,23 +55,66 @@ namespace SchettiniGestion.WPF
                                 WHERE f.Fecha >= @d AND f.Fecha <= @h ORDER BY f.Fecha DESC";
                         break;
                     case "Libro IVA Ventas":
-                        sql = @"SELECT f.Fecha, f.TipoComprobante AS TipoComp, ISNULL(c.CUIT,'') AS CUIT,
-                                       ISNULL(c.RazonSocial,'Consumidor Final') AS RazonSocial,
-                                       ISNULL(c.CondicionIVA,'CF') AS CondIVA,
-                                       ROUND(f.Total / 1.21, 2) AS Neto21,
-                                       ROUND(f.Total - f.Total/1.21, 2) AS IVA21,
-                                       f.Total AS Total
-                                FROM Facturas f LEFT JOIN Clientes c ON f.ClienteID=c.ClienteID
-                                WHERE f.Fecha >= @d AND f.Fecha <= @h ORDER BY f.Fecha";
+                        // Neto/IVA por línea desde TipoIVA del producto (no total/1.21 global)
+                        sql = @";WITH lv AS (
+  SELECT fd.FacturaID,
+    fd.Cantidad * fd.PrecioUnitario AS Subtot,
+    CASE WHEN UPPER(ISNULL(pr.TipoIVA,N'')) LIKE N'%EXE%' OR UPPER(ISNULL(pr.TipoIVA,N'')) LIKE N'%NO GRAVA%' THEN 0.0
+         WHEN ISNULL(pr.TipoIVA,N'') LIKE N'%10%' THEN 10.5
+         ELSE 21.0 END AS Pct
+  FROM FacturaDetalle fd
+  INNER JOIN Facturas fa ON fd.FacturaID=fa.FacturaID
+  LEFT JOIN Productos pr ON fd.ProductoID=pr.ProductoID
+  WHERE fa.Fecha>=@d AND fa.Fecha<=@h
+), lin AS (
+  SELECT FacturaID, Subtot, Pct,
+    CASE WHEN Pct<=0.01 THEN Subtot ELSE ROUND(Subtot/(1.0+Pct/100.0), 2) END AS NetoLin,
+    CASE WHEN Pct<=0.01 THEN 0 ELSE Subtot-ROUND(Subtot/(1.0+Pct/100.0), 2) END AS IvaLin
+  FROM lv
+), agg AS (
+  SELECT FacturaID, SUM(NetoLin) AS Neto,SUM(IvaLin) AS IVA, SUM(Subtot) AS TotalDet
+  FROM lin GROUP BY FacturaID
+)
+SELECT fa.Fecha, fa.TipoComprobante AS TipoComp, ISNULL(c.CUIT,'') AS CUIT,
+       ISNULL(c.RazonSocial,'Consumidor Final') AS RazonSocial,
+       ISNULL(c.CondicionIVA,'CF') AS CondIVA,
+       a.Neto AS Neto, a.IVA AS IVA,
+       CASE WHEN ABS(ISNULL(fa.Total,0)-ISNULL(a.TotalDet,0))<0.02 THEN fa.Total ELSE a.TotalDet END AS Total
+FROM Facturas fa
+INNER JOIN agg a ON fa.FacturaID=a.FacturaID
+LEFT JOIN Clientes c ON fa.ClienteID=c.ClienteID
+WHERE fa.Fecha>=@d AND fa.Fecha<=@h
+ORDER BY fa.Fecha;";
                         break;
                     case "Libro IVA Compras":
-                        sql = @"SELECT c.Fecha, c.TipoComprobante AS TipoComp, ISNULL(p.CUIT,'') AS CUIT,
-                                       ISNULL(p.RazonSocial,'') AS Proveedor,
-                                       ROUND(c.Total / 1.21, 2) AS Neto21,
-                                       ROUND(c.Total - c.Total/1.21, 2) AS IVA21,
-                                       c.Total AS Total
-                                FROM Compras c LEFT JOIN Proveedores p ON c.ProveedorID=p.ProveedorID
-                                WHERE c.Fecha >= @d AND c.Fecha <= @h ORDER BY c.Fecha";
+                        sql = @";WITH lc AS (
+  SELECT cd.CompraID,
+    cd.Cantidad * cd.PrecioCosto AS Subtot,
+    CASE WHEN UPPER(ISNULL(pr.TipoIVA,N'')) LIKE N'%EXE%' OR UPPER(ISNULL(pr.TipoIVA,N'')) LIKE N'%NO GRAVA%' THEN 0.0
+         WHEN ISNULL(pr.TipoIVA,N'') LIKE N'%10%' THEN 10.5
+         ELSE 21.0 END AS Pct
+  FROM CompraDetalle cd
+  INNER JOIN Compras cp ON cd.CompraID=cp.CompraID
+  LEFT JOIN Productos pr ON cd.ProductoID=pr.ProductoID
+  WHERE cp.Fecha>=@d AND cp.Fecha<=@h
+), lin AS (
+  SELECT CompraID, Subtot, Pct,
+    CASE WHEN Pct<=0.01 THEN Subtot ELSE ROUND(Subtot/(1.0+Pct/100.0), 2) END AS NetoLin,
+    CASE WHEN Pct<=0.01 THEN 0 ELSE Subtot-ROUND(Subtot/(1.0+Pct/100.0), 2) END AS IvaLin
+  FROM lc
+), agg AS (
+  SELECT CompraID, SUM(NetoLin) AS Neto,SUM(IvaLin) AS IVA, SUM(Subtot) AS TotalDet
+  FROM lin GROUP BY CompraID
+)
+SELECT cp.Fecha, cp.TipoComprobante AS TipoComp, ISNULL(pv.CUIT,'') AS CUIT,
+       ISNULL(pv.RazonSocial,'') AS Proveedor,
+       a.Neto AS Neto, a.IVA AS IVA,
+       CASE WHEN ABS(ISNULL(cp.Total,0)-ISNULL(a.TotalDet,0))<0.02 THEN cp.Total ELSE a.TotalDet END AS Total
+FROM Compras cp
+INNER JOIN agg a ON cp.CompraID=a.CompraID
+LEFT JOIN Proveedores pv ON cp.ProveedorID=pv.ProveedorID
+WHERE cp.Fecha>=@d AND cp.Fecha<=@h
+ORDER BY cp.Fecha;";
                         break;
                     case "Productos Más Vendidos":
                         sql = @"SELECT ISNULL(p.Descripcion,'Desconocido') AS Producto,

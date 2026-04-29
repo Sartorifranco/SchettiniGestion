@@ -67,6 +67,7 @@ namespace SchettiniGestion.WPF
                     if (cs != DatabaseService.ConnectionString)
                         DatabaseService.ActualizarConexion(cs);
                     DatabaseService.InitializeDatabase();
+                    DatabaseService.AsegurarUsuarioAdminInicial();
                     return true;
                 }
                 catch { /* probar siguiente */ }

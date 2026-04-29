@@ -344,31 +344,17 @@ Si falta el CUIT o el certificado, aparecerá un mensaje claro indicando qué co
 
 ---
 
-### 16. Módulo Informes - 5 pestañas implementadas
+### 16. Módulo Informes (`InformesControl`) — alcance actual
 
-**Archivos creados/modificados:**
-- `SchettiniGestion/DatabaseService.cs` - Métodos: GetEstadoResultados, GetDetalleCobros, GetValorizacionStock, GetProveedoresConSaldo, GetVentasParaLibroIVA, GetMovimientosCajaRango
-- `SchettiniGestion.WPF/InformeGeneralControl.xaml` y `.xaml.cs` (nuevo)
-- `SchettiniGestion.WPF/InformeCompraControl.xaml` y `.xaml.cs` (nuevo)
-- `SchettiniGestion.WPF/InformeStockControl.xaml` y `.xaml.cs` (nuevo)
-- `SchettiniGestion.WPF/InformeTesoreriaControl.xaml` y `.xaml.cs` (nuevo)
-- `SchettiniGestion.WPF/InformeContabilidadControl.xaml` y `.xaml.cs` (nuevo)
-- `SchettiniGestion.WPF/InformesControl.xaml.cs` - Carga los nuevos controles
+**Nota importante:** Este punto describía inicialmente controles separados (`InformeGeneralControl`, etc.). **Esos archivos no están en el repositorio.** El alcance vigente es un único `InformesControl.xaml.cs` con un **combo de tipo de informe** y datos generados en SQL desde la aplicación.
 
-**Qué se implementó:**
-- **General:** Estado de resultados (ventas, costos, gastos, resultado neto) y detalle de ventas por rango de fechas.
-- **Compra:** Cuenta corriente con proveedores (saldos), detalle de compras y gastos.
-- **Stock:** Valorización de stock (sin IVA, con IVA, totales).
-- **Tesorería:** Detalle de cobros (factura, cliente, medio de pago) y flujo de caja (movimientos por rango).
-- **Contabilidad:** Libro IVA (ventas con datos fiscales).
+**Archivos:** `SchettiniGestion.WPF/InformesControl.xaml(.cs)`. Algunos reportes más amplios (estado de resultados, valorización, flujo por rubros) están en **Administración > Informes financieros** según **`ReportesControl`** / otros módulos del menú principal, si están cableados ahí.
 
-**Cómo probar:**
-1. Administración > Informes.
-2. General: elegir fechas > Buscar > ver estado de resultados y detalle ventas.
-3. Compra: fechas > Buscar > ver cta cte proveedores, compras y gastos.
-4. Stock: Buscar > ver valorización.
-5. Tesorería: fechas > Buscar > ver cobros y flujo caja.
-6. Contabilidad: fechas > Buscar > ver libro IVA.
+**Tipos típicos en el combo (`InformesControl`):**
+- Ventas por período, Libro IVA ventas/compras (nettos por línea según `TipoIVA` del producto, no total/1.21 único).
+- Productos más vendidos, ranking clientes, export CSV.
+
+Si el cliente requiere **pestañas dedicadas por rubro**, hay que implementar controles UX adicionales o integrar vistas ya existentes en `PrincipalWindow`.
 
 ---
 

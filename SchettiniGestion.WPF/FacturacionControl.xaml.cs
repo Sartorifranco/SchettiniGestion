@@ -310,6 +310,17 @@ namespace SchettiniGestion.WPF
             if (CarritoDeVenta.Count == 0) { CustomMessageBox.Show("Agregue productos."); return; }
             if (_clienteSeleccionado == null) { CustomMessageBox.Show("Seleccione cliente."); return; }
 
+            foreach (var it in CarritoDeVenta)
+            {
+                if (string.Equals(it.Codigo, "VARIOS", StringComparison.OrdinalIgnoreCase)) continue;
+                int disp = DatabaseService.GetStockActualProducto(it.ProductoID);
+                if (it.Cantidad > disp)
+                {
+                    CustomMessageBox.Show($"Stock insuficiente: «{it.Descripcion}» (disponible {disp}, pedido {it.Cantidad}).");
+                    return;
+                }
+            }
+
             // 1. Obtener Configuración
             DataRow config = DatabaseService.GetConfiguracion();
             int puntoVentaConfig = 1;

@@ -14,6 +14,12 @@ Si el negocio exige un **instalador con accesos directos, desinstalador y cheque
 
 ---
 
+## Primera vez: usuario `admin`
+
+Si la tabla `Usuarios` está vacía, al iniciar la app se crea el usuario **`admin`** con una contraseña inicial definida en código (`UsuarioBootstrapAdminContraseña` en `DatabaseService`, valor documentado **`Admin#2026`**). **Cambiá esa contraseña** desde el módulo de usuarios antes de entregar la instalación a un cliente final.
+
+---
+
 ## ¿Qué es la «versión Lite» en este producto?
 
 **Lite no es un ejecutable diferente compilado.** Es **el mismo programa** SchettiniGestion.WPF, pero con una **licencia** (`licencia.key` o configuración equivalente) que permite **solo los módulos listados** en el JSON firmado/embebido en la clave.

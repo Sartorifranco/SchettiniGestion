@@ -151,6 +151,7 @@ namespace SchettiniGestion
                 using (var conn = new SqlConnection(_connectionString))
                 {
                     conn.Open();
+                    AsegurarMigracionLite(conn);
                 }
                 return true;
             }
@@ -183,7 +184,13 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='ListaID')
   ALTER TABLE Facturas ADD ListaID INT NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='CondicionVenta')
-  ALTER TABLE Facturas ADD CondicionVenta NVARCHAR(100) NULL;", c))
+  ALTER TABLE Facturas ADD CondicionVenta NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='StockMinimo')
+  ALTER TABLE Productos ADD StockMinimo INT NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='UsaVariantes')
+  ALTER TABLE Productos ADD UsaVariantes BIT NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='EsCombo')
+  ALTER TABLE Productos ADD EsCombo BIT NOT NULL DEFAULT 0;", c))
                         cmd.ExecuteNonQuery();
                     _columnasMigracionLiteOk = true;
                 }
@@ -327,15 +334,11 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             return dt;
         }
 
-        // ---------------------------------------------------------
-        // BYPASS TOTAL: Validar sin preguntar a la base de datos
-        // ---------------------------------------------------------
+        /// <summary>Contraseña provisional del usuario <c>admin</c> cuando la BD recién se crea sin usuarios.</summary>
+        public const string UsuarioBootstrapAdminContraseña = "Admin#2026";
+
         public static bool ValidarUsuario(string u, string p)
         {
-            // Si es admin, pase lo que pase, es VERDADERO
-            if (u.Trim().ToLower() == "admin") return true;
-
-            // Para el resto, consulta normal
             try
             {
                 using (var c = new SqlConnection(_connectionString))
@@ -355,28 +358,33 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             catch { return false; }
         }
 
-        // ---------------------------------------------------------
-        // BYPASS TOTAL: Cargar permisos "falsos" para entrar sí o sí
-        // ---------------------------------------------------------
+        /// <summary>Si no hay ningún usuario, crea <c>admin</c> con <see cref="UsuarioBootstrapAdminContraseña"/> (cambiar desde Usuarios).</summary>
+        public static void AsegurarUsuarioAdminInicial()
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    int n;
+                    using (var q = new SqlCommand("SELECT COUNT(*) FROM Usuarios", c))
+                        n = Convert.ToInt32(q.ExecuteScalar());
+                    if (n > 0) return;
+                    string ph = PasswordHasher.HashPassword(UsuarioBootstrapAdminContraseña);
+                    using (var ins = new SqlCommand(
+                        "INSERT INTO Usuarios (NombreUsuario,PasswordHash,RolID,Rol) VALUES (@u,@h,1,'Administrador')", c))
+                    {
+                        ins.Parameters.AddWithValue("@u", "admin");
+                        ins.Parameters.AddWithValue("@h", ph);
+                        ins.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch { /* sin permisos / BD */ }
+        }
+
         public static bool CargarSesionUsuario(string u)
         {
-            // Si es admin, cargamos permisos manualmente sin ir a la DB
-            if (u.Trim().ToLower() == "admin")
-            {
-                var todosLosPermisos = new List<string>
-                {
-                    PERMISO_USUARIOS, PERMISO_CLIENTES, PERMISO_PRODUCTOS, PERMISO_STOCK,
-                    PERMISO_FACTURACION, PERMISO_VENTAS, PERMISO_PERMISOS, PERMISO_PROVEEDORES,
-                    PERMISO_COMPRAS, PERMISO_PRECIOS, PERMISO_CAJA, PERMISO_PRESUPUESTOS,
-                    PERMISO_CUENTASCORRIENTES, PERMISO_LISTASPRECIOS
-                };
-
-                // Iniciamos sesión "fingida" con ID 1 y Rol Admin
-                SesionUsuario.Iniciar("admin", 1, todosLosPermisos);
-                return true;
-            }
-
-            // Lógica normal para el resto
             try
             {
                 using (var c = new SqlConnection(_connectionString))
@@ -694,13 +702,23 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    // Get the ID just saved/updated
+                    AsegurarMigracionLite(c);
+                    int pid = id;
                     if (id == 0)
                     {
                         var r = new SqlCommand("SELECT TOP 1 ProductoID FROM Productos ORDER BY ProductoID DESC", c).ExecuteScalar();
-                        return r != null ? Convert.ToInt32(r) : 1;
+                        pid = r != null ? Convert.ToInt32(r) : 1;
                     }
-                    return id;
+                    int? sm = stockMinimo.HasValue ? (int?)Convert.ToInt32(stockMinimo.Value) : (int?)null;
+                    using (var up = new SqlCommand(@"UPDATE Productos SET UsaVariantes=@uv, EsCombo=@ec, StockMinimo=@sm WHERE ProductoID=@pid", c))
+                    {
+                        up.Parameters.AddWithValue("@uv", usaVariantes);
+                        up.Parameters.AddWithValue("@ec", esCombo);
+                        up.Parameters.AddWithValue("@sm", (object)sm ?? DBNull.Value);
+                        up.Parameters.AddWithValue("@pid", pid);
+                        up.ExecuteNonQuery();
+                    }
+                    return pid;
                 }
             }
             catch { return id > 0 ? id : 1; }
@@ -716,6 +734,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    AsegurarMigracionLite(c);
                     string sql = id == 0 ? "INSERT INTO Productos (Codigo, CodigoBarra, Descripcion, Categoria, TipoIVA, PrecioCosto, Ganancia, ImpuestoInterno, PrecioVenta, StockActual, ImagenPath) VALUES (@c, @cb, @d, @cat, @iva, @pc, @g, @ii, @pv, @s, @img)" : "UPDATE Productos SET Codigo=@c, CodigoBarra=@cb, Descripcion=@d, Categoria=@cat, TipoIVA=@iva, PrecioCosto=@pc, Ganancia=@g, ImpuestoInterno=@ii, PrecioVenta=@pv, StockActual=@s, ImagenPath=@img WHERE ProductoID=@id";
                     using (var cmd = new SqlCommand(sql, c))
                     {
@@ -746,11 +765,33 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    new SqlCommand($"DELETE FROM Productos WHERE ProductoID={id}", c).ExecuteNonQuery();
+                    using (var del = new SqlCommand("DELETE FROM Productos WHERE ProductoID=@id", c))
+                    {
+                        del.Parameters.AddWithValue("@id", id);
+                        del.ExecuteNonQuery();
+                    }
                     return true;
                 }
             }
             catch { return false; }
+        }
+
+        public static int GetStockActualProducto(int productoId)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    using (var cmd = new SqlCommand("SELECT StockActual FROM Productos WHERE ProductoID=@id", c))
+                    {
+                        cmd.Parameters.AddWithValue("@id", productoId);
+                        object o = cmd.ExecuteScalar();
+                        return o != null && o != DBNull.Value ? Convert.ToInt32(o) : 0;
+                    }
+                }
+            }
+            catch { return 0; }
         }
 
         public static DataRow BuscarProducto(string q)

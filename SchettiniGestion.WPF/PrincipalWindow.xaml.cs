@@ -18,18 +18,6 @@ namespace SchettiniGestion.WPF
 
             InitializeComponent();
 
-            try
-            {
-                var logo = SvgLogoHelper.LoadEmbeddedLogo();
-                if (logo != null)
-                {
-                    Icon = logo;
-                    if (imgLogoSidebar != null)
-                        imgLogoSidebar.Source = logo;
-                }
-            }
-            catch { /* icono / logo opcional */ }
-
             Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
             Application.Current.MainWindow = this;
 
@@ -73,6 +61,12 @@ namespace SchettiniGestion.WPF
         private static Visibility Vis(bool mostrar)
         {
             return mostrar ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>Módulo habilitado en licencia Y permiso del rol.</summary>
+        private static bool PuedeModulo(string nombrePermiso)
+        {
+            return LicenseManager.IsModuleEnabled(nombrePermiso) && SesionUsuario.TienePermiso(nombrePermiso);
         }
 
         private void SincronizarModoPantallaDesdeBase()
@@ -137,39 +131,25 @@ namespace SchettiniGestion.WPF
                 if (!licenciaValida)
                 {
                     MessageBox.Show(
-                        "No se detectó una licencia válida o no hay conexión con el servidor.\n\n" +
-                        "El sistema entró en modo mantenimiento.\n" +
-                        "Use Configuración para corregir la red o la licencia.",
+                        "No se detectó una licencia válida o no hay conexión con el servidor.",
                         "Aviso de sistema", MessageBoxButton.OK, MessageBoxImage.Warning);
 
                     OcultarTodoPorFalloLicencia();
-                    if (btnConfiguracion != null) btnConfiguracion.Visibility = Visibility.Visible;
                     return;
                 }
 
-                btnInicio_Click(null, null);
+                btnVentasFacturacion_Click(null, null);
 
-                if (btnInicio != null) btnInicio.Visibility = Visibility.Visible;
-
-                bool ventasFact = (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_FACTURACION) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_FACTURACION))
-                    || (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_VENTAS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS));
+                bool ventasFact = PuedeModulo(DatabaseService.PERMISO_FACTURACION) || PuedeModulo(DatabaseService.PERMISO_VENTAS);
                 if (btnVentasFacturacion != null) btnVentasFacturacion.Visibility = Vis(ventasFact);
 
-                if (btnProductos != null)
-                    btnProductos.Visibility = Vis(LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRODUCTOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRODUCTOS));
+                if (btnGestionStock != null) btnGestionStock.Visibility = Vis(PuedeModulo(DatabaseService.PERMISO_STOCK) || PuedeModulo(DatabaseService.PERMISO_PRODUCTOS));
+                if (btnClientes != null) btnClientes.Visibility = Vis(PuedeModulo(DatabaseService.PERMISO_CLIENTES));
+                if (btnCaja != null) btnCaja.Visibility = Vis(PuedeModulo(DatabaseService.PERMISO_CAJA));
 
-                if (btnClientes != null)
-                    btnClientes.Visibility = Vis(LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CLIENTES) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_CLIENTES));
-
-                if (btnCaja != null)
-                    btnCaja.Visibility = Vis(LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_CAJA));
-
-                bool usuariosPermisos = (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_USUARIOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_USUARIOS))
-                    || (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_PERMISOS));
+                bool usuariosPermisos = PuedeModulo(DatabaseService.PERMISO_USUARIOS) || PuedeModulo(DatabaseService.PERMISO_PERMISOS);
                 if (btnUsuariosPermisos != null) btnUsuariosPermisos.Visibility = Vis(usuariosPermisos);
 
-                if (btnConfiguracion != null)
-                    btnConfiguracion.Visibility = Vis(LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_PERMISOS));
             }
             catch (Exception ex)
             {
@@ -180,17 +160,10 @@ namespace SchettiniGestion.WPF
         private void OcultarTodoPorFalloLicencia()
         {
             if (btnVentasFacturacion != null) btnVentasFacturacion.Visibility = Visibility.Collapsed;
-            if (btnProductos != null) btnProductos.Visibility = Visibility.Collapsed;
+            if (btnGestionStock != null) btnGestionStock.Visibility = Visibility.Collapsed;
             if (btnClientes != null) btnClientes.Visibility = Visibility.Collapsed;
             if (btnCaja != null) btnCaja.Visibility = Visibility.Collapsed;
             if (btnUsuariosPermisos != null) btnUsuariosPermisos.Visibility = Visibility.Collapsed;
-            if (btnInicio != null) btnInicio.Visibility = Visibility.Visible;
-        }
-
-        private void btnConfiguracion_Click(object sender, RoutedEventArgs e)
-        {
-            if (mainContentArea.Content is ConfiguracionControl) return;
-            mainContentArea.Content = new ConfiguracionControl();
         }
 
         private void btnCerrarSesion_Click(object sender, RoutedEventArgs e)
@@ -237,20 +210,108 @@ namespace SchettiniGestion.WPF
 
         private void productosMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PRODUCTOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_PRODUCTOS))
-                mainContentArea.Content = new ProductosControl();
+            if (!PuedeModulo(DatabaseService.PERMISO_PRODUCTOS))
+            {
+                MessageBox.Show("No tiene permiso para acceder al módulo de productos.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            mainContentArea.Content = new ProductosControl();
+        }
+
+        private void btnGestionStock_Click(object sender, RoutedEventArgs e)
+        {
+            if (!PuedeModulo(DatabaseService.PERMISO_STOCK) && !PuedeModulo(DatabaseService.PERMISO_PRODUCTOS))
+            {
+                MessageBox.Show("No tiene permiso para acceder al stock/productos.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            mainContentArea.Content = new ProductosControl();
         }
 
         private void clientesMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CLIENTES) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_CLIENTES))
-                mainContentArea.Content = new ClientesControl();
+            if (!PuedeModulo(DatabaseService.PERMISO_CLIENTES))
+            {
+                MessageBox.Show("No tiene permiso para acceder a clientes.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            mainContentArea.Content = new ClientesControl();
+        }
+
+        private void btnProveedores_Click(object sender, RoutedEventArgs e)
+        {
+            if (!PuedeModulo(DatabaseService.PERMISO_PROVEEDORES)) { MensajeSinPermiso(); return; }
+            mainContentArea.Content = new ProveedoresControl();
+        }
+
+        private void btnCompras_Click(object sender, RoutedEventArgs e)
+        {
+            if (!PuedeModulo(DatabaseService.PERMISO_COMPRAS)) { MensajeSinPermiso(); return; }
+            mainContentArea.Content = new ComprasControl();
+        }
+
+        private void btnPresupuestos_Click(object sender, RoutedEventArgs e)
+        {
+            if (!PuedeModulo(DatabaseService.PERMISO_PRESUPUESTOS)) { MensajeSinPermiso(); return; }
+            mainContentArea.Content = new PresupuestosControl();
+        }
+
+        private void btnCuentasCorrientes_Click(object sender, RoutedEventArgs e)
+        {
+            if (!PuedeModulo(DatabaseService.PERMISO_CUENTASCORRIENTES)) { MensajeSinPermiso(); return; }
+            mainContentArea.Content = new CuentasCorrientesControl();
+        }
+
+        private void btnListasPrecios_Click(object sender, RoutedEventArgs e)
+        {
+            if (!PuedeModulo(DatabaseService.PERMISO_LISTASPRECIOS)) { MensajeSinPermiso(); return; }
+            mainContentArea.Content = new ListasPreciosControl();
+        }
+
+        private void btnPreciosActualizar_Click(object sender, RoutedEventArgs e)
+        {
+            if (!PuedeModulo(DatabaseService.PERMISO_PRECIOS)) { MensajeSinPermiso(); return; }
+            mainContentArea.Content = new PreciosControl();
+        }
+
+        private void btnInformes_Click(object sender, RoutedEventArgs e)
+        {
+            if (!PuedeModulo(DatabaseService.PERMISO_FACTURACION) && !PuedeModulo(DatabaseService.PERMISO_VENTAS) && !PuedeModulo(DatabaseService.PERMISO_COMPRAS))
+            {
+                MensajeSinPermiso();
+                return;
+            }
+            mainContentArea.Content = new InformesControl();
+        }
+
+        private void btnReportesVentas_Click(object sender, RoutedEventArgs e)
+        {
+            if (!PuedeModulo(DatabaseService.PERMISO_VENTAS) && !PuedeModulo(DatabaseService.PERMISO_FACTURACION))
+            {
+                MensajeSinPermiso();
+                return;
+            }
+            mainContentArea.Content = new ReportesControl();
+        }
+
+        private static void MensajeSinPermiso()
+        {
+            MessageBox.Show("No tiene permiso para acceder a este módulo.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void btnCaja_Click(object sender, RoutedEventArgs e)
         {
-            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_CAJA) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_CAJA))
-                mainContentArea.Content = new CajaControl();
+            if (!PuedeModulo(DatabaseService.PERMISO_CAJA)) { MensajeSinPermiso(); return; }
+
+            var tabs = new TabControl { Margin = new Thickness(0) };
+            tabs.Items.Add(new TabItem { Header = "Resumen del día", Content = new CajaControl() });
+            tabs.Items.Add(new TabItem { Header = "Movimientos", Content = new MovimientosCajaControl() });
+            tabs.Items.Add(new TabItem { Header = "Consulta caja", Content = new ConsultaCajaControl() });
+            tabs.Items.Add(new TabItem { Header = "Cierre de caja", Content = new CierreCajaControl() });
+            tabs.Items.Add(new TabItem { Header = "Planilla diaria", Content = new PlanillaDiariaControl() });
+            tabs.Items.Add(new TabItem { Header = "Cobranzas pendientes", Content = new CobranzasPendientesControl() });
+            tabs.Items.Add(new TabItem { Header = "Cupones tarjetas", Content = new CuponesTarjetasControl() });
+            mainContentArea.Content = tabs;
         }
 
         private void btnUsuariosPermisos_Click(object sender, RoutedEventArgs e)
@@ -275,7 +336,19 @@ namespace SchettiniGestion.WPF
 
         private void btnTeclado_Click(object sender, RoutedEventArgs e)
         {
-            KeyboardHelper.ShowOnScreenKeyboard();
+            string windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            string oskPath64 = System.IO.Path.Combine(windir, "System32", "osk.exe");
+            string oskPath32 = System.IO.Path.Combine(windir, "sysnative", "osk.exe");
+            string targetPath = System.IO.File.Exists(oskPath64) ? oskPath64 : oskPath32;
+
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = targetPath, UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("No se pudo iniciar el teclado.\n\nError: " + ex.Message, "Error de teclado");
+            }
         }
 
         private void btnTema_Click(object sender, RoutedEventArgs e)

@@ -8,7 +8,7 @@
              Background="{DynamicResource ModuleBackgroundBrush}"
              Loaded="UserControl_Loaded">
 
-    <Grid Margin="20">
+    <Grid Margin="20" Background="{DynamicResource BackgroundDark}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -20,7 +20,7 @@
             <TextBlock x:Name="lblUsuario" Text=" Admin!" FontSize="28" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold"/>
         </StackPanel>
 
-        <Button Grid.Row="1" Content="🔄 Actualizar Tablero" HorizontalAlignment="Right" Style="{StaticResource ActionButtonStyle}" Click="btnActualizar_Click" Width="180" Margin="0,0,0,20"/>
+        <Button Grid.Row="1" Content="🔄 Actualizar Tablero" HorizontalAlignment="Right" Style="{DynamicResource ActionButtonStyle}" Click="btnActualizar_Click" Width="180" Margin="0,0,0,20"/>
 
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
@@ -38,43 +38,43 @@
                 <RowDefinition Height="150"/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" Grid.Column="0" Background="#007ACC" CornerRadius="10" Padding="20">
+            <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource DashboardKpiTileVentas}" CornerRadius="10" Padding="20">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Comprobantes Hoy" Foreground="White" FontSize="16" HorizontalAlignment="Center" Opacity="0.9"/>
-                    <TextBlock x:Name="lblCantVentas" Text="0" Foreground="White" FontSize="48" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Comprobantes Hoy" Foreground="{DynamicResource DashboardKpiCaptionForeground}" FontSize="16" HorizontalAlignment="Center" Opacity="0.95"/>
+                    <TextBlock x:Name="lblCantVentas" Text="0" Foreground="{DynamicResource DashboardKpiValueForeground}" FontSize="48" FontWeight="Bold" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Border>
 
-            <Border Grid.Row="0" Grid.Column="2" Background="#00A86B" CornerRadius="10" Padding="20">
+            <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource DashboardKpiTileIngresos}" CornerRadius="10" Padding="20">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Total Ventas Hoy" Foreground="White" FontSize="16" HorizontalAlignment="Center" Opacity="0.9"/>
-                    <TextBlock x:Name="lblTotalVentas" Text="$ 0,00" Foreground="White" FontSize="40" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Total Ventas Hoy" Foreground="{DynamicResource DashboardKpiCaptionForeground}" FontSize="16" HorizontalAlignment="Center" Opacity="0.95"/>
+                    <TextBlock x:Name="lblTotalVentas" Text="$ 0,00" Foreground="{DynamicResource DashboardKpiValueForeground}" FontSize="40" FontWeight="Bold" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Border>
 
-            <Border Grid.Row="0" Grid.Column="4" Background="#E67E22" CornerRadius="10" Padding="20">
+            <Border Grid.Row="0" Grid.Column="4" Background="{DynamicResource DashboardKpiTileRentabilidad}" CornerRadius="10" Padding="20">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Rentabilidad Estimada" Foreground="White" FontSize="16" HorizontalAlignment="Center" Opacity="0.9"/>
-                    <TextBlock x:Name="lblRentabilidad" Text="$ 0,00" Foreground="White" FontSize="40" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Rentabilidad Estimada" Foreground="{DynamicResource DashboardKpiCaptionForeground}" FontSize="16" HorizontalAlignment="Center" Opacity="0.95"/>
+                    <TextBlock x:Name="lblRentabilidad" Text="$ 0,00" Foreground="{DynamicResource DashboardKpiValueForeground}" FontSize="40" FontWeight="Bold" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Border>
 
-            <Border Grid.Row="2" Grid.Column="0" Background="#8E44AD" CornerRadius="10" Padding="20">
+            <Border Grid.Row="2" Grid.Column="0" Background="{DynamicResource DashboardKpiTileProductos}" CornerRadius="10" Padding="20">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Productos Activos" Foreground="White" FontSize="16" HorizontalAlignment="Center" Opacity="0.9"/>
-                    <TextBlock x:Name="lblProductos" Text="0" Foreground="White" FontSize="48" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Productos Activos" Foreground="{DynamicResource DashboardKpiCaptionForeground}" FontSize="16" HorizontalAlignment="Center" Opacity="0.95"/>
+                    <TextBlock x:Name="lblProductos" Text="0" Foreground="{DynamicResource DashboardKpiValueForeground}" FontSize="48" FontWeight="Bold" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Border>
 
-            <Border Grid.Row="2" Grid.Column="2" Background="#C0392B" CornerRadius="10" Padding="20">
+            <Border Grid.Row="2" Grid.Column="2" Background="{DynamicResource DashboardKpiTileClientes}" CornerRadius="10" Padding="20">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Clientes Registrados" Foreground="White" FontSize="16" HorizontalAlignment="Center" Opacity="0.9"/>
-                    <TextBlock x:Name="lblClientes" Text="0" Foreground="White" FontSize="48" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Clientes Registrados" Foreground="{DynamicResource DashboardKpiCaptionForeground}" FontSize="16" HorizontalAlignment="Center" Opacity="0.95"/>
+                    <TextBlock x:Name="lblClientes" Text="0" Foreground="{DynamicResource DashboardKpiValueForeground}" FontSize="48" FontWeight="Bold" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Border>
 
-            <Border Grid.Row="2" Grid.Column="4" Background="#34495E" CornerRadius="10" Padding="20" Opacity="0.5">
-                <TextBlock Text="Próximamente..." Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <Border Grid.Row="2" Grid.Column="4" Background="{DynamicResource DashboardKpiTileMuted}" CornerRadius="10" Padding="20" Opacity="0.85">
+                <TextBlock Text="Próximamente..." Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Border>
 
         </Grid>

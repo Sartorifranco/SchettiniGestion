@@ -1,6 +1,11 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using SchettiniGestion;
@@ -9,18 +14,77 @@ namespace SchettiniGestion.WPF
 {
     public partial class UsuariosControl : UserControl
     {
+        public class PermisoUI : INotifyPropertyChanged
+        {
+            private bool _habilitado;
+            public string NombreModulo { get; set; }
+            public bool Habilitado
+            {
+                get => _habilitado;
+                set
+                {
+                    if (_habilitado == value) return;
+                    _habilitado = value;
+                    OnPropertyChanged();
+                }
+            }
+
+            public event PropertyChangedEventHandler PropertyChanged;
+            private void OnPropertyChanged([CallerMemberName] string prop = null)
+                => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        }
+
         private int _usuarioIdSeleccionado = 0;
+        public ObservableCollection<PermisoUI> PermisosRolActual { get; } = new ObservableCollection<PermisoUI>();
 
         public UsuariosControl()
         {
             InitializeComponent();
+            DataContext = this;
         }
 
         private void UsuariosControl_Loaded(object sender, RoutedEventArgs e)
         {
             CargarUsuarios();
             CargarRoles();
+            CargarPermisosDesdeConstantes();
             Limpiar();
+        }
+
+        private void CargarPermisosDesdeConstantes()
+        {
+            PermisosRolActual.Clear();
+
+            var permisos = typeof(DatabaseService)
+                .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string) && f.Name.StartsWith("PERMISO_", StringComparison.Ordinal))
+                .Select(f => f.GetRawConstantValue() as string)
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(v => v)
+                .ToList();
+
+            foreach (var permiso in permisos)
+            {
+                PermisosRolActual.Add(new PermisoUI
+                {
+                    NombreModulo = permiso,
+                    Habilitado = false
+                });
+            }
+        }
+
+        private void CargarPermisosRolSeleccionado()
+        {
+            if (!(cmbRoles.SelectedItem is Rol rolSel))
+            {
+                foreach (var p in PermisosRolActual) p.Habilitado = false;
+                return;
+            }
+
+            var permisosGuardados = DatabaseService.GetPermisosNombresPorRol(rolSel.RolId);
+            foreach (var p in PermisosRolActual)
+                p.Habilitado = permisosGuardados.Contains(p.NombreModulo);
         }
 
         private void CargarUsuarios()
@@ -61,6 +125,7 @@ namespace SchettiniGestion.WPF
             txtNombreUsuario.Text = "";
             txtPassword.Password = "";
             cmbRoles.SelectedIndex = -1;
+            foreach (var p in PermisosRolActual) p.Habilitado = false;
             btnEliminar.IsEnabled = false;
             txtNombreUsuario.Focus();
         }
@@ -158,11 +223,45 @@ namespace SchettiniGestion.WPF
                     if (r.RolId == rolId)
                     {
                         cmbRoles.SelectedItem = r;
+                        CargarPermisosRolSeleccionado();
                         break;
                     }
                 }
 
                 btnEliminar.IsEnabled = true;
+            }
+        }
+
+        private void cmbRoles_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!IsLoaded) return;
+            CargarPermisosRolSeleccionado();
+        }
+
+        private void btnGuardarPermisos_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(cmbRoles.SelectedItem is Rol rolSel))
+            {
+                MessageBox.Show("Seleccione un rol para guardar sus permisos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                var permisosActivos = PermisosRolActual
+                    .Where(p => p.Habilitado)
+                    .Select(p => p.NombreModulo)
+                    .ToList();
+
+                bool ok = DatabaseService.ActualizarPermisosParaRolPorNombre(rolSel.RolId, permisosActivos);
+                if (ok)
+                    MessageBox.Show("Permisos guardados correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                else
+                    MessageBox.Show("No se pudieron guardar los permisos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al guardar permisos: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

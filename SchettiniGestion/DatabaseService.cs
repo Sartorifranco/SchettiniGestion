@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Linq;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
 using SqlDataAdapter = Microsoft.Data.SqlClient.SqlDataAdapter;
@@ -282,6 +283,25 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             }
         }
 
+        /// <summary>Contraseña del certificado (.pfx): descifra valores guardados con DPAPI o texto plano legado.</summary>
+        public static string DecodeAfipCertificatePasswordStored(object passwordAfipCampo)
+        {
+            if (passwordAfipCampo == null || passwordAfipCampo == DBNull.Value)
+                return "";
+            return AfipCertPasswordDpapi.Decode(passwordAfipCampo.ToString());
+        }
+
+        /// <summary>Hay algo persistido en <c>PasswordAfip</c> (cifrado, texto legado u otro).</summary>
+        public static bool TienePasswordAfipPersistida(DataRow configuracionRow)
+        {
+            if (configuracionRow == null) return false;
+            if (!configuracionRow.Table.Columns.Contains("PasswordAfip")) return false;
+            object v = configuracionRow["PasswordAfip"];
+            if (v == null || v == DBNull.Value) return false;
+            string s = v.ToString();
+            return !string.IsNullOrWhiteSpace(s);
+        }
+
         public static bool GuardarConfiguracion(string nombre, string razon, string cuit, string dir, string tel, string email, string logoPath, string cert, string pass, int pto, string mpToken, string mpUser, string mpPos, bool usaVisor)
         {
             try
@@ -300,7 +320,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                         cmd.Parameters.AddWithValue("@e", email);
                         cmd.Parameters.AddWithValue("@l", logoPath);
                         cmd.Parameters.AddWithValue("@cp", cert);
-                        cmd.Parameters.AddWithValue("@pa", pass);
+                        cmd.Parameters.AddWithValue("@pa", AfipCertPasswordDpapi.Encode(pass ?? ""));
                         cmd.Parameters.AddWithValue("@pv", pto);
                         cmd.Parameters.AddWithValue("@mpt", mpToken);
                         cmd.Parameters.AddWithValue("@mpu", mpUser);
@@ -334,53 +354,173 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             return dt;
         }
 
-        /// <summary>Contraseña provisional del usuario <c>admin</c> cuando la BD recién se crea sin usuarios.</summary>
-        public const string UsuarioBootstrapAdminContraseña = "Admin#2026";
+        /// <summary>Contraseña por defecto del usuario <c>admin</c> en instalaciones nuevas o reparación de hash inválido.</summary>
+        public const string UsuarioBootstrapAdminContraseña = "123456";
+
+        /// <summary>Contraseña usada en versiones anteriores; el login acepta esta o <see cref="UsuarioBootstrapAdminContraseña"/> según el hash guardado (ver <see cref="ValidarUsuario"/>).</summary>
+        public const string UsuarioBootstrapAdminContraseñaLegadaMigracion = "Admin#2026";
+
+        /// <summary>Usuario de respaldo (Rol administrador) creado si no existe. Misma finalidad que <c>admin</c> para poder ingresar al sistema.</summary>
+        public const string UsuarioVistaEjemploNombre = "vista";
+
+        /// <summary>Contraseña del usuario <see cref="UsuarioVistaEjemploNombre"/> (PBKDF2 en BD). Cambiar desde el módulo Usuarios antes de entrega a cliente.</summary>
+        public const string UsuarioVistaEjemploContraseña = "123456";
+
+        /// <summary>
+        /// TEMPORAL (depuración): fuerza <c>UPDATE</c> del hash PBKDF2 para <c>admin</c> y <see cref="UsuarioVistaEjemploNombre"/>
+        /// con <see cref="UsuarioBootstrapAdminContraseña"/>; <c>INSERT</c> si no existen. Quitar antes de entrega a cliente.
+        /// </summary>
+        public static void AsegurarUsuariosBootstrap()
+        {
+            string ph = PasswordHasher.HashPassword(UsuarioBootstrapAdminContraseña);
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    if (AplicarHashBootstrapAUsuario(c, "admin", ph) == 0)
+                    {
+                        using (var ins = new SqlCommand(
+                            "INSERT INTO Usuarios (NombreUsuario,PasswordHash,RolID,Rol) VALUES (N'admin',@h,1,N'Administrador')", c))
+                        {
+                            ins.Parameters.AddWithValue("@h", ph);
+                            ins.ExecuteNonQuery();
+                        }
+                    }
+                    if (AplicarHashBootstrapAUsuario(c, UsuarioVistaEjemploNombre, ph) == 0)
+                    {
+                        using (var ins = new SqlCommand(
+                            "INSERT INTO Usuarios (NombreUsuario,PasswordHash,RolID,Rol) VALUES (@u,@h,1,N'Administrador')", c))
+                        {
+                            ins.Parameters.AddWithValue("@u", UsuarioVistaEjemploNombre);
+                            ins.Parameters.AddWithValue("@h", ph);
+                            ins.ExecuteNonQuery();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) { NotificarError("AsegurarUsuariosBootstrap: " + ex.Message); }
+        }
+
+        private static int AplicarHashBootstrapAUsuario(SqlConnection c, string nombreUsuario, string hashPh)
+        {
+            using (var up = new SqlCommand(
+                @"UPDATE Usuarios SET PasswordHash=@h, RolID=1, Rol=N'Administrador'
+                  WHERE LOWER(LTRIM(RTRIM(NombreUsuario))) = LOWER(LTRIM(RTRIM(@u)))", c))
+            {
+                up.Parameters.AddWithValue("@h", hashPh);
+                up.Parameters.AddWithValue("@u", nombreUsuario ?? "");
+                return up.ExecuteNonQuery();
+            }
+        }
+
+        private static bool EsUsuarioAdmin(string nombreUsuario)
+        {
+            return string.Equals((nombreUsuario ?? "").Trim(), "admin", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary><c>admin</c> o el usuario de respaldo <see cref="UsuarioVistaEjemploNombre"/>.</summary>
+        private static bool EsUsuarioBootstrapConocido(string nombreUsuario)
+        {
+            string n = (nombreUsuario ?? "").Trim();
+            return EsUsuarioAdmin(n)
+                || string.Equals(n, UsuarioVistaEjemploNombre, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Último fallo de <see cref="ValidarUsuario"/> (SQL u otro); vacío si no hubo error o si el intento fue credencial incorrecta sin excepción.</summary>
+        public static string UltimoErrorValidacionLogin { get; private set; }
+
+        /// <summary>Quita espacios finales y caracteres invisibles típicos del portapapeles que rompen el login.</summary>
+        private static string NormalizarClaveIngreso(string password)
+        {
+            if (string.IsNullOrEmpty(password))
+                return password ?? "";
+            return password.Trim('\u200B', '\uFEFF', '\r', '\n', '\t').TrimEnd();
+        }
 
         public static bool ValidarUsuario(string u, string p)
         {
+            UltimoErrorValidacionLogin = null;
             try
             {
+                AsegurarUsuariosBootstrap();
+                p = NormalizarClaveIngreso(p);
+                string uTrim = (u ?? "").Trim();
+
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    string h = "";
-                    using (var cmd = new SqlCommand("SELECT PasswordHash FROM Usuarios WHERE NombreUsuario=@u", c))
+                    string h = LeerPasswordHashUsuario(c, uTrim);
+                    if (string.IsNullOrEmpty(h) && EsUsuarioBootstrapConocido(uTrim))
                     {
-                        cmd.Parameters.AddWithValue("@u", u);
-                        var r = cmd.ExecuteScalar();
-                        if (r != null) h = r.ToString();
-                        else return false;
+                        AsegurarUsuariosBootstrap();
+                        h = LeerPasswordHashUsuario(c, uTrim);
                     }
-                    return PasswordHasher.VerifyPassword(p, h);
+                    if (string.IsNullOrEmpty(h))
+                    {
+                        UltimoErrorValidacionLogin = "No se encontró el usuario en la base de datos (o la tabla Usuarios no es accesible). Revise la conexión a SQL Server.";
+                        return false;
+                    }
+
+                    if (PasswordHasher.VerifyPassword(p, h))
+                        return true;
+
+                    // admin / vista: desbloqueo cruzado entre 123456 y Admin#2026 cuando el PBKDF2 guardado coincide con sólo una de ellas.
+                    if (!EsUsuarioBootstrapConocido(uTrim))
+                        return false;
+                    bool hashEsPara123456 = PasswordHasher.VerifyPassword(UsuarioBootstrapAdminContraseña, h);
+                    bool hashEsParaLegado = PasswordHasher.VerifyPassword(UsuarioBootstrapAdminContraseñaLegadaMigracion, h);
+                    if (!hashEsPara123456 && !hashEsParaLegado)
+                    {
+                        // Hash ilegible (no PBKDF2) pero el usuario ingresa una contraseña de arranque conocida: re-asignar hash y permitir acceso
+                        if (!PasswordHasher.EsFormatoHashPbkdf2(h)
+                            && (string.Equals(p, UsuarioBootstrapAdminContraseña, StringComparison.Ordinal)
+                                || string.Equals(p, UsuarioBootstrapAdminContraseñaLegadaMigracion, StringComparison.Ordinal)))
+                        {
+                            return RepararHashUsuarioBootstrapYValidar(c, uTrim, p);
+                        }
+                        return false;
+                    }
+                    if (string.Equals(p, UsuarioBootstrapAdminContraseñaLegadaMigracion, StringComparison.Ordinal))
+                        return hashEsPara123456;
+                    if (string.Equals(p, UsuarioBootstrapAdminContraseña, StringComparison.Ordinal))
+                        return hashEsParaLegado;
+                    return false;
                 }
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                UltimoErrorValidacionLogin = ex.Message;
+                NotificarError(ex.Message);
+                return false;
+            }
         }
 
-        /// <summary>Si no hay ningún usuario, crea <c>admin</c> con <see cref="UsuarioBootstrapAdminContraseña"/> (cambiar desde Usuarios).</summary>
-        public static void AsegurarUsuarioAdminInicial()
+        private static string LeerPasswordHashUsuario(SqlConnection c, string u)
         {
-            try
+            using (var cmd = new SqlCommand(
+                "SELECT TOP 1 PasswordHash FROM Usuarios WHERE LOWER(LTRIM(RTRIM(NombreUsuario))) = LOWER(LTRIM(RTRIM(@u))) ORDER BY UsuarioID", c))
             {
-                using (var c = new SqlConnection(_connectionString))
-                {
-                    c.Open();
-                    int n;
-                    using (var q = new SqlCommand("SELECT COUNT(*) FROM Usuarios", c))
-                        n = Convert.ToInt32(q.ExecuteScalar());
-                    if (n > 0) return;
-                    string ph = PasswordHasher.HashPassword(UsuarioBootstrapAdminContraseña);
-                    using (var ins = new SqlCommand(
-                        "INSERT INTO Usuarios (NombreUsuario,PasswordHash,RolID,Rol) VALUES (@u,@h,1,'Administrador')", c))
-                    {
-                        ins.Parameters.AddWithValue("@u", "admin");
-                        ins.Parameters.AddWithValue("@h", ph);
-                        ins.ExecuteNonQuery();
-                    }
-                }
+                cmd.Parameters.AddWithValue("@u", u ?? "");
+                var r = cmd.ExecuteScalar();
+                if (r != null && r != DBNull.Value)
+                    return r.ToString();
             }
-            catch { /* sin permisos / BD */ }
+            return "";
+        }
+
+        private static bool RepararHashUsuarioBootstrapYValidar(SqlConnection c, string nombreUsuarioTrim, string pClavePlain)
+        {
+            string nh = PasswordHasher.HashPassword(pClavePlain);
+            using (var up = new SqlCommand(
+                "UPDATE Usuarios SET PasswordHash=@h WHERE LOWER(LTRIM(RTRIM(NombreUsuario))) = LOWER(LTRIM(RTRIM(@u)))", c))
+            {
+                up.Parameters.AddWithValue("@h", nh);
+                up.Parameters.AddWithValue("@u", nombreUsuarioTrim ?? "");
+                up.ExecuteNonQuery();
+            }
+            string h2 = LeerPasswordHashUsuario(c, nombreUsuarioTrim);
+            return !string.IsNullOrEmpty(h2) && PasswordHasher.VerifyPassword(pClavePlain, h2);
         }
 
         public static bool CargarSesionUsuario(string u)
@@ -391,9 +531,10 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 {
                     c.Open();
                     int rid = 2;
-                    using (var cmdRol = new SqlCommand("SELECT RolID FROM Usuarios WHERE NombreUsuario=@u", c))
+                    using (var cmdRol = new SqlCommand(
+                        "SELECT TOP 1 RolID FROM Usuarios WHERE LOWER(LTRIM(RTRIM(NombreUsuario))) = LOWER(LTRIM(RTRIM(@u))) ORDER BY UsuarioID", c))
                     {
-                        cmdRol.Parameters.AddWithValue("@u", u.Trim());
+                        cmdRol.Parameters.AddWithValue("@u", u ?? "");
                         object ro = cmdRol.ExecuteScalar();
                         if (ro != null && ro != DBNull.Value) rid = Convert.ToInt32(ro);
                     }
@@ -964,6 +1105,37 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             return d;
         }
 
+        public static HashSet<string> GetPermisosNombresPorRol(int rolId)
+        {
+            var permisos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    using (var cmd = new SqlCommand(@"
+                        SELECT p.NombrePermiso
+                        FROM Roles_Permisos rp
+                        INNER JOIN Permisos p ON p.PermisoID = rp.PermisoID
+                        WHERE rp.RolID = @rid", c))
+                    {
+                        cmd.Parameters.AddWithValue("@rid", rolId);
+                        using (var r = cmd.ExecuteReader())
+                        {
+                            while (r.Read())
+                            {
+                                var nombre = r["NombrePermiso"]?.ToString();
+                                if (!string.IsNullOrWhiteSpace(nombre))
+                                    permisos.Add(nombre);
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            return permisos;
+        }
+
         public static void ActualizarPermisosParaRol(int rid, List<int> pids)
         {
             using (var c = new SqlConnection(_connectionString))
@@ -981,6 +1153,59 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                     }
                     catch { t.Rollback(); }
                 }
+            }
+        }
+
+        public static bool ActualizarPermisosParaRolPorNombre(int rolId, List<string> nombresPermisos)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    using (var tx = c.BeginTransaction())
+                    {
+                        try
+                        {
+                            using (var del = new SqlCommand("DELETE FROM Roles_Permisos WHERE RolID=@rid", c, tx))
+                            {
+                                del.Parameters.AddWithValue("@rid", rolId);
+                                del.ExecuteNonQuery();
+                            }
+
+                            var lista = (nombresPermisos ?? new List<string>())
+                                .Where(n => !string.IsNullOrWhiteSpace(n))
+                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                .ToList();
+
+                            foreach (var nombre in lista)
+                            {
+                                using (var ins = new SqlCommand(@"
+                                    INSERT INTO Roles_Permisos (RolID, PermisoID)
+                                    SELECT @rid, p.PermisoID
+                                    FROM Permisos p
+                                    WHERE p.NombrePermiso = @nom", c, tx))
+                                {
+                                    ins.Parameters.AddWithValue("@rid", rolId);
+                                    ins.Parameters.AddWithValue("@nom", nombre);
+                                    ins.ExecuteNonQuery();
+                                }
+                            }
+
+                            tx.Commit();
+                            return true;
+                        }
+                        catch
+                        {
+                            try { tx.Rollback(); } catch { }
+                            return false;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -2294,11 +2519,16 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
         }
 
         // --- Configuración del negocio (columnas coherentes con App.xaml.sql y MigracionLite: PasswordAfip, MPAccessToken…) ---
+        /// <param name="conservarPasswordAfipSiContraseniaVacia">Si es true y <paramref name="certPassword"/> viene vacío, no se escribe la columna (mantiene el valor en BD).</param>
         public static bool GuardarConfiguracion(string nombreFantasia, string razonSocial, string cuit, string direccion, string telefono,
             string email, string logoPath, string certPath, string certPassword, int puntoVenta,
             string mpToken, string mpUserId, string mpPosId, bool habilitarMP, decimal? tipoCambioUSD,
-            bool afipProduccion = false)
+            bool afipProduccion = false,
+            bool conservarPasswordAfipSiContraseniaVacia = false)
         {
+            certPassword = certPassword ?? "";
+            bool omitirColumnaPwd = conservarPasswordAfipSiContraseniaVacia && string.IsNullOrWhiteSpace(certPassword);
+
             try
             {
                 using (var c = new SqlConnection(_connectionString))
@@ -2306,12 +2536,19 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                     c.Open();
                     AsegurarMigracionLite(c);
 
-                    using (var update = new SqlCommand(@"
-UPDATE Configuracion SET
+                    string updSql = omitirColumnaPwd
+                        ? @"UPDATE Configuracion SET
+  NombreFantasia=@nf, RazonSocial=@rs, CUIT=@cuit, Direccion=@dir, Telefono=@tel, Email=@email,
+  LogoPath=@logo, CertificadoPath=@cert, PuntoVenta=@pv,
+  MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, TipoCambioUSD=@tc, AfipProduccion=@afip
+WHERE ID = 1"
+                        : @"UPDATE Configuracion SET
   NombreFantasia=@nf, RazonSocial=@rs, CUIT=@cuit, Direccion=@dir, Telefono=@tel, Email=@email,
   LogoPath=@logo, CertificadoPath=@cert, PasswordAfip=@pwd, PuntoVenta=@pv,
   MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, TipoCambioUSD=@tc, AfipProduccion=@afip
-WHERE ID = 1", c))
+WHERE ID = 1";
+
+                    using (var update = new SqlCommand(updSql, c))
                     {
                         update.Parameters.AddWithValue("@nf", nombreFantasia ?? "");
                         update.Parameters.AddWithValue("@rs", razonSocial ?? "");
@@ -2321,7 +2558,8 @@ WHERE ID = 1", c))
                         update.Parameters.AddWithValue("@email", email ?? "");
                         update.Parameters.AddWithValue("@logo", logoPath ?? "");
                         update.Parameters.AddWithValue("@cert", certPath ?? "");
-                        update.Parameters.AddWithValue("@pwd", certPassword ?? "");
+                        if (!omitirColumnaPwd)
+                            update.Parameters.AddWithValue("@pwd", AfipCertPasswordDpapi.Encode(certPassword));
                         update.Parameters.AddWithValue("@pv", puntoVenta);
                         update.Parameters.AddWithValue("@mpt", mpToken ?? "");
                         update.Parameters.AddWithValue("@mpu", mpUserId ?? "");
@@ -2332,6 +2570,7 @@ WHERE ID = 1", c))
                         if (n > 0) return true;
                     }
 
+                    string pwdInsert = omitirColumnaPwd ? "" : AfipCertPasswordDpapi.Encode(certPassword);
                     using (var insert = new SqlCommand(@"
 INSERT INTO Configuracion (
   NombreFantasia,RazonSocial,CUIT,Direccion,Telefono,Email,LogoPath,CertificadoPath,PasswordAfip,PuntoVenta,
@@ -2347,7 +2586,7 @@ INSERT INTO Configuracion (
                         insert.Parameters.AddWithValue("@email", email ?? "");
                         insert.Parameters.AddWithValue("@logo", logoPath ?? "");
                         insert.Parameters.AddWithValue("@cert", certPath ?? "");
-                        insert.Parameters.AddWithValue("@pwd", certPassword ?? "");
+                        insert.Parameters.AddWithValue("@pwd", pwdInsert);
                         insert.Parameters.AddWithValue("@pv", puntoVenta);
                         insert.Parameters.AddWithValue("@mpt", mpToken ?? "");
                         insert.Parameters.AddWithValue("@mpu", mpUserId ?? "");
@@ -2408,7 +2647,7 @@ INSERT INTO Configuracion (
         public static DataTable GetMediosPagoCompleto()
         {
             var dt = new DataTable();
-            try { using (var c = new SqlConnection(_connectionString)) { c.Open(); new SqlDataAdapter("SELECT MedioPagoID, Nombre, Activo, Orden FROM MediosPago ORDER BY Orden", c).Fill(dt); } } catch { }
+            try { using (var c = new SqlConnection(_connectionString)) { c.Open(); new SqlDataAdapter("SELECT MedioID, Nombre, Activo, Orden FROM MediosPago ORDER BY Orden", c).Fill(dt); } } catch { }
             return dt;
         }
 
@@ -2420,7 +2659,7 @@ INSERT INTO Configuracion (
                 {
                     c.Open();
                     string sql = id > 0
-                        ? "UPDATE MediosPago SET Nombre=@n, Activo=@a, Orden=@o WHERE MedioPagoID=@id"
+                        ? "UPDATE MediosPago SET Nombre=@n, Activo=@a, Orden=@o WHERE MedioID=@id"
                         : "INSERT INTO MediosPago (Nombre, Activo, Orden) VALUES (@n, @a, @o)";
                     var cmd = new SqlCommand(sql, c);
                     cmd.Parameters.AddWithValue("@n", nombre);

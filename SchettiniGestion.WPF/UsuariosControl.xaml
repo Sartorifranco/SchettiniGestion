@@ -7,7 +7,8 @@
              d:DesignHeight="700" d:DesignWidth="1000"
              Loaded="UsuariosControl_Loaded">
 
-    <Grid Margin="20">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+    <Grid Margin="20" MinWidth="640">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="3.5*" MinWidth="300" MaxWidth="450"/>
             <ColumnDefinition Width="20"/>
@@ -34,8 +35,42 @@
 
                         <TextBlock Text="ROL / PERMISOS" Style="{StaticResource LabelStyle}"/>
                         <ComboBox x:Name="cmbRoles" Style="{StaticResource ModuleComboBoxStyle}" 
-                                  DisplayMemberPath="Nombre" SelectedValuePath="RolId" 
+                                  DisplayMemberPath="Nombre" SelectedValuePath="RolId"
+                                  SelectionChanged="cmbRoles_SelectionChanged"
                                   Margin="0,0,0,15"/>
+
+                        <TextBlock Text="PERMISOS ASIGNADOS" Style="{StaticResource LabelStyle}" Margin="0,8,0,6"/>
+                        <Border Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="8" Padding="10">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="Seleccione los módulos habilitados para el rol:" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,8"/>
+                                <ListBox Grid.Row="1" x:Name="lstPermisos"
+                                         ItemsSource="{Binding PermisosRolActual}"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                         MinHeight="180">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding NombreModulo}"
+                                                      IsChecked="{Binding Habilitado, Mode=TwoWay}"
+                                                      Margin="0,4,0,4"
+                                                      Foreground="{DynamicResource TextPrimary}"/>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <Button Grid.Row="2" x:Name="btnGuardarPermisos"
+                                        Content="💾 GUARDAR PERMISOS DEL ROL"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Click="btnGuardarPermisos_Click"
+                                        Margin="0,10,0,0"/>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
@@ -57,4 +92,5 @@
             </DataGrid>
         </Border>
     </Grid>
+    </ScrollViewer>
 </UserControl>

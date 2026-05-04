@@ -7,8 +7,14 @@
              d:DesignHeight="700" d:DesignWidth="1000"
              Loaded="UsuariosControl_Loaded">
 
-    <Grid Margin="20" MinWidth="760">
-        <TabControl>
+    <Grid Margin="20" MinWidth="760" Background="{DynamicResource BackgroundDark}">
+        <TabControl Background="{DynamicResource SurfaceDark}" Foreground="{DynamicResource TextPrimary}">
+            <TabControl.ItemContainerStyle>
+                <Style TargetType="TabItem">
+                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                    <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+                </Style>
+            </TabControl.ItemContainerStyle>
             <TabItem Header="Usuarios">
                 <Grid Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
@@ -88,7 +94,10 @@
                              ScrollViewer.VerticalScrollBarVisibility="Auto">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <CheckBox Content="{Binding NombreModulo}" IsChecked="{Binding Habilitado, Mode=TwoWay}" Margin="0,5"/>
+                                <CheckBox Content="{Binding NombreModulo}"
+                                          IsChecked="{Binding Habilitado, Mode=TwoWay}"
+                                          Margin="0,5"
+                                          Foreground="{DynamicResource TextPrimary}"/>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>

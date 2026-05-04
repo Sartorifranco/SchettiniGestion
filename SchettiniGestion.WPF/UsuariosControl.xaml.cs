@@ -257,7 +257,7 @@ namespace SchettiniGestion.WPF
 
                 bool ok = DatabaseService.ActualizarPermisosParaRolPorNombre(rolSel.RolId, permisosActivos);
                 if (ok)
-                    MessageBox.Show("Permisos guardados correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Permisos actualizados correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 else
                     MessageBox.Show("No se pudieron guardar los permisos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }

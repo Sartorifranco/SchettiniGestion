@@ -576,19 +576,28 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
         public static bool GuardarUsuario(int id, string u, string p, int rid, string rt)
         {
             string ph = string.IsNullOrEmpty(p) ? "" : PasswordHasher.HashPassword(p);
+            return GuardarUsuarioConHash(id, u, ph, rid, rt);
+        }
+
+        public static bool GuardarUsuarioConHash(int id, string u, string hashPassword, int rid, string rt)
+        {
             try
             {
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    string sql = id == 0 ? "INSERT INTO Usuarios (NombreUsuario,PasswordHash,RolID,Rol) VALUES (@u,@p,@r,@rt)" : string.IsNullOrEmpty(p) ? "UPDATE Usuarios SET NombreUsuario=@u,RolID=@r,Rol=@rt WHERE UsuarioID=@id" : "UPDATE Usuarios SET NombreUsuario=@u,PasswordHash=@p,RolID=@r,Rol=@rt WHERE UsuarioID=@id";
+                    string sql = id == 0
+                        ? "INSERT INTO Usuarios (NombreUsuario,PasswordHash,RolID,Rol) VALUES (@u,@p,@r,@rt)"
+                        : string.IsNullOrEmpty(hashPassword)
+                            ? "UPDATE Usuarios SET NombreUsuario=@u,RolID=@r,Rol=@rt WHERE UsuarioID=@id"
+                            : "UPDATE Usuarios SET NombreUsuario=@u,PasswordHash=@p,RolID=@r,Rol=@rt WHERE UsuarioID=@id";
                     using (var cmd = new SqlCommand(sql, c))
                     {
                         cmd.Parameters.AddWithValue("@u", u);
                         cmd.Parameters.AddWithValue("@r", rid);
                         cmd.Parameters.AddWithValue("@rt", rt);
                         cmd.Parameters.AddWithValue("@id", id);
-                        if (sql.Contains("@p")) cmd.Parameters.AddWithValue("@p", ph);
+                        if (sql.Contains("@p")) cmd.Parameters.AddWithValue("@p", hashPassword ?? "");
                         cmd.ExecuteNonQuery();
                         return true;
                     }

@@ -41,13 +41,14 @@ namespace SchettiniGestion.WPF
         {
             InitializeComponent();
             DataContext = this;
+            CargarPermisosDesdeConstantes();
+            lstPermisosDinamicos.ItemsSource = PermisosRolActual;
         }
 
         private void UsuariosControl_Loaded(object sender, RoutedEventArgs e)
         {
             CargarUsuarios();
             CargarRoles();
-            CargarPermisosDesdeConstantes();
             Limpiar();
         }
 
@@ -76,7 +77,7 @@ namespace SchettiniGestion.WPF
 
         private void CargarPermisosRolSeleccionado()
         {
-            if (!(cmbRoles.SelectedItem is Rol rolSel))
+            if (!(cmbRolesPermisos.SelectedItem is Rol rolSel))
             {
                 foreach (var p in PermisosRolActual) p.Habilitado = false;
                 return;
@@ -107,11 +108,16 @@ namespace SchettiniGestion.WPF
                 // Obtenemos la lista actualizada de roles (incluyendo los nuevos creados en GestiónPermisos)
                 List<Rol> roles = DatabaseService.GetRoles();
 
-                cmbRoles.ItemsSource = null; // Limpiar para refrescar
-                cmbRoles.ItemsSource = roles;
+                cmbRolesUsuario.ItemsSource = null;
+                cmbRolesPermisos.ItemsSource = null;
+                cmbRolesUsuario.ItemsSource = roles;
+                cmbRolesPermisos.ItemsSource = roles;
 
-                // Si la lista tiene elementos, seleccionar el primero por defecto (opcional)
-                if (roles.Count > 0) cmbRoles.SelectedIndex = -1;
+                if (roles.Count > 0)
+                {
+                    cmbRolesUsuario.SelectedIndex = -1;
+                    cmbRolesPermisos.SelectedIndex = -1;
+                }
             }
             catch (Exception ex)
             {
@@ -124,7 +130,7 @@ namespace SchettiniGestion.WPF
             _usuarioIdSeleccionado = 0;
             txtNombreUsuario.Text = "";
             txtPassword.Password = "";
-            cmbRoles.SelectedIndex = -1;
+            cmbRolesUsuario.SelectedIndex = -1;
             foreach (var p in PermisosRolActual) p.Habilitado = false;
             btnEliminar.IsEnabled = false;
             txtNombreUsuario.Focus();
@@ -135,10 +141,10 @@ namespace SchettiniGestion.WPF
             Limpiar();
         }
 
-        private void btnGuardar_Click(object sender, RoutedEventArgs e)
+        private void btnGuardarUsuario_Click(object sender, RoutedEventArgs e)
         {
             // Validaciones básicas
-            if (string.IsNullOrWhiteSpace(txtNombreUsuario.Text) || cmbRoles.SelectedItem == null)
+            if (string.IsNullOrWhiteSpace(txtNombreUsuario.Text) || cmbRolesUsuario.SelectedItem == null)
             {
                 MessageBox.Show("Complete el nombre de usuario y seleccione un rol.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
@@ -153,15 +159,15 @@ namespace SchettiniGestion.WPF
 
             try
             {
-                Rol rolSeleccionado = (Rol)cmbRoles.SelectedItem;
+                Rol rolSeleccionado = (Rol)cmbRolesUsuario.SelectedItem;
+                string hash = string.IsNullOrWhiteSpace(txtPassword.Password) ? "" : PasswordHasher.HashPassword(txtPassword.Password);
 
-                bool exito = DatabaseService.GuardarUsuario(
+                bool exito = DatabaseService.GuardarUsuarioConHash(
                     _usuarioIdSeleccionado,
                     txtNombreUsuario.Text.Trim(),
-                    txtPassword.Password, // Se envía tal cual, DatabaseService se encarga del Hash
+                    hash,
                     rolSeleccionado.RolId,
-                    rolSeleccionado.Nombre
-                );
+                    rolSeleccionado.Nombre);
 
                 if (exito)
                 {
@@ -218,11 +224,12 @@ namespace SchettiniGestion.WPF
                 if (row["RolID"] != DBNull.Value)
                     rolId = Convert.ToInt32(row["RolID"]);
 
-                foreach (Rol r in cmbRoles.Items)
+                foreach (Rol r in cmbRolesUsuario.Items)
                 {
                     if (r.RolId == rolId)
                     {
-                        cmbRoles.SelectedItem = r;
+                        cmbRolesUsuario.SelectedItem = r;
+                        cmbRolesPermisos.SelectedItem = r;
                         CargarPermisosRolSeleccionado();
                         break;
                     }
@@ -232,7 +239,7 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        private void cmbRoles_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void cmbRolesPermisos_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!IsLoaded) return;
             CargarPermisosRolSeleccionado();
@@ -240,7 +247,7 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardarPermisos_Click(object sender, RoutedEventArgs e)
         {
-            if (!(cmbRoles.SelectedItem is Rol rolSel))
+            if (!(cmbRolesPermisos.SelectedItem is Rol rolSel))
             {
                 MessageBox.Show("Seleccione un rol para guardar sus permisos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
@@ -252,6 +259,7 @@ namespace SchettiniGestion.WPF
                     .Where(p => p.Habilitado)
                     .Select(p => p.NombreModulo)
                     .ToList();
+                string permisosCsv = string.Join(",", permisosActivos);
 
                 bool ok = DatabaseService.ActualizarPermisosParaRolPorNombre(rolSel.RolId, permisosActivos);
                 if (ok)

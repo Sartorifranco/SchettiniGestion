@@ -8,6 +8,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Linq;
+using System.Reflection;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
 using SqlDataAdapter = Microsoft.Data.SqlClient.SqlDataAdapter;
@@ -122,20 +123,21 @@ namespace SchettiniGestion
         public static Action<string> OnDbError;
 
         // Constantes de Permisos
-        public const string PERMISO_USUARIOS = "ACCESO_USUARIOS";
-        public const string PERMISO_CLIENTES = "ACCESO_CLIENTES";
-        public const string PERMISO_PRODUCTOS = "ACCESO_PRODUCTOS";
-        public const string PERMISO_STOCK = "ACCESO_STOCK";
-        public const string PERMISO_FACTURACION = "ACCESO_FACTURACION";
-        public const string PERMISO_VENTAS = "ACCESO_VENTAS";
-        public const string PERMISO_PERMISOS = "ACCESO_PERMISOS";
-        public const string PERMISO_PROVEEDORES = "ACCESO_PROVEEDORES";
-        public const string PERMISO_COMPRAS = "ACCESO_COMPRAS";
-        public const string PERMISO_PRECIOS = "ACCESO_PRECIOS";
-        public const string PERMISO_CAJA = "ACCESO_CAJA";
-        public const string PERMISO_PRESUPUESTOS = "ACCESO_PRESUPUESTOS";
-        public const string PERMISO_CUENTASCORRIENTES = "ACCESO_CUENTASCORRIENTES";
-        public const string PERMISO_LISTASPRECIOS = "ACCESO_LISTASPRECIOS";
+        public const string PERMISO_USUARIOS = "ACCESOUSUARIOS";
+        public const string PERMISO_CLIENTES = "ACCESOCLIENTES";
+        public const string PERMISO_PRODUCTOS = "ACCESOPRODUCTOS";
+        public const string PERMISO_STOCK = "ACCESOSTOCK";
+        public const string PERMISO_FACTURACION = "ACCESOFACTURACION";
+        public const string PERMISO_VENTAS = "ACCESOVENTAS";
+        public const string PERMISO_PERMISOS = "ACCESOPERMISOS";
+        public const string PERMISO_PROVEEDORES = "ACCESOPROVEEDORES";
+        public const string PERMISO_COMPRAS = "ACCESOCOMPRAS";
+        public const string PERMISO_PRECIOS = "ACCESOPRECIOS";
+        public const string PERMISO_CAJA = "ACCESOCAJA";
+        public const string PERMISO_PRESUPUESTOS = "ACCESOPRESUPUESTOS";
+        public const string PERMISO_CUENTASCORRIENTES = "ACCESOCUENTASCORRIENTES";
+        public const string PERMISO_LISTASPRECIOS = "ACCESOLISTASPRECIOS";
+        public const string PERMISO_CONFIGURACION = "ACCESOCONFIGURACION";
 
         private static void NotificarError(string mensaje)
         {
@@ -539,15 +541,10 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                         if (ro != null && ro != DBNull.Value) rid = Convert.ToInt32(ro);
                     }
 
-                    var p = new List<string>();
-                    using (var cmdPm = new SqlCommand("SELECT p.NombrePermiso FROM Roles_Permisos rp JOIN Permisos p ON rp.PermisoID=p.PermisoID WHERE rp.RolID=@rid", c))
-                    {
-                        cmdPm.Parameters.AddWithValue("@rid", rid);
-                        using (var reader = cmdPm.ExecuteReader())
-                        {
-                            while (reader.Read()) p.Add(reader.GetString(0));
-                        }
-                    }
+                    var p = GetPermisosNombresPorRol(rid)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Select(x => x.Trim())
+                        .ToList();
                     SesionUsuario.Iniciar(u, rid, p);
                     return true;
                 }
@@ -1133,7 +1130,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                         {
                             while (r.Read())
                             {
-                                var nombre = r["NombrePermiso"]?.ToString();
+                                var nombre = r["NombrePermiso"]?.ToString()?.Trim();
                                 if (!string.IsNullOrWhiteSpace(nombre))
                                     permisos.Add(nombre);
                             }
@@ -1215,6 +1212,102 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             catch
             {
                 return false;
+            }
+        }
+
+        public static bool ActualizarPermisosRol(int rolId, string permisosCsv)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    using (var tx = c.BeginTransaction())
+                    {
+                        // 1. Borramos los permisos viejos de este rol
+                        using (var cmdDelete = new SqlCommand("DELETE FROM Roles_Permisos WHERE RolID = @RolID", c, tx))
+                        {
+                            cmdDelete.Parameters.AddWithValue("@RolID", rolId);
+                            cmdDelete.ExecuteNonQuery();
+                        }
+
+                        // 2. Preparamos la lista nueva
+                        var permisos = (permisosCsv ?? string.Empty)
+                            .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(p => p.Trim())
+                            .Where(p => !string.IsNullOrWhiteSpace(p))
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .ToList();
+
+                        // Si el usuario destildó todo, guardamos el borrado y terminamos con éxito
+                        if (permisos.Count == 0)
+                        {
+                            tx.Commit();
+                            return true;
+                        }
+
+                        // 3. Insertamos los nuevos
+                        foreach (var permiso in permisos)
+                        {
+                            using (var cmdInsert = new SqlCommand(@"
+                        INSERT INTO Roles_Permisos (RolID, PermisoID)
+                        SELECT @RolID, p.PermisoID
+                        FROM Permisos p
+                        WHERE p.NombrePermiso = @Permiso;", c, tx))
+                            {
+                                cmdInsert.Parameters.AddWithValue("@RolID", rolId);
+                                cmdInsert.Parameters.AddWithValue("@Permiso", permiso);
+
+                                int insertadas = cmdInsert.ExecuteNonQuery();
+
+                                // Si insertó 0, significa que el permiso no existe en la tabla maestra
+                                if (insertadas == 0)
+                                {
+                                    tx.Rollback();
+                                    throw new Exception($"El permiso '{permiso}' no se encontró en la tabla 'Permisos' de la base de datos. Verifica que los nombres coincidan exactamente.");
+                                }
+                            }
+                        }
+
+                        // Si todo salió bien, confirmamos la transacción
+                        tx.Commit();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // En vez de devolver false en silencio, lanzamos el error a la interfaz
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public static void InicializarPermisosBaseDatos()
+        {
+            var permisosBase = typeof(DatabaseService)
+                .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string) && f.Name.StartsWith("PERMISO_", StringComparison.Ordinal))
+                .Select(f => f.GetRawConstantValue() as string)
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (permisosBase.Count == 0) return;
+
+            using (var c = new SqlConnection(_connectionString))
+            {
+                c.Open();
+                foreach (var permiso in permisosBase)
+                {
+                    string query = @"
+    IF NOT EXISTS (SELECT 1 FROM Permisos WHERE NombrePermiso = @Nombre) 
+    INSERT INTO Permisos (NombrePermiso) VALUES (@Nombre)";
+                    using (var cmd = new SqlCommand(query, c))
+                    {
+                        cmd.Parameters.AddWithValue("@Nombre", permiso);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
             }
         }
 

@@ -17,6 +17,14 @@ namespace SchettiniGestion.WPF
             ThemeManager.ThemeChanged += _themeChangedHandler;
 
             InitializeComponent();
+            try
+            {
+                DatabaseService.InicializarPermisosBaseDatos();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error en el Seeder de Base de Datos: " + ex.Message, "Error de Arranque", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
 
             Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
             Application.Current.MainWindow = this;
@@ -66,6 +74,8 @@ namespace SchettiniGestion.WPF
         /// <summary>Módulo habilitado en licencia Y permiso del rol.</summary>
         private static bool PuedeModulo(string nombrePermiso)
         {
+            if (string.Equals(SesionUsuario.NombreUsuario, "admin", StringComparison.OrdinalIgnoreCase))
+                return true;
             return LicenseManager.IsModuleEnabled(nombrePermiso) && SesionUsuario.TienePermiso(nombrePermiso);
         }
 
@@ -118,37 +128,12 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                bool licenciaValida = false;
-                try
-                {
-                    licenciaValida = LicenseManager.ValidarLicencia();
-                }
-                catch
-                {
-                    licenciaValida = false;
-                }
-
-                if (!licenciaValida)
-                {
-                    MessageBox.Show(
-                        "No se detectó una licencia válida o no hay conexión con el servidor.",
-                        "Aviso de sistema", MessageBoxButton.OK, MessageBoxImage.Warning);
-
-                    OcultarTodoPorFalloLicencia();
-                    return;
-                }
-
-                btnVentasFacturacion_Click(null, null);
-
-                bool ventasFact = PuedeModulo(DatabaseService.PERMISO_FACTURACION) || PuedeModulo(DatabaseService.PERMISO_VENTAS);
-                if (btnVentasFacturacion != null) btnVentasFacturacion.Visibility = Vis(ventasFact);
-
-                if (btnGestionStock != null) btnGestionStock.Visibility = Vis(PuedeModulo(DatabaseService.PERMISO_STOCK) || PuedeModulo(DatabaseService.PERMISO_PRODUCTOS));
-                if (btnClientes != null) btnClientes.Visibility = Vis(PuedeModulo(DatabaseService.PERMISO_CLIENTES));
-                if (btnCaja != null) btnCaja.Visibility = Vis(PuedeModulo(DatabaseService.PERMISO_CAJA));
-
-                bool usuariosPermisos = PuedeModulo(DatabaseService.PERMISO_USUARIOS) || PuedeModulo(DatabaseService.PERMISO_PERMISOS);
-                if (btnUsuariosPermisos != null) btnUsuariosPermisos.Visibility = Vis(usuariosPermisos);
+                btnVentasFacturacion.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS) ? Visibility.Visible : Visibility.Collapsed;
+                btnGestionStock.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_STOCK) ? Visibility.Visible : Visibility.Collapsed;
+                btnClientes.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_CLIENTES) ? Visibility.Visible : Visibility.Collapsed;
+                btnCaja.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_CAJA) ? Visibility.Visible : Visibility.Collapsed;
+                btnUsuariosPermisos.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_USUARIOS) ? Visibility.Visible : Visibility.Collapsed;
+                btnConfiguracion.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_CONFIGURACION) ? Visibility.Visible : Visibility.Collapsed;
 
             }
             catch (Exception ex)
@@ -164,6 +149,7 @@ namespace SchettiniGestion.WPF
             if (btnClientes != null) btnClientes.Visibility = Visibility.Collapsed;
             if (btnCaja != null) btnCaja.Visibility = Visibility.Collapsed;
             if (btnUsuariosPermisos != null) btnUsuariosPermisos.Visibility = Visibility.Collapsed;
+            if (btnConfiguracion != null) btnConfiguracion.Visibility = Visibility.Collapsed;
         }
 
         private void btnCerrarSesion_Click(object sender, RoutedEventArgs e)
@@ -195,17 +181,13 @@ namespace SchettiniGestion.WPF
 
         private void btnVentasFacturacion_Click(object sender, RoutedEventArgs e)
         {
-            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_FACTURACION) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_FACTURACION))
+            if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS))
             {
-                mainContentArea.Content = new FacturacionControl();
+                MessageBox.Show("No tiene permiso para acceder a ventas o facturación.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-            if (LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_VENTAS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS))
-            {
-                mainContentArea.Content = new VentasControl();
-                return;
-            }
-            MessageBox.Show("No tiene permiso para acceder a ventas o facturación.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            mainContentArea.Content = new VentasControl();
         }
 
         private void productosMenuItem_Click(object sender, RoutedEventArgs e)
@@ -220,7 +202,7 @@ namespace SchettiniGestion.WPF
 
         private void btnGestionStock_Click(object sender, RoutedEventArgs e)
         {
-            if (!PuedeModulo(DatabaseService.PERMISO_STOCK) && !PuedeModulo(DatabaseService.PERMISO_PRODUCTOS))
+            if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_STOCK))
             {
                 MessageBox.Show("No tiene permiso para acceder al stock/productos.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
@@ -230,7 +212,7 @@ namespace SchettiniGestion.WPF
 
         private void clientesMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (!PuedeModulo(DatabaseService.PERMISO_CLIENTES))
+            if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_CLIENTES))
             {
                 MessageBox.Show("No tiene permiso para acceder a clientes.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
@@ -301,37 +283,34 @@ namespace SchettiniGestion.WPF
 
         private void btnCaja_Click(object sender, RoutedEventArgs e)
         {
-            if (!PuedeModulo(DatabaseService.PERMISO_CAJA)) { MensajeSinPermiso(); return; }
+            if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_CAJA))
+            {
+                MensajeSinPermiso();
+                return;
+            }
 
-            var tabs = new TabControl { Margin = new Thickness(0) };
-            tabs.Items.Add(new TabItem { Header = "Resumen del día", Content = new CajaControl() });
-            tabs.Items.Add(new TabItem { Header = "Movimientos", Content = new MovimientosCajaControl() });
-            tabs.Items.Add(new TabItem { Header = "Consulta caja", Content = new ConsultaCajaControl() });
-            tabs.Items.Add(new TabItem { Header = "Cierre de caja", Content = new CierreCajaControl() });
-            tabs.Items.Add(new TabItem { Header = "Planilla diaria", Content = new PlanillaDiariaControl() });
-            tabs.Items.Add(new TabItem { Header = "Cobranzas pendientes", Content = new CobranzasPendientesControl() });
-            tabs.Items.Add(new TabItem { Header = "Cupones tarjetas", Content = new CuponesTarjetasControl() });
-            mainContentArea.Content = tabs;
+            mainContentArea.Content = new CajaModuloControl();
         }
 
         private void btnUsuariosPermisos_Click(object sender, RoutedEventArgs e)
         {
-            bool puedeUsuarios = LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_USUARIOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_USUARIOS);
-            bool puedePermisos = LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_PERMISOS) && SesionUsuario.TienePermiso(DatabaseService.PERMISO_PERMISOS);
-
-            if (!puedeUsuarios && !puedePermisos)
+            if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_USUARIOS))
             {
-                MessageBox.Show("No tiene permiso para acceder a usuarios ni permisos.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("No tiene permiso para acceder a usuarios.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            mainContentArea.Content = new UsuariosControl();
+        }
+
+        private void btnConfiguracion_Click(object sender, RoutedEventArgs e)
+        {
+            if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_CONFIGURACION))
+            {
+                MessageBox.Show("No tiene permiso para acceder a la configuración.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            var tabs = new System.Windows.Controls.TabControl { Margin = new Thickness(0) };
-            if (puedeUsuarios)
-                tabs.Items.Add(new System.Windows.Controls.TabItem { Header = "Usuarios", Content = new UsuariosControl() });
-            if (puedePermisos)
-                tabs.Items.Add(new System.Windows.Controls.TabItem { Header = "Permisos", Content = new GestionPermisos() });
-
-            mainContentArea.Content = tabs;
+            mainContentArea.Content = new ConfiguracionControl();
         }
 
         private void btnTeclado_Click(object sender, RoutedEventArgs e)

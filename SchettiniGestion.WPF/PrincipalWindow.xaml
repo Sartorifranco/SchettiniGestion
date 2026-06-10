@@ -192,7 +192,8 @@
                                        FontSize="12"
                                        Margin="0,0,8,0"/>
                             <ComboBox x:Name="cmbModoPantalla"
-                                      MinHeight="40"
+                                      Style="{StaticResource TouchComboBoxStyle}"
+                                      MinHeight="44"
                                       MinWidth="220"
                                       MaxWidth="420"
                                       VerticalAlignment="Center"

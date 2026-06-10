@@ -14,6 +14,8 @@ namespace SchettiniGestion.WPF
         public CajaControl()
         {
             InitializeComponent();
+            numMontoManual.CultureInfo = AppCulture.Argentine;
+            KeyboardHelper.AttachTouchKeyboard(popupMovimiento);
         }
 
         private void CajaControl_Loaded(object sender, RoutedEventArgs e)
@@ -27,7 +29,7 @@ namespace SchettiniGestion.WPF
             {
                 // 1. Cargar Saldo Total
                 decimal saldo = DatabaseService.GetSaldoCaja();
-                lblSaldo.Text = saldo.ToString("C2");
+                lblSaldo.Text = AppCulture.FormatCurrency(saldo);
 
                 // Cambiar color si es negativo
                 if (saldo >= 0) lblSaldo.Foreground = new SolidColorBrush(Colors.LightGreen);

@@ -17,6 +17,7 @@ namespace SchettiniGestion.WPF
         {
             base.OnStartup(e);
 
+            AppCulture.Initialize();
             ThemeManager.LoadSavedTheme();
 
             this.DispatcherUnhandledException += App_DispatcherUnhandledException;

@@ -452,6 +452,9 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             catch (Exception ex) { NotificarError("AsegurarUsuariosBootstrap: " + ex.Message); }
         }
 
+        /// <summary>Alias de compatibilidad para arranque y primer uso. Ver <see cref="AsegurarUsuariosBootstrap"/>.</summary>
+        public static void AsegurarUsuarioAdminInicial() => AsegurarUsuariosBootstrap();
+
         private static int AplicarHashBootstrapAUsuario(SqlConnection c, string nombreUsuario, string hashPh)
         {
             using (var up = new SqlCommand(

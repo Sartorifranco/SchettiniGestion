@@ -185,6 +185,9 @@
       <DependentUpon>TouchDateField.xaml</DependentUpon>
     </Compile>
     <Compile Include="InputWindow.xaml.cs" />
+    <Compile Include="ModernInputWindow.xaml.cs">
+      <DependentUpon>ModernInputWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CompraModalWindow.xaml.cs">
       <DependentUpon>CompraModalWindow.xaml</DependentUpon>
     </Compile>
@@ -261,6 +264,9 @@
     <Compile Include="CajaControl.xaml.cs">
       <DependentUpon>CajaControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CajaModuloControl.xaml.cs">
+      <DependentUpon>CajaModuloControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ComprasControl.xaml.cs">
       <DependentUpon>ComprasControl.xaml</DependentUpon>
     </Compile>
@@ -323,6 +329,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="CajaModuloControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MovimientosCajaControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -380,6 +390,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ProductoModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ModernInputWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

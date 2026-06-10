@@ -1,0 +1,28 @@
+<UserControl x:Class="SchettiniGestion.WPF.CajaModuloControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:SchettiniGestion.WPF"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="700"
+             d:DesignWidth="1100"
+             Background="{DynamicResource ModuleBackgroundBrush}">
+
+    <Grid Margin="12">
+        <TabControl Background="Transparent" BorderThickness="0">
+            <TabItem Header="💵  Caja del día">
+                <local:CajaControl/>
+            </TabItem>
+            <TabItem Header="📋  Movimientos">
+                <local:MovimientosCajaControl/>
+            </TabItem>
+            <TabItem Header="🔍  Consulta caja">
+                <local:ConsultaCajaControl/>
+            </TabItem>
+            <TabItem Header="📄  Planilla diaria">
+                <local:PlanillaDiariaControl/>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

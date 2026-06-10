@@ -632,4 +632,48 @@
     </Style>
 
     <Style TargetType="DatePicker" BasedOn="{StaticResource TouchDatePickerStyle}"/>
+
+    <!-- Pestañas de módulo (tema oscuro, táctil) -->
+    <Style x:Key="ModuleTabItemStyle" TargetType="TabItem">
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+        <Setter Property="Padding" Value="18,12"/>
+        <Setter Property="Margin" Value="0,0,6,0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Border x:Name="tabBorder"
+                            Background="{DynamicResource SurfaceDark}"
+                            CornerRadius="8,8,0,0"
+                            BorderBrush="{DynamicResource BorderColor}"
+                            BorderThickness="1,1,1,0"
+                            Padding="{TemplateBinding Padding}"
+                            MinHeight="48"
+                            Margin="{TemplateBinding Margin}">
+                        <ContentPresenter ContentSource="Header"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="tabBorder" Property="Background" Value="{DynamicResource PanelBackgroundBrush}"/>
+                            <Setter TargetName="tabBorder" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                            <Setter TargetName="tabBorder" Property="BorderThickness" Value="1,1,1,3"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="tabBorder" Property="Background" Value="{DynamicResource HoverBackground}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ModuleTabControlStyle" TargetType="TabControl">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
 </ResourceDictionary>

@@ -10,6 +10,7 @@ namespace SchettiniGestion.WPF
     {
         private readonly EventHandler _themeChangedHandler;
         private bool _sincronizandoModoPantalla;
+        private Button _navActivo;
 
         public PrincipalWindow()
         {
@@ -174,8 +175,18 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        private void SetModuloActivo(Button boton)
+        {
+            if (_navActivo != null)
+                _navActivo.Style = (Style)FindResource("LiteNavButton");
+            _navActivo = boton;
+            if (boton != null)
+                boton.Style = (Style)FindResource("LiteNavButtonActive");
+        }
+
         private void btnInicio_Click(object sender, RoutedEventArgs e)
         {
+            SetModuloActivo(null);
             mainContentArea.Content = new InicioControl();
         }
 
@@ -187,6 +198,7 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
+            SetModuloActivo(btnVentasFacturacion);
             mainContentArea.Content = new VentasControl();
         }
 
@@ -197,6 +209,7 @@ namespace SchettiniGestion.WPF
                 MessageBox.Show("No tiene permiso para acceder al módulo de productos.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
+            SetModuloActivo(btnGestionStock);
             mainContentArea.Content = new ProductosControl();
         }
 
@@ -207,6 +220,7 @@ namespace SchettiniGestion.WPF
                 MessageBox.Show("No tiene permiso para acceder al stock/productos.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
+            SetModuloActivo(btnGestionStock);
             mainContentArea.Content = new ProductosControl();
         }
 
@@ -217,6 +231,7 @@ namespace SchettiniGestion.WPF
                 MessageBox.Show("No tiene permiso para acceder a clientes.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
+            SetModuloActivo(btnClientes);
             mainContentArea.Content = new ClientesControl();
         }
 
@@ -289,6 +304,7 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
+            SetModuloActivo(btnCaja);
             mainContentArea.Content = new CajaModuloControl();
         }
 
@@ -299,6 +315,7 @@ namespace SchettiniGestion.WPF
                 MessageBox.Show("No tiene permiso para acceder a usuarios.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
+            SetModuloActivo(btnUsuariosPermisos);
             mainContentArea.Content = new UsuariosControl();
         }
 
@@ -310,6 +327,7 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
+            SetModuloActivo(btnConfiguracion);
             mainContentArea.Content = new ConfiguracionControl();
         }
 

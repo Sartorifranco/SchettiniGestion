@@ -10,18 +10,21 @@
              Background="{DynamicResource ModuleBackgroundBrush}">
 
     <Grid Margin="12">
-        <TabControl Background="Transparent" BorderThickness="0">
+        <TabControl Style="{StaticResource ModuleTabControlStyle}">
+            <TabControl.Resources>
+                <Style TargetType="TabItem" BasedOn="{StaticResource ModuleTabItemStyle}"/>
+            </TabControl.Resources>
             <TabItem Header="💵  Caja del día">
-                <local:CajaControl/>
+                <local:CajaControl Margin="0,8,0,0"/>
             </TabItem>
             <TabItem Header="📋  Movimientos">
-                <local:MovimientosCajaControl/>
+                <local:MovimientosCajaControl Margin="0,8,0,0"/>
             </TabItem>
             <TabItem Header="🔍  Consulta caja">
-                <local:ConsultaCajaControl/>
+                <local:ConsultaCajaControl Margin="0,8,0,0"/>
             </TabItem>
             <TabItem Header="📄  Planilla diaria">
-                <local:PlanillaDiariaControl/>
+                <local:PlanillaDiariaControl Margin="0,8,0,0"/>
             </TabItem>
         </TabControl>
     </Grid>

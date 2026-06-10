@@ -47,6 +47,34 @@
             </Setter>
         </Style>
 
+        <Style x:Key="LiteNavButtonActive" TargetType="Button">
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="Padding" Value="16,12"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bdr"
+                                Background="{DynamicResource HoverBackground}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}"
+                                BorderBrush="{StaticResource PrimaryColor}"
+                                BorderThickness="3,0,0,0">
+                            <ContentPresenter VerticalAlignment="Center" Margin="4,0,0,0"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="LiteDangerOutlineButton" TargetType="Button" BasedOn="{StaticResource LiteNavButton}">
             <Setter Property="Foreground" Value="{StaticResource DangerColor}"/>
             <Setter Property="BorderBrush" Value="{StaticResource DangerColor}"/>

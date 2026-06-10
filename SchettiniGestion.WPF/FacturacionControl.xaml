@@ -86,23 +86,30 @@
                                  TextChanged="txtBuscarProducto_TextChanged" 
                                  LostFocus="txtBuscar_LostFocus" PreviewKeyDown="txtBuscar_PreviewKeyDown"/>
                         <Popup x:Name="popupProducto" PlacementTarget="{Binding ElementName=txtBuscarProducto}" StaysOpen="False">
-                            <ListBox x:Name="lstSugerenciasProducto" Width="600" MaxHeight="350" FontSize="16"
-                                     MouseUp="lstSugerenciasProducto_MouseUp" PreviewKeyDown="lstSugerencias_PreviewKeyDown">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Width="550">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding Codigo}" Foreground="{DynamicResource TextSecondary}"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Descripcion}" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                                            <TextBlock Grid.Column="2" Text="{Binding PrecioVenta, StringFormat=C2}" Foreground="{DynamicResource SuccessColor}" FontWeight="Bold"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                            <Border Background="{DynamicResource ComboBoxDropDownBackground}"
+                                    BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="6"
+                                    Padding="2" MaxHeight="360">
+                                <ListBox x:Name="lstSugerenciasProducto" Width="600" MaxHeight="350" FontSize="16"
+                                         Style="{StaticResource TouchSuggestionListBoxStyle}"
+                                         MouseUp="lstSugerenciasProducto_MouseUp" PreviewKeyDown="lstSugerencias_PreviewKeyDown">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Width="550">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Codigo}" Foreground="{DynamicResource ComboBoxDropDownForeground}" Opacity="0.75"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Descripcion}" FontWeight="Bold"
+                                                           Foreground="{DynamicResource ComboBoxDropDownForeground}"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding PrecioVenta, StringFormat=C2}"
+                                                           Foreground="{StaticResource SuccessColor}" FontWeight="Bold"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
                         </Popup>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="0,0,10,0">
@@ -138,13 +145,16 @@
                     <Button x:Name="btnCrearCliente" Grid.Column="1" Content="➕ Crear" Click="btnCrearCliente_Click" 
                             Background="#27AE60" Foreground="White" FontWeight="Bold" Height="40" Margin="5,0,0,0" Padding="10,0"/>
                     <Popup x:Name="popupCliente" PlacementTarget="{Binding ElementName=txtBuscarCliente}" StaysOpen="False">
-                        <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" Padding="0">
+                        <Border Background="{DynamicResource ComboBoxDropDownBackground}"
+                                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="6" Padding="2">
                             <StackPanel>
                                 <ListBox x:Name="lstSugerenciasCliente" Width="500" MaxHeight="250" FontSize="16"
+                                         Style="{StaticResource TouchSuggestionListBoxStyle}"
                                          MouseUp="lstSugerenciasCliente_MouseUp" PreviewKeyDown="lstSugerencias_PreviewKeyDown">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding RazonSocial}" Padding="5" Foreground="{DynamicResource TextPrimary}"/>
+                                            <TextBlock Text="{Binding RazonSocial}" Padding="5"
+                                                       Foreground="{DynamicResource ComboBoxDropDownForeground}"/>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>

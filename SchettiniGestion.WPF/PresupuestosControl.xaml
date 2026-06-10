@@ -80,9 +80,9 @@
                             <Popup x:Name="popupCliente" PlacementTarget="{Binding ElementName=txtBuscarCliente}" Placement="Bottom" StaysOpen="False">
                                 <Border Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{StaticResource WarningColor}" BorderThickness="1" MaxHeight="200">
                                     <ListBox x:Name="lstSugerenciasCliente" DisplayMemberPath="RazonSocial" 
+                                             Style="{StaticResource TouchSuggestionListBoxStyle}"
                                              MouseUp="lstSugerenciasCliente_MouseUp"
-                                             PreviewKeyDown="lstSugerencias_PreviewKeyDown"
-                                             Background="{DynamicResource PanelBackgroundBrush}" Foreground="{DynamicResource TextPrimary}"/>
+                                             PreviewKeyDown="lstSugerencias_PreviewKeyDown"/>
                                 </Border>
                             </Popup>
                             <TextBlock x:Name="lblClienteSeleccionado" Text="Consumidor Final" Foreground="{DynamicResource TextPrimary}" FontSize="16" FontWeight="SemiBold" Margin="0,5,0,0"/>
@@ -100,9 +100,9 @@
                             <Popup x:Name="popupProducto" PlacementTarget="{Binding ElementName=txtBuscarProducto}" Placement="Bottom" StaysOpen="False">
                                 <Border Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{StaticResource WarningColor}" BorderThickness="1" MaxHeight="200">
                                     <ListBox x:Name="lstSugerenciasProducto" DisplayMemberPath="Descripcion" 
+                                             Style="{StaticResource TouchSuggestionListBoxStyle}"
                                              MouseUp="lstSugerenciasProducto_MouseUp"
-                                             PreviewKeyDown="lstSugerencias_PreviewKeyDown"
-                                             Background="{DynamicResource PanelBackgroundBrush}" Foreground="{DynamicResource TextPrimary}"/>
+                                             PreviewKeyDown="lstSugerencias_PreviewKeyDown"/>
                                 </Border>
                             </Popup>
 

@@ -201,6 +201,49 @@
         </Setter>
     </Style>
 
+    <!-- ListBox de sugerencias (buscador producto/cliente en POS): mismo contraste que ComboBox táctil -->
+    <Style x:Key="TouchSuggestionListBoxItemStyle" TargetType="ListBoxItem">
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="Foreground" Value="{DynamicResource ComboBoxDropDownForeground}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="itemBorder"
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="itemBorder" Property="Background" Value="{DynamicResource ComboBoxItemHoverBackground}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="itemBorder" Property="Background" Value="{StaticResource PrimaryColor}"/>
+                            <Setter Property="Foreground" Value="White"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TouchSuggestionListBoxStyle" TargetType="ListBox">
+        <Setter Property="Background" Value="{DynamicResource ComboBoxDropDownBackground}"/>
+        <Setter Property="Foreground" Value="{DynamicResource ComboBoxDropDownForeground}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="ItemContainerStyle" Value="{StaticResource TouchSuggestionListBoxItemStyle}"/>
+    </Style>
+
     <Style x:Key="TouchComboBoxStyle" TargetType="ComboBox">
         <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}"/>
         <Setter Property="Background" Value="{DynamicResource ComboBoxBackground}"/>

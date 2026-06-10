@@ -544,6 +544,7 @@
       <DependentUpon>FacturacionControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="KeyboardHelper.cs" />
+    <Compile Include="AutocompleteListHelper.cs" />
     <Compile Include="ProductosControl.xaml.cs">
       <DependentUpon>ProductosControl.xaml</DependentUpon>
     </Compile>

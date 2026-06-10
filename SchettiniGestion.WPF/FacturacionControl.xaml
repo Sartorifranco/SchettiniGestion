@@ -90,7 +90,7 @@
                                     BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="6"
                                     Padding="2" MaxHeight="360">
                                 <ListBox x:Name="lstSugerenciasProducto" Width="600" MaxHeight="350" FontSize="16"
-                                         Style="{StaticResource TouchSuggestionListBoxStyle}"
+                                         Style="{StaticResource TouchSuggestionListBoxStyle}" Focusable="False" IsTabStop="False"
                                          MouseUp="lstSugerenciasProducto_MouseUp" PreviewKeyDown="lstSugerencias_PreviewKeyDown">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>

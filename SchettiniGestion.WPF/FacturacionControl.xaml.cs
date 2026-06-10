@@ -219,10 +219,14 @@ namespace SchettiniGestion.WPF
                     AgregarProductoSeleccionadoAlCarrito();
                     return;
                 }
-                if (lstSugerenciasProducto.Items.Count > 1)
+                if (lstSugerenciasProducto.SelectedItem is DataRowView sel)
                 {
-                    lstSugerenciasProducto.SelectedIndex = 0;
-                    lstSugerenciasProducto.Focus();
+                    SeleccionarProductoSugerencia(sel);
+                    return;
+                }
+                if (lstSugerenciasProducto.Items.Count > 0 && lstSugerenciasProducto.Items[0] is DataRowView first)
+                {
+                    SeleccionarProductoSugerencia(first);
                     return;
                 }
             }
@@ -678,31 +682,158 @@ namespace SchettiniGestion.WPF
             ActualizarTotal();
         }
         private void cmbListaPrecios_SelectionChanged(object sender, SelectionChangedEventArgs e) { if (!_cargandoListas) RecalcularCarritoConNuevaLista(); }
-        private void txtBuscarCliente_TextChanged(object sender, TextChangedEventArgs e) { if (txtBuscarCliente.Text.Length < 2) { popupCliente.IsOpen = false; return; } try { DataTable dt = DatabaseService.BuscarClientesMultiples(txtBuscarCliente.Text); lstSugerenciasCliente.ItemsSource = dt.DefaultView; popupCliente.IsOpen = true; } catch { } }
-        private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e) { if (_ignorarPerdidaFoco) return; if (txtBuscarProducto.Text.Length < 1) { popupProducto.IsOpen = false; _productoSeleccionado = null; return; } try { DataTable dt = DatabaseService.BuscarProductosMultiples_ParaVenta(txtBuscarProducto.Text); lstSugerenciasProducto.ItemsSource = dt.DefaultView; popupProducto.IsOpen = dt.Rows.Count > 0; } catch { } }
-        private void SeleccionarCliente(DataRowView row) { _clienteSeleccionado = row.Row; _ignorarPerdidaFoco = true; txtBuscarCliente.Text = _clienteSeleccionado["RazonSocial"].ToString(); lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString(); _ignorarPerdidaFoco = false; popupCliente.IsOpen = false; txtBuscarProducto.Focus(); }
-        private void lstSugerenciasCliente_MouseUp(object sender, MouseButtonEventArgs e) { if (lstSugerenciasCliente.SelectedItem is DataRowView r) SeleccionarCliente(r); }
-        private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e) { if (lstSugerenciasProducto.SelectedItem is DataRowView r) { _productoSeleccionado = r.Row; _ignorarPerdidaFoco = true; txtBuscarProducto.Text = _productoSeleccionado["Descripcion"].ToString(); _ignorarPerdidaFoco = false; popupProducto.IsOpen = false; txtCantidad.Focus(); txtCantidad.SelectAll(); } }
-        private async void txtBuscar_LostFocus(object sender, RoutedEventArgs e) { if (_ignorarPerdidaFoco) return; await Task.Delay(150); if (!lstSugerenciasCliente.IsFocused && !lstSugerenciasProducto.IsFocused) { popupCliente.IsOpen = false; popupProducto.IsOpen = false; } }
+        private void txtBuscarCliente_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (txtBuscarCliente.Text.Length < 2) { popupCliente.IsOpen = false; return; }
+            try
+            {
+                DataTable dt = DatabaseService.BuscarClientesMultiples(txtBuscarCliente.Text);
+                lstSugerenciasCliente.ItemsSource = dt.DefaultView;
+                popupCliente.IsOpen = dt.Rows.Count > 0;
+                AutocompleteListHelper.ReiniciarSeleccion(lstSugerenciasCliente);
+            }
+            catch { }
+        }
+
+        private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_ignorarPerdidaFoco) return;
+            if (txtBuscarProducto.Text.Length < 1) { popupProducto.IsOpen = false; _productoSeleccionado = null; return; }
+            try
+            {
+                DataTable dt = DatabaseService.BuscarProductosMultiples_ParaVenta(txtBuscarProducto.Text);
+                lstSugerenciasProducto.ItemsSource = dt.DefaultView;
+                popupProducto.IsOpen = dt.Rows.Count > 0;
+                AutocompleteListHelper.ReiniciarSeleccion(lstSugerenciasProducto);
+            }
+            catch { }
+        }
+
+        private void SeleccionarCliente(DataRowView row)
+        {
+            _clienteSeleccionado = row.Row;
+            _ignorarPerdidaFoco = true;
+            txtBuscarCliente.Text = _clienteSeleccionado["RazonSocial"].ToString();
+            lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
+            _ignorarPerdidaFoco = false;
+            popupCliente.IsOpen = false;
+            txtBuscarProducto.Focus();
+        }
+
+        private void SeleccionarProductoSugerencia(DataRowView row)
+        {
+            _productoSeleccionado = row.Row;
+            _ignorarPerdidaFoco = true;
+            txtBuscarProducto.Text = _productoSeleccionado["Descripcion"].ToString();
+            _ignorarPerdidaFoco = false;
+            popupProducto.IsOpen = false;
+            txtCantidad.Focus();
+            txtCantidad.SelectAll();
+        }
+
+        private void lstSugerenciasCliente_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (lstSugerenciasCliente.SelectedItem is DataRowView r) SeleccionarCliente(r);
+        }
+
+        private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (lstSugerenciasProducto.SelectedItem is DataRowView r) SeleccionarProductoSugerencia(r);
+        }
+
+        private async void txtBuscar_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (_ignorarPerdidaFoco) return;
+            await Task.Delay(150);
+            if (!lstSugerenciasCliente.IsFocused && !lstSugerenciasProducto.IsFocused)
+            {
+                popupCliente.IsOpen = false;
+                popupProducto.IsOpen = false;
+            }
+        }
+
         private void txtBuscar_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Down)
             {
-                if (popupCliente.IsOpen) { lstSugerenciasCliente.SelectedIndex = 0; lstSugerenciasCliente.Focus(); }
-                else if (popupProducto.IsOpen) { lstSugerenciasProducto.SelectedIndex = 0; lstSugerenciasProducto.Focus(); }
+                if (sender == txtBuscarCliente && popupCliente.IsOpen && lstSugerenciasCliente.Items.Count > 0)
+                {
+                    AutocompleteListHelper.MoverSeleccion(lstSugerenciasCliente, 1);
+                    e.Handled = true;
+                }
+                else if (sender == txtBuscarProducto && popupProducto.IsOpen && lstSugerenciasProducto.Items.Count > 0)
+                {
+                    AutocompleteListHelper.MoverSeleccion(lstSugerenciasProducto, 1);
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.Up)
+            {
+                if (sender == txtBuscarCliente && popupCliente.IsOpen && lstSugerenciasCliente.Items.Count > 0)
+                {
+                    AutocompleteListHelper.MoverSeleccion(lstSugerenciasCliente, -1);
+                    e.Handled = true;
+                }
+                else if (sender == txtBuscarProducto && popupProducto.IsOpen && lstSugerenciasProducto.Items.Count > 0)
+                {
+                    AutocompleteListHelper.MoverSeleccion(lstSugerenciasProducto, -1);
+                    e.Handled = true;
+                }
             }
             else if (e.Key == Key.Escape)
             {
                 popupCliente.IsOpen = false;
                 popupProducto.IsOpen = false;
-            }
-            else if (e.Key == Key.Enter && sender == txtBuscarProducto)
-            {
                 e.Handled = true;
-                txtBuscarProductoEnterAgregarSiCorresponde();
+            }
+            else if (e.Key == Key.Enter)
+            {
+                if (sender == txtBuscarCliente && popupCliente.IsOpen && lstSugerenciasCliente.Items.Count > 0)
+                {
+                    if (lstSugerenciasCliente.SelectedItem is DataRowView cv)
+                        SeleccionarCliente(cv);
+                    else if (lstSugerenciasCliente.Items[0] is DataRowView cv0)
+                        SeleccionarCliente(cv0);
+                    e.Handled = true;
+                }
+                else if (sender == txtBuscarProducto)
+                {
+                    if (popupProducto.IsOpen && lstSugerenciasProducto.Items.Count > 0)
+                    {
+                        if (lstSugerenciasProducto.SelectedItem is DataRowView pv)
+                            SeleccionarProductoSugerencia(pv);
+                        else if (lstSugerenciasProducto.Items[0] is DataRowView pv0)
+                            SeleccionarProductoSugerencia(pv0);
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        e.Handled = true;
+                        txtBuscarProductoEnterAgregarSiCorresponde();
+                    }
+                }
             }
         }
-        private void lstSugerencias_PreviewKeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Enter) { if (sender == lstSugerenciasCliente && lstSugerenciasCliente.SelectedItem is DataRowView c) SeleccionarCliente(c); else if (sender == lstSugerenciasProducto && lstSugerenciasProducto.SelectedItem is DataRowView p) { _productoSeleccionado = p.Row; _ignorarPerdidaFoco = true; txtBuscarProducto.Text = _productoSeleccionado["Descripcion"].ToString(); _ignorarPerdidaFoco = false; popupProducto.IsOpen = false; txtCantidad.Focus(); txtCantidad.SelectAll(); } } }
+
+        private void lstSugerencias_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                if (sender == lstSugerenciasCliente && lstSugerenciasCliente.SelectedItem is DataRowView c)
+                    SeleccionarCliente(c);
+                else if (sender == lstSugerenciasProducto && lstSugerenciasProducto.SelectedItem is DataRowView p)
+                    SeleccionarProductoSugerencia(p);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                popupCliente.IsOpen = false;
+                popupProducto.IsOpen = false;
+                if (sender == lstSugerenciasCliente) txtBuscarCliente.Focus();
+                else txtBuscarProducto.Focus();
+                e.Handled = true;
+            }
+        }
         private void NumberValidationTextBox(object sender, TextCompositionEventArgs e) { e.Handled = new Regex("[^0-9,.]+").IsMatch(e.Text); }
 
         // --- Vista Cards/Lista ---

@@ -18,9 +18,9 @@ namespace SchettiniGestion.WPF
             Title = titulo;
             Width = 480;
             Height = 420;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            WindowStyle = WindowStyle.None;
-            ResizeMode = ResizeMode.NoResize;
+            WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
+            WindowStyle = System.Windows.WindowStyle.None;
+            ResizeMode = System.Windows.ResizeMode.NoResize;
             AllowsTransparency = true;
             Background = System.Windows.Media.Brushes.Transparent;
 

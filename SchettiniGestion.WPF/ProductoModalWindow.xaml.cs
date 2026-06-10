@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using SchettiniGestion;
 using Xceed.Wpf.Toolkit;
@@ -27,11 +28,12 @@ namespace SchettiniGestion.WPF
             _productoId = productoId;
             _modoDuplicar = duplicar;
             _onGuardado = onGuardado;
+            CargarCombos();
+            KeyboardHelper.AttachTouchKeyboard(this);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            CargarProveedores();
             CargarListasPrecio();
             if (_productoId == 0)
             {
@@ -59,21 +61,122 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        private void CargarProveedores()
+        private void btnTeclado_Click(object sender, RoutedEventArgs e)
         {
-            try
+            KeyboardHelper.ShowOnScreenKeyboard();
+        }
+
+        private void CargarCombos()
+        {
+            string cat = ObtenerTextoLookupCombo(cmbCategoria);
+            string sub = ObtenerTextoLookupCombo(cmbSubRubro);
+            string prov = ObtenerTextoLookupCombo(cmbProveedor);
+
+            cmbCategoria.ItemsSource = DatabaseService.GetCategoriasCatalogo();
+            cmbSubRubro.ItemsSource = DatabaseService.GetSubRubrosCatalogo();
+            cmbProveedor.ItemsSource = DatabaseService.GetProveedoresCatalogo();
+
+            SeleccionarLookupPorNombre(cmbCategoria, cat);
+            SeleccionarLookupPorNombre(cmbSubRubro, sub);
+            SeleccionarLookupPorNombre(cmbProveedor, prov);
+        }
+
+        private static string ObtenerTextoLookupCombo(ComboBox cb)
+        {
+            if (cb == null) return "";
+            string t = cb.Text?.Trim() ?? "";
+            if (!string.IsNullOrEmpty(t)) return t;
+            if (cb.SelectedItem is ComboLookupItem li && li.Id != 0)
+                return li.Nombre?.Trim() ?? "";
+            return "";
+        }
+
+        private static void SeleccionarLookupPorNombre(ComboBox cb, string valor)
+        {
+            if (cb?.ItemsSource == null) return;
+            foreach (var o in cb.Items)
             {
-                var dt = DatabaseService.GetProveedores();
-                if (dt == null || cmbProveedor == null) return;
-                cmbProveedor.Items.Clear();
-                cmbProveedor.Items.Add("");
-                foreach (DataRow r in dt.Rows)
+                if (!(o is ComboLookupItem it)) continue;
+                if (it.Id == 0 && string.IsNullOrWhiteSpace(valor))
                 {
-                    string rs = r["RazonSocial"]?.ToString() ?? "";
-                    if (!string.IsNullOrEmpty(rs)) cmbProveedor.Items.Add(rs);
+                    cb.SelectedItem = it;
+                    cb.Text = "";
+                    return;
+                }
+                if (it.Id != 0 && string.Equals(it.Nombre?.Trim(), valor?.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    cb.SelectedItem = it;
+                    return;
                 }
             }
-            catch { }
+            cb.SelectedItem = null;
+            cb.Text = valor ?? "";
+        }
+
+        private void btnNuevaCategoria_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new ModernInputWindow("Nueva categoría", "Nombre:") { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+            string n = dlg.ResultText?.Trim();
+            if (string.IsNullOrEmpty(n))
+            {
+                ModernMessageBox.Show("Ingrese un nombre.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            int id = DatabaseService.InsertCategoria(n);
+            if (id <= 0)
+            {
+                ModernMessageBox.Show("No se pudo guardar la categoría.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            CargarCombos();
+            SeleccionarLookupPorNombre(cmbCategoria, n);
+        }
+
+        private void btnNuevoSubRubro_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new ModernInputWindow("Nuevo sub-rubro", "Nombre:") { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+            string n = dlg.ResultText?.Trim();
+            if (string.IsNullOrEmpty(n))
+            {
+                ModernMessageBox.Show("Ingrese un nombre.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            int id = DatabaseService.InsertSubRubro(n);
+            if (id <= 0)
+            {
+                ModernMessageBox.Show("No se pudo guardar el sub-rubro.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            CargarCombos();
+            SeleccionarLookupPorNombre(cmbSubRubro, n);
+        }
+
+        private void btnNuevoProveedor_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new ModernInputWindow("Nuevo proveedor", "Razón social:") { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+            string n = dlg.ResultText?.Trim();
+            if (string.IsNullOrEmpty(n))
+            {
+                ModernMessageBox.Show("Ingrese la razón social.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            int id = DatabaseService.InsertProveedorNombre(n);
+            if (id <= 0)
+            {
+                ModernMessageBox.Show("No se pudo guardar el proveedor.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            CargarCombos();
+            SeleccionarLookupPorNombre(cmbProveedor, n);
         }
 
         private void CargarListasPrecio()
@@ -89,7 +192,6 @@ namespace SchettiniGestion.WPF
                     return;
                 }
                 txtSinListas.Visibility = Visibility.Collapsed;
-                decimal tipoCambio = DatabaseService.GetTipoCambioUSD() ?? 0;
                 foreach (DataRow r in dt.Rows)
                 {
                     int listaId = Convert.ToInt32(r["ListaID"]);
@@ -98,15 +200,21 @@ namespace SchettiniGestion.WPF
                     var chk = new CheckBox
                     {
                         Content = nombre,
-                        Foreground = System.Windows.Media.Brushes.LightGray,
-                        Tag = new { ListaID = listaId, Porcentaje = pct },
-                        Margin = new Thickness(0, 4, 0, 4)
+                        Foreground = (Brush)FindResource("TextPrimary"),
+                        Style = (Style)FindResource("ProductoTouchCheckBox"),
+                        Margin = new Thickness(0, 6, 0, 6)
                     };
                     chk.Checked += (s, e) => ActualizarPrecioLista(chk);
                     chk.Unchecked += (s, e) => ActualizarPrecioLista(chk);
                     var sp = new StackPanel { Orientation = Orientation.Horizontal };
                     sp.Children.Add(chk);
-                    var lbl = new TextBlock { Foreground = System.Windows.Media.Brushes.Gray, FontSize = 11, Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+                    var lbl = new TextBlock
+                    {
+                        Foreground = (Brush)FindResource("TextSecondary"),
+                        FontSize = 13,
+                        Margin = new Thickness(10, 0, 0, 0),
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
                     sp.Children.Add(lbl);
                     chk.Tag = new ListaPrecioItem { ListaID = listaId, Porcentaje = pct, CheckBox = chk, LabelPrecio = lbl };
                     pnlListasPrecio.Items.Add(sp);
@@ -153,9 +261,7 @@ namespace SchettiniGestion.WPF
             foreach (var item in pnlListasPrecio.Items)
             {
                 if (item is StackPanel sp && sp.Children.Count > 0 && sp.Children[0] is CheckBox chk)
-                {
                     ActualizarPrecioLista(chk);
-                }
             }
         }
 
@@ -177,9 +283,9 @@ namespace SchettiniGestion.WPF
             txtCodigo.Text = r["Codigo"]?.ToString() ?? "";
             txtCodigoBarra.Text = r["CodigoBarra"]?.ToString() ?? "";
             txtDescripcion.Text = r["Descripcion"]?.ToString() ?? "";
-            EstablecerCombo(cmbCategoria, V(r, "Categoria"));
-            EstablecerCombo(cmbSubRubro, V(r, "SubRubro"));
-            EstablecerCombo(cmbProveedor, V(r, "Proveedor"));
+            SeleccionarLookupPorNombre(cmbCategoria, V(r, "Categoria"));
+            SeleccionarLookupPorNombre(cmbSubRubro, V(r, "SubRubro"));
+            SeleccionarLookupPorNombre(cmbProveedor, V(r, "Proveedor"));
             txtCodigoExterno.Text = V(r, "CodigoExterno");
 
             string moneda = V(r, "TipoMoneda");
@@ -274,9 +380,9 @@ namespace SchettiniGestion.WPF
             txtCodigo.Text = "";
             txtCodigoBarra.Text = "";
             txtDescripcion.Text = "";
-            cmbCategoria.Text = "";
-            cmbSubRubro.Text = "";
-            cmbProveedor.Text = "";
+            SeleccionarLookupPorNombre(cmbCategoria, "");
+            SeleccionarLookupPorNombre(cmbSubRubro, "");
+            SeleccionarLookupPorNombre(cmbProveedor, "");
             txtCodigoExterno.Text = "";
             cmbTipoMoneda.SelectedIndex = 0;
             cmbTipoIVA.SelectedIndex = 0;
@@ -362,9 +468,9 @@ namespace SchettiniGestion.WPF
 
         private void chkEsStockeable_Changed(object sender, RoutedEventArgs e)
         {
-            if (pnlStockCantidades == null) return;
+            if (pnlStockGrid == null) return;
             bool stockeable = chkEsStockeable?.IsChecked == true;
-            pnlStockCantidades.Visibility = stockeable ? Visibility.Visible : Visibility.Collapsed;
+            pnlStockGrid.Visibility = stockeable ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void chkUsaVariantes_Changed(object sender, RoutedEventArgs e)
@@ -379,21 +485,11 @@ namespace SchettiniGestion.WPF
             pnlCombo.Visibility = chkEsCombo?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private void btnSeleccionarImagen_Click(object sender, RoutedEventArgs e)
-        {
-            var ofd = new OpenFileDialog { Filter = "Imágenes|*.jpg;*.png;*.jpeg;*.bmp" };
-            if (ofd.ShowDialog() == true)
-            {
-                _rutaImagen = ofd.FileName;
-                CargarImagen(_rutaImagen);
-            }
-        }
-
         private bool GuardarProductoActual(bool crearYOtro)
         {
             if (string.IsNullOrWhiteSpace(txtCodigo.Text) || string.IsNullOrWhiteSpace(txtDescripcion.Text))
             {
-                System.Windows.MessageBox.Show("El Código y la Descripción son obligatorios.", "Aviso", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                ModernMessageBox.Show("El Código y la Descripción son obligatorios.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return false;
             }
 
@@ -412,10 +508,10 @@ namespace SchettiniGestion.WPF
                 txtCodigo.Text.Trim(),
                 codigoBarra,
                 txtDescripcion.Text.Trim(),
-                cmbCategoria.Text?.Trim() ?? "",
-                cmbSubRubro.Text?.Trim() ?? "",
+                ObtenerTextoLookupCombo(cmbCategoria),
+                ObtenerTextoLookupCombo(cmbSubRubro),
                 "",
-                cmbProveedor.Text?.Trim() ?? "",
+                ObtenerTextoLookupCombo(cmbProveedor),
                 ivaStr,
                 numCosto.Value ?? 0,
                 numGanancia.Value ?? 0,
@@ -439,7 +535,7 @@ namespace SchettiniGestion.WPF
 
             if (productoId <= 0)
             {
-                System.Windows.MessageBox.Show("Error al guardar.", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                ModernMessageBox.Show("Error al guardar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
 
@@ -479,7 +575,7 @@ namespace SchettiniGestion.WPF
             _onGuardado?.Invoke();
             if (!crearYOtro)
             {
-                System.Windows.MessageBox.Show("Producto guardado correctamente.", "Éxito", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                ModernMessageBox.Show("Producto guardado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 DialogResult = true;
                 Close();
             }
@@ -516,7 +612,7 @@ namespace SchettiniGestion.WPF
 
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
-            if (System.Windows.MessageBox.Show("¿Eliminar este producto?", "Confirmar", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning) == System.Windows.MessageBoxResult.Yes)
+            if (ModernMessageBox.Show("¿Eliminar este producto?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
                 if (DatabaseService.EliminarProducto(_productoId))
                 {
@@ -525,13 +621,13 @@ namespace SchettiniGestion.WPF
                     Close();
                 }
                 else
-                    System.Windows.MessageBox.Show("No se pudo eliminar.", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    ModernMessageBox.Show("No se pudo eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void btnCambiarImagen_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new Microsoft.Win32.OpenFileDialog
+            var dlg = new OpenFileDialog
             {
                 Filter = "Imágenes|*.jpg;*.jpeg;*.png;*.bmp;*.gif",
                 Title = "Seleccionar imagen del producto"

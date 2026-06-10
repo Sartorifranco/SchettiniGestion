@@ -3,174 +3,528 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:SchettiniGestion.WPF"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-        Title="Producto" Height="720" Width="900"
-        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Title="Producto"
+        Width="960"
+        Height="700"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        Background="Transparent"
         Loaded="Window_Loaded">
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-            <TextBlock x:Name="txtTitulo" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
-        </StackPanel>
+    <Window.Resources>
+        <Style x:Key="ProductoTouchTextBox" TargetType="TextBox" BasedOn="{StaticResource ModuleTextBoxStyle}">
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
+        <Style x:Key="ProductoTouchCombo" TargetType="ComboBox" BasedOn="{StaticResource ModuleComboBoxStyle}">
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
+        <Style x:Key="ProductoTouchDecimal" TargetType="xctk:DecimalUpDown" BasedOn="{StaticResource ModuleNumericUpDownStyle}">
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
+        <Style x:Key="ProductoTouchCheckBox" TargetType="CheckBox">
+            <Setter Property="MinHeight" Value="44"/>
+            <Setter Property="Padding" Value="8,10"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        </Style>
+        <Style x:Key="OutlinePrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="MinHeight" Value="48"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="ProductoFooterPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="22,12"/>
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="FontSize" Value="15"/>
+        </Style>
+        <Style x:Key="ProductoAddButton" TargetType="Button" BasedOn="{StaticResource OutlinePrimaryButtonStyle}">
+            <Setter Property="Width" Value="48"/>
+            <Setter Property="MinWidth" Value="48"/>
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style x:Key="ProductoTabItemStyle" TargetType="TabItem">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="Padding" Value="20,14"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="bdr"
+                                Background="Transparent"
+                                BorderThickness="0,0,0,3"
+                                BorderBrush="Transparent"
+                                Margin="0,0,8,0"
+                                MinHeight="52">
+                            <ContentPresenter ContentSource="Header"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="6"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="bdr" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ProductoSectionBorder" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+    </Window.Resources>
 
-        <!-- Body -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-                <!-- Códigos -->
-                <WrapPanel Margin="0,0,0,6">
-                    <StackPanel Margin="0,0,12,0">
-                        <TextBlock Text="Código"/>
-                        <TextBox x:Name="txtCodigo" Width="140" Padding="4"/>
-                    </StackPanel>
-                    <StackPanel Margin="0,0,12,0">
-                        <TextBlock Text="Código de Barra"/>
-                        <TextBox x:Name="txtCodigoBarra" Width="180" Padding="4"/>
-                    </StackPanel>
-                    <StackPanel Margin="0,0,12,0">
-                        <TextBlock Text="Código Externo"/>
-                        <TextBox x:Name="txtCodigoExterno" Width="140" Padding="4"/>
-                    </StackPanel>
-                    <CheckBox x:Name="chkGenerarCodigoBarra" Content="Generar CB automático" VerticalAlignment="Bottom" Margin="0,0,12,4"/>
-                </WrapPanel>
+    <Border Background="{DynamicResource PanelBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderColor}"
+            BorderThickness="1"
+            CornerRadius="12">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-                <!-- Descripción -->
-                <StackPanel Margin="0,0,0,6">
-                    <TextBlock Text="Descripción"/>
-                    <TextBox x:Name="txtDescripcion" Padding="4"/>
+            <!-- Encabezado moderno (sin barra de título de Windows) -->
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="txtTitulo"
+                               FontSize="22"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimary}"
+                               VerticalAlignment="Center"/>
                 </StackPanel>
-
-                <!-- Categorías y proveedor -->
-                <WrapPanel Margin="0,0,0,6">
-                    <StackPanel Margin="0,0,12,0">
-                        <TextBlock Text="Categoría"/>
-                        <ComboBox x:Name="cmbCategoria" Width="160" IsEditable="True"/>
-                    </StackPanel>
-                    <StackPanel Margin="0,0,12,0">
-                        <TextBlock Text="Sub-rubro"/>
-                        <ComboBox x:Name="cmbSubRubro" Width="160" IsEditable="True"/>
-                    </StackPanel>
-                    <StackPanel Margin="0,0,12,0">
-                        <TextBlock Text="Proveedor"/>
-                        <ComboBox x:Name="cmbProveedor" Width="200" IsEditable="True"/>
-                    </StackPanel>
-                </WrapPanel>
-
-                <!-- Precios -->
-                <WrapPanel Margin="0,0,0,6">
-                    <StackPanel Margin="0,0,12,0">
-                        <TextBlock Text="IVA"/>
-                        <ComboBox x:Name="cmbTipoIVA" Width="100">
-                            <ComboBoxItem Content="21.0"/>
-                            <ComboBoxItem Content="10.5"/>
-                            <ComboBoxItem Content="0.0"/>
-                            <ComboBoxItem Content="27.0"/>
-                        </ComboBox>
-                    </StackPanel>
-                    <StackPanel Margin="0,0,12,0">
-                        <TextBlock Text="Moneda"/>
-                        <ComboBox x:Name="cmbTipoMoneda" Width="90">
-                            <ComboBoxItem Content="ARS" IsSelected="True"/>
-                            <ComboBoxItem Content="USD"/>
-                        </ComboBox>
-                    </StackPanel>
-                    <StackPanel Margin="0,0,12,0">
-                        <TextBlock Text="Costo"/>
-                        <xctk:DecimalUpDown x:Name="numCosto" Width="120" Minimum="0" FormatString="N2"
-                                            ValueChanged="CalcularPrecio_ValueChanged"/>
-                    </StackPanel>
-                    <StackPanel Margin="0,0,12,0">
-                        <TextBlock Text="Ganancia %"/>
-                        <xctk:DecimalUpDown x:Name="numGanancia" Width="100" Minimum="0" FormatString="N2"
-                                            ValueChanged="CalcularPrecio_ValueChanged"/>
-                    </StackPanel>
-                    <StackPanel Margin="0,0,12,0">
-                        <TextBlock Text="Precio Venta"/>
-                        <xctk:DecimalUpDown x:Name="numPrecioFinal" Width="120" Minimum="0" FormatString="N2"
-                                            ValueChanged="CalcularPrecio_ValueChanged"/>
-                    </StackPanel>
-                </WrapPanel>
-
-                <!-- Listas de precio -->
-                <TextBlock x:Name="txtSinListas" Text="(Sin listas de precio configuradas)" Foreground="Gray" Margin="0,0,0,4" Visibility="Collapsed"/>
-                <ItemsControl x:Name="pnlListasPrecio" Margin="0,0,0,6"/>
-
-                <!-- Stock -->
-                <StackPanel x:Name="pnlStockCantidades" Margin="0,0,0,6">
-                    <WrapPanel>
-                        <StackPanel Margin="0,0,12,0">
-                            <TextBlock Text="Stock Actual"/>
-                            <xctk:DecimalUpDown x:Name="numStockDisponible" Width="100" Minimum="0" FormatString="N0"/>
-                        </StackPanel>
-                        <StackPanel Margin="0,0,12,0">
-                            <TextBlock Text="Stock Mínimo"/>
-                            <xctk:DecimalUpDown x:Name="numStockMinimo" Width="100" Minimum="0" FormatString="N0"/>
-                        </StackPanel>
-                        <StackPanel Margin="0,0,12,0">
-                            <TextBlock Text="Stock Ideal"/>
-                            <xctk:DecimalUpDown x:Name="numStockIdeal" Width="100" Minimum="0" FormatString="N0"/>
-                        </StackPanel>
-                    </WrapPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="⌨"
+                            Width="48"
+                            Height="48"
+                            Margin="0,0,8,0"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            FontSize="20"
+                            ToolTip="Teclado en pantalla"
+                            Click="btnTeclado_Click"/>
+                    <Button Content="✕"
+                            Width="48"
+                            Height="48"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            FontSize="16"
+                            ToolTip="Cerrar"
+                            Click="btnCancelar_Click"/>
                 </StackPanel>
+            </Grid>
 
-                <!-- Opciones -->
-                <WrapPanel Margin="0,0,0,6">
-                    <CheckBox x:Name="chkPermiteModificarPrecioVenta" Content="Permite modificar precio en venta" Margin="0,0,16,4"/>
-                    <CheckBox x:Name="chkEsStockeable" Content="Stockeable" Margin="0,0,16,4"/>
-                    <CheckBox x:Name="chkAceptaStockNegativo" Content="Acepta stock negativo" Margin="0,0,16,4"/>
-                    <CheckBox x:Name="chkUsaVariantes" Content="Usa variantes" Margin="0,0,16,4"/>
-                    <CheckBox x:Name="chkEsCombo" Content="Es combo" Margin="0,0,16,4"/>
-                </WrapPanel>
+            <!-- Contenido en pestañas (sin scrollbar principal) -->
+            <TabControl Grid.Row="1"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0">
+                <TabControl.Resources>
+                    <Style TargetType="TabItem" BasedOn="{StaticResource ProductoTabItemStyle}"/>
+                </TabControl.Resources>
 
-                <!-- Variantes -->
-                <StackPanel x:Name="pnlVariantes" Margin="0,0,0,6" Visibility="Collapsed">
-                    <WrapPanel>
-                        <StackPanel Margin="0,0,12,0">
-                            <TextBlock Text="Color"/>
-                            <TextBox x:Name="txtVarianteColor" Width="120" Padding="4"/>
+                <!-- Pestaña 1: Datos principales -->
+                <TabItem Header="Datos principales">
+                    <Grid Margin="0,12,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Border Style="{StaticResource ProductoSectionBorder}" Grid.Row="0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid Grid.Row="0" Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                        <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Código"/>
+                                        <TextBox x:Name="txtCodigo" Style="{StaticResource ProductoTouchTextBox}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                                        <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Código de Barra"/>
+                                        <TextBox x:Name="txtCodigoBarra" Style="{StaticResource ProductoTouchTextBox}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                                        <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Código Externo"/>
+                                        <TextBox x:Name="txtCodigoExterno" Style="{StaticResource ProductoTouchTextBox}"/>
+                                    </StackPanel>
+                                    <CheckBox x:Name="chkGenerarCodigoBarra"
+                                              Grid.Column="3"
+                                              Content="Generar CB automático"
+                                              Style="{StaticResource ProductoTouchCheckBox}"
+                                              VerticalAlignment="Bottom"
+                                              Checked="chkGenerarCodigoBarra_Changed"
+                                              Unchecked="chkGenerarCodigoBarra_Changed"/>
+                                </Grid>
+                                <StackPanel Grid.Row="1" Margin="0,0,0,12">
+                                    <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Descripción"/>
+                                    <TextBox x:Name="txtDescripcion"
+                                             Style="{StaticResource ProductoTouchTextBox}"
+                                             MinHeight="52"/>
+                                </StackPanel>
+                                <Grid Grid.Row="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                        <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Categoría"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox x:Name="cmbCategoria"
+                                                      Grid.Column="0"
+                                                      Style="{StaticResource ProductoTouchCombo}"
+                                                      IsEditable="True"
+                                                      DisplayMemberPath="Nombre"
+                                                      SelectedValuePath="Id"/>
+                                            <Button x:Name="btnNuevaCategoria"
+                                                    Grid.Column="1"
+                                                    Content="+"
+                                                    Style="{StaticResource ProductoAddButton}"
+                                                    Margin="8,0,0,0"
+                                                    Click="btnNuevaCategoria_Click"
+                                                    ToolTip="Nueva categoría"/>
+                                        </Grid>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                                        <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Sub-rubro"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox x:Name="cmbSubRubro"
+                                                      Grid.Column="0"
+                                                      Style="{StaticResource ProductoTouchCombo}"
+                                                      IsEditable="True"
+                                                      DisplayMemberPath="Nombre"
+                                                      SelectedValuePath="Id"/>
+                                            <Button x:Name="btnNuevoSubRubro"
+                                                    Grid.Column="1"
+                                                    Content="+"
+                                                    Style="{StaticResource ProductoAddButton}"
+                                                    Margin="8,0,0,0"
+                                                    Click="btnNuevoSubRubro_Click"
+                                                    ToolTip="Nuevo sub-rubro"/>
+                                        </Grid>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Proveedor"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox x:Name="cmbProveedor"
+                                                      Grid.Column="0"
+                                                      Style="{StaticResource ProductoTouchCombo}"
+                                                      IsEditable="True"
+                                                      DisplayMemberPath="Nombre"
+                                                      SelectedValuePath="Id"/>
+                                            <Button x:Name="btnNuevoProveedor"
+                                                    Grid.Column="1"
+                                                    Content="+"
+                                                    Style="{StaticResource ProductoAddButton}"
+                                                    Margin="8,0,0,0"
+                                                    Click="btnNuevoProveedor_Click"
+                                                    ToolTip="Nuevo proveedor"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Border Style="{StaticResource ProductoSectionBorder}" Grid.Row="1">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="110" Height="110" CornerRadius="8"
+                                        BorderBrush="{DynamicResource BorderColor}"
+                                        BorderThickness="1"
+                                        Background="{DynamicResource ModuleBackgroundBrush}"
+                                        Margin="0,0,16,0">
+                                    <Border CornerRadius="6" Margin="4" ClipToBounds="True">
+                                        <Image x:Name="imgProducto" Stretch="Uniform"/>
+                                    </Border>
+                                </Border>
+                                <Button Content="Cambiar imagen"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        MinHeight="48"
+                                        Padding="20,12"
+                                        FontSize="15"
+                                        Click="btnCambiarImagen_Click"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </TabItem>
+
+                <!-- Pestaña 2: Precios -->
+                <TabItem Header="Precios">
+                    <Border Style="{StaticResource ProductoSectionBorder}" Margin="0,12,0,0">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                    <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="IVA"/>
+                                    <ComboBox x:Name="cmbTipoIVA" Style="{StaticResource ProductoTouchCombo}">
+                                        <ComboBoxItem Content="21.0"/>
+                                        <ComboBoxItem Content="10.5"/>
+                                        <ComboBoxItem Content="0.0"/>
+                                        <ComboBoxItem Content="27.0"/>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                                    <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Moneda"/>
+                                    <ComboBox x:Name="cmbTipoMoneda" Style="{StaticResource ProductoTouchCombo}">
+                                        <ComboBoxItem Content="ARS" IsSelected="True"/>
+                                        <ComboBoxItem Content="USD"/>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                                    <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Costo"/>
+                                    <xctk:DecimalUpDown x:Name="numCosto"
+                                                        Style="{StaticResource ProductoTouchDecimal}"
+                                                        Minimum="0"
+                                                        FormatString="N2"
+                                                        ValueChanged="CalcularPrecio_ValueChanged"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="3" Margin="0,0,12,0">
+                                    <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Ganancia %"/>
+                                    <xctk:DecimalUpDown x:Name="numGanancia"
+                                                        Style="{StaticResource ProductoTouchDecimal}"
+                                                        Minimum="0"
+                                                        FormatString="N2"
+                                                        ValueChanged="CalcularPrecio_ValueChanged"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Precio Venta"/>
+                                    <xctk:DecimalUpDown x:Name="numPrecioFinal"
+                                                        Style="{StaticResource ProductoTouchDecimal}"
+                                                        Minimum="0"
+                                                        FormatString="N2"
+                                                        ValueChanged="CalcularPrecio_ValueChanged"/>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock x:Name="txtSinListas"
+                                       Text="(Sin listas de precio configuradas)"
+                                       Style="{DynamicResource ModalCaptionTextStyle}"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       Margin="0,0,0,8"
+                                       Visibility="Collapsed"/>
+                            <ItemsControl x:Name="pnlListasPrecio"/>
                         </StackPanel>
-                        <StackPanel Margin="0,0,12,0">
-                            <TextBlock Text="Talle"/>
-                            <TextBox x:Name="txtVarianteTalle" Width="100" Padding="4"/>
-                        </StackPanel>
-                        <StackPanel Margin="0,0,12,0">
-                            <TextBlock Text="Unidad Medida"/>
-                            <TextBox x:Name="txtVarianteUnidadMedida" Width="120" Padding="4"/>
-                        </StackPanel>
-                    </WrapPanel>
-                </StackPanel>
-
-                <!-- Combo -->
-                <StackPanel x:Name="pnlCombo" Margin="0,0,0,6" Visibility="Collapsed">
-                    <TextBlock Text="Componentes (uno por línea: codigo,cantidad)"/>
-                    <TextBox x:Name="txtComponentes" AcceptsReturn="True" Height="80" Padding="4" VerticalScrollBarVisibility="Auto"/>
-                </StackPanel>
-
-                <!-- Imagen -->
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                    <Border Width="80" Height="80" BorderBrush="LightGray" BorderThickness="1" Margin="0,0,12,0">
-                        <Image x:Name="imgProducto" Stretch="Uniform"/>
                     </Border>
-                    <Button Content="Cambiar imagen" Width="120" Height="30" VerticalAlignment="Center"
-                            Click="btnCambiarImagen_Click"/>
-                </StackPanel>
-            </StackPanel>
-        </ScrollViewer>
+                </TabItem>
 
-        <!-- Footer buttons -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-            <Button x:Name="btnDuplicar" Content="Duplicar" Width="90" Height="32" Margin="0,0,8,0"
-                    Click="btnDuplicar_Click" Visibility="Collapsed"/>
-            <Button x:Name="btnEliminar" Content="Eliminar" Width="90" Height="32" Margin="0,0,8,0"
-                    Click="btnEliminar_Click" Visibility="Collapsed"/>
-            <Button x:Name="btnCrearYOtro" Content="Guardar y Crear otro" Width="140" Height="32" Margin="0,0,8,0"
-                    Click="btnCrearYOtro_Click"/>
-            <Button x:Name="btnGuardar" Content="Guardar" Width="90" Height="32"
-                    Click="btnGuardar_Click"/>
-        </StackPanel>
-    </Grid>
+                <!-- Pestaña 3: Stock y configuración -->
+                <TabItem Header="Stock y configuración">
+                    <StackPanel Margin="0,12,0,0">
+                        <Border Style="{StaticResource ProductoSectionBorder}">
+                            <StackPanel>
+                                <StackPanel x:Name="pnlStockGrid">
+                                    <TextBlock Text="Cantidades de stock"
+                                               FontSize="14"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimary}"
+                                               Margin="0,0,0,12"/>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                            <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Stock Actual"/>
+                                            <xctk:DecimalUpDown x:Name="numStockDisponible"
+                                                                Style="{StaticResource ProductoTouchDecimal}"
+                                                                Minimum="0"
+                                                                FormatString="N0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                                            <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Mínimo"/>
+                                            <xctk:DecimalUpDown x:Name="numStockMinimo"
+                                                                Style="{StaticResource ProductoTouchDecimal}"
+                                                                Minimum="0"
+                                                                FormatString="N0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Ideal"/>
+                                            <xctk:DecimalUpDown x:Name="numStockIdeal"
+                                                                Style="{StaticResource ProductoTouchDecimal}"
+                                                                Minimum="0"
+                                                                FormatString="N0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+
+                                <TextBlock Style="{DynamicResource ModalCaptionTextStyle}"
+                                           Text="Opciones"
+                                           Margin="0,8,0,10"/>
+                                <WrapPanel>
+                                    <CheckBox x:Name="chkPermiteModificarPrecioVenta"
+                                              Content="Permite modificar precio en venta"
+                                              Style="{StaticResource ProductoTouchCheckBox}"
+                                              Margin="0,4,24,4"/>
+                                    <CheckBox x:Name="chkEsStockeable"
+                                              Content="Stockeable"
+                                              Style="{StaticResource ProductoTouchCheckBox}"
+                                              Margin="0,4,24,4"
+                                              IsChecked="True"
+                                              Checked="chkEsStockeable_Changed"
+                                              Unchecked="chkEsStockeable_Changed"/>
+                                    <CheckBox x:Name="chkAceptaStockNegativo"
+                                              Content="Acepta stock negativo"
+                                              Style="{StaticResource ProductoTouchCheckBox}"
+                                              Margin="0,4,24,4"/>
+                                    <CheckBox x:Name="chkUsaVariantes"
+                                              Content="Usa variantes"
+                                              Style="{StaticResource ProductoTouchCheckBox}"
+                                              Margin="0,4,24,4"
+                                              Checked="chkUsaVariantes_Changed"
+                                              Unchecked="chkUsaVariantes_Changed"/>
+                                    <CheckBox x:Name="chkEsCombo"
+                                              Content="Es combo"
+                                              Style="{StaticResource ProductoTouchCheckBox}"
+                                              Margin="0,4,16,4"
+                                              Checked="chkEsCombo_Changed"
+                                              Unchecked="chkEsCombo_Changed"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="pnlVariantes"
+                                Style="{StaticResource ProductoSectionBorder}"
+                                Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Text="Variantes"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           Margin="0,0,0,12"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                        <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Color"/>
+                                        <TextBox x:Name="txtVarianteColor" Style="{StaticResource ProductoTouchTextBox}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                                        <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Talle"/>
+                                        <TextBox x:Name="txtVarianteTalle" Style="{StaticResource ProductoTouchTextBox}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Unidad Medida"/>
+                                        <TextBox x:Name="txtVarianteUnidadMedida" Style="{StaticResource ProductoTouchTextBox}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="pnlCombo"
+                                Style="{StaticResource ProductoSectionBorder}"
+                                Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Style="{DynamicResource ModalCaptionTextStyle}"
+                                           Text="Componentes (uno por línea: codigo,cantidad)"
+                                           Margin="0,0,0,8"/>
+                                <TextBox x:Name="txtComponentes"
+                                         Style="{StaticResource ProductoTouchTextBox}"
+                                         AcceptsReturn="True"
+                                         MinHeight="100"
+                                         TextWrapping="Wrap"
+                                         VerticalContentAlignment="Top"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
+
+            <!-- Pie de acciones -->
+            <Border Grid.Row="2"
+                    Background="{DynamicResource SurfaceDark}"
+                    CornerRadius="8"
+                    BorderBrush="{DynamicResource BorderColor}"
+                    BorderThickness="1"
+                    Padding="16,14"
+                    Margin="0,12,0,0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="btnDuplicar"
+                            Content="Duplicar"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            MinHeight="48"
+                            Padding="18,10"
+                            Margin="0,0,10,0"
+                            Visibility="Collapsed"
+                            Click="btnDuplicar_Click"/>
+                    <Button x:Name="btnEliminar"
+                            Content="Eliminar"
+                            Style="{StaticResource DeleteButtonStyle}"
+                            MinHeight="48"
+                            Padding="18,10"
+                            Margin="0,0,10,0"
+                            Visibility="Collapsed"
+                            Click="btnEliminar_Click"/>
+                    <Button x:Name="btnCrearYOtro"
+                            Content="Guardar y Crear otro"
+                            Style="{StaticResource OutlinePrimaryButtonStyle}"
+                            Margin="0,0,12,0"
+                            Click="btnCrearYOtro_Click"/>
+                    <Button x:Name="btnGuardar"
+                            Content="Guardar"
+                            Style="{StaticResource ProductoFooterPrimaryButtonStyle}"
+                            MinWidth="130"
+                            Click="btnGuardar_Click"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
 </Window>

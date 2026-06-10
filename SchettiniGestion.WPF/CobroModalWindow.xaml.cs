@@ -18,31 +18,28 @@ namespace SchettiniGestion.WPF
         public string MontoFormateado => monto.ToString("C2");
     }
 
+    /// <summary>Opción de medio de pago (clase pública para binding WPF en ComboBox).</summary>
+    public class MedioPagoOpcion
+    {
+        public int MedioID { get; set; }
+        public string Nombre { get; set; }
+        public override string ToString() => Nombre ?? string.Empty;
+    }
+
     public partial class CobroModalWindow : Window
     {
         public List<CobranzaItem> Cobranzas { get; private set; } = new List<CobranzaItem>();
-        public int ResultID { get; private set; } = 0;
 
         private readonly decimal _total;
-        private ObservableCollection<CobranzaItem> _cobros = new ObservableCollection<CobranzaItem>();
-        private DataTable _mediosPago;
+        private readonly ObservableCollection<CobranzaItem> _cobros = new ObservableCollection<CobranzaItem>();
 
-        public CobroModalWindow()
-        {
-            InitializeComponent();
-            _total = 0;
-            Loaded += CobroModalWindow_Loaded;
-        }
-
-        public CobroModalWindow(Window owner, decimal total) : this()
+        public CobroModalWindow(Window owner, decimal total)
         {
             Owner = owner;
             _total = total;
+            InitializeComponent();
+            Loaded += CobroModalWindow_Loaded;
         }
-
-        public CobroModalWindow(object param) : this() { }
-        public CobroModalWindow(object p1, object p2) : this() { }
-        public CobroModalWindow(object p1, object p2, object p3) : this() { }
 
         private void CobroModalWindow_Loaded(object sender, RoutedEventArgs e)
         {
@@ -53,8 +50,6 @@ namespace SchettiniGestion.WPF
             CargarMediosPago();
             ActualizarResumen();
 
-            // Pre-seleccionar efectivo y poner el total pendiente como monto sugerido
-            if (cmbMediosPago.Items.Count > 0) cmbMediosPago.SelectedIndex = 0;
             txtMonto.Text = _total.ToString("N2");
             txtMonto.SelectAll();
             txtMonto.Focus();
@@ -64,28 +59,42 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                _mediosPago = DatabaseService.GetMediosPagoCompleto();
-                var lista = new List<MedioPagoItem>();
-                foreach (DataRow row in _mediosPago.Rows)
+                var dt = DatabaseService.GetMediosPagoCompleto();
+                var lista = new List<MedioPagoOpcion>();
+                foreach (DataRow row in dt.Rows)
                 {
                     if (row["Activo"] != DBNull.Value && Convert.ToBoolean(row["Activo"]))
-                        lista.Add(new MedioPagoItem { MedioID = Convert.ToInt32(row["MedioID"]), Nombre = row["Nombre"].ToString() });
+                    {
+                        lista.Add(new MedioPagoOpcion
+                        {
+                            MedioID = Convert.ToInt32(row["MedioID"]),
+                            Nombre = row["Nombre"]?.ToString() ?? "Medio"
+                        });
+                    }
                 }
+
+                if (lista.Count == 0)
+                    lista = CrearMediosFallback();
+
                 cmbMediosPago.ItemsSource = lista;
-                if (lista.Count > 0) cmbMediosPago.SelectedIndex = 0;
+                cmbMediosPago.SelectedIndex = 0;
             }
             catch
             {
-                var fallback = new List<MedioPagoItem>
-                {
-                    new MedioPagoItem { MedioID = 1, Nombre = "Efectivo" },
-                    new MedioPagoItem { MedioID = 2, Nombre = "Tarjeta Débito" },
-                    new MedioPagoItem { MedioID = 3, Nombre = "Tarjeta Crédito" },
-                    new MedioPagoItem { MedioID = 4, Nombre = "Transferencia" }
-                };
-                cmbMediosPago.ItemsSource = fallback;
+                cmbMediosPago.ItemsSource = CrearMediosFallback();
                 cmbMediosPago.SelectedIndex = 0;
             }
+        }
+
+        private static List<MedioPagoOpcion> CrearMediosFallback()
+        {
+            return new List<MedioPagoOpcion>
+            {
+                new MedioPagoOpcion { MedioID = 1, Nombre = "Efectivo" },
+                new MedioPagoOpcion { MedioID = 2, Nombre = "Tarjeta Débito" },
+                new MedioPagoOpcion { MedioID = 3, Nombre = "Tarjeta Crédito" },
+                new MedioPagoOpcion { MedioID = 4, Nombre = "Transferencia" }
+            };
         }
 
         private void cmbMediosPago_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -118,8 +127,9 @@ namespace SchettiniGestion.WPF
 
         private void btnAgregarPago_Click(object sender, RoutedEventArgs e)
         {
-            var medio = cmbMediosPago.SelectedItem as MedioPagoItem;
+            var medio = cmbMediosPago.SelectedItem as MedioPagoOpcion;
             if (medio == null) return;
+
             if (!decimal.TryParse(txtMonto.Text.Replace(",", "."), System.Globalization.NumberStyles.Number,
                 System.Globalization.CultureInfo.InvariantCulture, out decimal monto) || monto <= 0)
             {
@@ -128,7 +138,6 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
-            // Si ya existe ese medio, sumar al existente
             var existente = _cobros.FirstOrDefault(c => c.nombreMedio == medio.Nombre);
             if (existente != null)
             {
@@ -145,7 +154,6 @@ namespace SchettiniGestion.WPF
                 _cobros.Add(new CobranzaItem { MedioPagoID = medio.MedioID, nombreMedio = medio.Nombre, monto = monto });
             }
 
-            // Sugerir el pendiente restante para el próximo medio
             decimal pendiente = _total - _cobros.Sum(c => c.monto);
             txtMonto.Text = pendiente > 0 ? pendiente.ToString("N2") : "0";
         }
@@ -183,7 +191,7 @@ namespace SchettiniGestion.WPF
             e.Handled = !IsNumericInput(e.Text);
         }
 
-        private bool IsNumericInput(string text)
+        private static bool IsNumericInput(string text)
         {
             foreach (char c in text)
                 if (!char.IsDigit(c) && c != '.' && c != ',') return false;
@@ -193,12 +201,6 @@ namespace SchettiniGestion.WPF
         private void txtMonto_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter) btnAgregarPago_Click(sender, e);
-        }
-
-        private class MedioPagoItem
-        {
-            public int MedioID { get; set; }
-            public string Nombre { get; set; }
         }
     }
 }

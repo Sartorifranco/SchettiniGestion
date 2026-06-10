@@ -107,7 +107,7 @@ namespace SchettiniGestion.Tester
                 {
                     new FacturaItem { ProductoID = prodId, Codigo = codProd, Descripcion = tag, Cantidad = 1, PrecioUnitario = 500m }
                 };
-                if (DatabaseService.GuardarPresupuesto(clienteId, 500m, itemsPresu))
+                if (DatabaseService.GuardarPresupuesto(clienteId, 500m, itemsPresu) > 0)
                 {
                     int pid = ObtenerMaxPresupuestoCliente(clienteId);
                     if (pid > 0 && DatabaseService.GetPresupuestoDetalle(pid).Rows.Count >= 1)

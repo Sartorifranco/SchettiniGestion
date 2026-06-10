@@ -63,6 +63,44 @@ namespace SchettiniGestion.WPF
                 }
                 if (tabFacturacion != null) tabFacturacion.SelectedIndex = 0;
             }
+
+            ActualizarUiSegunTipoComprobante();
+        }
+
+        private void cmbTipoComprobante_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ActualizarUiSegunTipoComprobante();
+        }
+
+        private string ObtenerTipoComprobanteSeleccionado()
+        {
+            return (cmbTipoComprobante.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Factura";
+        }
+
+        private void ActualizarUiSegunTipoComprobante()
+        {
+            if (btnGuardarFactura == null) return;
+
+            string tipo = ObtenerTipoComprobanteSeleccionado();
+            bool esPresupuesto = tipo == "Presupuesto";
+
+            btnGuardarFactura.Content = esPresupuesto ? "📄 GENERAR PRESUPUESTO" : "✅ COBRAR";
+
+            if (pnlCondicionPago != null)
+                pnlCondicionPago.Visibility = esPresupuesto ? Visibility.Collapsed : Visibility.Visible;
+
+            if (btnPagoQR != null)
+                btnPagoQR.Visibility = esPresupuesto ? Visibility.Collapsed : Visibility.Visible;
+
+            if (esPresupuesto)
+            {
+                if (pnlCalculoEfectivo != null)
+                    pnlCalculoEfectivo.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                cmbCondicionVenta_SelectionChanged(null, null);
+            }
         }
 
         private void FacturacionControl_Unloaded(object sender, RoutedEventArgs e)
@@ -310,6 +348,13 @@ namespace SchettiniGestion.WPF
             if (CarritoDeVenta.Count == 0) { CustomMessageBox.Show("Agregue productos."); return; }
             if (_clienteSeleccionado == null) { CustomMessageBox.Show("Seleccione cliente."); return; }
 
+            string tipoCompTexto = ObtenerTipoComprobanteSeleccionado();
+            if (tipoCompTexto == "Presupuesto")
+            {
+                GuardarPresupuestoDesdePos();
+                return;
+            }
+
             foreach (var it in CarritoDeVenta)
             {
                 if (string.Equals(it.Codigo, "VARIOS", StringComparison.OrdinalIgnoreCase)) continue;
@@ -331,7 +376,6 @@ namespace SchettiniGestion.WPF
 
             // 2. Determinar Tipo AFIP
             decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
-            string tipoCompTexto = (cmbTipoComprobante.SelectedItem as ComboBoxItem).Content.ToString();
 
             int tipoAfip = 0;
             if (tipoCompTexto == "Factura")
@@ -432,6 +476,42 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        private void GuardarPresupuestoDesdePos()
+        {
+            btnGuardarFactura.IsEnabled = false;
+            try
+            {
+                decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
+                int clienteId = Convert.ToInt32(_clienteSeleccionado["ClienteID"]);
+                int presupuestoId = DatabaseService.GuardarPresupuesto(clienteId, total, CarritoDeVenta.ToList());
+
+                if (presupuestoId <= 0)
+                {
+                    CustomMessageBox.Show("No se pudo guardar el presupuesto.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                if (CustomMessageBox.Show(
+                    $"Presupuesto #{presupuestoId:D8} guardado correctamente.\n¿Imprimir presupuesto?",
+                    "Presupuesto generado",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) == MessageBoxResult.Yes)
+                {
+                    PrintService.ImprimirPresupuesto(presupuestoId);
+                }
+
+                LimpiarFormulario();
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show("Error al guardar presupuesto: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                btnGuardarFactura.IsEnabled = true;
+            }
+        }
+
         private void LimpiarFormulario()
         {
             CarritoDeVenta.Clear();
@@ -440,6 +520,7 @@ namespace SchettiniGestion.WPF
             _referenciaPagoMP = "";
             CancelarModoQR();
             LimpiarProducto();
+            ActualizarUiSegunTipoComprobante();
         }
 
         private void LimpiarProducto()

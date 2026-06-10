@@ -237,14 +237,14 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="44"/>
                                             </Grid.ColumnDefinitions>
-                                            <ContentPresenter x:Name="selectionBox"
-                                                              Margin="{Binding Padding, RelativeSource={RelativeSource AncestorType=ComboBox}}"
-                                                              HorizontalAlignment="Left"
-                                                              VerticalAlignment="Center"
-                                                              Content="{Binding SelectionBoxItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"
-                                                              ContentTemplate="{Binding SelectionBoxItemTemplate, RelativeSource={RelativeSource AncestorType=ComboBox}}"
-                                                              ContentStringFormat="{Binding SelectionBoxItemStringFormat, RelativeSource={RelativeSource AncestorType=ComboBox}}"
-                                                              TextElement.Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
+                                            <TextBlock x:Name="selectionText"
+                                                       Margin="{Binding Padding, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                       HorizontalAlignment="Left"
+                                                       VerticalAlignment="Center"
+                                                       Text="{Binding Text, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                       FontSize="{Binding FontSize, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                       TextTrimming="CharacterEllipsis"/>
                                             <TextBlock Grid.Column="1"
                                                        Text="▼"
                                                        FontSize="12"

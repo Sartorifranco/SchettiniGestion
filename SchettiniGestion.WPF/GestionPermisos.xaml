@@ -40,7 +40,7 @@
                              FontSize="16"
                              SelectionChanged="RolesListBox_SelectionChanged">
                         <ListBox.ItemContainerStyle>
-                            <Style TargetType="ListBoxItem">
+                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                                 <Setter Property="Padding" Value="10,5"/>
                                 <Setter Property="Cursor" Value="Hand"/>
                             </Style>

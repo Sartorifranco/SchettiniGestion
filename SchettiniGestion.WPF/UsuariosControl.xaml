@@ -7,14 +7,33 @@
              d:DesignHeight="700" d:DesignWidth="1000"
              Loaded="UsuariosControl_Loaded">
 
-    <Grid Margin="20" MinWidth="760" Background="{DynamicResource BackgroundDark}">
-        <TabControl Background="{DynamicResource SurfaceDark}" Foreground="{DynamicResource TextPrimary}">
-            <TabControl.ItemContainerStyle>
+    <Grid Background="{DynamicResource BackgroundDark}">
+        <TabControl Background="Transparent" BorderThickness="0" Margin="20">
+            <TabControl.Resources>
                 <Style TargetType="TabItem">
-                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-                    <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+                    <Setter Property="FontSize" Value="14"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border Name="Border" Padding="15,10" BorderThickness="0,0,0,2" BorderBrush="Transparent" Background="Transparent" Cursor="Hand">
+                                    <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" ContentSource="Header"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="False">
+                                        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
                 </Style>
-            </TabControl.ItemContainerStyle>
+            </TabControl.Resources>
+
             <TabItem Header="Usuarios">
                 <Grid Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
@@ -23,7 +42,7 @@
                         <ColumnDefinition Width="6.5*"/>
                     </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0" Background="{StaticResource SurfaceDark}" CornerRadius="8" Padding="20">
+                    <Border Grid.Column="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="20">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -31,7 +50,7 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Text="Gestión de Usuarios" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,20"/>
+                            <TextBlock Text="Gestión de Usuarios" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,20"/>
 
                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
@@ -43,7 +62,7 @@
 
                                     <TextBlock Text="ROL" Style="{StaticResource LabelStyle}"/>
                                     <ComboBox x:Name="cmbRolesUsuario" Style="{StaticResource ModuleComboBoxStyle}"
-                                              DisplayMemberPath="Nombre" SelectedValuePath="RolId"
+                                              DisplayMemberPath="NombreRol" SelectedValuePath="RolID"
                                               Margin="0,0,0,15"/>
                                 </StackPanel>
                             </ScrollViewer>
@@ -56,7 +75,7 @@
                         </Grid>
                     </Border>
 
-                    <Border Grid.Column="2" Background="{StaticResource SurfaceDark}" CornerRadius="8" Padding="1">
+                    <Border Grid.Column="2" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="1">
                         <DataGrid x:Name="dgvUsuarios" Style="{StaticResource {x:Type DataGrid}}" AutoGenerateColumns="False" IsReadOnly="True" SelectionChanged="dgvUsuarios_SelectionChanged">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="ID" Binding="{Binding UsuarioID}" Width="60"/>
@@ -69,44 +88,35 @@
             </TabItem>
 
             <TabItem Header="Permisos">
-                <Grid Margin="0,12,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                <Grid Margin="15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="250"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="Permisos por Rol" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,20"/>
+                    <ListBox x:Name="lstRolesPermisos" Grid.Column="0" Margin="0,0,20,0"
+                             Background="{DynamicResource SurfaceDark}"
+                             Foreground="{DynamicResource TextPrimary}"
+                             SelectionChanged="lstRolesPermisos_SelectionChanged"
+                             DisplayMemberPath="NombreRol"/>
 
-                    <StackPanel Grid.Row="1">
-                        <TextBlock Text="ROL" Style="{StaticResource LabelStyle}"/>
-                        <ComboBox x:Name="cmbRolesPermisos" Style="{StaticResource ModuleComboBoxStyle}"
-                                  DisplayMemberPath="Nombre" SelectedValuePath="RolId"
-                                  SelectionChanged="cmbRolesPermisos_SelectionChanged"
-                                  Margin="0,0,0,12"/>
+                    <StackPanel Grid.Column="1">
+                        <ItemsControl x:Name="lstPermisosDinamicos">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox Content="{Binding NombreModulo}"
+                                              IsChecked="{Binding Habilitado, Mode=TwoWay}"
+                                              Foreground="{DynamicResource TextPrimary}"
+                                              Margin="0,8"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Button x:Name="btnGuardarPermisos" Content="GUARDAR CAMBIOS DE PERMISOS"
+                                Click="btnGuardarPermisos_Click"
+                                Margin="0,20,0,0" Width="250" HorizontalAlignment="Left"
+                                Background="#0078D7" Foreground="White" Padding="10"/>
                     </StackPanel>
-
-                    <ListBox Grid.Row="2" x:Name="lstPermisosDinamicos"
-                             BorderThickness="1"
-                             BorderBrush="{DynamicResource BorderColor}"
-                             Background="{DynamicResource PanelBackgroundBrush}"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <CheckBox Content="{Binding NombreModulo}"
-                                          IsChecked="{Binding Habilitado, Mode=TwoWay}"
-                                          Margin="0,5"
-                                          Foreground="{DynamicResource TextPrimary}"/>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-
-                    <Button Grid.Row="3" x:Name="btnGuardarPermisos"
-                            Content="💾 GUARDAR CAMBIOS DE PERMISOS"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Click="btnGuardarPermisos_Click"
-                            Margin="0,12,0,0"/>
                 </Grid>
             </TabItem>
         </TabControl>

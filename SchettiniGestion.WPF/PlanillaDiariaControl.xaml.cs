@@ -54,13 +54,13 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar planilla: " + ex.Message);
+                ModernMessageBox.Show("Error al cargar planilla: " + ex.Message);
             }
         }
 
         private void btnExportar_Click(object sender, RoutedEventArgs e)
         {
-            if (_dt == null || _dt.Rows.Count == 0) { MessageBox.Show("No hay datos para exportar.", "Información", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            if (_dt == null || _dt.Rows.Count == 0) { ModernMessageBox.Show("No hay datos para exportar.", "Información", MessageBoxButton.OK, MessageBoxImage.Information); return; }
             var dlg = new SaveFileDialog { Filter = "CSV (*.csv)|*.csv", FileName = $"planilla_{(dpFecha.SelectedDate ?? DateTime.Today):yyyyMMdd}.csv" };
             if (dlg.ShowDialog() != true) return;
             try
@@ -69,9 +69,9 @@ namespace SchettiniGestion.WPF
                 foreach (DataRow r in _dt.Rows)
                     sb.AppendLine($"{r["Fecha"]};{r["Concepto"]};{r["Tipo"]};{r["Monto"]};{r["Usuario"]}");
                 System.IO.File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);
-                MessageBox.Show("Exportado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("Exportado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (Exception ex) { MessageBox.Show("Error al exportar: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error al exportar: " + ex.Message); }
         }
     }
 }

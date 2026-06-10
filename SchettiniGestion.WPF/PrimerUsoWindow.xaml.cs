@@ -88,7 +88,7 @@ namespace SchettiniGestion.WPF
         {
             if (string.IsNullOrWhiteSpace(_cadenaTesteada))
             {
-                MessageBox.Show("Primero pruebe la conexión correctamente.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Primero pruebe la conexión correctamente.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -108,11 +108,11 @@ namespace SchettiniGestion.WPF
                     ?.Invoke(app, new object[] { _cadenaTesteada });
 
                 DatabaseService.InitializeDatabase();
-                DatabaseService.AsegurarUsuarioAdminInicial();
+                DatabaseService.AsegurarUsuariosBootstrap();
 
                 SetTestStatus("✔", "¡Base de datos configurada!", "El sistema está listo para usar.", "success");
 
-                MessageBox.Show("¡Configuración completada!\n\nEl sistema se iniciará ahora.", "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("¡Configuración completada!\n\nEl sistema se iniciará ahora.", "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
                 DialogResult = true;
                 Close();
             }

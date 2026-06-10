@@ -158,20 +158,110 @@
     </Style>
     <Style TargetType="PasswordBox" x:Key="ModulePasswordBoxStyle" BasedOn="{StaticResource PasswordBoxStyle}"/>
 
-    <Style TargetType="ComboBox" x:Key="ModuleComboBoxStyle">
+    <!-- ComboBox implícito: lista desplegable y selección usan colores del tema (evita texto blanco sobre fondo blanco). -->
+    <Style TargetType="ComboBoxItem">
+        <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Style.Triggers>
+            <Trigger Property="IsHighlighted" Value="True">
+                <Setter Property="Background" Value="{DynamicResource ComboBoxHighlightBackground}"/>
+                <Setter Property="Foreground" Value="{DynamicResource ComboBoxHighlightForeground}"/>
+            </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{DynamicResource ComboBoxHighlightBackground}"/>
+                <Setter Property="Foreground" Value="{DynamicResource ComboBoxHighlightForeground}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="ComboBox">
+        <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}"/>
+        <Setter Property="Background" Value="{DynamicResource ComboBoxBackground}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="OuterBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter x:Name="ContentSite"
+                                                  Grid.Column="0"
+                                                  Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center"
+                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                  TextElement.Foreground="{TemplateBinding Foreground}"/>
+                                <ToggleButton x:Name="ToggleDropDown"
+                                              Grid.Column="1"
+                                              Focusable="False"
+                                              Width="32"
+                                              Background="Transparent"
+                                              BorderThickness="0"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                              ClickMode="Press">
+                                    <Path Data="M0,0 L4,4 L8,0 Z"
+                                          Fill="{TemplateBinding Foreground}"
+                                          Stretch="Uniform"
+                                          Width="10"
+                                          Height="6"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                                </ToggleButton>
+                            </Grid>
+                        </Border>
+                        <Popup x:Name="PART_Popup"
+                               Placement="Bottom"
+                               PlacementTarget="{Binding ElementName=OuterBorder}"
+                               IsOpen="{TemplateBinding IsDropDownOpen}"
+                               AllowsTransparency="True"
+                               Focusable="False"
+                               PopupAnimation="Fade">
+                            <Border MinWidth="{Binding ActualWidth, ElementName=OuterBorder}"
+                                    Background="{DynamicResource ComboBoxPopupBackground}"
+                                    BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Margin="0,2,0,0">
+                                <ScrollViewer MaxHeight="220" Margin="2" SnapsToDevicePixels="True">
+                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.55"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="OuterBorder" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ComboBox" x:Key="ModuleComboBoxStyle" BasedOn="{StaticResource {x:Type ComboBox}}">
         <Setter Property="MinHeight" Value="44"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="Padding" Value="10,5"/>
-        <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}"/>
-        <Setter Property="Background" Value="{DynamicResource ComboBoxBackground}"/>
-        <Setter Property="ItemContainerStyle">
-            <Setter.Value>
-                <Style TargetType="ComboBoxItem">
-                    <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}"/>
-                    <Setter Property="Background" Value="{DynamicResource ComboBoxBackground}"/>
-                </Style>
-            </Setter.Value>
-        </Setter>
     </Style>
 
     <Style TargetType="DataGrid">
@@ -233,6 +323,25 @@
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ListBoxItem global: texto siempre legible al seleccionar/hover -->
+    <Style TargetType="ListBoxItem">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
+                <Setter Property="Foreground" Value="White"/>
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -252,11 +361,34 @@
         <Setter Property="MinHeight" Value="40"/>
     </Style>
 
+    <!-- CalendarStyle inline: garantiza el escalado táctil aunque el Popup aísle el árbol visual. -->
     <Style TargetType="DatePicker">
         <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="8,5"/>
+        <Setter Property="MinHeight" Value="45"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="CalendarStyle">
+            <Setter.Value>
+                <Style TargetType="Calendar">
+                    <Setter Property="LayoutTransform">
+                        <Setter.Value>
+                            <ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Estilo implícito de Calendar (como fallback para cualquier Calendar standalone). -->
+    <Style TargetType="Calendar">
+        <Setter Property="LayoutTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
+            </Setter.Value>
+        </Setter>
     </Style>
 </ResourceDictionary>

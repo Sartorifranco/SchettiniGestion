@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using QRCoder;
 using SchettiniGestion;
 using System;
@@ -25,11 +25,11 @@ namespace SchettiniGestion.WPF
             try
             {
                 DataRow cabecera = DatabaseService.GetPresupuestoPorID(presupuestoID);
-                if (cabecera == null) { MessageBox.Show("Error: No se encontró el presupuesto."); return; }
+                if (cabecera == null) { ModernMessageBox.Show("Error: No se encontró el presupuesto."); return; }
                 DataTable items = DatabaseService.GetPresupuestoDetalle(presupuestoID);
                 GenerarDocumentoA4_Presupuesto(cabecera, items);
             }
-            catch (Exception ex) { MessageBox.Show("Error crítico al imprimir: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error crítico al imprimir: " + ex.Message); }
         }
 
         // --- ACTUALIZADO: PARAMETROS CAE Y VTO ---
@@ -58,7 +58,7 @@ namespace SchettiniGestion.WPF
             if (USAR_MOTOR_GRAFICO_PARA_TICKETS)
                 ImprimirTicketGrafico(tit, nroStr, cli, fec, items, tot, cond, letra, pie);
             else
-                MessageBox.Show("Motor A4 no activo.");
+                ModernMessageBox.Show("Motor A4 no activo.");
         }
 
         // --- NUEVO: IMPRIMIR CIERRE DE CAJA (Z) ---
@@ -100,7 +100,7 @@ namespace SchettiniGestion.WPF
                 pd.Document = doc;
                 if (pd.ShowDialog() == System.Windows.Forms.DialogResult.OK) doc.Print();
             }
-            catch (Exception ex) { MessageBox.Show("Error imprimiendo Z: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error imprimiendo Z: " + ex.Message); }
         }
         // ------------------------------------------
         #endregion
@@ -128,19 +128,13 @@ namespace SchettiniGestion.WPF
                 ImageSource logoSource = SvgLogoHelper.LoadEmbeddedLogo();
                 if (logoSource == null)
                 {
-                    string rutaLogo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logo.png");
-                    if (File.Exists(rutaLogo))
+                    string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                    foreach (string rel in new[] { "logo.svg", @"Resources\logo.svg", "logo.png" })
                     {
-                        try
-                        {
-                            BitmapImage bi = new BitmapImage();
-                            bi.BeginInit();
-                            bi.UriSource = new Uri(rutaLogo);
-                            bi.CacheOption = BitmapCacheOption.OnLoad;
-                            bi.EndInit();
-                            logoSource = bi;
-                        }
-                        catch { /* seguir sin logo en disco */ }
+                        string ruta = Path.Combine(baseDir, rel);
+                        logoSource = SvgLogoHelper.LoadImageFromPath(ruta);
+                        if (logoSource != null)
+                            break;
                     }
                 }
 
@@ -239,7 +233,7 @@ namespace SchettiniGestion.WPF
                     IDocumentPaginatorSource dps = doc; pd.PrintDocument(dps.DocumentPaginator, $"Presupuesto_{cabecera["PresupuestoID"]}");
                 }
             }
-            catch (Exception ex) { MessageBox.Show("Error generando PDF: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error generando PDF: " + ex.Message); }
         }
 
         private static TableCell CrearCelda(string texto, TextAlignment alineacion, bool negrita = false)
@@ -259,7 +253,7 @@ namespace SchettiniGestion.WPF
                 pd.Document = doc;
                 if (pd.ShowDialog() == System.Windows.Forms.DialogResult.OK) doc.Print();
             }
-            catch (Exception x) { MessageBox.Show("Error Ticket: " + x.Message); }
+            catch (Exception x) { ModernMessageBox.Show("Error Ticket: " + x.Message); }
         }
 
         private static void DibujarTicketGDI(WinDrawing.Graphics g, string tit, string nro, string cli, DateTime fec, DataTable its, decimal tot, string extra, string let, string pie)

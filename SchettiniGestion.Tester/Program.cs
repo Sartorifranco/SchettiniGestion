@@ -15,6 +15,36 @@ namespace SchettiniGestion.Tester
         [STAThread]
         static void Main(string[] args)
         {
+            // Modo rápido: solo conectar BD, crear admin/vista y validar (sin suite de pruebas).
+            // Uso: SchettiniGestion.Tester.exe bootstrap
+            // La cadena es la de este App.config (connectionStrings SchPosDB).
+            if (args != null && args.Length > 0 && string.Equals(args[0], "bootstrap", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine("Bootstrap usuarios (admin + vista) según App.config de Tester...");
+                try
+                {
+                    var csb = new SqlConnectionStringBuilder(DatabaseService.ConnectionString);
+                    Console.WriteLine("Destino: " + csb.DataSource + " | Base: " + csb.InitialCatalog);
+                }
+                catch { /* ignorar */ }
+                DatabaseService.OnDbError = msg => Console.WriteLine("DB: " + msg);
+                if (!DatabaseService.InitializeDatabase())
+                {
+                    Console.WriteLine("ERROR: InitializeDatabase falló. Revise connectionStrings en App.config del Tester.");
+                    Environment.Exit(1);
+                    return;
+                }
+                DatabaseService.AsegurarUsuariosBootstrap();
+                bool okAdmin = DatabaseService.ValidarUsuario("admin", DatabaseService.UsuarioBootstrapAdminContraseña);
+                bool okVista = DatabaseService.ValidarUsuario(DatabaseService.UsuarioVistaEjemploNombre, DatabaseService.UsuarioVistaEjemploContraseña);
+                Console.WriteLine("Login admin / " + DatabaseService.UsuarioBootstrapAdminContraseña + ": " + (okAdmin ? "OK" : "FALLO"));
+                Console.WriteLine("Login " + DatabaseService.UsuarioVistaEjemploNombre + " / " + DatabaseService.UsuarioVistaEjemploContraseña + ": " + (okVista ? "OK" : "FALLO"));
+                if (!string.IsNullOrEmpty(DatabaseService.UltimoErrorValidacionLogin))
+                    Console.WriteLine("Ultimo error validación: " + DatabaseService.UltimoErrorValidacionLogin);
+                Environment.Exit(okAdmin && okVista ? 0 : 2);
+                return;
+            }
+
             Console.WriteLine("=================================================");
             Console.WriteLine("🤖 INICIANDO BOT DE PRUEBAS INTEGRALES SOCTECH...");
             Console.WriteLine("=================================================\n");
@@ -37,7 +67,7 @@ namespace SchettiniGestion.Tester
             }
 
             // 2. Sesión (admin inicial si BD vacía + contraseña establecida)
-            DatabaseService.AsegurarUsuarioAdminInicial();
+            DatabaseService.AsegurarUsuariosBootstrap();
             if (!DatabaseService.ValidarUsuario("admin", DatabaseService.UsuarioBootstrapAdminContraseña))
             {
                 Registrar("❌ SEGURIDAD: Login admin falló (usuario/contraseña bootstrap).");

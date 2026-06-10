@@ -29,11 +29,11 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel>
                     <TextBlock Text="Desde" Style="{StaticResource LabelStyle}"/>
-                    <DatePicker x:Name="dpDesde" Height="35" Width="130"/>
+                    <DatePicker x:Name="dpDesde" Height="45" Width="140" FontSize="16"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2">
                     <TextBlock Text="Hasta" Style="{StaticResource LabelStyle}"/>
-                    <DatePicker x:Name="dpHasta" Height="35" Width="130"/>
+                    <DatePicker x:Name="dpHasta" Height="45" Width="140" FontSize="16"/>
                 </StackPanel>
                 <StackPanel Grid.Column="4">
                     <TextBlock Text="Tipo" Style="{StaticResource LabelStyle}"/>

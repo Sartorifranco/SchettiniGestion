@@ -37,7 +37,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                ModernMessageBox.Show("Error: " + ex.Message);
             }
         }
     }

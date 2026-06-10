@@ -12,27 +12,25 @@ namespace SchettiniGestion.WPF
         /// </summary>
         public static void ShowOnScreenKeyboard()
         {
-            Process[] oskProcesses = Process.GetProcessesByName("osk");
-            if (oskProcesses.Length > 0)
-                return;
-
             try
             {
-                string win = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-                string oskPath = Path.Combine(win, "sysnative", "osk.exe");
-                if (!File.Exists(oskPath))
-                    oskPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "osk.exe");
-
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = oskPath,
-                    UseShellExecute = true
-                });
+                Process.Start(new ProcessStartInfo { FileName = "osk.exe", UseShellExecute = true });
             }
-            catch (Exception ex)
+            catch
             {
-                CustomMessageBox.Show($"No se pudo iniciar el teclado.\n\nError: {ex.Message}",
-                    "Error de teclado", MessageBoxButton.OK, MessageBoxImage.Error);
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = @"C:\Program Files\Common Files\microsoft shared\ink\TabTip.exe",
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    ModernMessageBox.Show("No se pudo iniciar el teclado táctil.\n" + ex.Message,
+                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
     }

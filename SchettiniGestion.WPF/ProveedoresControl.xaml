@@ -7,7 +7,8 @@
              d:DesignHeight="600" d:DesignWidth="1000"
              Loaded="ProveedoresControl_Loaded">
 
-    <Grid Margin="20">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+    <Grid Margin="20" MinWidth="640">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="3.5*" MinWidth="300" MaxWidth="450"/>
             <ColumnDefinition Width="20"/>
@@ -86,4 +87,5 @@
             </Grid>
         </Border>
     </Grid>
+    </ScrollViewer>
 </UserControl>

@@ -1,0 +1,115 @@
+<Window x:Class="SchettiniGestion.WPF.ModernInputWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title=""
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Foreground="{DynamicResource TextPrimary}"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Topmost="True"
+        SizeToContent="Height"
+        MinWidth="320"
+        MaxWidth="440">
+
+    <Window.Resources>
+        <Style x:Key="MIW_Primary" TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="MinWidth" Value="90"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style x:Key="MIW_Outline" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="MinWidth" Value="90"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="{DynamicResource SurfaceDark}"
+            CornerRadius="12"
+            Padding="24"
+            Margin="20"
+            BorderBrush="{DynamicResource BorderColor}"
+            BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect ShadowDepth="2" BlurRadius="16" Opacity="0.35" Direction="270" Color="#000000"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Título -->
+            <TextBlock x:Name="lblTitulo"
+                       Grid.Row="0"
+                       Text="Ingresar valor"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource TextPrimary}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,10"/>
+
+            <!-- Etiqueta / prompt -->
+            <TextBlock x:Name="lblPrompt"
+                       Grid.Row="1"
+                       Text=""
+                       FontSize="13"
+                       Foreground="{DynamicResource TextSecondary}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,8"/>
+
+            <!-- Campo de entrada -->
+            <TextBox x:Name="txtInput"
+                     Grid.Row="2"
+                     Style="{StaticResource ModernTextBox}"
+                     FontSize="16"
+                     Margin="0,0,0,18"/>
+
+            <!-- Footer: ⌨ Teclado (izq.) + Cancelar / Aceptar (der.) -->
+            <Grid Grid.Row="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="btnTeclado"
+                        Grid.Column="0"
+                        Content="⌨ Teclado"
+                        Style="{StaticResource MIW_Outline}"
+                        MinWidth="0"
+                        Padding="12,10"
+                        Click="btnTeclado_Click"/>
+
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal">
+                    <Button x:Name="btnCancelar"
+                            Content="Cancelar"
+                            Style="{StaticResource MIW_Outline}"
+                            Margin="0,0,8,0"
+                            Click="btnCancelar_Click"/>
+                    <Button x:Name="btnAceptar"
+                            Content="Aceptar"
+                            Style="{StaticResource MIW_Primary}"
+                            IsDefault="True"
+                            Click="btnAceptar_Click"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

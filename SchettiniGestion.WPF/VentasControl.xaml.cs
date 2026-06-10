@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Windows;
 using System.Windows.Controls;
@@ -85,7 +85,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar ventas: " + ex.Message);
+                ModernMessageBox.Show("Error al cargar ventas: " + ex.Message);
             }
         }
 
@@ -105,7 +105,7 @@ namespace SchettiniGestion.WPF
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("No se pudo abrir el detalle: " + ex.Message);
+                    ModernMessageBox.Show("No se pudo abrir el detalle: " + ex.Message);
                 }
             }
         }

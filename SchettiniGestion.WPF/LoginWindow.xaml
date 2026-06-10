@@ -117,6 +117,8 @@
 
             <Border Grid.Column="0" Background="{StaticResource SurfaceDark}" CornerRadius="15,0,0,15">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Image x:Name="imgLogoLogin" Height="88" Margin="0,0,0,16" Stretch="Uniform"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
                     <TextBlock Text="SCHETTINI" FontSize="32" FontWeight="Black" Foreground="{StaticResource PrimaryColor}" HorizontalAlignment="Center"/>
                     <TextBlock Text="GESTIÓN POS" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center"/>
                 </StackPanel>

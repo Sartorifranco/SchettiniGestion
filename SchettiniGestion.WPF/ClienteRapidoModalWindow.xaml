@@ -4,12 +4,10 @@
 
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 
-        Title="Nuevo Cliente Rápido" Width="500" Height="420"
-
+        Title="Nuevo Cliente Rápido" Width="500"
+        SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-
         ResizeMode="NoResize"
-
         Background="{DynamicResource ModuleBackgroundBrush}">
 
 
@@ -28,9 +26,19 @@
 
 
 
-        <TextBlock Grid.Row="0" Text="Nuevo Cliente Rápido" FontSize="17" FontWeight="Bold"
-
-                   Foreground="{StaticResource PrimaryColor}" Margin="0,0,0,20"/>
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="Nuevo Cliente Rápido" FontSize="17" FontWeight="Bold"
+                       Foreground="{StaticResource PrimaryColor}"
+                       VerticalAlignment="Center"/>
+            <Button x:Name="btnTeclado"
+                    Content="⌨ Teclado"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Padding="10,6"
+                    FontSize="13"
+                    Click="btnTeclado_Click"/>
+        </Grid>
 
 
 

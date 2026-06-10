@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -198,16 +198,16 @@ namespace SchettiniGestion.WPF
                                 string idExterno = caja.external_id;
                                 reporte += $"📂 {nombre}\n👉 ID: {idExterno}\n------------------\n";
                             }
-                            MessageBox.Show(reporte, "Cajas Disponibles", MessageBoxButton.OK, MessageBoxImage.Information);
+                            ModernMessageBox.Show(reporte, "Cajas Disponibles", MessageBoxButton.OK, MessageBoxImage.Information);
                         }
                     }
                     else
                     {
-                        MessageBox.Show("Error MP: " + jsonStr);
+                        ModernMessageBox.Show("Error MP: " + jsonStr);
                     }
                 }
             }
-            catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error: " + ex.Message); }
         }
 
         // -------------------------------------------------------------------------

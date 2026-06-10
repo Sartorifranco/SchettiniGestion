@@ -1,4 +1,4 @@
-﻿using SchettiniGestion;
+using SchettiniGestion;
 using System;
 using System.Data;
 using System.Windows;
@@ -39,7 +39,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                CustomMessageBox.Show($"Error al actualizar caja: {ex.Message}");
+                ModernMessageBox.Show($"Error al actualizar caja: {ex.Message}");
             }
         }
 
@@ -79,12 +79,12 @@ namespace SchettiniGestion.WPF
 
             if (monto <= 0)
             {
-                CustomMessageBox.Show("El monto debe ser mayor a cero.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("El monto debe ser mayor a cero.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (string.IsNullOrEmpty(concepto))
             {
-                CustomMessageBox.Show("Debe ingresar un concepto o motivo.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Debe ingresar un concepto o motivo.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -93,7 +93,7 @@ namespace SchettiniGestion.WPF
 
             if (exito)
             {
-                CustomMessageBox.Show("Movimiento registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("Movimiento registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 popupMovimiento.Visibility = Visibility.Collapsed;
                 ActualizarPantalla(); // Refrescar saldo y grilla
             }

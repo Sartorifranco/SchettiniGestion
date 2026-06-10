@@ -48,23 +48,23 @@ namespace SchettiniGestion.WPF
         private void btnImprimir_Click(object sender, RoutedEventArgs e)
         {
             int id = GetSelectedId();
-            if (id == 0) { MessageBox.Show("Seleccione un presupuesto.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (id == 0) { ModernMessageBox.Show("Seleccione un presupuesto.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
             PrintService.ImprimirPresupuesto(id);
         }
 
         private void btnConvertir_Click(object sender, RoutedEventArgs e)
         {
             int id = GetSelectedId();
-            if (id == 0) { MessageBox.Show("Seleccione un presupuesto.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            MessageBox.Show("Para convertir a factura, use el botón 'Cargar Presupuesto' en la pestaña principal de Facturación.",
+            if (id == 0) { ModernMessageBox.Show("Seleccione un presupuesto.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            ModernMessageBox.Show("Para convertir a factura, use el botón 'Cargar Presupuesto' en la pestaña principal de Facturación.",
                 "Información", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
             int id = GetSelectedId();
-            if (id == 0) { MessageBox.Show("Seleccione un presupuesto.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            if (MessageBox.Show("¿Eliminar este presupuesto?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            if (id == 0) { ModernMessageBox.Show("Seleccione un presupuesto.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (ModernMessageBox.Show("¿Eliminar este presupuesto?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
                 try
                 {
@@ -75,7 +75,7 @@ namespace SchettiniGestion.WPF
                     }
                     Cargar(txtFiltro.Text.Trim());
                 }
-                catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
+                catch (Exception ex) { ModernMessageBox.Show("Error: " + ex.Message); }
             }
         }
 

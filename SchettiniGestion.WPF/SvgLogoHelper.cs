@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using SharpVectors.Converters;
@@ -12,9 +14,36 @@ namespace SchettiniGestion.WPF
         private static readonly Uri PackLogoUri =
             new Uri("pack://application:,,,/Resources/logo.svg", UriKind.Absolute);
 
+        /// <summary>Marca de la app embebida (<c>Resources/logo.svg</c>).</summary>
         public static DrawingImage LoadEmbeddedLogo()
         {
             return LoadFromUri(PackLogoUri);
+        }
+
+        /// <summary>Asigna el icono de ventana / barra de tareas desde el SVG embebido.</summary>
+        public static void ApplyWindowIcon(Window window)
+        {
+            if (window == null) return;
+            try
+            {
+                var logo = LoadEmbeddedLogo();
+                if (logo != null)
+                    window.Icon = logo;
+            }
+            catch { /* opcional */ }
+        }
+
+        /// <summary>Asigna <see cref="Image.Source"/> al logo embebido (pantallas de login, sidebar, etc.).</summary>
+        public static void ApplyToImage(Image image)
+        {
+            if (image == null) return;
+            try
+            {
+                var logo = LoadEmbeddedLogo();
+                if (logo != null)
+                    image.Source = logo;
+            }
+            catch { /* opcional */ }
         }
 
         public static DrawingImage LoadFromUri(Uri uri)

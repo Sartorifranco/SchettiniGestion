@@ -79,5 +79,27 @@ namespace SchettiniGestion
                 return false;
             }
         }
+
+        /// <summary>Determina si <paramref name="hashedPassword"/> tiene el formato <c>iter:saltBase64:hashBase64</c> usado por <see cref="HashPassword"/>.</summary>
+        public static bool EsFormatoHashPbkdf2(string hashedPassword)
+        {
+            if (string.IsNullOrWhiteSpace(hashedPassword))
+                return false;
+            try
+            {
+                var parts = hashedPassword.Split(':');
+                if (parts.Length != 3)
+                    return false;
+                if (!int.TryParse(parts[0], out int iter) || iter < 1)
+                    return false;
+                byte[] s = Convert.FromBase64String(parts[1]);
+                byte[] h = Convert.FromBase64String(parts[2]);
+                return s.Length >= SaltSize && h.Length >= 16;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

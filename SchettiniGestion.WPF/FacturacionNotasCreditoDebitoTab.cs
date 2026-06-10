@@ -49,8 +49,8 @@ namespace SchettiniGestion.WPF
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
             int id = GetSelectedId();
-            if (id == 0) { MessageBox.Show("Seleccione una nota.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            if (MessageBox.Show("¿Eliminar esta nota?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            if (id == 0) { ModernMessageBox.Show("Seleccione una nota.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (ModernMessageBox.Show("¿Eliminar esta nota?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
                 try
                 {
@@ -61,7 +61,7 @@ namespace SchettiniGestion.WPF
                     }
                     Cargar(txtFiltro.Text.Trim());
                 }
-                catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
+                catch (Exception ex) { ModernMessageBox.Show("Error: " + ex.Message); }
             }
         }
     }

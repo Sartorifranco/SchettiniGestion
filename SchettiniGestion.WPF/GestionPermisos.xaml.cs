@@ -43,7 +43,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al cargar datos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show($"Error al cargar datos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -99,14 +99,14 @@ namespace SchettiniGestion.WPF
         private void btnNuevoRol_Click(object sender, RoutedEventArgs e)
         {
             // 1. Abrimos la ventanita para pedir el nombre
-            InputWindow input = new InputWindow("Crear Nuevo Rol");
+            var input = new ModernInputWindow("Crear Nuevo Rol");
             if (input.ShowDialog() == true)
             {
                 string nuevoNombre = input.ResponseText.Trim();
 
                 if (string.IsNullOrEmpty(nuevoNombre))
                 {
-                    MessageBox.Show("El nombre no puede estar vacío.");
+                    ModernMessageBox.Show("El nombre no puede estar vacío.");
                     return;
                 }
 
@@ -121,7 +121,7 @@ namespace SchettiniGestion.WPF
                         cmdCheck.Parameters.AddWithValue("@n", nuevoNombre);
                         if (Convert.ToInt32(cmdCheck.ExecuteScalar()) > 0)
                         {
-                            MessageBox.Show($"Ya existe un rol con el nombre '{nuevoNombre}'.\nElija otro nombre.", "Rol duplicado", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            ModernMessageBox.Show($"Ya existe un rol con el nombre '{nuevoNombre}'.\nElija otro nombre.", "Rol duplicado", MessageBoxButton.OK, MessageBoxImage.Warning);
                             return;
                         }
 
@@ -135,11 +135,11 @@ namespace SchettiniGestion.WPF
 
                     // 3. Recargamos la lista para que aparezca el nuevo rol
                     CargarDatosIniciales();
-                    MessageBox.Show($"Rol '{nuevoNombre}' creado exitosamente.\nAhora selecciónelo y asígnele permisos.", "Éxito");
+                    ModernMessageBox.Show($"Rol '{nuevoNombre}' creado exitosamente.\nAhora selecciónelo y asígnele permisos.", "Éxito");
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error al crear rol: " + ex.Message);
+                    ModernMessageBox.Show("Error al crear rol: " + ex.Message);
                 }
             }
         }
@@ -168,11 +168,11 @@ namespace SchettiniGestion.WPF
                 // Actualizar memoria local
                 permisosPorRol[rolSeleccionado.RolId] = nuevosPermisos;
 
-                MessageBox.Show("Permisos guardados correctamente.", "Guardado", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("Permisos guardados correctamente.", "Guardado", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al guardar: {ex.Message}", "Error");
+                ModernMessageBox.Show($"Error al guardar: {ex.Message}", "Error");
             }
         }
 
@@ -184,11 +184,11 @@ namespace SchettiniGestion.WPF
             // Seguridad: No borrar al Admin
             if (rol.Nombre.ToUpper().Contains("ADMIN"))
             {
-                MessageBox.Show("No se puede eliminar el rol de Administrador.", "Bloqueado", MessageBoxButton.OK, MessageBoxImage.Stop);
+                ModernMessageBox.Show("No se puede eliminar el rol de Administrador.", "Bloqueado", MessageBoxButton.OK, MessageBoxImage.Stop);
                 return;
             }
 
-            if (MessageBox.Show($"¿Está seguro de eliminar el rol '{rol.Nombre}'?\nLos usuarios con este rol perderán sus accesos.", "Confirmar Eliminación", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            if (ModernMessageBox.Show($"¿Está seguro de eliminar el rol '{rol.Nombre}'?\nLos usuarios con este rol perderán sus accesos.", "Confirmar Eliminación", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
                 try
                 {
@@ -206,7 +206,7 @@ namespace SchettiniGestion.WPF
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error eliminando rol: " + ex.Message);
+                    ModernMessageBox.Show("Error eliminando rol: " + ex.Message);
                 }
             }
         }

@@ -1,4 +1,4 @@
-﻿using SchettiniGestion;
+using SchettiniGestion;
 using System;
 using System.Data;
 using System.Windows;
@@ -142,7 +142,7 @@ namespace SchettiniGestion.WPF
         private void btnConfirmarPago_Click(object sender, RoutedEventArgs e)
         {
             decimal monto = numMontoPago.Value ?? 0;
-            if (monto <= 0) { CustomMessageBox.Show("El monto debe ser mayor a 0."); return; }
+            if (monto <= 0) { ModernMessageBox.Show("El monto debe ser mayor a 0."); return; }
 
             bool exito = false;
             int id = Convert.ToInt32(_entidadSeleccionada[_modoClientes ? "ClienteID" : "ProveedorID"]);
@@ -154,7 +154,7 @@ namespace SchettiniGestion.WPF
 
             if (exito)
             {
-                CustomMessageBox.Show("Movimiento registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("Movimiento registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 popupPago.Visibility = Visibility.Collapsed;
 
                 // Recargar historial para ver el nuevo movimiento

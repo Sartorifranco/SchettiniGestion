@@ -61,16 +61,17 @@
                                 Style="{StaticResource {x:Type DataGrid}}" HeadersVisibility="Column"
                                 CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80"/>
-                                    <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" Width="*"/>
-                                    <DataGridTextColumn Header="Rubro" Binding="{Binding Rubro}" Width="80"/>
-                                    <DataGridTextColumn Header="SubRubro" Binding="{Binding SubRubro}" Width="80"/>
-                                    <DataGridTextColumn Header="Marca" Binding="{Binding Marca}" Width="70"/>
-                                    <DataGridTextColumn Header="Talle" Binding="{Binding Talle}" Width="60"/>
-                                    <DataGridTextColumn Header="Color" Binding="{Binding Color}" Width="60"/>
-                                    <DataGridTextColumn Header="Stock Real" Binding="{Binding StockReal}" Width="80"/>
-                                    <DataGridTextColumn Header="Reservado" Binding="{Binding StockReservado}" Width="80"/>
-                                    <DataGridTextColumn Header="Disponible" Binding="{Binding StockDisponible}" Width="90"/>
+                                    <DataGridTextColumn Header="Código" Binding="{Binding [Codigo]}" Width="85"/>
+                                    <DataGridTextColumn Header="DESCRIPCIÓN" Binding="{Binding [Descripcion]}" Width="*" MinWidth="140"/>
+                                    <DataGridTextColumn Header="Rubro" Binding="{Binding [Rubro]}" Width="100"/>
+                                    <DataGridTextColumn Header="Sub-rubro" Binding="{Binding [SubRubro]}" Width="100"/>
+                                    <DataGridTextColumn Header="Marca" Binding="{Binding [Marca]}" Width="85"/>
+                                    <DataGridTextColumn Header="Proveedor" Binding="{Binding [Proveedor]}" Width="130"/>
+                                    <DataGridTextColumn Header="Talle" Binding="{Binding [Talle]}" Width="55"/>
+                                    <DataGridTextColumn Header="Color" Binding="{Binding [Color]}" Width="55"/>
+                                    <DataGridTextColumn Header="Stock Real" Binding="{Binding [StockReal]}" Width="85"/>
+                                    <DataGridTextColumn Header="Reservado" Binding="{Binding [StockReservado]}" Width="85"/>
+                                    <DataGridTextColumn Header="Disponible" Binding="{Binding [StockDisponible]}" Width="95"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
@@ -326,15 +327,16 @@
                                 Style="{StaticResource {x:Type DataGrid}}" HeadersVisibility="Column"
                                 CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80"/>
-                                    <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" Width="*"/>
-                                    <DataGridTextColumn Header="Rubro" Binding="{Binding Rubro}" Width="80"/>
-                                    <DataGridTextColumn Header="SubRubro" Binding="{Binding SubRubro}" Width="80"/>
-                                    <DataGridTextColumn Header="Proveedor" Binding="{Binding Proveedor}" Width="100"/>
-                                    <DataGridTextColumn Header="Talle" Binding="{Binding Talle}" Width="60"/>
-                                    <DataGridTextColumn Header="Color" Binding="{Binding Color}" Width="60"/>
-                                    <DataGridTextColumn Header="Stock" Binding="{Binding Stock}" Width="70"/>
-                                    <DataGridTextColumn Header="Mínimo" Binding="{Binding StockMinimo}" Width="70"/>
+                                    <DataGridTextColumn Header="Código" Binding="{Binding [Codigo]}" Width="85"/>
+                                    <DataGridTextColumn Header="DESCRIPCIÓN" Binding="{Binding [Descripcion]}" Width="*" MinWidth="120"/>
+                                    <DataGridTextColumn Header="Rubro" Binding="{Binding [Rubro]}" Width="95"/>
+                                    <DataGridTextColumn Header="Sub-rubro" Binding="{Binding [SubRubro]}" Width="95"/>
+                                    <DataGridTextColumn Header="Marca" Binding="{Binding [Marca]}" Width="80"/>
+                                    <DataGridTextColumn Header="Proveedor" Binding="{Binding [Proveedor]}" Width="130"/>
+                                    <DataGridTextColumn Header="Talle" Binding="{Binding [Talle]}" Width="55"/>
+                                    <DataGridTextColumn Header="Color" Binding="{Binding [Color]}" Width="55"/>
+                                    <DataGridTextColumn Header="Stock" Binding="{Binding [Stock]}" Width="72"/>
+                                    <DataGridTextColumn Header="Mínimo" Binding="{Binding [StockMinimo]}" Width="72"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>

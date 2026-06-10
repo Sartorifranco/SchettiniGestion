@@ -45,7 +45,7 @@ namespace SchettiniGestion.WPF
         private void btnConfirmar_Click(object sender, RoutedEventArgs e)
         {
             int id = GetSelectedId();
-            if (id == 0) { MessageBox.Show("Seleccione un pedido.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (id == 0) { ModernMessageBox.Show("Seleccione un pedido.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
             try
             {
                 using (var conn = new System.Data.SqlClient.SqlConnection(DatabaseService.ConnectionString))
@@ -55,14 +55,14 @@ namespace SchettiniGestion.WPF
                 }
                 Cargar(txtFiltro.Text.Trim());
             }
-            catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error: " + ex.Message); }
         }
 
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
             int id = GetSelectedId();
-            if (id == 0) { MessageBox.Show("Seleccione un pedido.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            if (MessageBox.Show("¿Eliminar este pedido?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            if (id == 0) { ModernMessageBox.Show("Seleccione un pedido.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (ModernMessageBox.Show("¿Eliminar este pedido?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
                 try
                 {
@@ -73,7 +73,7 @@ namespace SchettiniGestion.WPF
                     }
                     Cargar(txtFiltro.Text.Trim());
                 }
-                catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
+                catch (Exception ex) { ModernMessageBox.Show("Error: " + ex.Message); }
             }
         }
     }

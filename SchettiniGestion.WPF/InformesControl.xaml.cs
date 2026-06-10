@@ -36,7 +36,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al generar informe: " + ex.Message);
+                ModernMessageBox.Show("Error al generar informe: " + ex.Message);
             }
         }
 
@@ -150,7 +150,7 @@ ORDER BY cp.Fecha;";
         private void btnExportar_Click(object sender, RoutedEventArgs e)
         {
             if (_dtActual == null || _dtActual.Rows.Count == 0)
-            { MessageBox.Show("Genere un informe primero.", "Información", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            { ModernMessageBox.Show("Genere un informe primero.", "Información", MessageBoxButton.OK, MessageBoxImage.Information); return; }
             var dlg = new SaveFileDialog { Filter = "CSV (*.csv)|*.csv", FileName = $"informe_{DateTime.Today:yyyyMMdd}.csv" };
             if (dlg.ShowDialog() != true) return;
             try
@@ -166,9 +166,9 @@ ORDER BY cp.Fecha;";
                     sb.AppendLine(string.Join(";", vals));
                 }
                 System.IO.File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);
-                MessageBox.Show("Exportado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("Exportado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (Exception ex) { MessageBox.Show("Error al exportar: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error al exportar: " + ex.Message); }
         }
     }
 }

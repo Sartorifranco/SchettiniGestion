@@ -33,7 +33,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar productos: " + ex.Message);
+                ModernMessageBox.Show("Error al cargar productos: " + ex.Message);
             }
         }
 
@@ -67,21 +67,21 @@ namespace SchettiniGestion.WPF
                     {
                         CargarProductos(txtBuscar.Text);
                         LimpiarInputsMenosBuscador();
-                        MessageBox.Show("Precio actualizado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                        ModernMessageBox.Show("Precio actualizado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                     else
                     {
-                        MessageBox.Show("No se pudo actualizar el precio.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ModernMessageBox.Show("No se pudo actualizar el precio.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error: " + ex.Message);
+                    ModernMessageBox.Show("Error: " + ex.Message);
                 }
             }
             else
             {
-                MessageBox.Show("Seleccione un producto de la lista primero.");
+                ModernMessageBox.Show("Seleccione un producto de la lista primero.");
             }
         }
 

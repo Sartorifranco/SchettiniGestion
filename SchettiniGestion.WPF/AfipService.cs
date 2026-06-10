@@ -36,9 +36,25 @@ namespace SchettiniGestion.WPF
             {
                 bool prod = DatabaseService.GetAfipAmbienteProduccion();
                 DataRow config = DatabaseService.GetConfiguracion();
-                long cuitEmpresa = Convert.ToInt64(config["CUIT"].ToString().Replace("-", "").Trim());
-                string rutaCert = config["CertificadoPath"].ToString();
-                string passCert = config["PasswordAfip"].ToString();
+                if (config == null)
+                {
+                    resultado.Exito = false;
+                    resultado.Error =
+                        "CUIT de la empresa no configurado o inválido. Configure el CUIT de su negocio en el módulo Configuración > Negocio y AFIP.";
+                    return resultado;
+                }
+
+                string cuitEmpDigits = DatabaseService.ObtenerCuitEmpresaSoloDigitos(config);
+                if (string.IsNullOrEmpty(cuitEmpDigits) || !long.TryParse(cuitEmpDigits, out long cuitEmpresa))
+                {
+                    resultado.Exito = false;
+                    resultado.Error =
+                        "CUIT de la empresa no configurado o inválido. Configure el CUIT de su negocio en el módulo Configuración > Negocio y AFIP.";
+                    return resultado;
+                }
+
+                string rutaCert = config["CertificadoPath"]?.ToString() ?? "";
+                string passCert = DatabaseService.DecodeAfipCertificatePasswordStored(config["PasswordAfip"]);
 
                 // 1. LOGIN
                 LoginTicket ticket;
@@ -52,7 +68,7 @@ namespace SchettiniGestion.WPF
                     ticket = await ObtenerTicketAcceso(rutaCert, passCert, prod);
                 }
 
-                // 2. ├ÜLTIMO COMPROBANTE
+                // 2. ÚLTIMO COMPROBANTE
                 int nroComprobante = await ObtenerUltimoComprobante(ticket, cuitEmpresa, puntoVenta, tipoComprobante, prod) + 1;
 
                 // 3. DATOS VENTA (neto / IVA según alícuota por ítem)
@@ -82,17 +98,17 @@ namespace SchettiniGestion.WPF
                     }
                 }
 
-                // --- AJUSTE AN├ôNIMO + RG 5616 ---
-                int docTipo = 99; // Consumidor Final (An├│nimo)
+                // --- AJUSTE ANÓNIMO + RG 5616 ---
+                int docTipo = 99; // Consumidor Final (Anónimo)
                 long docNro = 0;
-                // C├│digo 5 = Consumidor Final (Obligatorio por RG 5616 en Homologaci├│n)
+                // Código 5 = Consumidor Final (Obligatorio por RG 5616 en Homologación)
                 int condicionIvaReceptor = 5;
 
                 if (prod && cuitCliente > 0)
                 {
                     docTipo = 80;
                     docNro = cuitCliente;
-                    // En producci├│n con CUIT, la condici├│n depende del cliente (ej: 1=Resp Inscripto)
+                    // En producción con CUIT, la condición depende del cliente (ej.: 1=Resp Inscripto)
                     // Por ahora en modo prueba forzamos 5.
                 }
 
@@ -166,7 +182,7 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        // --- M├ëTODOS AUXILIARES ---
+        // --- MÉTODOS AUXILIARES ---
         private static async Task<LoginTicket> ObtenerTicketAcceso(string rutaCert, string pass, bool produccion)
         {
             if (File.Exists(ARCHIVO_TOKEN)) { try { var doc = XDocument.Load(ARCHIVO_TOKEN); var expTime = DateTime.Parse(doc.Descendants("expirationTime").First().Value); if (expTime > DateTime.Now) return new LoginTicket { Token = doc.Descendants("token").First().Value, Sign = doc.Descendants("sign").First().Value }; } catch { } }
@@ -219,33 +235,49 @@ namespace SchettiniGestion.WPF
             return new string(cuit.Where(char.IsDigit).ToArray());
         }
 
-        // --- CONSULTA PADR├ôN (CUIT en AFIP) ---
+        // --- CONSULTA PADRÓN (CUIT en AFIP) ---
         public static async Task<PersonaAfip> ObtenerPersonaPorCuitAsync(string cuit)
         {
             var resultado = new PersonaAfip { Exito = false };
             try
             {
                 string cuitLimpio = LimpiarCuit(cuit);
-                if (string.IsNullOrEmpty(cuitLimpio) || cuitLimpio.Length < 10) { resultado.Error = "CUIT inv├ílido (m├¡nimo 10 d├¡gitos)"; return resultado; }
-                if (!long.TryParse(cuitLimpio, out long idPersona)) { resultado.Error = "CUIT debe contener solo n├║meros"; return resultado; }
+                if (string.IsNullOrEmpty(cuitLimpio) || cuitLimpio.Length < 10)
+                {
+                    resultado.Error = "CUIT inválido (mínimo 10 dígitos)";
+                    return resultado;
+                }
+
+                if (!long.TryParse(cuitLimpio, out long idPersona))
+                {
+                    resultado.Error = "CUIT debe contener solo números";
+                    return resultado;
+                }
 
                 bool prod = DatabaseService.GetAfipAmbienteProduccion();
                 DataRow config = DatabaseService.GetConfiguracion();
-                if (config == null) { resultado.Error = "No hay configuraci├│n de negocio. Vaya a Configuraci├│n > Negocio y AFIP."; return resultado; }
-                string cuitEmpresaStr = LimpiarCuit(config["CUIT"]?.ToString());
+                if (config == null)
+                {
+                    resultado.Error =
+                        "CUIT de la empresa no configurado o inválido. Configure el CUIT de su negocio en el módulo Configuración > Negocio y AFIP.";
+                    return resultado;
+                }
+
+                string cuitEmpresaStr = DatabaseService.ObtenerCuitEmpresaSoloDigitos(config);
                 if (string.IsNullOrEmpty(cuitEmpresaStr) || !long.TryParse(cuitEmpresaStr, out long cuitEmpresa))
                 {
-                    resultado.Error = "CUIT de la empresa no configurado o inv├ílido. Configure el CUIT en Configuraci├│n > Negocio y AFIP.";
+                    resultado.Error =
+                        "CUIT de la empresa no configurado o inválido. Configure el CUIT de su negocio en el módulo Configuración > Negocio y AFIP.";
                     return resultado;
                 }
                 string rutaCert = config["CertificadoPath"]?.ToString();
-                string passCert = config["PasswordAfip"]?.ToString();
+                string passCert = DatabaseService.DecodeAfipCertificatePasswordStored(config["PasswordAfip"]);
                 if (string.IsNullOrEmpty(rutaCert) || !File.Exists(rutaCert)) { resultado.Error = "Certificado AFIP no configurado o no encontrado"; return resultado; }
 
                 LoginTicket ticket = await ObtenerTicketAccesoPadron(rutaCert, passCert ?? "", prod);
                 string urlPadron = prod ? URL_PADRON_PROD : URL_PADRON_HOMO;
 
-                // SOAP getPersona para Padr├│n A4
+                // SOAP getPersona para Padrón A4
                 string ns = "http://ar.gov.afip.dif.sr_padron_a4/";
                 string xmlBody = $@"<getPersona xmlns=""{ns}""><token>{ticket.Token}</token><sign>{ticket.Sign}</sign><cuitRepresentada>{cuitEmpresa}</cuitRepresentada><idPersona>{idPersona}</idPersona></getPersona>";
                 string soapAction = $"\"{ns}getPersona\"";
@@ -265,7 +297,11 @@ namespace SchettiniGestion.WPF
                         var personaReturn = doc.Descendants().FirstOrDefault(n => n.Name.LocalName == "personaReturn");
                         if (personaReturn == null) { resultado.Error = "AFIP: Respuesta sin datos de persona"; return resultado; }
                         var persona = personaReturn.Descendants().FirstOrDefault(n => n.Name.LocalName == "persona" || n.Name.LocalName == "datosGenerales");
-                        if (persona == null) { resultado.Error = "AFIP: No se encontr├│ el CUIT en el padr├│n"; return resultado; }
+                        if (persona == null)
+                        {
+                            resultado.Error = "AFIP: No se encontró el CUIT en el padrón";
+                            return resultado;
+                        }
 
                         string razonSocial = persona.Descendants().FirstOrDefault(n => n.Name.LocalName == "razonSocial")?.Value ?? persona.Descendants().FirstOrDefault(n => n.Name.LocalName == "denominacion")?.Value;
                         if (string.IsNullOrEmpty(razonSocial))
@@ -287,7 +323,7 @@ namespace SchettiniGestion.WPF
             {
                 string msg = ex.Message;
                 if (msg.Contains("no autorizado") || msg.Contains("Computador"))
-                    msg += "\n\nDebe autorizar su IP en AFIP: ingrese a afip.gob.ar con Clave Fiscal, vaya a Administraci├│n de Relaciones / Web Services, adhiera el servicio ws_sr_padron_a4 y registre la IP de su computadora.";
+                    msg += "\n\nDebe autorizar su IP en AFIP: ingrese a afip.gob.ar con Clave Fiscal, vaya a Administración de Relaciones / Web Services, adhiera el servicio ws_sr_padron_a4 y registre la IP de su computadora.";
                 resultado.Error = "Error: " + msg;
                 return resultado;
             }

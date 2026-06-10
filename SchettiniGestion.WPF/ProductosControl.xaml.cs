@@ -29,13 +29,13 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                _dtProductos = DatabaseService.GetProductos("");
+                _dtProductos = DatabaseService.GetProductosListado("");
                 dgvProductos.ItemsSource = _dtProductos.DefaultView;
                 AplicarFiltro();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar lista: " + ex.Message);
+                ModernMessageBox.Show("Error al cargar lista: " + ex.Message);
             }
         }
 
@@ -118,77 +118,114 @@ namespace SchettiniGestion.WPF
 
         private void btnDescargarPlantilla_Click(object sender, RoutedEventArgs e)
         {
-            var sfd = new SaveFileDialog { Filter = "Archivo CSV (Excel)|*.csv", FileName = "Plantilla_Carga_Productos.csv" };
-            if (sfd.ShowDialog() == true)
+            var sfd = new SaveFileDialog { Filter = "Archivo CSV|*.csv", FileName = "Plantilla_Productos.csv" };
+            if (sfd.ShowDialog() != true) return;
+            try
             {
-                try
-                {
-                    string contenido = "CODIGO;CODIGO_BARRAS;DESCRIPCION;CATEGORIA;SUB_RUBRO;MARCA;PROVEEDOR;COSTO;PRECIO_VENTA;STOCK\n" +
-                                       "COCA15;779123456;Coca Cola 1.5 Litros;Bebidas;Gaseosas;Coca-Cola;Coca-Cola;1000;1500;50\n" +
-                                       "PAN001;;Pan Frances Kg;Almacen;Panaderia;Varios;;800;1200;10";
-                    File.WriteAllText(sfd.FileName, contenido, Encoding.UTF8);
-                    MessageBox.Show("Plantilla guardada.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
+                // Las columnas deben coincidir exactamente con lo que lee ProcesarImportacionCSV (header-driven).
+                string cabeceras = "CodigoBarra;CodigoExterno;Descripcion;Categoria;SubRubro;Proveedor;Costo;GananciaPorcentaje;PrecioVenta;StockActual;StockMinimo;AceptaStockNegativo";
+                string ejemploA  = "7791234567890;COCA15;Coca Cola 1.5 Litros;Bebidas;Gaseosas;Coca-Cola;1000;50;1500;50;5;No";
+                string ejemploB  = ";PAN001;Pan Frances Kg;Almacen;Panaderia;Varios;800;50;1200;10;;No";
+                File.WriteAllText(sfd.FileName, cabeceras + "\n" + ejemploA + "\n" + ejemploB, Encoding.UTF8);
+                ModernMessageBox.Show(
+                    "Plantilla descargada con éxito.\n\nLlénela respetando los nombres de las columnas y luego use '📗 Importar Masivo'.\n\n" +
+                    "• CodigoBarra: código de barras EAN/UPC (puede dejarse vacío).\n" +
+                    "• CodigoExterno: código interno del sistema (obligatorio o se usa CodigoBarra).\n" +
+                    "• GananciaPorcentaje: ej. 50 significa 50% de ganancia sobre el costo.\n" +
+                    "• AceptaStockNegativo: escribir Sí o No.",
+                    "Plantilla Generada", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+            catch (Exception ex) { ModernMessageBox.Show("Error al guardar la plantilla: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
         private void btnImportarExcel_Click(object sender, RoutedEventArgs e)
         {
-            var ofd = new OpenFileDialog { Filter = "Archivo CSV (Excel)|*.csv" };
+            var ofd = new OpenFileDialog { Filter = "Archivo CSV|*.csv", Title = "Seleccionar archivo de importación" };
             if (ofd.ShowDialog() == true)
             {
                 try { ProcesarImportacionCSV(ofd.FileName); }
-                catch (Exception ex) { MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+                catch (Exception ex) { ModernMessageBox.Show("Error inesperado: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
             }
         }
 
         private void ProcesarImportacionCSV(string ruta)
         {
             var lineas = File.ReadAllLines(ruta, Encoding.UTF8);
+            if (lineas.Length < 2)
+            {
+                ModernMessageBox.Show("El archivo no contiene filas de datos.", "Importación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Mapa columna→índice (insensible a mayúsculas/espacios)
+            var headers = lineas[0].Split(';');
+            var idx = new System.Collections.Generic.Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            for (int h = 0; h < headers.Length; h++)
+                idx[headers[h].Trim()] = h;
+
+            string Col(string[] d, string name)
+                => idx.TryGetValue(name, out int i) && i < d.Length ? d[i].Trim() : "";
+
+            decimal ParseDec(string s) { decimal.TryParse(s.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal v); return v; }
+
             int importados = 0, errores = 0;
 
             for (int i = 1; i < lineas.Length; i++)
             {
                 try
                 {
-                    string linea = lineas[i];
-                    if (string.IsNullOrWhiteSpace(linea)) continue;
+                    if (string.IsNullOrWhiteSpace(lineas[i])) continue;
+                    string[] d = lineas[i].Split(';');
 
-                    string[] datos = linea.Split(';');
-                    if (datos.Length < 6) { errores++; continue; }
+                    string codigoBarra   = Col(d, "CodigoBarra");
+                    string codigoExterno = Col(d, "CodigoExterno");
+                    string descripcion   = Col(d, "Descripcion");
+                    string categoria     = Col(d, "Categoria");
+                    string subRubro      = Col(d, "SubRubro");
+                    string proveedor     = Col(d, "Proveedor");
 
-                    string codigo = datos[0].Trim();
-                    string codigoBarra = datos.Length > 1 ? datos[1].Trim() : "";
-                    string descripcion = datos.Length > 2 ? datos[2].Trim() : "";
-                    string categoria = datos.Length > 3 ? datos[3].Trim() : "";
-                    string subRubro = datos.Length > 4 ? datos[4].Trim() : "";
-                    string marca = datos.Length > 5 ? datos[5].Trim() : "";
-                    string proveedor = datos.Length > 6 ? datos[6].Trim() : "";
+                    decimal costo        = ParseDec(Col(d, "Costo"));
+                    decimal ganancia     = ParseDec(Col(d, "GananciaPorcentaje"));
+                    decimal precioVenta  = ParseDec(Col(d, "PrecioVenta"));
+                    int.TryParse(Col(d, "StockActual"), out int stockActual);
 
-                    string costoStr = (datos.Length > 7 ? datos[7] : "0").Trim().Replace(",", ".");
-                    string ventaStr = (datos.Length > 8 ? datos[8] : "0").Trim().Replace(",", ".");
-                    decimal.TryParse(costoStr, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal costo);
-                    decimal.TryParse(ventaStr, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal venta);
+                    string stockMinStr   = Col(d, "StockMinimo");
+                    decimal? stockMinimo = !string.IsNullOrEmpty(stockMinStr) ? (decimal?)ParseDec(stockMinStr) : null;
 
-                    int stock = 0;
-                    if (datos.Length > 9) int.TryParse(datos[9].Trim(), out stock);
+                    string aceptaRaw     = Col(d, "AceptaStockNegativo").ToLowerInvariant();
+                    bool aceptaStockNeg  = aceptaRaw == "si" || aceptaRaw == "sí" || aceptaRaw == "yes" || aceptaRaw == "true" || aceptaRaw == "1";
 
+                    // Código principal: preferir CodigoExterno; si no, usar CodigoBarra
+                    string codigo = !string.IsNullOrEmpty(codigoExterno) ? codigoExterno : codigoBarra;
                     if (string.IsNullOrEmpty(codigoBarra)) codigoBarra = codigo;
 
-                    decimal ganancia = costo > 0 ? ((venta - costo) / costo) * 100 : 0;
+                    if (string.IsNullOrEmpty(descripcion)) { errores++; continue; }
+
+                    // Si no viene PrecioVenta pero sí Costo y Ganancia, calcularlo
+                    if (precioVenta == 0 && costo > 0 && ganancia > 0)
+                        precioVenta = costo * (1 + ganancia / 100m);
 
                     int idProd = 0;
                     var existente = DatabaseService.BuscarProducto(codigo);
                     if (existente != null) idProd = Convert.ToInt32(existente["ProductoID"]);
 
-                    DatabaseService.GuardarProducto(idProd, codigo, codigoBarra, descripcion, categoria, subRubro, marca, proveedor, "21.0", costo, ganancia, 0, venta, stock, null);
+                    DatabaseService.GuardarProducto(
+                        idProd, codigo, codigoBarra, descripcion, categoria, subRubro,
+                        /*marca*/ "", proveedor, /*iva*/ "21.0",
+                        costo, ganancia, /*imp*/ 0, precioVenta, stockActual, /*img*/ null,
+                        /*moneda*/ "ARS", /*permiteModPrecio*/ true, /*esStockeable*/ true,
+                        aceptaStockNeg, /*usaVariantes*/ false, /*esCombo*/ false,
+                        stockMinimo, /*stockIdeal*/ null,
+                        codigoExterno, /*color*/ "", /*talle*/ "", /*udm*/ "");
+
                     importados++;
                 }
                 catch { errores++; }
             }
 
-            MessageBox.Show($"Procesados: {importados}\nErrores: {errores}", "Importación", MessageBoxButton.OK, MessageBoxImage.Information);
+            ModernMessageBox.Show(
+                $"Importación finalizada.\n\n✔ Importados: {importados}\n✖ Errores: {errores}",
+                "Importación Masiva", MessageBoxButton.OK, MessageBoxImage.Information);
             CargarProductos();
         }
     }

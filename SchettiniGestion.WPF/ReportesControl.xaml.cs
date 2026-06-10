@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32; // Necesario para el guardado de archivos
+using Microsoft.Win32; // Necesario para el guardado de archivos
 using System;
 using System.Data;
 using System.IO;
@@ -88,7 +88,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al generar reporte: " + ex.Message);
+                ModernMessageBox.Show("Error al generar reporte: " + ex.Message);
             }
         }
 
@@ -100,7 +100,7 @@ namespace SchettiniGestion.WPF
                 // 1. Verificar si hay datos
                 if (dgvReporte.ItemsSource == null)
                 {
-                    MessageBox.Show("No hay datos para exportar. Genere el reporte primero.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ModernMessageBox.Show("No hay datos para exportar. Genere el reporte primero.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
@@ -109,7 +109,7 @@ namespace SchettiniGestion.WPF
 
                 if (dt.Rows.Count == 0)
                 {
-                    MessageBox.Show("La lista está vacía.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ModernMessageBox.Show("La lista está vacía.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
@@ -144,7 +144,7 @@ namespace SchettiniGestion.WPF
                     File.WriteAllText(sfd.FileName, sb.ToString(), Encoding.UTF8);
 
                     // 5. Confirmar y abrir
-                    if (MessageBox.Show("¡Reporte exportado correctamente!\n\n¿Desea abrirlo ahora?", "Éxito", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                    if (ModernMessageBox.Show("¡Reporte exportado correctamente!\n\n¿Desea abrirlo ahora?", "Éxito", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                     {
                         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                         {
@@ -156,7 +156,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al exportar: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show("Error al exportar: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

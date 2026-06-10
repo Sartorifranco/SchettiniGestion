@@ -125,7 +125,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar detalle: " + ex.Message);
+                ModernMessageBox.Show("Error al cargar detalle: " + ex.Message);
             }
         }
 
@@ -139,13 +139,13 @@ namespace SchettiniGestion.WPF
                 }
                 else
                 {
-                    MessageBox.Show("Impresión de facturas desde este panel no disponible aún.\nUse la opción de impresión al guardar la venta.",
+                    ModernMessageBox.Show("Impresión de facturas desde este panel no disponible aún.\nUse la opción de impresión al guardar la venta.",
                         "Información", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al imprimir: " + ex.Message);
+                ModernMessageBox.Show("Error al imprimir: " + ex.Message);
             }
         }
 

@@ -28,7 +28,7 @@ namespace SchettiniGestion.WPF
                 dgvClientes.ItemsSource = _dt.DefaultView;
                 ActualizarTotal();
             }
-            catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error: " + ex.Message); }
         }
 
         private void AplicarFiltro()

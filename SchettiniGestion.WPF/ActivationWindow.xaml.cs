@@ -38,7 +38,7 @@ namespace SchettiniGestion.WPF
             try
             {
                 Clipboard.SetText(txtMachineId.Text);
-                MessageBox.Show("ID de máquina copiado al portapapeles.", "Copiado", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("ID de máquina copiado al portapapeles.", "Copiado", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch { }
         }
@@ -74,7 +74,7 @@ namespace SchettiniGestion.WPF
             lblStatusDesc.Text = $"Vence: {LicenseManager.ObtenerFechaVencimiento()}";
             lblError.Visibility = Visibility.Collapsed;
 
-            MessageBox.Show("¡Sistema activado correctamente!\nPuede ingresar ahora.", "Activación Exitosa", MessageBoxButton.OK, MessageBoxImage.Information);
+            ModernMessageBox.Show("¡Sistema activado correctamente!\nPuede ingresar ahora.", "Activación Exitosa", MessageBoxButton.OK, MessageBoxImage.Information);
             DialogResult = true;
             Close();
         }

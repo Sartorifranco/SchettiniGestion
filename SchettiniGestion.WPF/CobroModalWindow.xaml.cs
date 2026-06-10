@@ -123,7 +123,7 @@ namespace SchettiniGestion.WPF
             if (!decimal.TryParse(txtMonto.Text.Replace(",", "."), System.Globalization.NumberStyles.Number,
                 System.Globalization.CultureInfo.InvariantCulture, out decimal monto) || monto <= 0)
             {
-                CustomMessageBox.Show("Ingrese un monto válido mayor a cero.", "Monto inválido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Ingrese un monto válido mayor a cero.", "Monto inválido", MessageBoxButton.OK, MessageBoxImage.Warning);
                 txtMonto.Focus();
                 return;
             }
@@ -164,7 +164,7 @@ namespace SchettiniGestion.WPF
         {
             if (_cobros.Count == 0)
             {
-                CustomMessageBox.Show("Debe ingresar al menos un medio de pago.", "Sin cobros", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Debe ingresar al menos un medio de pago.", "Sin cobros", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             Cobranzas = _cobros.ToList();

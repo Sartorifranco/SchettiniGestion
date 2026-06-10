@@ -15,6 +15,12 @@ namespace SchettiniGestion.WPF
     {
         protected override void OnStartup(StartupEventArgs e)
         {
+            EventManager.RegisterClassHandler(typeof(Window), Window.LoadedEvent, new RoutedEventHandler((s, _) =>
+            {
+                if (s is Window w)
+                    SvgLogoHelper.ApplyWindowIcon(w);
+            }), handledEventsToo: true);
+
             base.OnStartup(e);
 
             ThemeManager.LoadSavedTheme();
@@ -39,7 +45,7 @@ namespace SchettiniGestion.WPF
             if (!licenciaValida)
             {
                 string mensaje = SchettiniGestion.LicenseManager.UltimoMensajeError ?? "Error de licencia. La aplicación se cerrará.";
-                CustomMessageBox.Show(mensaje, "Error de licencia", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show(mensaje, "Error de licencia", MessageBoxButton.OK, MessageBoxImage.Error);
                 Application.Current.Shutdown();
             }
         }
@@ -67,7 +73,7 @@ namespace SchettiniGestion.WPF
                     if (cs != DatabaseService.ConnectionString)
                         DatabaseService.ActualizarConexion(cs);
                     DatabaseService.InitializeDatabase();
-                    DatabaseService.AsegurarUsuarioAdminInicial();
+                    DatabaseService.AsegurarUsuariosBootstrap();
                     return true;
                 }
                 catch { /* probar siguiente */ }
@@ -505,13 +511,13 @@ namespace SchettiniGestion.WPF
             string detalle = e.Exception.Message;
             if (e.Exception.StackTrace != null)
                 detalle += "\n\nUbicación:\n" + e.Exception.StackTrace.Split(new[] { '\r', '\n' })[0];
-            MessageBox.Show("Error UI: " + detalle);
+            ModernMessageBox.Show("Error UI: " + detalle);
             e.Handled = true;
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            MessageBox.Show("Error Fatal: " + (e.ExceptionObject as Exception)?.Message);
+            ModernMessageBox.Show("Error Fatal: " + (e.ExceptionObject as Exception)?.Message);
         }
     }
 }

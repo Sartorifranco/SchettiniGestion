@@ -53,7 +53,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar movimientos: " + ex.Message);
+                ModernMessageBox.Show("Error al cargar movimientos: " + ex.Message);
             }
         }
 

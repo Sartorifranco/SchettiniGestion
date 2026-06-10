@@ -46,13 +46,13 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar datos: " + ex.Message);
+                ModernMessageBox.Show("Error al cargar datos: " + ex.Message);
             }
         }
 
         private void btnCerrarCaja_Click(object sender, RoutedEventArgs e)
         {
-            var res = MessageBox.Show(
+            var res = ModernMessageBox.Show(
                 $"¿Confirma el cierre de caja?\n\nSaldo apertura: {_saldoApertura:C2}\nIngresos: {_ingresos:C2}\nEgresos: {_egresos:C2}\nSaldo cierre: {(_saldoApertura + _ingresos - _egresos):C2}",
                 "Confirmar Cierre", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
@@ -78,12 +78,12 @@ namespace SchettiniGestion.WPF
                     cmd.ExecuteNonQuery();
                 }
 
-                MessageBox.Show("Cierre de caja registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("Cierre de caja registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 CargarResumen();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al registrar cierre: " + ex.Message);
+                ModernMessageBox.Show("Error al registrar cierre: " + ex.Message);
             }
         }
     }

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace SchettiniGestion
 {
@@ -23,7 +25,7 @@ namespace SchettiniGestion
         /// <summary>
         /// La lista de permisos (ej: "ACCESO_USUARIOS", "ACCESO_FACTURACION").
         /// </summary>
-        private static HashSet<string> Permisos { get; set; }
+        public static HashSet<string> Permisos { get; private set; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Inicia la sesión. Este método es llamado por DatabaseService.
@@ -33,8 +35,12 @@ namespace SchettiniGestion
             NombreUsuario = nombreUsuario;
             RolID = rolId;
             NombreRol = rolId == 1 ? "Administrador" : $"Rol {rolId}";
-            // Usamos un HashSet para búsquedas de permisos ultra-rápidas
-            Permisos = new HashSet<string>(permisos);
+            // Normalizamos para evitar fallos por casing/espacios.
+            Permisos = new HashSet<string>(
+                (permisos ?? new List<string>())
+                    .Where(p => !string.IsNullOrWhiteSpace(p))
+                    .Select(p => p.Trim()),
+                StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -42,8 +48,13 @@ namespace SchettiniGestion
         /// </summary>
         /// <param name="permiso">El nombre del permiso a comprobar (ej: DatabaseService.PERMISO_USUARIOS)</param>
         /// <returns>True si tiene el permiso, False si no.</returns>
-        public static bool TienePermiso(string permiso)
+        public static bool TienePermiso(string permisoRequerido)
         {
+            if (string.Equals(NombreUsuario, "admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
             if (Permisos == null)
             {
                 return false; // Sesión no iniciada
@@ -55,8 +66,16 @@ namespace SchettiniGestion
                 return true;
             }
 
-            // Para otros roles, comprobamos la lista
-            return Permisos.Contains(permiso);
+            bool tiene = Permisos.Contains((permisoRequerido ?? string.Empty).Trim());
+#if DEBUG
+            if (!tiene)
+            {
+                string cargados = string.Join(", ", Permisos);
+                Debug.WriteLine($"[SesionUsuario permisos] Buscando: '{permisoRequerido}' | En sesión ({Permisos.Count}): {cargados}");
+            }
+#endif
+
+            return tiene;
         }
 
         /// <summary>

@@ -8,6 +8,8 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/SharedResources.xaml"/>
+                <!-- Tema por defecto hasta ThemeManager.ApplyTheme (AccentColor, TextPrimary, ComboBox*, etc.) -->
+                <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
@@ -13,9 +13,7 @@ namespace SchettiniGestion.WPF
             InitializeComponent();
             try
             {
-                var marca = SvgLogoHelper.LoadEmbeddedLogo();
-                if (marca != null && imgMarcaLogin != null)
-                    imgMarcaLogin.Source = marca;
+                SvgLogoHelper.ApplyToImage(imgMarcaLogin);
             }
             catch { /* logo opcional */ }
             ThemeManager.ThemeChanged += ThemeManager_ThemeChanged;
@@ -25,7 +23,7 @@ namespace SchettiniGestion.WPF
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    CustomMessageBox.Show(mensajeError, "Aviso del Sistema", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ModernMessageBox.Show(mensajeError, "Aviso del Sistema", MessageBoxButton.OK, MessageBoxImage.Error);
                 });
             };
         }
@@ -79,7 +77,7 @@ namespace SchettiniGestion.WPF
 
             if (string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(password))
             {
-                CustomMessageBox.Show("Por favor, ingrese usuario y contraseña.", "Datos Incompletos", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Por favor, ingrese usuario y contraseña.", "Datos Incompletos", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -108,12 +106,12 @@ namespace SchettiniGestion.WPF
                 }
                 else
                 {
-                    CustomMessageBox.Show("Error al cargar los permisos. Contacte al administrador.", "Error de Sesión", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ModernMessageBox.Show("Error al cargar los permisos. Contacte al administrador.", "Error de Sesión", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
             {
-                CustomMessageBox.Show("Usuario o contraseña incorrectos.", "Acceso Denegado", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show("Usuario o contraseña incorrectos.", "Acceso Denegado", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -124,24 +122,7 @@ namespace SchettiniGestion.WPF
 
         private void btnTeclado_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                Process[] oskProcesses = Process.GetProcessesByName("osk");
-                if (oskProcesses.Length == 0)
-                {
-                    string path64 = @"C:\Windows\Www64\osk.exe";
-                    string path32 = @"C:\Windows\System32\osk.exe";
-
-                    if (System.IO.File.Exists(path64))
-                        Process.Start(path64);
-                    else
-                        Process.Start(path32);
-                }
-            }
-            catch (Exception ex)
-            {
-                CustomMessageBox.Show($"No se pudo iniciar el teclado: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            KeyboardHelper.ShowOnScreenKeyboard();
         }
 
         private void Input_KeyDown(object sender, KeyEventArgs e)

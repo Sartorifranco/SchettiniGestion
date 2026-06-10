@@ -14,6 +14,7 @@ using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
 using SqlDataAdapter = Microsoft.Data.SqlClient.SqlDataAdapter;
 using SqlException = Microsoft.Data.SqlClient.SqlException;
 using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlDataReader = Microsoft.Data.SqlClient.SqlDataReader;
 
 namespace SchettiniGestion
 {
@@ -52,6 +53,24 @@ namespace SchettiniGestion
     public class Permiso
     {
         public int PermisoId { get; set; }
+        public string Nombre { get; set; }
+    }
+
+    /// <summary>Fila de listado para gestión de clientes (columnas usadas por el DataGrid).</summary>
+    public class ClienteListadoItem
+    {
+        public int ClienteID { get; set; }
+        public string CUIT { get; set; }
+        public string RazonSocial { get; set; }
+        public string CondicionIVA { get; set; }
+        public string Telefono { get; set; }
+        public string Email { get; set; }
+    }
+
+    /// <summary>Elemento de ComboBox con id (tabla catálogo o 0 = vacío).</summary>
+    public class ComboLookupItem
+    {
+        public int Id { get; set; }
         public string Nombre { get; set; }
     }
 
@@ -193,7 +212,24 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Produc
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='UsaVariantes')
   ALTER TABLE Productos ADD UsaVariantes BIT NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='EsCombo')
-  ALTER TABLE Productos ADD EsCombo BIT NOT NULL DEFAULT 0;", c))
+  ALTER TABLE Productos ADD EsCombo BIT NOT NULL DEFAULT 0;
+
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = N'Categorias' AND schema_id = SCHEMA_ID(N'dbo'))
+BEGIN
+  CREATE TABLE dbo.Categorias (CategoriaID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Categorias PRIMARY KEY, Nombre NVARCHAR(100) NOT NULL);
+  CREATE UNIQUE INDEX UX_Categorias_Nombre ON dbo.Categorias(Nombre);
+END
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = N'SubRubros' AND schema_id = SCHEMA_ID(N'dbo'))
+BEGIN
+  CREATE TABLE dbo.SubRubros (SubRubroID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_SubRubros PRIMARY KEY, Nombre NVARCHAR(150) NOT NULL);
+  CREATE UNIQUE INDEX UX_SubRubros_Nombre ON dbo.SubRubros(Nombre);
+END
+INSERT INTO dbo.Categorias(Nombre) SELECT DISTINCT LTRIM(RTRIM(p.Categoria)) FROM dbo.Productos p
+WHERE p.Categoria IS NOT NULL AND LEN(LTRIM(RTRIM(p.Categoria))) > 0
+  AND NOT EXISTS (SELECT 1 FROM dbo.Categorias c WHERE c.Nombre = LTRIM(RTRIM(p.Categoria)));
+INSERT INTO dbo.SubRubros(Nombre) SELECT DISTINCT LTRIM(RTRIM(p.SubRubro)) FROM dbo.Productos p
+WHERE p.SubRubro IS NOT NULL AND LEN(LTRIM(RTRIM(p.SubRubro))) > 0
+  AND NOT EXISTS (SELECT 1 FROM dbo.SubRubros s WHERE s.Nombre = LTRIM(RTRIM(p.SubRubro)));", c))
                         cmd.ExecuteNonQuery();
                     _columnasMigracionLiteOk = true;
                 }
@@ -262,6 +298,39 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             return null;
         }
 
+        /// <summary>
+        /// Lee el CUIT del emisor desde la fila de configuración del negocio.
+        /// Acepta el nombre de columna <c>CUIT</c> sin importar mayúsculas (esquema SQL Server habitual).
+        /// </summary>
+        public static string ObtenerCuitEmpresaSoloDigitos(DataRow configuracionRow = null)
+        {
+            var raw = ObtenerCuitEmpresaTextoBruto(configuracionRow);
+            if (string.IsNullOrWhiteSpace(raw)) return "";
+            return new string(raw.Where(char.IsDigit).ToArray());
+        }
+
+        /// <summary>Valor de CUIT como está en BD (para mostrar en pantalla).</summary>
+        public static string ObtenerCuitEmpresaTextoBruto(DataRow configuracionRow = null)
+        {
+            try
+            {
+                var dr = configuracionRow ?? GetConfiguracion();
+                if (dr?.Table == null) return "";
+
+                foreach (DataColumn col in dr.Table.Columns)
+                {
+                    if (!string.Equals(col.ColumnName, "CUIT", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    object rawObj = dr[col];
+                    if (rawObj == null || rawObj == DBNull.Value) return "";
+                    return rawObj.ToString()?.Trim() ?? "";
+                }
+
+                return "";
+            }
+            catch { return ""; }
+        }
+
         /// <summary>Actualiza solo el flag de visor / segunda pantalla para el cliente (Lite).</summary>
         public static bool ActualizarUsaVisorCliente(bool usaVisorCliente)
         {
@@ -311,7 +380,9 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    string sql = "UPDATE Configuracion SET NombreFantasia=@n, RazonSocial=@r, CUIT=@c, Direccion=@d, Telefono=@t, Email=@e, LogoPath=@l, CertificadoPath=@cp, PasswordAfip=@pa, PuntoVenta=@pv, MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, UsaVisorCliente=@uvc WHERE ID=1";
+                    string sql = @"UPDATE cfg SET NombreFantasia=@n, RazonSocial=@r, CUIT=@c, Direccion=@d, Telefono=@t, Email=@e, LogoPath=@l, CertificadoPath=@cp, PasswordAfip=@pa, PuntoVenta=@pv, MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, UsaVisorCliente=@uvc
+FROM Configuracion cfg
+INNER JOIN (SELECT TOP 1 ID AS TargetId FROM Configuracion ORDER BY ID) t ON cfg.ID = t.TargetId";
                     using (var cmd = new SqlCommand(sql, c))
                     {
                         cmd.Parameters.AddWithValue("@n", nombre);
@@ -633,6 +704,46 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             return dt;
         }
 
+        /// <summary>Lista tipada para el grid de clientes (SELECT explícito de columnas de contacto).</summary>
+        public static List<ClienteListadoItem> GetClientesLista()
+        {
+            var list = new List<ClienteListadoItem>();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    const string sql = @"SELECT ClienteID,
+  ISNULL(CUIT, N'') AS CUIT,
+  ISNULL(RazonSocial, N'') AS RazonSocial,
+  ISNULL(CondicionIVA, N'') AS CondicionIVA,
+  ISNULL(Telefono, N'') AS Telefono,
+  ISNULL(Email, N'') AS Email
+FROM Clientes
+ORDER BY RazonSocial";
+
+                    using (var cmd = new SqlCommand(sql, c))
+                    using (SqlDataReader rd = cmd.ExecuteReader())
+                    {
+                        while (rd.Read())
+                        {
+                            list.Add(new ClienteListadoItem
+                            {
+                                ClienteID = Convert.ToInt32(rd["ClienteID"]),
+                                CUIT = rd["CUIT"]?.ToString() ?? "",
+                                RazonSocial = rd["RazonSocial"]?.ToString() ?? "",
+                                CondicionIVA = rd["CondicionIVA"]?.ToString() ?? "",
+                                Telefono = rd["Telefono"]?.ToString() ?? "",
+                                Email = rd["Email"]?.ToString() ?? ""
+                            });
+                        }
+                    }
+                }
+            }
+            catch { }
+            return list;
+        }
+
         public static bool GuardarCliente(int id, string c, string r, string i)
         {
             try
@@ -814,6 +925,150 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             return dt;
         }
 
+        public static List<ComboLookupItem> GetCategoriasCatalogo()
+        {
+            var list = new List<ComboLookupItem> { new ComboLookupItem { Id = 0, Nombre = "" } };
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    using (var cmd = new SqlCommand("SELECT CategoriaID, Nombre FROM dbo.Categorias ORDER BY Nombre", c))
+                    using (SqlDataReader rd = cmd.ExecuteReader())
+                    {
+                        while (rd.Read())
+                            list.Add(new ComboLookupItem { Id = Convert.ToInt32(rd["CategoriaID"]), Nombre = rd["Nombre"]?.ToString() ?? "" });
+                    }
+                }
+            }
+            catch { }
+            return list;
+        }
+
+        public static List<ComboLookupItem> GetSubRubrosCatalogo()
+        {
+            var list = new List<ComboLookupItem> { new ComboLookupItem { Id = 0, Nombre = "" } };
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    using (var cmd = new SqlCommand("SELECT SubRubroID, Nombre FROM dbo.SubRubros ORDER BY Nombre", c))
+                    using (SqlDataReader rd = cmd.ExecuteReader())
+                    {
+                        while (rd.Read())
+                            list.Add(new ComboLookupItem { Id = Convert.ToInt32(rd["SubRubroID"]), Nombre = rd["Nombre"]?.ToString() ?? "" });
+                    }
+                }
+            }
+            catch { }
+            return list;
+        }
+
+        public static List<ComboLookupItem> GetProveedoresCatalogo()
+        {
+            var list = new List<ComboLookupItem> { new ComboLookupItem { Id = 0, Nombre = "" } };
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    using (var cmd = new SqlCommand("SELECT ProveedorID, RazonSocial FROM dbo.Proveedores ORDER BY RazonSocial", c))
+                    using (SqlDataReader rd = cmd.ExecuteReader())
+                    {
+                        while (rd.Read())
+                        {
+                            string nom = rd["RazonSocial"]?.ToString() ?? "";
+                            if (!string.IsNullOrWhiteSpace(nom))
+                                list.Add(new ComboLookupItem { Id = Convert.ToInt32(rd["ProveedorID"]), Nombre = nom });
+                        }
+                    }
+                }
+            }
+            catch { }
+            return list;
+        }
+
+        public static int InsertCategoria(string nombre)
+        {
+            nombre = (nombre ?? "").Trim();
+            if (string.IsNullOrEmpty(nombre)) return 0;
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    using (var q = new SqlCommand("SELECT CategoriaID FROM dbo.Categorias WHERE Nombre=@n", c))
+                    {
+                        q.Parameters.AddWithValue("@n", nombre);
+                        object o = q.ExecuteScalar();
+                        if (o != null && o != DBNull.Value) return Convert.ToInt32(o);
+                    }
+                    using (var ins = new SqlCommand("INSERT INTO dbo.Categorias (Nombre) OUTPUT INSERTED.CategoriaID VALUES (@n)", c))
+                    {
+                        ins.Parameters.AddWithValue("@n", nombre);
+                        object id = ins.ExecuteScalar();
+                        return id != null ? Convert.ToInt32(id) : 0;
+                    }
+                }
+            }
+            catch { return 0; }
+        }
+
+        public static int InsertSubRubro(string nombre)
+        {
+            nombre = (nombre ?? "").Trim();
+            if (string.IsNullOrEmpty(nombre)) return 0;
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    using (var q = new SqlCommand("SELECT SubRubroID FROM dbo.SubRubros WHERE Nombre=@n", c))
+                    {
+                        q.Parameters.AddWithValue("@n", nombre);
+                        object o = q.ExecuteScalar();
+                        if (o != null && o != DBNull.Value) return Convert.ToInt32(o);
+                    }
+                    using (var ins = new SqlCommand("INSERT INTO dbo.SubRubros (Nombre) OUTPUT INSERTED.SubRubroID VALUES (@n)", c))
+                    {
+                        ins.Parameters.AddWithValue("@n", nombre);
+                        object id = ins.ExecuteScalar();
+                        return id != null ? Convert.ToInt32(id) : 0;
+                    }
+                }
+            }
+            catch { return 0; }
+        }
+
+        /// <summary>Alta mínima de proveedor solo con razón social (resto vacío).</summary>
+        public static int InsertProveedorNombre(string razonSocial)
+        {
+            razonSocial = (razonSocial ?? "").Trim();
+            if (string.IsNullOrEmpty(razonSocial)) return 0;
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    using (var ins = new SqlCommand(
+                        @"INSERT INTO dbo.Proveedores (CUIT,RazonSocial,Telefono,Email,Direccion,CategoriaFiscal,PersonaContacto,PaginaWeb,SaldoDeuda)
+                          OUTPUT INSERTED.ProveedorID
+                          VALUES (N'',@r,N'',N'',N'',N'',N'',N'',0)", c))
+                    {
+                        ins.Parameters.AddWithValue("@r", razonSocial);
+                        object id = ins.ExecuteScalar();
+                        return id != null ? Convert.ToInt32(id) : 0;
+                    }
+                }
+            }
+            catch { return 0; }
+        }
+
         // Productos
         public static DataTable GetProductos(string filtro = "")
         {
@@ -836,13 +1091,70 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             return dt;
         }
 
+        /// <summary>
+        /// Listado para grillas (ProductosControl): incluye texto de rubro/sub-rubro/proveedor resuelto con LEFT JOIN a catálogos cuando el texto en Productos coincide.
+        /// </summary>
+        public static DataTable GetProductosListado(string filtro = "")
+        {
+            var dt = new DataTable();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    string where = string.IsNullOrWhiteSpace(filtro)
+                        ? ""
+                        : @" WHERE (
+  p.Descripcion LIKE @f OR p.Codigo LIKE @f OR p.CodigoBarra LIKE @f
+  OR p.Categoria LIKE @f OR p.SubRubro LIKE @f OR p.Marca LIKE @f OR p.Proveedor LIKE @f
+  OR cat.Nombre LIKE @f OR sr.Nombre LIKE @f OR prov.RazonSocial LIKE @f
+)";
+                    string sql = $@"
+SELECT
+  p.ProductoID,
+  p.Codigo,
+  p.CodigoBarra,
+  ISNULL(p.Descripcion, N'') AS Descripcion,
+  COALESCE(NULLIF(LTRIM(RTRIM(ISNULL(cat.Nombre, N''))), N''), NULLIF(LTRIM(RTRIM(ISNULL(p.Categoria, N''))), N''), N'') AS Categoria,
+  COALESCE(NULLIF(LTRIM(RTRIM(ISNULL(sr.Nombre, N''))), N''), NULLIF(LTRIM(RTRIM(ISNULL(p.SubRubro, N''))), N''), N'') AS SubRubro,
+  LTRIM(RTRIM(ISNULL(p.Marca, N''))) AS Marca,
+  COALESCE(NULLIF(LTRIM(RTRIM(ISNULL(prov.RazonSocial, N''))), N''), NULLIF(LTRIM(RTRIM(ISNULL(p.Proveedor, N''))), N''), N'') AS Proveedor,
+  p.PrecioVenta,
+  p.StockActual
+FROM dbo.Productos p
+LEFT JOIN dbo.Categorias cat
+  ON NULLIF(LTRIM(RTRIM(ISNULL(p.Categoria, N''))), N'') <> N''
+ AND LTRIM(RTRIM(ISNULL(cat.Nombre, N''))) = LTRIM(RTRIM(ISNULL(p.Categoria, N'')))
+LEFT JOIN dbo.SubRubros sr
+  ON NULLIF(LTRIM(RTRIM(ISNULL(p.SubRubro, N''))), N'') <> N''
+ AND LTRIM(RTRIM(ISNULL(sr.Nombre, N''))) = LTRIM(RTRIM(ISNULL(p.SubRubro, N'')))
+LEFT JOIN dbo.Proveedores prov
+  ON NULLIF(LTRIM(RTRIM(ISNULL(p.Proveedor, N''))), N'') <> N''
+ AND LTRIM(RTRIM(ISNULL(prov.RazonSocial, N''))) = LTRIM(RTRIM(ISNULL(p.Proveedor, N'')))
+{where}
+ORDER BY p.Descripcion";
+                    var da = new SqlDataAdapter(sql, c);
+                    if (!string.IsNullOrWhiteSpace(filtro))
+                        da.SelectCommand.Parameters.AddWithValue("@f", "%" + filtro + "%");
+                    da.Fill(dt);
+                }
+            }
+            catch
+            {
+                return GetProductos(filtro);
+            }
+
+            return dt;
+        }
+
         public static int GuardarProducto(int id, string cod, string cb, string desc, string cat, string subRubro, string marca, string proveedor, string iva,
             decimal costo, decimal gan, decimal imp, decimal venta, int stock, string img,
             string tipoMoneda, bool permiteModPrecio, bool esStockeable, bool aceptaStockNeg,
             bool usaVariantes, bool esCombo, decimal? stockMinimo, decimal? stockIdeal,
             string codigoExterno, string varianteColor, string varianteTalle, string varianteUnidadMedida)
         {
-            bool ok = GuardarProducto(id, cod, cb, desc, cat, iva, costo, gan, imp, venta, stock, img);
+            bool ok = GuardarProducto(id, cod, cb, desc, cat, subRubro, marca, proveedor, iva, costo, gan, imp, venta, stock, img);
             if (!ok) return 0;
             try
             {
@@ -872,9 +1184,13 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
         }
 
         public static bool GuardarProducto(int id, string cod, string cb, string desc, string cat, string subRubro, string marca, string proveedor, string iva, decimal costo, decimal gan, decimal imp, decimal venta, int stock, string img)
-            => GuardarProducto(id, cod, cb, desc, cat, iva, costo, gan, imp, venta, stock, img);
+            => GuardarProductoCompleto(id, cod, cb, desc, cat ?? "", subRubro ?? "", marca ?? "", proveedor ?? "", iva, costo, gan, imp, venta, stock, img);
 
         public static bool GuardarProducto(int id, string cod, string cb, string desc, string cat, string iva, decimal costo, decimal gan, decimal imp, decimal venta, int stock, string img)
+            => GuardarProductoCompleto(id, cod, cb, desc, cat ?? "", "", "", "", iva, costo, gan, imp, venta, stock, img);
+
+        private static bool GuardarProductoCompleto(int id, string cod, string cb, string desc, string cat, string subRubro, string marca, string proveedor, string iva,
+            decimal costo, decimal gan, decimal imp, decimal venta, int stock, string img)
         {
             try
             {
@@ -882,20 +1198,26 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 {
                     c.Open();
                     AsegurarMigracionLite(c);
-                    string sql = id == 0 ? "INSERT INTO Productos (Codigo, CodigoBarra, Descripcion, Categoria, TipoIVA, PrecioCosto, Ganancia, ImpuestoInterno, PrecioVenta, StockActual, ImagenPath) VALUES (@c, @cb, @d, @cat, @iva, @pc, @g, @ii, @pv, @s, @img)" : "UPDATE Productos SET Codigo=@c, CodigoBarra=@cb, Descripcion=@d, Categoria=@cat, TipoIVA=@iva, PrecioCosto=@pc, Ganancia=@g, ImpuestoInterno=@ii, PrecioVenta=@pv, StockActual=@s, ImagenPath=@img WHERE ProductoID=@id";
+                    string sql = id == 0
+                        ? @"INSERT INTO Productos (Codigo, CodigoBarra, Descripcion, Categoria, SubRubro, Marca, Proveedor, TipoIVA, PrecioCosto, Ganancia, ImpuestoInterno, PrecioVenta, StockActual, ImagenPath)
+                            VALUES (@c, @cb, @d, @cat, @sr, @mar, @prov, @iva, @pc, @g, @ii, @pv, @s, @img)"
+                        : @"UPDATE Productos SET Codigo=@c, CodigoBarra=@cb, Descripcion=@d, Categoria=@cat, SubRubro=@sr, Marca=@mar, Proveedor=@prov, TipoIVA=@iva, PrecioCosto=@pc, Ganancia=@g, ImpuestoInterno=@ii, PrecioVenta=@pv, StockActual=@s, ImagenPath=@img WHERE ProductoID=@id";
                     using (var cmd = new SqlCommand(sql, c))
                     {
-                        cmd.Parameters.AddWithValue("@c", cod);
-                        cmd.Parameters.AddWithValue("@cb", cb);
-                        cmd.Parameters.AddWithValue("@d", desc);
-                        cmd.Parameters.AddWithValue("@cat", cat);
-                        cmd.Parameters.AddWithValue("@iva", iva);
+                        cmd.Parameters.AddWithValue("@c", cod ?? "");
+                        cmd.Parameters.AddWithValue("@cb", cb ?? "");
+                        cmd.Parameters.AddWithValue("@d", desc ?? "");
+                        cmd.Parameters.AddWithValue("@cat", cat ?? "");
+                        cmd.Parameters.AddWithValue("@sr", subRubro ?? "");
+                        cmd.Parameters.AddWithValue("@mar", marca ?? "");
+                        cmd.Parameters.AddWithValue("@prov", proveedor ?? "");
+                        cmd.Parameters.AddWithValue("@iva", iva ?? "");
                         cmd.Parameters.AddWithValue("@pc", costo);
                         cmd.Parameters.AddWithValue("@g", gan);
                         cmd.Parameters.AddWithValue("@ii", imp);
                         cmd.Parameters.AddWithValue("@pv", venta);
                         cmd.Parameters.AddWithValue("@s", stock);
-                        cmd.Parameters.AddWithValue("@img", img);
+                        cmd.Parameters.AddWithValue("@img", img ?? "");
                         cmd.Parameters.AddWithValue("@id", id);
                         cmd.ExecuteNonQuery();
                         return true;
@@ -1729,19 +2051,39 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    string where = string.IsNullOrWhiteSpace(filtro) ? ""
-                        : $" WHERE (p.Codigo LIKE @f OR p.Descripcion LIKE @f OR p.Categoria LIKE @f OR p.Marca LIKE @f OR p.SubRubro LIKE @f OR p.Proveedor LIKE @f)";
-                    string sql = $@"SELECT p.ProductoID, p.Codigo, p.Descripcion,
-                                           ISNULL(p.Categoria,'') AS Rubro,
-                                           ISNULL(p.SubRubro,'') AS SubRubro,
-                                           ISNULL(p.Marca,'') AS Marca,
-                                           '' AS Talle, '' AS Color,
-                                           ISNULL(p.StockActual,0) AS StockReal,
-                                           ISNULL((SELECT SUM(r.Cantidad) FROM ReservasStock r WHERE r.ProductoID=p.ProductoID AND r.Estado='Activa'),0) AS StockReservado,
-                                           ISNULL(p.StockActual,0) - ISNULL((SELECT SUM(r.Cantidad) FROM ReservasStock r WHERE r.ProductoID=p.ProductoID AND r.Estado='Activa'),0) AS StockDisponible,
-                                           ISNULL(p.Proveedor,'') AS Proveedor,
-                                           CAST(0 AS INT) AS StockMinimo
-                                    FROM Productos p{where} ORDER BY p.Descripcion";
+                    AsegurarMigracionLite(c);
+                    string where = string.IsNullOrWhiteSpace(filtro)
+                        ? ""
+                        : @" WHERE (
+  p.Codigo LIKE @f OR p.Descripcion LIKE @f OR p.Categoria LIKE @f OR p.Marca LIKE @f OR p.SubRubro LIKE @f OR p.Proveedor LIKE @f
+  OR cat.Nombre LIKE @f OR sr.Nombre LIKE @f OR prov.RazonSocial LIKE @f
+)";
+                    string sql = $@"SELECT
+  p.ProductoID,
+  p.Codigo,
+  ISNULL(p.Descripcion, N'') AS Descripcion,
+  COALESCE(NULLIF(LTRIM(RTRIM(ISNULL(cat.Nombre, N''))), N''), NULLIF(LTRIM(RTRIM(ISNULL(p.Categoria, N''))), N''), N'') AS Rubro,
+  COALESCE(NULLIF(LTRIM(RTRIM(ISNULL(sr.Nombre, N''))), N''), NULLIF(LTRIM(RTRIM(ISNULL(p.SubRubro, N''))), N''), N'') AS SubRubro,
+  LTRIM(RTRIM(ISNULL(p.Marca, N''))) AS Marca,
+  N'' AS Talle,
+  N'' AS Color,
+  ISNULL(p.StockActual, 0) AS StockReal,
+  ISNULL((SELECT SUM(r.Cantidad) FROM ReservasStock r WHERE r.ProductoID=p.ProductoID AND r.Estado=N'Activa'), 0) AS StockReservado,
+  ISNULL(p.StockActual, 0) - ISNULL((SELECT SUM(r.Cantidad) FROM ReservasStock r WHERE r.ProductoID=p.ProductoID AND r.Estado=N'Activa'), 0) AS StockDisponible,
+  COALESCE(NULLIF(LTRIM(RTRIM(ISNULL(prov.RazonSocial, N''))), N''), NULLIF(LTRIM(RTRIM(ISNULL(p.Proveedor, N''))), N''), N'') AS Proveedor,
+  CAST(0 AS INT) AS StockMinimo
+FROM dbo.Productos p
+LEFT JOIN dbo.Categorias cat
+  ON NULLIF(LTRIM(RTRIM(ISNULL(p.Categoria, N''))), N'') <> N''
+ AND LTRIM(RTRIM(ISNULL(cat.Nombre, N''))) = LTRIM(RTRIM(ISNULL(p.Categoria, N'')))
+LEFT JOIN dbo.SubRubros sr
+  ON NULLIF(LTRIM(RTRIM(ISNULL(p.SubRubro, N''))), N'') <> N''
+ AND LTRIM(RTRIM(ISNULL(sr.Nombre, N''))) = LTRIM(RTRIM(ISNULL(p.SubRubro, N'')))
+LEFT JOIN dbo.Proveedores prov
+  ON NULLIF(LTRIM(RTRIM(ISNULL(p.Proveedor, N''))), N'') <> N''
+ AND LTRIM(RTRIM(ISNULL(prov.RazonSocial, N''))) = LTRIM(RTRIM(ISNULL(p.Proveedor, N'')))
+{where}
+ORDER BY p.Descripcion";
                     var da = new SqlDataAdapter(sql, c);
                     if (!string.IsNullOrWhiteSpace(filtro)) da.SelectCommand.Parameters.AddWithValue("@f", "%" + filtro + "%");
                     da.Fill(dt);
@@ -2639,16 +2981,18 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                     AsegurarMigracionLite(c);
 
                     string updSql = omitirColumnaPwd
-                        ? @"UPDATE Configuracion SET
+                        ? @"UPDATE c SET
   NombreFantasia=@nf, RazonSocial=@rs, CUIT=@cuit, Direccion=@dir, Telefono=@tel, Email=@email,
   LogoPath=@logo, CertificadoPath=@cert, PuntoVenta=@pv,
   MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, TipoCambioUSD=@tc, AfipProduccion=@afip
-WHERE ID = 1"
-                        : @"UPDATE Configuracion SET
+FROM Configuracion c
+INNER JOIN (SELECT TOP 1 ID AS TargetId FROM Configuracion ORDER BY ID) t ON c.ID = t.TargetId"
+                        : @"UPDATE c SET
   NombreFantasia=@nf, RazonSocial=@rs, CUIT=@cuit, Direccion=@dir, Telefono=@tel, Email=@email,
   LogoPath=@logo, CertificadoPath=@cert, PasswordAfip=@pwd, PuntoVenta=@pv,
   MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, TipoCambioUSD=@tc, AfipProduccion=@afip
-WHERE ID = 1";
+FROM Configuracion c
+INNER JOIN (SELECT TOP 1 ID AS TargetId FROM Configuracion ORDER BY ID) t ON c.ID = t.TargetId";
 
                     using (var update = new SqlCommand(updSql, c))
                     {
@@ -2746,33 +3090,94 @@ INSERT INTO Configuracion (
         }
 
         // --- Medios de pago ---
+        private static void AsegurarColumnasMediosPago(SqlConnection c)
+        {
+            try
+            {
+                using (var q1 = new SqlCommand(@"
+                    IF OBJECT_ID(N'MediosPago', N'U') IS NOT NULL
+                      AND NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'MediosPago') AND name = N'Tipo')
+                    ALTER TABLE MediosPago ADD Tipo NVARCHAR(30) NULL;", c))
+                    q1.ExecuteNonQuery();
+
+                using (var q2 = new SqlCommand(@"
+                    IF OBJECT_ID(N'MediosPago', N'U') IS NOT NULL
+                      AND NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'MediosPago') AND name = N'RecargoDescuentoPct')
+                    ALTER TABLE MediosPago ADD RecargoDescuentoPct DECIMAL(9,4) NULL;", c))
+                    q2.ExecuteNonQuery();
+            }
+            catch { /* esquema muy antiguo */ }
+        }
+
         public static DataTable GetMediosPagoCompleto()
         {
             var dt = new DataTable();
-            try { using (var c = new SqlConnection(_connectionString)) { c.Open(); new SqlDataAdapter("SELECT MedioID, Nombre, Activo, Orden FROM MediosPago ORDER BY Orden", c).Fill(dt); } } catch { }
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarColumnasMediosPago(c);
+                    new SqlDataAdapter(@"
+                        SELECT MedioID, Nombre, Activo, Orden,
+                               ISNULL(NULLIF(LTRIM(RTRIM(Tipo)), ''), N'Efectivo') AS Tipo,
+                               ISNULL(RecargoDescuentoPct, 0) AS RecargoDescuentoPct
+                        FROM MediosPago ORDER BY Orden", c).Fill(dt);
+                }
+            }
+            catch
+            {
+                try
+                {
+                    using (var c = new SqlConnection(_connectionString))
+                    {
+                        c.Open();
+                        new SqlDataAdapter("SELECT MedioID, Nombre, Activo, Orden FROM MediosPago ORDER BY Orden", c).Fill(dt);
+                        if (!dt.Columns.Contains("Tipo")) dt.Columns.Add("Tipo", typeof(string));
+                        if (!dt.Columns.Contains("RecargoDescuentoPct")) dt.Columns.Add("RecargoDescuentoPct", typeof(decimal));
+                        foreach (DataRow r in dt.Rows)
+                        {
+                            if (r["Tipo"] == DBNull.Value || string.IsNullOrWhiteSpace(r["Tipo"]?.ToString()))
+                                r["Tipo"] = "Efectivo";
+                            if (r["RecargoDescuentoPct"] == DBNull.Value) r["RecargoDescuentoPct"] = 0m;
+                        }
+                    }
+                }
+                catch { }
+            }
+
             return dt;
         }
 
-        public static bool GuardarMedioPago(int id, string nombre, bool activo, int orden)
+        public static bool GuardarMedioPago(int id, string nombre, bool activo, int orden, string tipo, decimal recargoDescuentoPct)
         {
             try
             {
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    AsegurarColumnasMediosPago(c);
                     string sql = id > 0
-                        ? "UPDATE MediosPago SET Nombre=@n, Activo=@a, Orden=@o WHERE MedioID=@id"
-                        : "INSERT INTO MediosPago (Nombre, Activo, Orden) VALUES (@n, @a, @o)";
+                        ? @"UPDATE MediosPago SET Nombre=@n, Activo=@a, Orden=@o, Tipo=@t, RecargoDescuentoPct=@p WHERE MedioID=@id"
+                        : @"INSERT INTO MediosPago (Nombre, Activo, Orden, Tipo, RecargoDescuentoPct) VALUES (@n, @a, @o, @t, @p)";
                     var cmd = new SqlCommand(sql, c);
-                    cmd.Parameters.AddWithValue("@n", nombre);
+                    cmd.Parameters.AddWithValue("@n", nombre ?? "");
                     cmd.Parameters.AddWithValue("@a", activo);
                     cmd.Parameters.AddWithValue("@o", orden);
+                    cmd.Parameters.AddWithValue("@t", string.IsNullOrWhiteSpace(tipo) ? "Efectivo" : tipo.Trim());
+                    cmd.Parameters.AddWithValue("@p", recargoDescuentoPct);
                     if (id > 0) cmd.Parameters.AddWithValue("@id", id);
                     cmd.ExecuteNonQuery();
                     return true;
                 }
             }
             catch { return false; }
+        }
+
+        /// <summary>Compatibilidad con llamadas que solo persisten nombre/activo/orden.</summary>
+        public static bool GuardarMedioPago(int id, string nombre, bool activo, int orden)
+        {
+            return GuardarMedioPago(id, nombre, activo, orden, "Efectivo", 0m);
         }
 
         // --- Licencia ---

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Input;
@@ -11,6 +11,7 @@ namespace SchettiniGestion.WPF
         public LoginWindow()
         {
             InitializeComponent();
+            SvgLogoHelper.ApplyToImage(imgLogoLogin);
             AutomationProperties.SetAutomationId(txtUsuario, "UITest_Usuario");
             AutomationProperties.SetAutomationId(txtPassword, "UITest_Password");
             AutomationProperties.SetAutomationId(btnIngresar, "UITest_Ingresar");
@@ -44,7 +45,7 @@ namespace SchettiniGestion.WPF
 
             if (string.IsNullOrEmpty(u) || string.IsNullOrEmpty(p))
             {
-                MessageBox.Show("Por favor, complete todos los campos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Por favor, complete todos los campos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -54,28 +55,32 @@ namespace SchettiniGestion.WPF
                 if (DatabaseService.ValidarUsuario(u, p))
                 {
                     // 2. Cargar permisos en sesión
-                    if (DatabaseService.CargarSesionUsuario(u))
+                    bool sesionCargada = DatabaseService.CargarSesionUsuario(u);
+                    if (!sesionCargada)
                     {
-                        // 3. Abrir Principal
-                        PrincipalWindow principal = new PrincipalWindow();
-                        principal.Show();
-                        this.Close();
+                        ModernMessageBox.Show("Error al cargar los permisos del usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
                     }
-                    else
-                    {
-                        MessageBox.Show("Error al cargar los permisos del usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
+
+                    // 3. Abrir Principal (solo después de cargar sesión/permisos)
+                    PrincipalWindow principal = new PrincipalWindow();
+                    principal.Show();
+                    this.Close();
                 }
                 else
                 {
-                    MessageBox.Show("Usuario o contraseña incorrectos.", "Acceso Denegado", MessageBoxButton.OK, MessageBoxImage.Error);
+                    string detalle = DatabaseService.UltimoErrorValidacionLogin;
+                    string msg = string.IsNullOrWhiteSpace(detalle)
+                        ? "Usuario o contraseña incorrectos."
+                        : "Usuario o contraseña incorrectos.\n\nDetalle técnico:\n" + detalle;
+                    ModernMessageBox.Show(msg, "Acceso denegado", MessageBoxButton.OK, MessageBoxImage.Error);
                     txtPassword.Clear();
                     txtPassword.Focus();
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error de conexión: " + ex.Message, "Error Crítico", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show("Error de conexión: " + ex.Message, "Error Crítico", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

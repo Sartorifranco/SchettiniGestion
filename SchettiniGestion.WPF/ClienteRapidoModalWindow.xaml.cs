@@ -37,7 +37,7 @@ namespace SchettiniGestion.WPF
             string razonSocial = txtRazonSocial.Text.Trim();
             if (string.IsNullOrWhiteSpace(razonSocial))
             {
-                CustomMessageBox.Show("La razón social es obligatoria.", "Campo requerido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("La razón social es obligatoria.", "Campo requerido", MessageBoxButton.OK, MessageBoxImage.Warning);
                 txtRazonSocial.Focus();
                 return;
             }
@@ -51,7 +51,7 @@ namespace SchettiniGestion.WPF
             bool ok = DatabaseService.GuardarCliente(0, cuit, razonSocial, condIva, direccion, telefono, email, false, null);
             if (!ok)
             {
-                CustomMessageBox.Show("Error al guardar el cliente. Verifique los datos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show("Error al guardar el cliente. Verifique los datos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -69,5 +69,8 @@ namespace SchettiniGestion.WPF
             DialogResult = false;
             Close();
         }
+
+        private void btnTeclado_Click(object sender, RoutedEventArgs e)
+            => KeyboardHelper.ShowOnScreenKeyboard();
     }
 }

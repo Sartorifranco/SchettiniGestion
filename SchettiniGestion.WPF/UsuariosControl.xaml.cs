@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Linq;
@@ -18,6 +18,7 @@ namespace SchettiniGestion.WPF
         {
             private bool _habilitado;
             public string NombreModulo { get; set; }
+
             public bool Habilitado
             {
                 get => _habilitado;
@@ -34,7 +35,8 @@ namespace SchettiniGestion.WPF
                 => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
         }
 
-        private int _usuarioIdSeleccionado = 0;
+        private int _usuarioIdSeleccionado;
+        private DataTable _rolesDataTable;
         public ObservableCollection<PermisoUI> PermisosRolActual { get; } = new ObservableCollection<PermisoUI>();
 
         public UsuariosControl()
@@ -52,11 +54,50 @@ namespace SchettiniGestion.WPF
             Limpiar();
         }
 
+        private void CargarUsuarios()
+        {
+            try
+            {
+                DataTable dt = global::SchettiniGestion.DatabaseService.GetUsuarios();
+                dgvUsuarios.ItemsSource = dt.DefaultView;
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show("Error al cargar usuarios: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CargarRoles()
+        {
+            try
+            {
+                var roles = global::SchettiniGestion.DatabaseService.GetRoles();
+                var dt = new DataTable();
+                dt.Columns.Add("RolID", typeof(int));
+                dt.Columns.Add("NombreRol", typeof(string));
+
+                foreach (var rol in roles)
+                {
+                    dt.Rows.Add(rol.RolId, rol.Nombre);
+                }
+
+                _rolesDataTable = dt;
+                cmbRolesUsuario.ItemsSource = _rolesDataTable.DefaultView;
+                lstRolesPermisos.ItemsSource = _rolesDataTable.DefaultView;
+                cmbRolesUsuario.SelectedIndex = -1;
+                lstRolesPermisos.SelectedIndex = -1;
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show("Error cargando roles: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void CargarPermisosDesdeConstantes()
         {
             PermisosRolActual.Clear();
 
-            var permisos = typeof(DatabaseService)
+            var permisos = typeof(global::SchettiniGestion.DatabaseService)
                 .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
                 .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string) && f.Name.StartsWith("PERMISO_", StringComparison.Ordinal))
                 .Select(f => f.GetRawConstantValue() as string)
@@ -67,71 +108,32 @@ namespace SchettiniGestion.WPF
 
             foreach (var permiso in permisos)
             {
-                PermisosRolActual.Add(new PermisoUI
-                {
-                    NombreModulo = permiso,
-                    Habilitado = false
-                });
+                PermisosRolActual.Add(new PermisoUI { NombreModulo = permiso, Habilitado = false });
             }
         }
 
         private void CargarPermisosRolSeleccionado()
         {
-            if (!(cmbRolesPermisos.SelectedItem is Rol rolSel))
+            if (!(lstRolesPermisos.SelectedItem is DataRowView rolRow))
             {
                 foreach (var p in PermisosRolActual) p.Habilitado = false;
                 return;
             }
 
-            var permisosGuardados = DatabaseService.GetPermisosNombresPorRol(rolSel.RolId);
+            int rolId = Convert.ToInt32(rolRow["RolID"]);
+            HashSet<string> permisosGuardados = global::SchettiniGestion.DatabaseService.GetPermisosNombresPorRol(rolId);
             foreach (var p in PermisosRolActual)
+            {
                 p.Habilitado = permisosGuardados.Contains(p.NombreModulo);
-        }
-
-        private void CargarUsuarios()
-        {
-            try
-            {
-                DataTable dt = DatabaseService.GetUsuarios();
-                dgvUsuarios.ItemsSource = dt.DefaultView;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error al cargar usuarios: " + ex.Message);
-            }
-        }
-
-        private void CargarRoles()
-        {
-            try
-            {
-                // Obtenemos la lista actualizada de roles (incluyendo los nuevos creados en GestiónPermisos)
-                List<Rol> roles = DatabaseService.GetRoles();
-
-                cmbRolesUsuario.ItemsSource = null;
-                cmbRolesPermisos.ItemsSource = null;
-                cmbRolesUsuario.ItemsSource = roles;
-                cmbRolesPermisos.ItemsSource = roles;
-
-                if (roles.Count > 0)
-                {
-                    cmbRolesUsuario.SelectedIndex = -1;
-                    cmbRolesPermisos.SelectedIndex = -1;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error cargando roles: " + ex.Message);
             }
         }
 
         private void Limpiar()
         {
             _usuarioIdSeleccionado = 0;
-            txtNombreUsuario.Text = "";
-            txtPassword.Password = "";
+            txtNombreUsuario.Text = string.Empty;
+            txtPassword.Password = string.Empty;
             cmbRolesUsuario.SelectedIndex = -1;
-            foreach (var p in PermisosRolActual) p.Habilitado = false;
             btnEliminar.IsEnabled = false;
             txtNombreUsuario.Focus();
         }
@@ -147,36 +149,38 @@ namespace SchettiniGestion.WPF
                 || string.IsNullOrWhiteSpace(txtPassword.Password)
                 || cmbRolesUsuario.SelectedItem == null)
             {
-                MessageBox.Show("Complete Nombre de Usuario, Contraseña y Rol.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Complete Nombre de Usuario, Contraseña y Rol.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             try
             {
-                Rol rolSeleccionado = (Rol)cmbRolesUsuario.SelectedItem;
-                string hash = PasswordHasher.HashPassword(txtPassword.Password);
+                var row = (DataRowView)cmbRolesUsuario.SelectedItem;
+                int rolId = Convert.ToInt32(row["RolID"]);
+                string nombreRol = Convert.ToString(row["NombreRol"]);
+                string hash = global::SchettiniGestion.PasswordHasher.HashPassword(txtPassword.Password);
 
-                bool exito = DatabaseService.GuardarUsuarioConHash(
+                bool exito = global::SchettiniGestion.DatabaseService.GuardarUsuarioConHash(
                     _usuarioIdSeleccionado,
                     txtNombreUsuario.Text.Trim(),
                     hash,
-                    rolSeleccionado.RolId,
-                    rolSeleccionado.Nombre);
+                    rolId,
+                    nombreRol);
 
                 if (exito)
                 {
-                    MessageBox.Show("Usuario guardado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                    CargarUsuarios();
+                    ModernMessageBox.Show("Usuario guardado correctamente.", "Exito", MessageBoxButton.OK, MessageBoxImage.Information);
                     Limpiar();
+                    CargarUsuarios();
                 }
                 else
                 {
-                    MessageBox.Show("Error al guardar en base de datos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ModernMessageBox.Show("Error al guardar en base de datos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error crítico: " + ex.Message);
+                ModernMessageBox.Show("Error critico al guardar usuario: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -184,56 +188,60 @@ namespace SchettiniGestion.WPF
         {
             if (_usuarioIdSeleccionado == 0) return;
 
-            // Evitar que se borre a sí mismo o al admin principal si se llama 'admin'
-            if (txtNombreUsuario.Text.ToLower() == "admin")
+            if (txtNombreUsuario.Text.Trim().Equals("admin", StringComparison.OrdinalIgnoreCase))
             {
-                MessageBox.Show("No se puede eliminar al super-administrador.", "Prohibido", MessageBoxButton.OK, MessageBoxImage.Stop);
+                ModernMessageBox.Show("No se puede eliminar al super-administrador.", "Prohibido", MessageBoxButton.OK, MessageBoxImage.Stop);
                 return;
             }
 
-            if (MessageBox.Show($"¿Eliminar el usuario '{txtNombreUsuario.Text}'?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            if (ModernMessageBox.Show("¿Eliminar el usuario '" + txtNombreUsuario.Text + "'?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             {
-                if (DatabaseService.EliminarUsuario(_usuarioIdSeleccionado))
-                {
-                    CargarUsuarios();
-                    Limpiar();
-                }
-                else
-                {
-                    MessageBox.Show("No se pudo eliminar el usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                return;
+            }
+
+            bool ok = global::SchettiniGestion.DatabaseService.EliminarUsuario(_usuarioIdSeleccionado);
+            if (ok)
+            {
+                CargarUsuarios();
+                Limpiar();
+            }
+            else
+            {
+                ModernMessageBox.Show("No se pudo eliminar el usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void dgvUsuarios_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (dgvUsuarios.SelectedItem is DataRowView row)
-            {
-                _usuarioIdSeleccionado = Convert.ToInt32(row["UsuarioID"]);
-                txtNombreUsuario.Text = row["NombreUsuario"].ToString();
-                txtPassword.Password = ""; // Por seguridad, no traemos el Hash
+            if (!(dgvUsuarios.SelectedItem is DataRowView row)) return;
 
-                // Seleccionar el rol correspondiente en el ComboBox
-                int rolId = 0;
-                if (row["RolID"] != DBNull.Value)
-                    rolId = Convert.ToInt32(row["RolID"]);
+            _usuarioIdSeleccionado = Convert.ToInt32(row["UsuarioID"]);
+            txtNombreUsuario.Text = Convert.ToString(row["NombreUsuario"]);
+            txtPassword.Password = string.Empty;
+            btnEliminar.IsEnabled = true;
 
-                foreach (Rol r in cmbRolesUsuario.Items)
-                {
-                    if (r.RolId == rolId)
-                    {
-                        cmbRolesUsuario.SelectedItem = r;
-                        cmbRolesPermisos.SelectedItem = r;
-                        CargarPermisosRolSeleccionado();
-                        break;
-                    }
-                }
-
-                btnEliminar.IsEnabled = true;
-            }
+            int rolId = row["RolID"] == DBNull.Value ? 0 : Convert.ToInt32(row["RolID"]);
+            SeleccionarRolEnControles(rolId);
         }
 
-        private void cmbRolesPermisos_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void SeleccionarRolEnControles(int rolId)
+        {
+            if (_rolesDataTable == null) return;
+
+            for (int i = 0; i < _rolesDataTable.Rows.Count; i++)
+            {
+                if (Convert.ToInt32(_rolesDataTable.Rows[i]["RolID"]) == rolId)
+                {
+                    cmbRolesUsuario.SelectedIndex = i;
+                    lstRolesPermisos.SelectedIndex = i;
+                    break;
+                }
+            }
+
+            CargarPermisosRolSeleccionado();
+        }
+
+        private void lstRolesPermisos_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!IsLoaded) return;
             CargarPermisosRolSeleccionado();
@@ -241,29 +249,36 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardarPermisos_Click(object sender, RoutedEventArgs e)
         {
-            if (!(cmbRolesPermisos.SelectedItem is Rol rolSel))
-            {
-                MessageBox.Show("Seleccione un rol para guardar sus permisos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
             try
             {
-                var permisosActivos = PermisosRolActual
-                    .Where(p => p.Habilitado)
-                    .Select(p => p.NombreModulo)
-                    .ToList();
-                string permisosCsv = string.Join(",", permisosActivos);
+                if (lstRolesPermisos.SelectedItem == null)
+                {
+                    ModernMessageBox.Show("Por favor, seleccione un rol primero.", "Atencion", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
-                bool ok = DatabaseService.ActualizarPermisosParaRolPorNombre(rolSel.RolId, permisosActivos);
-                if (ok)
-                    MessageBox.Show("Permisos actualizados correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                else
-                    MessageBox.Show("No se pudieron guardar los permisos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                int idRolSeleccionado = Convert.ToInt32(((DataRowView)lstRolesPermisos.SelectedItem)["RolID"]);
+
+                if (lstPermisosDinamicos.ItemsSource is IEnumerable<PermisoUI> permisos)
+                {
+                    var permisosSeleccionados = permisos.Where(p => p.Habilitado).Select(p => p.NombreModulo).ToList();
+                    string stringPermisos = string.Join(",", permisosSeleccionados);
+
+                    bool exito = global::SchettiniGestion.DatabaseService.ActualizarPermisosRol(idRolSeleccionado, stringPermisos);
+
+                    if (exito)
+                    {
+                        ModernMessageBox.Show("Permisos guardados correctamente en la base de datos.", "Exito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    else
+                    {
+                        ModernMessageBox.Show("Fallo al actualizar la base de datos. DatabaseService retorno false.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al guardar permisos: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show("Error critico al guardar: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

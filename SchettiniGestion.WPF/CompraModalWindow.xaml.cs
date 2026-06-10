@@ -112,10 +112,10 @@ namespace SchettiniGestion.WPF
 
         private void btnAgregarItem_Click(object sender, RoutedEventArgs e)
         {
-            if (_productoId == 0) { MessageBox.Show("Seleccione un producto.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            if (!int.TryParse(txtCantidad.Text, out int cant) || cant <= 0) { MessageBox.Show("Cantidad inválida.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (_productoId == 0) { ModernMessageBox.Show("Seleccione un producto.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (!int.TryParse(txtCantidad.Text, out int cant) || cant <= 0) { ModernMessageBox.Show("Cantidad inválida.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
             if (!decimal.TryParse(txtCosto.Text.Replace(",", "."), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out decimal costo) || costo < 0)
-            { MessageBox.Show("Costo inválido.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            { ModernMessageBox.Show("Costo inválido.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
             var existente = null as CompraItem;
             foreach (var it in _items) if (it.ProductoID == _productoId) { existente = it; break; }
@@ -142,15 +142,15 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            if (_proveedorId == 0) { MessageBox.Show("Seleccione un proveedor.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            if (_items.Count == 0) { MessageBox.Show("Agregue al menos un ítem.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (_proveedorId == 0) { ModernMessageBox.Show("Seleccione un proveedor.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (_items.Count == 0) { ModernMessageBox.Show("Agregue al menos un ítem.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
             string tipo = (cmbTipoComprobante.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Content?.ToString() ?? "Factura A";
             decimal total = 0; foreach (var it in _items) total += it.Subtotal;
             var items = new List<(int, int, decimal)>();
             foreach (var it in _items) items.Add((it.ProductoID, it.Cantidad, it.Costo));
             bool ok = DatabaseService.GuardarCompra(_proveedorId, tipo, total, items, "Contado");
             if (ok) { _onGuardado?.Invoke(); DialogResult = true; Close(); }
-            else MessageBox.Show("Error al guardar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            else ModernMessageBox.Show("Error al guardar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         private void btnCancelar_Click(object sender, RoutedEventArgs e) { DialogResult = false; Close(); }

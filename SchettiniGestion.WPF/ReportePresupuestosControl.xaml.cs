@@ -77,7 +77,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar lista: " + ex.Message);
+                ModernMessageBox.Show("Error al cargar lista: " + ex.Message);
             }
         }
 
@@ -112,7 +112,7 @@ namespace SchettiniGestion.WPF
             {
                 int id = Convert.ToInt32(row["PresupuestoID"]);
 
-                if (MessageBox.Show($"¿Eliminar Presupuesto #{id}?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                if (ModernMessageBox.Show($"¿Eliminar Presupuesto #{id}?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                 {
                     if (DatabaseService.EliminarPresupuesto(id))
                     {
@@ -120,7 +120,7 @@ namespace SchettiniGestion.WPF
                     }
                     else
                     {
-                        MessageBox.Show("Error al eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ModernMessageBox.Show("Error al eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }

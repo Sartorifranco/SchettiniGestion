@@ -73,13 +73,13 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
-            if (_proveedorId == 0) { MessageBox.Show("Seleccione un proveedor.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (_proveedorId == 0) { ModernMessageBox.Show("Seleccione un proveedor.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
             if (!decimal.TryParse(txtMonto.Text.Replace(",", "."), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out decimal monto) || monto <= 0)
-            { MessageBox.Show("Ingrese un monto válido.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            { ModernMessageBox.Show("Ingrese un monto válido.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
             string tipo = (cmbTipo.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Content?.ToString() ?? "NC";
             bool ok = DatabaseService.GuardarNotaCreditoDebitoCompra(_notaId, _proveedorId, tipo, monto, txtDescripcion.Text.Trim(), txtNroComprobante.Text.Trim());
             if (ok) { _onGuardado?.Invoke(); DialogResult = true; Close(); }
-            else MessageBox.Show("Error al guardar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            else ModernMessageBox.Show("Error al guardar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         private void btnCancelar_Click(object sender, RoutedEventArgs e) { DialogResult = false; Close(); }

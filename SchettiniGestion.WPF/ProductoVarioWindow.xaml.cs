@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls; // Necesario para ComboBoxItem
 using System.Windows.Input;
@@ -28,13 +28,13 @@ namespace SchettiniGestion.WPF
             // 1. Validaciones básicas
             if (string.IsNullOrWhiteSpace(txtDescripcion.Text))
             {
-                CustomMessageBox.Show("Ingrese una descripción.", "Falta dato", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Ingrese una descripción.", "Falta dato", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (!decimal.TryParse(txtPrecio.Text.Replace(".", ","), out decimal precioIngresado))
             {
-                CustomMessageBox.Show("Precio inválido.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Precio inválido.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 

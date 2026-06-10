@@ -23,7 +23,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error en el Seeder de Base de Datos: " + ex.Message, "Error de Arranque", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Error en el Seeder de Base de Datos: " + ex.Message, "Error de Arranque", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
 
             Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
@@ -45,6 +45,8 @@ namespace SchettiniGestion.WPF
             ActualizarHeaderUsuario();
             AplicarPermisosLite();
             SincronizarModoPantallaDesdeBase();
+            if (SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS))
+                AbrirPuntoDeVenta();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -115,7 +117,7 @@ namespace SchettiniGestion.WPF
 
             if (modoDosPantallas && System.Windows.Forms.Screen.AllScreens.Length < 2)
             {
-                MessageBox.Show(
+                ModernMessageBox.Show(
                     "Modo «dos pantallas» activado: el visor para el cliente se abrirá automáticamente cuando haya un segundo monitor conectado.\n\n" +
                     "Con un solo monitor, el cajero trabaja solo en esta ventana.",
                     "Pantalla cliente",
@@ -128,7 +130,8 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                btnVentasFacturacion.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS) ? Visibility.Visible : Visibility.Collapsed;
+                btnPuntoDeVenta.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS) ? Visibility.Visible : Visibility.Collapsed;
+                btnHistorialVentas.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS) ? Visibility.Visible : Visibility.Collapsed;
                 btnGestionStock.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_STOCK) ? Visibility.Visible : Visibility.Collapsed;
                 btnClientes.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_CLIENTES) ? Visibility.Visible : Visibility.Collapsed;
                 btnCaja.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_CAJA) ? Visibility.Visible : Visibility.Collapsed;
@@ -138,13 +141,14 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al iniciar interfaz: " + ex.Message);
+                ModernMessageBox.Show("Error al iniciar interfaz: " + ex.Message);
             }
         }
 
         private void OcultarTodoPorFalloLicencia()
         {
-            if (btnVentasFacturacion != null) btnVentasFacturacion.Visibility = Visibility.Collapsed;
+            if (btnPuntoDeVenta != null) btnPuntoDeVenta.Visibility = Visibility.Collapsed;
+            if (btnHistorialVentas != null) btnHistorialVentas.Visibility = Visibility.Collapsed;
             if (btnGestionStock != null) btnGestionStock.Visibility = Visibility.Collapsed;
             if (btnClientes != null) btnClientes.Visibility = Visibility.Collapsed;
             if (btnCaja != null) btnCaja.Visibility = Visibility.Collapsed;
@@ -165,7 +169,7 @@ namespace SchettiniGestion.WPF
 
         private void btnSalirSistema_Click(object sender, RoutedEventArgs e)
         {
-            if (MessageBox.Show("¿Cerrar completamente el sistema?", "Salir", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            if (ModernMessageBox.Show("¿Cerrar completamente el sistema?", "Salir", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
                 _volviendoALogin = false;
                 SesionUsuario.Cerrar();
@@ -179,11 +183,31 @@ namespace SchettiniGestion.WPF
             mainContentArea.Content = new InicioControl();
         }
 
-        private void btnVentasFacturacion_Click(object sender, RoutedEventArgs e)
+        private void AbrirPuntoDeVenta()
+        {
+            if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS))
+                return;
+            mainContentArea.Content = new FacturacionControl();
+        }
+
+        /// <summary>Pantalla de caja POS: código de barras, buscador de productos, carrito y facturación/cobro.</summary>
+        private void btnPuntoDeVenta_Click(object sender, RoutedEventArgs e)
         {
             if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS))
             {
-                MessageBox.Show("No tiene permiso para acceder a ventas o facturación.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("No tiene permiso para acceder al punto de venta.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            AbrirPuntoDeVenta();
+        }
+
+        /// <summary>Listado histórico de comprobantes (no es cobro en tiempo real).</summary>
+        private void btnHistorialVentas_Click(object sender, RoutedEventArgs e)
+        {
+            if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS))
+            {
+                ModernMessageBox.Show("No tiene permiso para ver ventas.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -194,7 +218,7 @@ namespace SchettiniGestion.WPF
         {
             if (!PuedeModulo(DatabaseService.PERMISO_PRODUCTOS))
             {
-                MessageBox.Show("No tiene permiso para acceder al módulo de productos.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("No tiene permiso para acceder al módulo de productos.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             mainContentArea.Content = new ProductosControl();
@@ -204,7 +228,7 @@ namespace SchettiniGestion.WPF
         {
             if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_STOCK))
             {
-                MessageBox.Show("No tiene permiso para acceder al stock/productos.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("No tiene permiso para acceder al stock/productos.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             mainContentArea.Content = new ProductosControl();
@@ -214,7 +238,7 @@ namespace SchettiniGestion.WPF
         {
             if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_CLIENTES))
             {
-                MessageBox.Show("No tiene permiso para acceder a clientes.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("No tiene permiso para acceder a clientes.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             mainContentArea.Content = new ClientesControl();
@@ -278,7 +302,7 @@ namespace SchettiniGestion.WPF
 
         private static void MensajeSinPermiso()
         {
-            MessageBox.Show("No tiene permiso para acceder a este módulo.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+            ModernMessageBox.Show("No tiene permiso para acceder a este módulo.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void btnCaja_Click(object sender, RoutedEventArgs e)
@@ -296,7 +320,7 @@ namespace SchettiniGestion.WPF
         {
             if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_USUARIOS))
             {
-                MessageBox.Show("No tiene permiso para acceder a usuarios.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("No tiene permiso para acceder a usuarios.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             mainContentArea.Content = new UsuariosControl();
@@ -306,7 +330,7 @@ namespace SchettiniGestion.WPF
         {
             if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_CONFIGURACION))
             {
-                MessageBox.Show("No tiene permiso para acceder a la configuración.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("No tiene permiso para acceder a la configuración.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -314,21 +338,7 @@ namespace SchettiniGestion.WPF
         }
 
         private void btnTeclado_Click(object sender, RoutedEventArgs e)
-        {
-            string windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-            string oskPath64 = System.IO.Path.Combine(windir, "System32", "osk.exe");
-            string oskPath32 = System.IO.Path.Combine(windir, "sysnative", "osk.exe");
-            string targetPath = System.IO.File.Exists(oskPath64) ? oskPath64 : oskPath32;
-
-            try
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = targetPath, UseShellExecute = true });
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("No se pudo iniciar el teclado.\n\nError: " + ex.Message, "Error de teclado");
-            }
-        }
+            => KeyboardHelper.ShowOnScreenKeyboard();
 
         private void btnTema_Click(object sender, RoutedEventArgs e)
         {

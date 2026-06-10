@@ -72,8 +72,8 @@ namespace SchettiniGestion.WPF
 
         private void BtnOk_Click(object sender, RoutedEventArgs e)
         {
-            if (_productoRow == null) { MessageBox.Show("Ingrese un producto válido.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            if (!int.TryParse(_txtCantidad.Text, out int cant) || cant <= 0) { MessageBox.Show("Cantidad inválida.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (_productoRow == null) { ModernMessageBox.Show("Ingrese un producto válido.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (!int.TryParse(_txtCantidad.Text, out int cant) || cant <= 0) { ModernMessageBox.Show("Cantidad inválida.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
             ProductoID = Convert.ToInt32(_productoRow["ProductoID"]);
             Cantidad = cant;
             Motivo = "Reserva manual";
@@ -120,20 +120,20 @@ namespace SchettiniGestion.WPF
             // 1. Validaciones
             if (_productoSeleccionado == null)
             {
-                CustomMessageBox.Show("Debe seleccionar un producto.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Debe seleccionar un producto.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             int cantidad = numCantidad.Value ?? 0;
             if (cantidad == 0)
             {
-                CustomMessageBox.Show("La cantidad no puede ser cero.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("La cantidad no puede ser cero.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (cmbTipoMovimiento.SelectedItem == null)
             {
-                CustomMessageBox.Show("Debe seleccionar un tipo de movimiento.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Debe seleccionar un tipo de movimiento.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -154,7 +154,7 @@ namespace SchettiniGestion.WPF
             int productoID = Convert.ToInt32(_productoSeleccionado["ProductoID"]);
             string nombreProducto = _productoSeleccionado["Descripcion"].ToString();
 
-            MessageBoxResult confirmacion = CustomMessageBox.Show(
+            MessageBoxResult confirmacion = ModernMessageBox.Show(
                 $"¿Está seguro que desea registrar el siguiente movimiento?\n\n" +
                 $"Producto: {nombreProducto}\n" +
                 $"Cantidad: {cantidad}\n" +
@@ -170,12 +170,12 @@ namespace SchettiniGestion.WPF
 
             if (exito)
             {
-                CustomMessageBox.Show("¡Movimiento de stock guardado exitosamente!", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("¡Movimiento de stock guardado exitosamente!", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 LimpiarCampos();
             }
             else
             {
-                CustomMessageBox.Show("No se pudo guardar el movimiento.", "Error Grave", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show("No se pudo guardar el movimiento.", "Error Grave", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -256,7 +256,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar stock: " + ex.Message);
+                ModernMessageBox.Show("Error al cargar stock: " + ex.Message);
             }
         }
 
@@ -287,7 +287,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar movimientos: " + ex.Message);
+                ModernMessageBox.Show("Error al cargar movimientos: " + ex.Message);
             }
         }
 
@@ -312,7 +312,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar reservas: " + ex.Message);
+                ModernMessageBox.Show("Error al cargar reservas: " + ex.Message);
             }
         }
 
@@ -324,8 +324,8 @@ namespace SchettiniGestion.WPF
             if (dialog.ShowDialog() == true && dialog.ProductoID > 0 && dialog.Cantidad > 0)
             {
                 bool ok = DatabaseService.GuardarReservaStock(dialog.ProductoID, dialog.Cantidad, dialog.Motivo);
-                if (ok) { MessageBox.Show("Reserva creada correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information); CargarReservas(); }
-                else MessageBox.Show("Error al crear reserva.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                if (ok) { ModernMessageBox.Show("Reserva creada correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information); CargarReservas(); }
+                else ModernMessageBox.Show("Error al crear reserva.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -334,13 +334,13 @@ namespace SchettiniGestion.WPF
             if (dgvReservas.SelectedItem is System.Data.DataRowView row)
             {
                 int id = Convert.ToInt32(row["ReservaID"]);
-                if (MessageBox.Show("¿Anular esta reserva?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                if (ModernMessageBox.Show("¿Anular esta reserva?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                 {
                     if (DatabaseService.AnularReservaStock(id)) CargarReservas();
-                    else MessageBox.Show("Error al anular.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    else ModernMessageBox.Show("Error al anular.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
-            else MessageBox.Show("Seleccione una reserva.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
+            else ModernMessageBox.Show("Seleccione una reserva.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
         // ========== PESTAÑA: AJUSTES ==========
@@ -378,7 +378,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar ajustes: " + ex.Message);
+                ModernMessageBox.Show("Error al cargar ajustes: " + ex.Message);
             }
         }
 
@@ -390,7 +390,7 @@ namespace SchettiniGestion.WPF
 
         private void btnAnularAjuste_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Los ajustes de stock no se pueden anular directamente.\nRealice un ajuste inverso desde la pestaña 'Registrar movimiento'.",
+            ModernMessageBox.Show("Los ajustes de stock no se pueden anular directamente.\nRealice un ajuste inverso desde la pestaña 'Registrar movimiento'.",
                 "Información", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
@@ -426,7 +426,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar depósitos: " + ex.Message);
+                ModernMessageBox.Show("Error al cargar depósitos: " + ex.Message);
             }
         }
     }

@@ -11,6 +11,22 @@
              Loaded="CajaControl_Loaded">
 
     <Grid Margin="20">
+        <Grid.Resources>
+            <Style x:Key="CajaModalCancelButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderDarkBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Padding" Value="16,10"/>
+                <Setter Property="MinWidth" Value="100"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -77,28 +93,58 @@
             </DockPanel>
         </Border>
 
-        <Grid x:Name="popupMovimiento" Visibility="Collapsed" Background="{DynamicResource OverlayScrimBrush}">
-            <Border Background="{DynamicResource ModuleBackgroundBrush}" Width="400" Height="350" CornerRadius="10" BorderBrush="{DynamicResource BorderDarkBrush}" BorderThickness="1">
-                <Grid Margin="20">
+        <!-- Overlay a pantalla completa del contenido del control (último en Z-order para cubrir todo) -->
+        <Grid x:Name="popupMovimiento"
+              Grid.Row="0" Grid.Column="0"
+              Grid.RowSpan="10" Grid.ColumnSpan="10"
+              Visibility="Collapsed"
+              Background="#80000000"
+              Panel.ZIndex="1000">
+            <Border Width="400"
+                    MinHeight="260"
+                    Background="White"
+                    CornerRadius="12"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Padding="24"
+                    BorderBrush="{DynamicResource BorderDarkBrush}"
+                    BorderThickness="1">
+                <Border.Effect>
+                    <DropShadowEffect ShadowDepth="2" BlurRadius="10" Opacity="0.3" Direction="270" Color="#000000"/>
+                </Border.Effect>
+                <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock x:Name="lblPopupTitulo" Text="Registrar Movimiento" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="lblPopupTitulo" Text="Registrar Movimiento"
+                               FontSize="20" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimary}"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,18"/>
 
                     <StackPanel Grid.Row="1" VerticalAlignment="Center">
                         <TextBlock Text="Monto:" Style="{StaticResource ModuleLabelStyle}"/>
-                        <xctk:DecimalUpDown x:Name="numMontoManual" Style="{StaticResource ModuleNumericUpDownStyle}" FormatString="C2" Margin="0,0,0,20" FontSize="18"/>
+                        <xctk:DecimalUpDown x:Name="numMontoManual" Style="{StaticResource ModuleNumericUpDownStyle}"
+                                            FormatString="C2" Margin="0,0,0,20" FontSize="18"/>
 
                         <TextBlock Text="Concepto / Motivo:" Style="{StaticResource ModuleLabelStyle}"/>
-                        <TextBox x:Name="txtConceptoManual" Style="{StaticResource ModuleTextBoxStyle}" Height="80" TextWrapping="Wrap" AcceptsReturn="True"/>
+                        <TextBox x:Name="txtConceptoManual" Style="{StaticResource ModuleTextBoxStyle}"
+                                 Height="80" TextWrapping="Wrap" AcceptsReturn="True"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Cancelar" Style="{StaticResource SecondaryButtonStyle}" Width="100" Margin="0,0,10,0" Click="btnCancelarPopup_Click"/>
-                        <Button Content="Guardar" Style="{StaticResource ActionButtonStyle}" Width="100" Click="btnGuardarMovimiento_Click"/>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button Content="Cancelar"
+                                Style="{StaticResource CajaModalCancelButtonStyle}"
+                                Margin="0,0,10,0"
+                                Click="btnCancelarPopup_Click"/>
+                        <Button Content="Guardar"
+                                Style="{StaticResource ButtonStyle}"
+                                MinWidth="110"
+                                Padding="18,10"
+                                Click="btnGuardarMovimiento_Click"/>
                     </StackPanel>
                 </Grid>
             </Border>

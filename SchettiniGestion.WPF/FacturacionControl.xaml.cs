@@ -179,12 +179,12 @@ namespace SchettiniGestion.WPF
         {
             if (_esperandoPagoMP)
             {
-                if (CustomMessageBox.Show("¿Cancelar el cobro con QR?", "Cancelar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                if (ModernMessageBox.Show("¿Cancelar el cobro con QR?", "Cancelar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                     CancelarModoQR();
                 return;
             }
 
-            if (CarritoDeVenta.Count == 0) { CustomMessageBox.Show("No hay productos."); return; }
+            if (CarritoDeVenta.Count == 0) { ModernMessageBox.Show("No hay productos."); return; }
 
             decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
 
@@ -211,13 +211,13 @@ namespace SchettiniGestion.WPF
                 }
                 else
                 {
-                    CustomMessageBox.Show("Error MP: " + respuesta.Error);
+                    ModernMessageBox.Show("Error MP: " + respuesta.Error);
                     CancelarModoQR();
                 }
             }
             catch (Exception ex)
             {
-                CustomMessageBox.Show("Error: " + ex.Message);
+                ModernMessageBox.Show("Error: " + ex.Message);
                 CancelarModoQR();
             }
         }
@@ -268,7 +268,7 @@ namespace SchettiniGestion.WPF
             {
                 SeleccionarCondicion(opcion);
                 if (opcion == "MERCADOPAGO") btnPagoQR_Click(null, null);
-                else if (opcion == "TARJETA") CustomMessageBox.Show("Usar Posnet.", "Info");
+                else if (opcion == "TARJETA") ModernMessageBox.Show("Usar Posnet.", "Info");
                 else txtMontoPagado.Focus();
             });
         }
@@ -307,8 +307,8 @@ namespace SchettiniGestion.WPF
 
         private async void btnGuardarFactura_Click(object sender, RoutedEventArgs e)
         {
-            if (CarritoDeVenta.Count == 0) { CustomMessageBox.Show("Agregue productos."); return; }
-            if (_clienteSeleccionado == null) { CustomMessageBox.Show("Seleccione cliente."); return; }
+            if (CarritoDeVenta.Count == 0) { ModernMessageBox.Show("Agregue productos."); return; }
+            if (_clienteSeleccionado == null) { ModernMessageBox.Show("Seleccione cliente."); return; }
 
             foreach (var it in CarritoDeVenta)
             {
@@ -316,7 +316,7 @@ namespace SchettiniGestion.WPF
                 int disp = DatabaseService.GetStockActualProducto(it.ProductoID);
                 if (it.Cantidad > disp)
                 {
-                    CustomMessageBox.Show($"Stock insuficiente: «{it.Descripcion}» (disponible {disp}, pedido {it.Cantidad}).");
+                    ModernMessageBox.Show($"Stock insuficiente: «{it.Descripcion}» (disponible {disp}, pedido {it.Cantidad}).");
                     return;
                 }
             }
@@ -348,7 +348,7 @@ namespace SchettiniGestion.WPF
                 string cuitStr = _clienteSeleccionado["CUIT"].ToString();
                 if (cuitStr.Length < 11 || cuitStr.Contains("00-00000000"))
                 {
-                    CustomMessageBox.Show("Error: Para Factura A, el cliente debe tener CUIT válido.");
+                    ModernMessageBox.Show("Error: Para Factura A, el cliente debe tener CUIT válido.");
                     return;
                 }
             }
@@ -375,7 +375,7 @@ namespace SchettiniGestion.WPF
                     }
                     else
                     {
-                        CustomMessageBox.Show("❌ ERROR AFIP: " + resultadoAfip.Error);
+                        ModernMessageBox.Show("❌ ERROR AFIP: " + resultadoAfip.Error);
                         btnGuardarFactura.IsEnabled = true;
                         return;
                     }
@@ -409,7 +409,7 @@ namespace SchettiniGestion.WPF
                     CustomerScreenService.PantallaGracias();
                     string msgExito = "Venta Guardada.";
                     if (!string.IsNullOrEmpty(cae)) msgExito += "\n¡Factura Electrónica Aprobada!";
-                    if (CustomMessageBox.Show($"{msgExito}\n¿Imprimir comprobante?", "Éxito", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                    if (ModernMessageBox.Show($"{msgExito}\n¿Imprimir comprobante?", "Éxito", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                     {
                         DataTable dt = new DataTable();
                         dt.Columns.Add("Codigo"); dt.Columns.Add("Descripcion"); dt.Columns.Add("Cantidad"); dt.Columns.Add("Subtotal");
@@ -420,11 +420,11 @@ namespace SchettiniGestion.WPF
                     LimpiarFormulario();
                 }
                 else
-                    CustomMessageBox.Show("No se pudo guardar la factura.");
+                    ModernMessageBox.Show("No se pudo guardar la factura.");
             }
             catch (Exception ex)
             {
-                CustomMessageBox.Show("ERROR: " + ex.Message);
+                ModernMessageBox.Show("ERROR: " + ex.Message);
             }
             finally
             {
@@ -590,7 +590,7 @@ namespace SchettiniGestion.WPF
         private void btnCrearCliente_Click(object sender, RoutedEventArgs e)
         {
             string texto = txtBuscarCliente.Text.Trim();
-            if (string.IsNullOrEmpty(texto)) { CustomMessageBox.Show("Escriba el nombre o razón social del cliente."); return; }
+            if (string.IsNullOrEmpty(texto)) { ModernMessageBox.Show("Escriba el nombre o razón social del cliente."); return; }
             var modal = new ClienteRapidoModalWindow(texto);
             if (modal.ShowDialog() == true && modal.ClienteID > 0)
             {
@@ -610,7 +610,7 @@ namespace SchettiniGestion.WPF
         {
             if ((sender as Button)?.DataContext is FacturaItem item)
             {
-                var win = new InputWindow("Descuento", "Porcentaje de descuento:", item.DescuentoPorcentaje.ToString("N0"));
+                var win = new ModernInputWindow("Descuento", "Porcentaje de descuento:", item.DescuentoPorcentaje.ToString("N0"));
                 if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 100)
                 {
                     item.DescuentoPorcentaje = pct;
@@ -622,7 +622,7 @@ namespace SchettiniGestion.WPF
         {
             if ((sender as Button)?.DataContext is FacturaItem item)
             {
-                var win = new InputWindow("Recargo", "Porcentaje de recargo:", item.RecargoPorcentaje.ToString("N0"));
+                var win = new ModernInputWindow("Recargo", "Porcentaje de recargo:", item.RecargoPorcentaje.ToString("N0"));
                 if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 100)
                 {
                     item.RecargoPorcentaje = pct;
@@ -634,9 +634,9 @@ namespace SchettiniGestion.WPF
         {
             if ((sender as Button)?.DataContext is FacturaItem item)
             {
-                var winCant = new InputWindow("Editar cantidad", "Nueva cantidad:", item.Cantidad.ToString());
+                var winCant = new ModernInputWindow("Editar cantidad", "Nueva cantidad:", item.Cantidad.ToString());
                 if (winCant.ShowDialog() == true && int.TryParse(winCant.ResponseText, out int cant) && cant > 0) { item.Cantidad = cant; ActualizarTotal(); return; }
-                var winPrecio = new InputWindow("Editar precio", "Nuevo precio unitario:", item.PrecioUnitario.ToString("N2"));
+                var winPrecio = new ModernInputWindow("Editar precio", "Nuevo precio unitario:", item.PrecioUnitario.ToString("N2"));
                 if (winPrecio.ShowDialog() == true && decimal.TryParse(winPrecio.ResponseText?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal prec) && prec >= 0) { item.PrecioUnitario = prec; ActualizarTotal(); }
             }
         }

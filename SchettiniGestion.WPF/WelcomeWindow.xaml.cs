@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
@@ -18,13 +18,13 @@ namespace SchettiniGestion.WPF
 
             if (string.IsNullOrEmpty(u) || string.IsNullOrEmpty(p1))
             {
-                MessageBox.Show("Complete todos los campos.");
+                ModernMessageBox.Show("Complete todos los campos.");
                 return;
             }
 
             if (p1 != p2)
             {
-                MessageBox.Show("Las contraseñas no coinciden.");
+                ModernMessageBox.Show("Las contraseñas no coinciden.");
                 return;
             }
 
@@ -36,7 +36,7 @@ namespace SchettiniGestion.WPF
                                                                       // (Opcional: Si el script SQL ya asigna permisos al Rol 1, esto no hace falta. 
                                                                       // Pero por seguridad, asignamos el rol 1).
 
-                MessageBox.Show("¡Administrador creado con éxito!\nBienvenido al sistema.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("¡Administrador creado con éxito!\nBienvenido al sistema.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // 3. Abrir el Login
                 LoginWindow login = new LoginWindow();
@@ -45,7 +45,7 @@ namespace SchettiniGestion.WPF
             }
             else
             {
-                MessageBox.Show("Error al crear el usuario en la base de datos.");
+                ModernMessageBox.Show("Error al crear el usuario en la base de datos.");
             }
         }
 

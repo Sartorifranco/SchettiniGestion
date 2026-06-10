@@ -7,7 +7,8 @@
              d:DesignHeight="700" d:DesignWidth="1000"
              Loaded="ClientesControl_Loaded">
 
-    <Grid Margin="20">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+    <Grid Margin="20" MinWidth="640">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="3.5*" MinWidth="300" MaxWidth="450"/>
             <ColumnDefinition Width="20"/>
@@ -72,14 +73,19 @@
                 </Grid.RowDefinitions>
                 <TextBlock Text="Buscar por CUIT o Razón Social" Style="{DynamicResource LabelStyle}"/>
                 <TextBox x:Name="txtFiltroClientes" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,10" TextChanged="txtFiltroClientes_TextChanged"/>
-                <DataGrid x:Name="dgvClientes" Grid.Row="1" Style="{DynamicResource {x:Type DataGrid}}" SelectionChanged="dgvClientes_SelectionChanged" AutoGenerateColumns="False" IsReadOnly="True">
+                <DataGrid x:Name="dgvClientes" Grid.Row="1" Style="{DynamicResource {x:Type DataGrid}}"
+                          SelectionChanged="dgvClientes_SelectionChanged" AutoGenerateColumns="False"
+                          IsReadOnly="True" CanUserReorderColumns="True" CanUserResizeColumns="True">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="CUIT" Binding="{Binding CUIT}" Width="Auto" MinWidth="100"/>
-                        <DataGridTextColumn Header="RAZÓN SOCIAL" Binding="{Binding RazonSocial}" Width="*"/>
-                        <DataGridTextColumn Header="CONDICIÓN" Binding="{Binding CondicionIVA}" Width="Auto"/>
+                        <DataGridTextColumn Header="CUIT" Binding="{Binding CUIT}" Width="120" MinWidth="104"/>
+                        <DataGridTextColumn Header="RAZÓN SOCIAL / NOMBRE" Binding="{Binding RazonSocial}" Width="*" MinWidth="160"/>
+                        <DataGridTextColumn Header="CONDICIÓN IVA" Binding="{Binding CondicionIVA}" Width="150" MinWidth="120"/>
+                        <DataGridTextColumn Header="TELÉFONO" Binding="{Binding Telefono}" Width="130" MinWidth="100"/>
+                        <DataGridTextColumn Header="EMAIL" Binding="{Binding Email}" Width="200" MinWidth="140"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
         </Border>
     </Grid>
+    </ScrollViewer>
 </UserControl>

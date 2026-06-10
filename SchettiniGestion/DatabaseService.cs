@@ -2307,7 +2307,8 @@ ORDER BY p.Descripcion";
             return s;
         }
 
-        public static bool GuardarPresupuesto(int cid, decimal t, List<FacturaItem> i)
+        /// <summary>Guarda presupuesto y devuelve PresupuestoID; 0 si falla.</summary>
+        public static int GuardarPresupuesto(int cid, decimal t, List<FacturaItem> i)
         {
             using (var c = new SqlConnection(_connectionString))
             {
@@ -2332,9 +2333,9 @@ ORDER BY p.Descripcion";
                             det.ExecuteNonQuery();
                         }
                         tr.Commit();
-                        return true;
+                        return pid;
                     }
-                    catch { tr.Rollback(); return false; }
+                    catch { tr.Rollback(); return 0; }
                 }
             }
         }

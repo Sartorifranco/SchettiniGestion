@@ -194,13 +194,13 @@ namespace SchettiniGestion.WPF
 
             try
             {
-                bool exito = DatabaseService.GuardarPresupuesto(
+                int presupuestoId = DatabaseService.GuardarPresupuesto(
                     Convert.ToInt32(_clienteSeleccionado["ClienteID"]),
                     Carrito.Sum(x => x.Subtotal),
                     Carrito.ToList()
                 );
 
-                if (exito)
+                if (presupuestoId > 0)
                 {
                     ModernMessageBox.Show("Presupuesto guardado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                     LimpiarFormulario();

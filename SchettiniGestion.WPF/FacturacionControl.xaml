@@ -291,7 +291,8 @@
 
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Tipo de comprobante" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2"/>
-                            <ComboBox x:Name="cmbTipoComprobante" SelectedIndex="0" Style="{StaticResource WhiteTouchCombo}">
+                            <ComboBox x:Name="cmbTipoComprobante" SelectedIndex="0" Style="{StaticResource WhiteTouchCombo}"
+                                      SelectionChanged="cmbTipoComprobante_SelectionChanged">
                                 <ComboBoxItem Content="Factura"/>
                                 <ComboBoxItem Content="Ticket"/>
                                 <ComboBoxItem Content="Remito"/>
@@ -300,7 +301,7 @@
                             </ComboBox>
                         </StackPanel>
 
-                        <StackPanel Grid.Column="2">
+                        <StackPanel x:Name="pnlCondicionPago" Grid.Column="2">
                             <TextBlock Text="Pago" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2"/>
                             <ComboBox x:Name="cmbCondicionVenta" SelectedIndex="0" SelectionChanged="cmbCondicionVenta_SelectionChanged" Style="{StaticResource WhiteTouchCombo}">
                                 <ComboBoxItem Content="Contado"/>
@@ -384,13 +385,7 @@
                         </Grid.ColumnDefinitions>
 
                         <Button x:Name="btnGuardarFactura" Grid.Column="0" Content="✅ COBRAR" Click="btnGuardarFactura_Click"
-                                Background="#27AE60" Foreground="White" FontWeight="Bold" FontSize="20" Height="65">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="5"/>
-                                </Style>
-                            </Button.Resources>
-                        </Button>
+                                Style="{StaticResource SuccessButtonStyle}" FontSize="18" MinHeight="65"/>
 
                         <Button x:Name="btnCancelarFactura" Grid.Column="2" Content="❌" Click="btnCancelarFactura_Click"
                                 Background="#C0392B" Foreground="White" FontWeight="Bold" FontSize="20" Height="65" Width="65" ToolTip="Cancelar Venta">

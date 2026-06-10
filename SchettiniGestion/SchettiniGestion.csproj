@@ -202,6 +202,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AfipCertPasswordDpapi.cs" />
     <Compile Include="DatabaseService.cs" />
     <Compile Include="DatabaseService.Dashboard.cs" />
     <Compile Include="LicenseFileHelper.cs" />

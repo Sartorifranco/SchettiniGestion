@@ -1,5 +1,5 @@
 # Compila SchettiniGestion en Release x64 y prepara carpeta staging para Inno Setup.
-# Uso (PowerShell en Windows, desde la raíz del repo o desde Instalador\):
+# Uso (PowerShell en Windows):
 #   .\Instalador\build-release.ps1
 #   .\Instalador\build-release.ps1 -BuildInstaller
 
@@ -29,27 +29,28 @@ function Find-MSBuild {
     }
     $fromPath = Get-Command msbuild -ErrorAction SilentlyContinue
     if ($fromPath) { return $fromPath.Source }
-    throw "No se encontró MSBuild. Instale Visual Studio 2022 con carga de trabajo .NET desktop."
+    throw "No se encontro MSBuild. Instale Visual Studio 2022 con carga de trabajo .NET desktop."
 }
 
-Write-Host "== SchettiniGestion — build $Configuration | $Platform ==" -ForegroundColor Cyan
+$banner = "== SchettiniGestion - build {0} / {1} ==" -f $Configuration, $Platform
+Write-Host $banner -ForegroundColor Cyan
 
 $msbuild = Find-MSBuild
 Write-Host "MSBuild: $msbuild"
 
 & $msbuild $sln /t:Restore,Build /p:Configuration=$Configuration /p:Platform=$Platform /v:minimal
-if ($LASTEXITCODE -ne 0) { throw "MSBuild falló con código $LASTEXITCODE" }
+if ($LASTEXITCODE -ne 0) { throw "MSBuild fallo con codigo $LASTEXITCODE" }
 
 $outDir = Join-Path $repoRoot $outputRelative
-if (-not (Test-Path (Join-Path $outDir "SchettiniGestion.WPF.exe"))) {
-    throw "No se encontró el ejecutable en: $outDir"
+$exePath = Join-Path $outDir "SchettiniGestion.WPF.exe"
+if (-not (Test-Path $exePath)) {
+    throw "No se encontro el ejecutable en: $outDir"
 }
 
 if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
 New-Item -ItemType Directory -Path $staging | Out-Null
 Copy-Item -Path (Join-Path $outDir "*") -Destination $staging -Recurse -Force
 
-# Quitar símbolos de depuración del paquete de testing (opcional)
 Get-ChildItem $staging -Filter "*.pdb" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
 
 Write-Host ""
@@ -57,12 +58,12 @@ Write-Host "Carpeta lista para Inno Setup:" -ForegroundColor Green
 Write-Host "  $staging"
 Write-Host ""
 Write-Host "Pasos siguientes:" -ForegroundColor Yellow
-Write-Host "  1) (Opcional) Coloque SqlLocalDB.msi en Instalador\prerequisites\"
-Write-Host "  2) Abra Instalador\SchettiniGestion.iss en Inno Setup y compile (F9)"
-Write-Host "  3) El Setup.exe quedará en Instalador\Output\"
+Write-Host ('  1. (Opcional) Coloque SqlLocalDB.msi en ' + (Join-Path $PSScriptRoot 'prerequisites'))
+Write-Host ('  2. Abra ' + (Join-Path $PSScriptRoot 'SchettiniGestion.iss') + ' en Inno Setup y compile (F9)')
+Write-Host ('  3. El Setup.exe quedara en ' + (Join-Path $PSScriptRoot 'Output'))
 Write-Host ""
-Write-Host "Licencias: ejecute LicenseGenerator y envíe la clave al tester."
-Write-Host "Usuario inicial tras instalar: admin (cambiar contraseña en primer uso)."
+Write-Host "Licencias: ejecute LicenseGenerator y envie la clave al tester."
+Write-Host "Usuario inicial tras instalar: admin (cambiar contrasena en primer uso)."
 
 if ($BuildInstaller) {
     $isccCandidates = @(
@@ -79,7 +80,8 @@ if ($BuildInstaller) {
     else {
         $iss = Join-Path $PSScriptRoot "SchettiniGestion.iss"
         & $iscc $iss
-        if ($LASTEXITCODE -ne 0) { throw "ISCC falló con código $LASTEXITCODE" }
-        Write-Host "Instalador generado en Instalador\Output\" -ForegroundColor Green
+        if ($LASTEXITCODE -ne 0) { throw "ISCC fallo con codigo $LASTEXITCODE" }
+        $outInstaller = Join-Path $PSScriptRoot "Output"
+        Write-Host "Instalador generado en $outInstaller" -ForegroundColor Green
     }
 }

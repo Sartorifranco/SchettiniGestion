@@ -57,6 +57,10 @@ Ver **[README_CAMBIOS.md](README_CAMBIOS.md)** para:
 - Instrucciones de prueba por módulo
 - Checklist de pruebas al finalizar
 
-## Instalador
+## Instalador (testing / clientes)
 
-Para generar el Setup.exe: compilar Release x64, abrir `Instalador/SchettiniGestion.iss` en Inno Setup y presionar F9.
+```powershell
+.\Instalador\build-release.ps1 -BuildInstaller
+```
+
+Guía: [Instalador/README-INSTALADOR.md](Instalador/README-INSTALADOR.md). Licencias: `dotnet run --project LicenseGenerator`.

@@ -28,3 +28,8 @@ Coverage*/
 # OS
 Thumbs.db
 Desktop.ini
+
+# Instalador (artefactos de build local)
+Instalador/staging/
+Instalador/Output/
+Instalador/prerequisites/*.msi

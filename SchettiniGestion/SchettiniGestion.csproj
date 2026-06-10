@@ -204,6 +204,7 @@
   <ItemGroup>
     <Compile Include="DatabaseService.cs" />
     <Compile Include="DatabaseService.Dashboard.cs" />
+    <Compile Include="LicenseFileHelper.cs" />
     <Compile Include="LicenseManager.cs" />
     <Compile Include="PasswordHasher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

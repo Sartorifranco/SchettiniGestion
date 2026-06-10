@@ -3108,6 +3108,19 @@ INSERT INTO Configuracion (
         }
 
         // --- Licencia ---
+        private static void AsegurarColumnaLicenciaPayload(SqlConnection c)
+        {
+            try
+            {
+                new SqlCommand(@"
+IF NOT EXISTS (
+    SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'Configuracion' AND COLUMN_NAME = 'LicenciaPayload')
+    ALTER TABLE Configuracion ADD LicenciaPayload NVARCHAR(MAX) NULL;", c).ExecuteNonQuery();
+            }
+            catch { }
+        }
+
         public static string ObtenerStringLicencia()
         {
             try
@@ -3115,31 +3128,47 @@ INSERT INTO Configuracion (
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    var cmd = new SqlCommand("SELECT TOP 1 Valor FROM Configuracion WHERE Clave='LicenciaKey'", c);
+                    AsegurarColumnaLicenciaPayload(c);
+                    var cmd = new SqlCommand("SELECT TOP 1 LicenciaPayload FROM Configuracion WHERE ID=1", c);
                     var r = cmd.ExecuteScalar();
-                    return r?.ToString() ?? "";
+                    if (r != null && r != DBNull.Value)
+                        return r.ToString();
                 }
             }
-            catch { return ""; }
+            catch { }
+            return "";
         }
 
         public static bool GuardarNuevaLicencia(string key)
         {
+            if (string.IsNullOrWhiteSpace(key))
+                return false;
+
+            key = key.Trim();
             try
             {
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    string sql = @"IF EXISTS (SELECT 1 FROM Configuracion WHERE Clave='LicenciaKey')
-                        UPDATE Configuracion SET Valor=@v WHERE Clave='LicenciaKey'
-                        ELSE INSERT INTO Configuracion (Clave,Valor) VALUES ('LicenciaKey',@v)";
-                    var cmd = new SqlCommand(sql, c);
+                    AsegurarColumnaLicenciaPayload(c);
+
+                    var cmd = new SqlCommand("UPDATE Configuracion SET LicenciaPayload=@v WHERE ID=1", c);
                     cmd.Parameters.AddWithValue("@v", key);
-                    cmd.ExecuteNonQuery();
-                    return true;
+                    if (cmd.ExecuteNonQuery() == 0)
+                    {
+                        cmd.CommandText = "INSERT INTO Configuracion (ID, LicenciaPayload, NombreFantasia) VALUES (1, @v, 'Mi Negocio')";
+                        cmd.ExecuteNonQuery();
+                    }
                 }
+
+                LicenseFileHelper.GuardarClave(key);
+                LicenseManager.InvalidarCache();
+                return true;
             }
-            catch { return false; }
+            catch
+            {
+                return false;
+            }
         }
 
         // --- Listas de precio por producto ---

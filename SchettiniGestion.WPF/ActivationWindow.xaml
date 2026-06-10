@@ -6,7 +6,7 @@
 
         Title="Activación de Licencia"
 
-        Width="500" Height="420"
+        Width="500" Height="460"
 
         WindowStartupLocation="CenterScreen"
 
@@ -173,10 +173,12 @@
                 <TextBlock Text="Clave de Licencia:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
 
                 <TextBox x:Name="txtLicenciaKey" Style="{StaticResource ModuleTextBoxStyle}"
-
                          Height="42" FontFamily="Consolas" FontSize="12"
-
                          ToolTip="Pegue aquí la clave de licencia recibida"/>
+
+                <Button Content="📂 Cargar archivo licencia.key" Margin="0,8,0,0" Padding="12,8"
+                        HorizontalAlignment="Left" Style="{StaticResource SecondaryButtonStyle}"
+                        Click="btnCargarArchivoLicencia_Click"/>
 
                 <TextBlock x:Name="lblError" Text="" Foreground="{StaticResource DangerColor}" FontSize="11" Margin="0,4,0,0" Visibility="Collapsed"/>
 

@@ -36,14 +36,20 @@ namespace SchettiniGestion.WPF
                 }
             }
 
-            // Validar licencia del sistema
-            bool licenciaValida = LicenseManager.ValidarLicencia();
-            if (!licenciaValida)
+            // Licencia: si no hay clave válida, asistente de activación (pegar texto o cargar archivo)
+            if (!LicenseManager.ValidarLicencia())
             {
-                string mensaje = SchettiniGestion.LicenseManager.UltimoMensajeError ?? "Error de licencia. La aplicación se cerrará.";
-                CustomMessageBox.Show(mensaje, "Error de licencia", MessageBoxButton.OK, MessageBoxImage.Error);
-                Application.Current.Shutdown();
+                var activation = new ActivationWindow();
+                if (activation.ShowDialog() != true || !LicenseManager.ValidarLicencia())
+                {
+                    Shutdown();
+                    return;
+                }
             }
+
+            var login = new LoginWindow();
+            MainWindow = login;
+            login.Show();
         }
 
         /// <summary>

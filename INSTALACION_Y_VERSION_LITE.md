@@ -2,15 +2,17 @@
 
 ## ¿Hay un instalador listo para usar?
 
-**En este repositorio no hay un instalador empaquetado** (no hay proyecto WiX, Inno Setup, ClickOnce ni `.msi` / `.exe` de setup versionado).
+**Sí — Inno Setup** en la carpeta `Instalador/`:
 
-Lo que sí está listo es **compilar** la solución y **distribuir** la carpeta de salida del ejecutable (despliegue tipo **portable** o **xcopy**):
+1. En Windows: `.\Instalador\build-release.ps1` (compila Release x64 y arma `staging\`).
+2. Abrir `Instalador\SchettiniGestion.iss` en **Inno Setup 6** y compilar (F9), o `build-release.ps1 -BuildInstaller`.
+3. Entregar `Instalador\Output\SchettiniGestion-Setup-*.exe` al tester.
 
-1. Compilar en **Release** (por ejemplo `dotnet build SchettiniGestion.sln -c Release` o MSBuild/Visual Studio).
-2. Copiar al equipo destino la carpeta de salida de **SchettiniGestion.WPF** (p. ej. `SchettiniGestion.WPF\bin\Release\` o `bin\x64\Release\` según la plataforma elegida), **incluyendo todas las DLL y archivos de configuración** que genere ese build.
-3. En el cliente: **Windows 10/11**, **.NET Framework 4.7.2** instalado y **SQL Server** (Express o superior) accesible con la cadena de conexión que use la aplicación (`App.config`, etc.).
+Guía completa: **[Instalador/README-INSTALADOR.md](Instalador/README-INSTALADOR.md)**
 
-Si el negocio exige un **instalador con accesos directos, desinstalador y chequeo de requisitos**, habría que **añadir** un proyecto aparte (p. ej. Inno Setup o WiX) que empaquete esa carpeta; **no viene incluido hoy**.
+La base de datos se crea sola en el **primer inicio** (LocalDB por defecto). La **licencia no va en el instalador**: generarla con `LicenseGenerator` y enviarla al tester para pegar en la pantalla de activación o en `licencia.key`.
+
+Alternativa manual (sin Setup): compilar Release x64 y copiar `SchettiniGestion.WPF\bin\x64\Release\` con todas las DLL.
 
 ---
 
@@ -30,7 +32,7 @@ Si la tabla `Usuarios` está vacía, al iniciar la app se crea el usuario **`adm
 
 Un **cliente Lite** típico tendría una licencia con **menos** entradas en `ModulosPermitidos` (ejemplo de prueba en `LicenseGenerator`: solo `FACTURACION` y `STOCK` en el listado de ejemplo; en producción deben usarse los strings `ACCESO_*` que usa la app).
 
-Para **generar** licencias se usan las herramientas del repo (**`GeneradorLicencias`** / **`LicenseGenerator`**) con el hardware ID del equipo y la lista de módulos deseada.
+Para **generar** licencias de testing usar **`LicenseGenerator`** (consola interactiva, clave Base64). El tester activa pegando la clave o cargando `licencia.key`. El proyecto `GeneradorLicencias` (AES) no es compatible con la app actual.
 
 ---
 
@@ -43,11 +45,11 @@ Para **generar** licencias se usan las herramientas del repo (**`GeneradorLicenc
 | Archivo **`licencia.key`** (o `LicenciaBase64` en config) con módulos **Lite** | Generar con herramienta de licencias |
 | Usuario SQL con permisos sobre la BD | Configuración en servidor |
 | Prueba en homologación AFIP antes de producción | Ver `ENTREGA_AFIP_Y_AMBIENTE.md` |
-| Instalador MSI/EXE unificado | **Opcional; hoy no está en el repo** |
+| Instalador Setup.exe (Inno) | `Instalador/build-release.ps1` + `SchettiniGestion.iss` |
 
 ---
 
 ## Resumen
 
-- **Instalador automático:** no incluido; se puede usar el producto con **copia de carpeta** tras compilar, o **definir** un instalador externo.
+- **Instalador automático:** `Instalador/` (Inno Setup) + activación por clave del `LicenseGenerator`.
 - **Lite:** misma compilación que la edición «completa»; diferencia = **archivo/contenido de licencia** (módulos habilitados) + permisos de usuario en la base.

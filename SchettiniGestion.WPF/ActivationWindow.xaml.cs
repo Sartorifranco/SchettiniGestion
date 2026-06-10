@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Media;
+using Microsoft.Win32;
 using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
@@ -30,6 +32,35 @@ namespace SchettiniGestion.WPF
             catch
             {
                 return Environment.MachineName.ToUpper();
+            }
+        }
+
+        private void btnCargarArchivoLicencia_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new OpenFileDialog
+                {
+                    Title = "Seleccionar archivo de licencia",
+                    Filter = "Licencia (*.key)|*.key|Todos los archivos|*.*",
+                    FileName = "licencia.key"
+                };
+                if (dlg.ShowDialog() != true)
+                    return;
+
+                string contenido = File.ReadAllText(dlg.FileName).Trim();
+                if (string.IsNullOrWhiteSpace(contenido))
+                {
+                    MostrarError("El archivo está vacío.");
+                    return;
+                }
+
+                txtLicenciaKey.Text = contenido;
+                lblError.Visibility = Visibility.Collapsed;
+            }
+            catch (Exception ex)
+            {
+                MostrarError("No se pudo leer el archivo: " + ex.Message);
             }
         }
 

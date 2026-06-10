@@ -11,6 +11,7 @@
             <StackPanel Orientation="Horizontal">
                 <TextBox x:Name="txtFiltro" Style="{StaticResource ModernTextBox}" Width="280" TextChanged="txtFiltro_TextChanged"/>
                 <Button Content="🔍 Buscar" Style="{StaticResource ButtonStyle}" Margin="8,0,0,0" Padding="10,6" Click="btnBuscar_Click"/>
+                <Button Content="🖨 Imprimir" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Padding="10,6" Click="btnImprimir_Click"/>
                 <Button Content="🗑 Eliminar" Style="{StaticResource DeleteButtonStyle}" Margin="8,0,0,0" Padding="10,6" Click="btnEliminar_Click"/>
             </StackPanel>
         </Border>

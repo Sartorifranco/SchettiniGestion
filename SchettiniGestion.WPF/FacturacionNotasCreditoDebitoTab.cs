@@ -46,6 +46,13 @@ namespace SchettiniGestion.WPF
         private void txtFiltro_TextChanged(object sender, TextChangedEventArgs e) => Cargar(txtFiltro.Text.Trim());
         private void btnBuscar_Click(object sender, RoutedEventArgs e) => Cargar(txtFiltro.Text.Trim());
 
+        private void btnImprimir_Click(object sender, RoutedEventArgs e)
+        {
+            int id = GetSelectedId();
+            if (id == 0) { MessageBox.Show("Seleccione una nota.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            PrintService.ImprimirNotaCreditoDebitoVenta(id);
+        }
+
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
             int id = GetSelectedId();

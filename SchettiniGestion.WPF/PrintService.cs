@@ -27,7 +27,53 @@ namespace SchettiniGestion.WPF
                 DataRow cabecera = DatabaseService.GetPresupuestoPorID(presupuestoID);
                 if (cabecera == null) { MessageBox.Show("Error: No se encontró el presupuesto."); return; }
                 DataTable items = DatabaseService.GetPresupuestoDetalle(presupuestoID);
-                GenerarDocumentoA4_Presupuesto(cabecera, items);
+                GenerarDocumentoA4ConItems("PRESUPUESTO", "PresupuestoID", cabecera, items,
+                    Convert.ToDecimal(cabecera["Total"]), "Documento no válido como factura fiscal.");
+            }
+            catch (Exception ex) { MessageBox.Show("Error crítico al imprimir: " + ex.Message); }
+        }
+
+        public static void ImprimirRemito(int remitoID)
+        {
+            try
+            {
+                DataRow cabecera = DatabaseService.GetRemitoPorID(remitoID);
+                if (cabecera == null) { MessageBox.Show("Error: No se encontró el remito."); return; }
+                DataTable items = DatabaseService.GetRemitoDetalle(remitoID);
+                decimal total = items.Rows.Count > 0
+                    ? items.AsEnumerable().Sum(r => Convert.ToDecimal(r["Subtotal"]))
+                    : 0m;
+                GenerarDocumentoA4ConItems("REMITO", "RemitoID", cabecera, items, total,
+                    "Comprobante de entrega. No válido como factura fiscal.");
+            }
+            catch (Exception ex) { MessageBox.Show("Error crítico al imprimir: " + ex.Message); }
+        }
+
+        public static void ImprimirPedido(int pedidoID)
+        {
+            try
+            {
+                DataRow cabecera = DatabaseService.GetPedidoPorID(pedidoID);
+                if (cabecera == null) { MessageBox.Show("Error: No se encontró el pedido."); return; }
+                DataTable items = DatabaseService.GetPedidoDetalle(pedidoID);
+                string extra = cabecera["FechaEntrega"] != DBNull.Value
+                    ? $"Entrega prevista: {Convert.ToDateTime(cabecera["FechaEntrega"]):dd/MM/yyyy}"
+                    : null;
+                GenerarDocumentoA4ConItems("PEDIDO", "PedidoID", cabecera, items,
+                    Convert.ToDecimal(cabecera["Total"]), "Pedido de venta. No válido como factura fiscal.", extra);
+            }
+            catch (Exception ex) { MessageBox.Show("Error crítico al imprimir: " + ex.Message); }
+        }
+
+        public static void ImprimirNotaCreditoDebitoVenta(int notaID)
+        {
+            try
+            {
+                DataRow cabecera = DatabaseService.GetNotaVentaPorID(notaID);
+                if (cabecera == null) { MessageBox.Show("Error: No se encontró la nota."); return; }
+                string tipo = cabecera["Tipo"]?.ToString() ?? "NC";
+                string titulo = tipo == "ND" ? "NOTA DE DÉBITO" : "NOTA DE CRÉDITO";
+                GenerarDocumentoA4Nota(titulo, cabecera);
             }
             catch (Exception ex) { MessageBox.Show("Error crítico al imprimir: " + ex.Message); }
         }
@@ -105,141 +151,196 @@ namespace SchettiniGestion.WPF
         // ------------------------------------------
         #endregion
 
-        private static void GenerarDocumentoA4_Presupuesto(DataRow cabecera, DataTable items)
+        private static void GenerarDocumentoA4ConItems(string tituloDocumento, string idColumn, DataRow cabecera, DataTable items, decimal total, string pieLegal, string lineaExtra = null)
         {
             try
             {
-                FlowDocument doc = new FlowDocument();
-                doc.PagePadding = new Thickness(40);
-                doc.ColumnWidth = double.PositiveInfinity;
-                doc.FontFamily = new FontFamily("Arial");
-                doc.FontSize = 11;
-                doc.PageWidth = 793;
+                FlowDocument doc = CrearDocumentoBase();
+                doc.Blocks.Add(CrearEncabezadoDocumento(tituloDocumento, idColumn, cabecera, lineaExtra));
+                doc.Blocks.Add(CrearBloqueCliente(cabecera));
+                doc.Blocks.Add(CrearTablaItems(items));
+                doc.Blocks.Add(CrearBloqueTotal(total));
+                doc.Blocks.Add(new Paragraph(new Run(pieLegal)) { TextAlignment = TextAlignment.Center, FontSize = 10, Foreground = Brushes.Gray, Margin = new Thickness(0, 40, 0, 0) });
+                MostrarDialogoImpresion(doc, $"{tituloDocumento}_{cabecera[idColumn]}");
+            }
+            catch (Exception ex) { MessageBox.Show("Error generando PDF: " + ex.Message); }
+        }
 
-                Table headerTable = new Table();
-                headerTable.CellSpacing = 0;
-                headerTable.Columns.Add(new TableColumn() { Width = new GridLength(450) });
-                headerTable.Columns.Add(new TableColumn() { Width = new GridLength(250) });
+        private static void GenerarDocumentoA4Nota(string tituloDocumento, DataRow cabecera)
+        {
+            try
+            {
+                FlowDocument doc = CrearDocumentoBase();
+                doc.Blocks.Add(CrearEncabezadoDocumento(tituloDocumento, "NotaID", cabecera));
+                doc.Blocks.Add(CrearBloqueCliente(cabecera));
 
-                TableRowGroup headerGroup = new TableRowGroup();
-                TableRow rowH = new TableRow();
-
-                TableCell cellLogo = new TableCell();
-                ImageSource logoSource = SvgLogoHelper.LoadEmbeddedLogo();
-                if (logoSource == null)
+                Paragraph pDetalle = new Paragraph { FontSize = 12, Margin = new Thickness(0, 10, 0, 10) };
+                pDetalle.Inlines.Add(new Run("Descripción: ") { FontWeight = FontWeights.Bold });
+                pDetalle.Inlines.Add(new Run(cabecera["Descripcion"]?.ToString() ?? "—"));
+                if (cabecera["NumeroComprobante"] != DBNull.Value && !string.IsNullOrWhiteSpace(cabecera["NumeroComprobante"].ToString()))
                 {
-                    string rutaLogo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logo.png");
-                    if (File.Exists(rutaLogo))
-                    {
-                        try
-                        {
-                            BitmapImage bi = new BitmapImage();
-                            bi.BeginInit();
-                            bi.UriSource = new Uri(rutaLogo);
-                            bi.CacheOption = BitmapCacheOption.OnLoad;
-                            bi.EndInit();
-                            logoSource = bi;
-                        }
-                        catch { /* seguir sin logo en disco */ }
-                    }
+                    pDetalle.Inlines.Add(new LineBreak());
+                    pDetalle.Inlines.Add(new Run("Comprobante asociado: ") { FontWeight = FontWeights.Bold });
+                    pDetalle.Inlines.Add(new Run(cabecera["NumeroComprobante"].ToString()));
                 }
+                doc.Blocks.Add(pDetalle);
 
-                if (logoSource != null)
+                doc.Blocks.Add(CrearBloqueTotal(Convert.ToDecimal(cabecera["Monto"])));
+                doc.Blocks.Add(new Paragraph(new Run("Documento no válido como factura fiscal.")) { TextAlignment = TextAlignment.Center, FontSize = 10, Foreground = Brushes.Gray, Margin = new Thickness(0, 40, 0, 0) });
+                MostrarDialogoImpresion(doc, $"{tituloDocumento}_{cabecera["NotaID"]}");
+            }
+            catch (Exception ex) { MessageBox.Show("Error generando PDF: " + ex.Message); }
+        }
+
+        private static FlowDocument CrearDocumentoBase()
+        {
+            return new FlowDocument
+            {
+                PagePadding = new Thickness(40),
+                ColumnWidth = double.PositiveInfinity,
+                FontFamily = new FontFamily("Arial"),
+                FontSize = 11,
+                PageWidth = 793
+            };
+        }
+
+        private static Block CrearEncabezadoDocumento(string tituloDocumento, string idColumn, DataRow cabecera, string lineaExtra = null)
+        {
+            Table headerTable = new Table();
+            headerTable.CellSpacing = 0;
+            headerTable.Columns.Add(new TableColumn() { Width = new GridLength(450) });
+            headerTable.Columns.Add(new TableColumn() { Width = new GridLength(250) });
+
+            TableRow rowH = new TableRow();
+            TableCell cellLogo = new TableCell();
+            ImageSource logoSource = SvgLogoHelper.LoadEmbeddedLogo();
+            if (logoSource == null)
+            {
+                string rutaLogo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logo.png");
+                if (File.Exists(rutaLogo))
                 {
                     try
                     {
-                        Image img = new Image();
-                        img.Source = logoSource;
-                        img.Width = 90;
-                        img.HorizontalAlignment = HorizontalAlignment.Left;
-                        img.Stretch = Stretch.Uniform;
-                        cellLogo.Blocks.Add(new BlockUIContainer(img));
+                        BitmapImage bi = new BitmapImage();
+                        bi.BeginInit();
+                        bi.UriSource = new Uri(rutaLogo);
+                        bi.CacheOption = BitmapCacheOption.OnLoad;
+                        bi.EndInit();
+                        logoSource = bi;
                     }
-                    catch { cellLogo.Blocks.Add(new Paragraph(new Run("SchTec"))); }
-                }
-                else
-                {
-                    cellLogo.Blocks.Add(new Paragraph(new Run("SchTec")) { FontSize = 30, FontWeight = FontWeights.Bold, Foreground = Brushes.DarkBlue });
-                }
-                rowH.Cells.Add(cellLogo);
-
-                Paragraph pDatos = new Paragraph();
-                pDatos.TextAlignment = TextAlignment.Right;
-                pDatos.Inlines.Add(new Run("PRESUPUESTO") { FontSize = 18, FontWeight = FontWeights.Bold });
-                pDatos.Inlines.Add(new LineBreak());
-                pDatos.Inlines.Add(new Run($"Nº: {int.Parse(cabecera["PresupuestoID"].ToString()):D8}") { FontSize = 14, FontWeight = FontWeights.Bold });
-                pDatos.Inlines.Add(new LineBreak());
-                pDatos.Inlines.Add(new Run($"Fecha: {Convert.ToDateTime(cabecera["Fecha"]):dd/MM/yyyy}") { FontSize = 12 });
-                rowH.Cells.Add(new TableCell(pDatos));
-
-                headerGroup.Rows.Add(rowH);
-                headerTable.RowGroups.Add(headerGroup);
-                doc.Blocks.Add(headerTable);
-
-                doc.Blocks.Add(new BlockUIContainer(new Separator { Margin = new Thickness(0, 10, 0, 10), Background = Brushes.Black, Height = 1 }));
-
-                Paragraph pCliente = new Paragraph();
-                pCliente.FontSize = 11;
-                pCliente.Inlines.Add(new Run("CLIENTE: ") { FontWeight = FontWeights.Bold });
-                pCliente.Inlines.Add(new Run(cabecera["ClienteNombre"].ToString().ToUpper()));
-                pCliente.Inlines.Add(new LineBreak());
-                pCliente.Inlines.Add(new Run($"CUIT: {cabecera["ClienteCUIT"]}    |    IVA: {cabecera["ClienteIVA"]}"));
-                string dir = cabecera["ClienteDireccion"].ToString();
-                if (dir != "-") pCliente.Inlines.Add(new Run($"    |    Dir: {dir}"));
-                doc.Blocks.Add(pCliente);
-
-                doc.Blocks.Add(new BlockUIContainer(new Separator { Margin = new Thickness(0, 5, 0, 15), Background = Brushes.LightGray }));
-
-                Table table = new Table();
-                table.CellSpacing = 0;
-                table.BorderBrush = Brushes.Gray;
-                table.BorderThickness = new Thickness(0, 1, 0, 1);
-                table.Margin = new Thickness(0, 0, 0, 15);
-                table.Columns.Add(new TableColumn() { Width = new GridLength(50) });
-                table.Columns.Add(new TableColumn() { Width = new GridLength(360) });
-                table.Columns.Add(new TableColumn() { Width = new GridLength(100) });
-                table.Columns.Add(new TableColumn() { Width = new GridLength(100) });
-
-                TableRowGroup groupData = new TableRowGroup();
-                TableRow rowTitulos = new TableRow();
-                rowTitulos.Background = Brushes.LightGray;
-                rowTitulos.Cells.Add(CrearCelda("CANT", TextAlignment.Center, true));
-                rowTitulos.Cells.Add(CrearCelda("DESCRIPCIÓN", TextAlignment.Left, true));
-                rowTitulos.Cells.Add(CrearCelda("UNITARIO", TextAlignment.Right, true));
-                rowTitulos.Cells.Add(CrearCelda("TOTAL", TextAlignment.Right, true));
-                groupData.Rows.Add(rowTitulos);
-
-                foreach (DataRow item in items.Rows)
-                {
-                    TableRow r = new TableRow();
-                    r.Cells.Add(CrearCelda(item["Cantidad"].ToString(), TextAlignment.Center));
-                    r.Cells.Add(CrearCelda(item["Descripcion"].ToString(), TextAlignment.Left));
-                    r.Cells.Add(CrearCelda(Convert.ToDecimal(item["PrecioUnitario"]).ToString("C2"), TextAlignment.Right));
-                    r.Cells.Add(CrearCelda(Convert.ToDecimal(item["Subtotal"]).ToString("C2"), TextAlignment.Right));
-                    groupData.Rows.Add(r);
-                }
-                table.RowGroups.Add(groupData);
-                doc.Blocks.Add(table);
-
-                Paragraph pTotal = new Paragraph();
-                pTotal.TextAlignment = TextAlignment.Right;
-                pTotal.Margin = new Thickness(0, 10, 0, 0);
-                pTotal.Inlines.Add(new Run("TOTAL:  ") { FontSize = 14, FontWeight = FontWeights.SemiBold });
-                pTotal.Inlines.Add(new Run(Convert.ToDecimal(cabecera["Total"]).ToString("C2")) { FontSize = 22, FontWeight = FontWeights.Bold });
-                doc.Blocks.Add(pTotal);
-
-                Paragraph pPie = new Paragraph(new Run("Documento no válido como factura fiscal.")) { TextAlignment = TextAlignment.Center, FontSize = 10, Foreground = Brushes.Gray, Margin = new Thickness(0, 40, 0, 0) };
-                doc.Blocks.Add(pPie);
-
-                PrintDialog pd = new PrintDialog();
-                if (pd.ShowDialog() == true)
-                {
-                    doc.PageHeight = pd.PrintableAreaHeight; doc.PageWidth = pd.PrintableAreaWidth;
-                    doc.PagePadding = new Thickness(40); doc.ColumnGap = 0; doc.ColumnWidth = pd.PrintableAreaWidth;
-                    IDocumentPaginatorSource dps = doc; pd.PrintDocument(dps.DocumentPaginator, $"Presupuesto_{cabecera["PresupuestoID"]}");
+                    catch { }
                 }
             }
-            catch (Exception ex) { MessageBox.Show("Error generando PDF: " + ex.Message); }
+
+            if (logoSource != null)
+            {
+                try
+                {
+                    Image img = new Image { Source = logoSource, Width = 90, HorizontalAlignment = HorizontalAlignment.Left, Stretch = Stretch.Uniform };
+                    cellLogo.Blocks.Add(new BlockUIContainer(img));
+                }
+                catch { cellLogo.Blocks.Add(new Paragraph(new Run("SchTec"))); }
+            }
+            else
+            {
+                cellLogo.Blocks.Add(new Paragraph(new Run("SchTec")) { FontSize = 30, FontWeight = FontWeights.Bold, Foreground = Brushes.DarkBlue });
+            }
+            rowH.Cells.Add(cellLogo);
+
+            Paragraph pDatos = new Paragraph { TextAlignment = TextAlignment.Right };
+            pDatos.Inlines.Add(new Run(tituloDocumento) { FontSize = 18, FontWeight = FontWeights.Bold });
+            pDatos.Inlines.Add(new LineBreak());
+            pDatos.Inlines.Add(new Run($"Nº: {int.Parse(cabecera[idColumn].ToString()):D8}") { FontSize = 14, FontWeight = FontWeights.Bold });
+            pDatos.Inlines.Add(new LineBreak());
+            pDatos.Inlines.Add(new Run($"Fecha: {Convert.ToDateTime(cabecera["Fecha"]):dd/MM/yyyy}") { FontSize = 12 });
+            if (!string.IsNullOrWhiteSpace(lineaExtra))
+            {
+                pDatos.Inlines.Add(new LineBreak());
+                pDatos.Inlines.Add(new Run(lineaExtra) { FontSize = 12 });
+            }
+            rowH.Cells.Add(new TableCell(pDatos));
+
+            var headerGroup = new TableRowGroup();
+            headerGroup.Rows.Add(rowH);
+            headerTable.RowGroups.Add(headerGroup);
+
+            var contenedor = new Section();
+            contenedor.Blocks.Add(headerTable);
+            contenedor.Blocks.Add(new BlockUIContainer(new Separator { Margin = new Thickness(0, 10, 0, 10), Background = Brushes.Black, Height = 1 }));
+            return contenedor;
+        }
+
+        private static Block CrearBloqueCliente(DataRow cabecera)
+        {
+            var section = new Section();
+            Paragraph pCliente = new Paragraph { FontSize = 11 };
+            pCliente.Inlines.Add(new Run("CLIENTE: ") { FontWeight = FontWeights.Bold });
+            pCliente.Inlines.Add(new Run(cabecera["ClienteNombre"].ToString().ToUpper()));
+            pCliente.Inlines.Add(new LineBreak());
+            pCliente.Inlines.Add(new Run($"CUIT: {cabecera["ClienteCUIT"]}    |    IVA: {cabecera["ClienteIVA"]}"));
+            string dir = cabecera["ClienteDireccion"].ToString();
+            if (dir != "-") pCliente.Inlines.Add(new Run($"    |    Dir: {dir}"));
+            section.Blocks.Add(pCliente);
+            section.Blocks.Add(new BlockUIContainer(new Separator { Margin = new Thickness(0, 5, 0, 15), Background = Brushes.LightGray }));
+            return section;
+        }
+
+        private static Block CrearTablaItems(DataTable items)
+        {
+            Table table = new Table
+            {
+                CellSpacing = 0,
+                BorderBrush = Brushes.Gray,
+                BorderThickness = new Thickness(0, 1, 0, 1),
+                Margin = new Thickness(0, 0, 0, 15)
+            };
+            table.Columns.Add(new TableColumn() { Width = new GridLength(50) });
+            table.Columns.Add(new TableColumn() { Width = new GridLength(360) });
+            table.Columns.Add(new TableColumn() { Width = new GridLength(100) });
+            table.Columns.Add(new TableColumn() { Width = new GridLength(100) });
+
+            TableRowGroup groupData = new TableRowGroup();
+            TableRow rowTitulos = new TableRow { Background = Brushes.LightGray };
+            rowTitulos.Cells.Add(CrearCelda("CANT", TextAlignment.Center, true));
+            rowTitulos.Cells.Add(CrearCelda("DESCRIPCIÓN", TextAlignment.Left, true));
+            rowTitulos.Cells.Add(CrearCelda("UNITARIO", TextAlignment.Right, true));
+            rowTitulos.Cells.Add(CrearCelda("TOTAL", TextAlignment.Right, true));
+            groupData.Rows.Add(rowTitulos);
+
+            foreach (DataRow item in items.Rows)
+            {
+                TableRow r = new TableRow();
+                r.Cells.Add(CrearCelda(item["Cantidad"].ToString(), TextAlignment.Center));
+                r.Cells.Add(CrearCelda(item["Descripcion"].ToString(), TextAlignment.Left));
+                r.Cells.Add(CrearCelda(Convert.ToDecimal(item["PrecioUnitario"]).ToString("C2"), TextAlignment.Right));
+                r.Cells.Add(CrearCelda(Convert.ToDecimal(item["Subtotal"]).ToString("C2"), TextAlignment.Right));
+                groupData.Rows.Add(r);
+            }
+            table.RowGroups.Add(groupData);
+            return table;
+        }
+
+        private static Paragraph CrearBloqueTotal(decimal total)
+        {
+            Paragraph pTotal = new Paragraph { TextAlignment = TextAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
+            pTotal.Inlines.Add(new Run("TOTAL:  ") { FontSize = 14, FontWeight = FontWeights.SemiBold });
+            pTotal.Inlines.Add(new Run(total.ToString("C2")) { FontSize = 22, FontWeight = FontWeights.Bold });
+            return pTotal;
+        }
+
+        private static void MostrarDialogoImpresion(FlowDocument doc, string jobName)
+        {
+            PrintDialog pd = new PrintDialog();
+            if (pd.ShowDialog() == true)
+            {
+                doc.PageHeight = pd.PrintableAreaHeight;
+                doc.PageWidth = pd.PrintableAreaWidth;
+                doc.PagePadding = new Thickness(40);
+                doc.ColumnGap = 0;
+                doc.ColumnWidth = pd.PrintableAreaWidth;
+                IDocumentPaginatorSource dps = doc;
+                pd.PrintDocument(dps.DocumentPaginator, jobName);
+            }
         }
 
         private static TableCell CrearCelda(string texto, TextAlignment alineacion, bool negrita = false)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Windows;
 using SchettiniGestion;
 
@@ -63,15 +64,23 @@ namespace SchettiniGestion.WPF
                     lblTitulo.Text = "Detalle de Presupuesto";
                     _encabezado = DatabaseService.GetPresupuestoPorID(_id);
                     _detalle = DatabaseService.GetPresupuestoDetalle(_id);
-
-                    if (_encabezado != null)
-                    {
-                        lblTipo.Text = "Presupuesto";
-                        lblFecha.Text = Convert.ToDateTime(_encabezado["Fecha"]).ToString("dd/MM/yyyy HH:mm");
-                        lblNumero.Text = _encabezado["PresupuestoID"].ToString();
-                        lblTotal.Text = Convert.ToDecimal(_encabezado["Total"]).ToString("C2");
-                        lblEstado.Text = _encabezado["Estado"]?.ToString() ?? "—";
-                    }
+                    CargarEncabezadoDocumento("Presupuesto", "PresupuestoID", "Total");
+                }
+                else if (_tipo == "Remito")
+                {
+                    Title = "Detalle de Remito";
+                    lblTitulo.Text = "Detalle de Remito";
+                    _encabezado = DatabaseService.GetRemitoPorID(_id);
+                    _detalle = DatabaseService.GetRemitoDetalle(_id);
+                    CargarEncabezadoDocumento("Remito", "RemitoID", null);
+                }
+                else if (_tipo == "Pedido")
+                {
+                    Title = "Detalle de Pedido";
+                    lblTitulo.Text = "Detalle de Pedido";
+                    _encabezado = DatabaseService.GetPedidoPorID(_id);
+                    _detalle = DatabaseService.GetPedidoDetalle(_id);
+                    CargarEncabezadoDocumento("Pedido", "PedidoID", "Total");
                 }
                 else
                 {
@@ -129,18 +138,37 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        private void CargarEncabezadoDocumento(string tipo, string idColumn, string totalColumn)
+        {
+            if (_encabezado == null) return;
+
+            lblTipo.Text = tipo;
+            lblFecha.Text = Convert.ToDateTime(_encabezado["Fecha"]).ToString("dd/MM/yyyy HH:mm");
+            lblNumero.Text = _encabezado[idColumn].ToString();
+            if (!string.IsNullOrEmpty(totalColumn) && _encabezado.Table.Columns.Contains(totalColumn))
+                lblTotal.Text = Convert.ToDecimal(_encabezado[totalColumn]).ToString("C2");
+            else if (_detalle != null && _detalle.Rows.Count > 0)
+                lblTotal.Text = _detalle.AsEnumerable().Sum(r => Convert.ToDecimal(r["Subtotal"])).ToString("C2");
+            else
+                lblTotal.Text = "—";
+            lblEstado.Text = _encabezado.Table.Columns.Contains("Estado") ? _encabezado["Estado"]?.ToString() ?? "—" : "—";
+            if (_encabezado.Table.Columns.Contains("ClienteNombre") && string.IsNullOrWhiteSpace(lblCliente.Text))
+                lblCliente.Text = _encabezado["ClienteNombre"]?.ToString();
+        }
+
         private void btnImprimir_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (_tipo == "Presupuesto")
+                switch (_tipo)
                 {
-                    PrintService.ImprimirPresupuesto(_id);
-                }
-                else
-                {
-                    MessageBox.Show("Impresión de facturas desde este panel no disponible aún.\nUse la opción de impresión al guardar la venta.",
-                        "Información", MessageBoxButton.OK, MessageBoxImage.Information);
+                    case "Presupuesto": PrintService.ImprimirPresupuesto(_id); break;
+                    case "Remito": PrintService.ImprimirRemito(_id); break;
+                    case "Pedido": PrintService.ImprimirPedido(_id); break;
+                    default:
+                        MessageBox.Show("Impresión de facturas desde este panel no disponible aún.\nUse la opción de impresión al guardar la venta.",
+                            "Información", MessageBoxButton.OK, MessageBoxImage.Information);
+                        break;
                 }
             }
             catch (Exception ex)

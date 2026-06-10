@@ -42,6 +42,21 @@ namespace SchettiniGestion.WPF
         private void txtFiltro_TextChanged(object sender, TextChangedEventArgs e) => Cargar(txtFiltro.Text.Trim());
         private void btnBuscar_Click(object sender, RoutedEventArgs e) => Cargar(txtFiltro.Text.Trim());
 
+        private void btnImprimir_Click(object sender, RoutedEventArgs e)
+        {
+            int id = GetSelectedId();
+            if (id == 0) { MessageBox.Show("Seleccione un remito.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            PrintService.ImprimirRemito(id);
+        }
+
+        private void dgvRemitos_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            int id = GetSelectedId();
+            if (id == 0) return;
+            string cliente = dgvRemitos.SelectedItem is DataRowView rv ? rv["RazonSocial"]?.ToString() : "";
+            new DetalleVentaWindow(id, cliente, "Remito").ShowDialog();
+        }
+
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
             int id = GetSelectedId();

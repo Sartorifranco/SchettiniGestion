@@ -298,6 +298,8 @@
                                 <ComboBoxItem Content="Remito"/>
                                 <ComboBoxItem Content="Pedido"/>
                                 <ComboBoxItem Content="Presupuesto"/>
+                                <ComboBoxItem Content="Nota de Crédito"/>
+                                <ComboBoxItem Content="Nota de Débito"/>
                             </ComboBox>
                         </StackPanel>
 

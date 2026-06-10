@@ -2904,6 +2904,12 @@ INSERT INTO Configuracion (
             return null;
         }
 
+        private const string SqlCamposClienteJoin =
+            "ISNULL(c.RazonSocial,'Consumidor Final') AS ClienteNombre, " +
+            "ISNULL(c.CUIT,'-') AS ClienteCUIT, " +
+            "ISNULL(c.CondicionIVA,'-') AS ClienteIVA, " +
+            "ISNULL(c.Direccion,'-') AS ClienteDireccion";
+
         // --- Presupuestos (para PrintService) ---
         public static DataRow GetPresupuestoPorID(int id)
         {
@@ -2913,7 +2919,186 @@ INSERT INTO Configuracion (
                 {
                     c.Open();
                     var dt = new DataTable();
-                    new SqlDataAdapter($"SELECT * FROM Presupuestos WHERE PresupuestoID={id}", c).Fill(dt);
+                    var cmd = new SqlCommand(
+                        $"SELECT p.*, {SqlCamposClienteJoin} FROM Presupuestos p LEFT JOIN Clientes c ON p.ClienteID=c.ClienteID WHERE p.PresupuestoID=@id", c);
+                    cmd.Parameters.AddWithValue("@id", id);
+                    new SqlDataAdapter(cmd).Fill(dt);
+                    return dt.Rows.Count > 0 ? dt.Rows[0] : null;
+                }
+            }
+            catch { return null; }
+        }
+
+        public static int GuardarRemito(int cid, List<FacturaItem> items, string observaciones = null)
+        {
+            using (var c = new SqlConnection(_connectionString))
+            {
+                c.Open();
+                using (var tr = c.BeginTransaction())
+                {
+                    try
+                    {
+                        var cmd = new SqlCommand(
+                            "INSERT INTO Remitos (ClienteID,FacturaID,Fecha,Estado,Observaciones) VALUES (@cid,NULL,@f,'Emitido',@o); SELECT SCOPE_IDENTITY();", c, tr);
+                        cmd.Parameters.AddWithValue("@cid", cid);
+                        cmd.Parameters.AddWithValue("@f", DateTime.Now);
+                        cmd.Parameters.AddWithValue("@o", (object)observaciones ?? DBNull.Value);
+                        int rid = Convert.ToInt32(cmd.ExecuteScalar());
+                        foreach (var it in items)
+                        {
+                            var det = new SqlCommand(
+                                "INSERT INTO RemitoDetalle (RemitoID,ProductoID,Cantidad,PrecioUnitario) VALUES (@rid,@prod,@cant,@pu)", c, tr);
+                            det.Parameters.AddWithValue("@rid", rid);
+                            det.Parameters.AddWithValue("@prod", it.ProductoID);
+                            det.Parameters.AddWithValue("@cant", it.Cantidad);
+                            det.Parameters.AddWithValue("@pu", it.PrecioUnitario);
+                            det.ExecuteNonQuery();
+                        }
+                        tr.Commit();
+                        return rid;
+                    }
+                    catch { tr.Rollback(); return 0; }
+                }
+            }
+        }
+
+        public static DataRow GetRemitoPorID(int id)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    var dt = new DataTable();
+                    var cmd = new SqlCommand(
+                        $"SELECT r.*, {SqlCamposClienteJoin} FROM Remitos r LEFT JOIN Clientes c ON r.ClienteID=c.ClienteID WHERE r.RemitoID=@id", c);
+                    cmd.Parameters.AddWithValue("@id", id);
+                    new SqlDataAdapter(cmd).Fill(dt);
+                    return dt.Rows.Count > 0 ? dt.Rows[0] : null;
+                }
+            }
+            catch { return null; }
+        }
+
+        public static DataTable GetRemitoDetalle(int rid)
+        {
+            var dt = new DataTable();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    new SqlDataAdapter(
+                        $"SELECT p.Codigo,p.Descripcion,rd.Cantidad,rd.PrecioUnitario,(rd.Cantidad*rd.PrecioUnitario) AS Subtotal FROM RemitoDetalle rd JOIN Productos p ON rd.ProductoID=p.ProductoID WHERE rd.RemitoID={rid}", c).Fill(dt);
+                }
+            }
+            catch { }
+            return dt;
+        }
+
+        public static int GuardarPedido(int cid, decimal total, List<FacturaItem> items, DateTime? fechaEntrega = null, string observaciones = null)
+        {
+            using (var c = new SqlConnection(_connectionString))
+            {
+                c.Open();
+                using (var tr = c.BeginTransaction())
+                {
+                    try
+                    {
+                        var cmd = new SqlCommand(
+                            "INSERT INTO Pedidos (ClienteID,Fecha,FechaEntrega,Estado,Total,Observaciones) VALUES (@cid,@f,@fe,'Pendiente',@t,@o); SELECT SCOPE_IDENTITY();", c, tr);
+                        cmd.Parameters.AddWithValue("@cid", cid);
+                        cmd.Parameters.AddWithValue("@f", DateTime.Now);
+                        cmd.Parameters.AddWithValue("@fe", (object)fechaEntrega ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@t", total);
+                        cmd.Parameters.AddWithValue("@o", (object)observaciones ?? DBNull.Value);
+                        int pid = Convert.ToInt32(cmd.ExecuteScalar());
+                        foreach (var it in items)
+                        {
+                            var det = new SqlCommand(
+                                "INSERT INTO PedidoDetalle (PedidoID,ProductoID,Cantidad,PrecioUnitario) VALUES (@pid,@prod,@cant,@pu)", c, tr);
+                            det.Parameters.AddWithValue("@pid", pid);
+                            det.Parameters.AddWithValue("@prod", it.ProductoID);
+                            det.Parameters.AddWithValue("@cant", it.Cantidad);
+                            det.Parameters.AddWithValue("@pu", it.PrecioUnitario);
+                            det.ExecuteNonQuery();
+                        }
+                        tr.Commit();
+                        return pid;
+                    }
+                    catch { tr.Rollback(); return 0; }
+                }
+            }
+        }
+
+        public static DataRow GetPedidoPorID(int id)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    var dt = new DataTable();
+                    var cmd = new SqlCommand(
+                        $"SELECT p.*, {SqlCamposClienteJoin} FROM Pedidos p LEFT JOIN Clientes c ON p.ClienteID=c.ClienteID WHERE p.PedidoID=@id", c);
+                    cmd.Parameters.AddWithValue("@id", id);
+                    new SqlDataAdapter(cmd).Fill(dt);
+                    return dt.Rows.Count > 0 ? dt.Rows[0] : null;
+                }
+            }
+            catch { return null; }
+        }
+
+        public static DataTable GetPedidoDetalle(int pid)
+        {
+            var dt = new DataTable();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    new SqlDataAdapter(
+                        $"SELECT pr.Codigo,pr.Descripcion,pd.Cantidad,pd.PrecioUnitario,(pd.Cantidad*pd.PrecioUnitario) AS Subtotal FROM PedidoDetalle pd JOIN Productos pr ON pd.ProductoID=pr.ProductoID WHERE pd.PedidoID={pid}", c).Fill(dt);
+                }
+            }
+            catch { }
+            return dt;
+        }
+
+        public static int GuardarNotaCreditoDebitoVenta(int cid, string tipo, decimal monto, string descripcion, int? facturaId = null, string numeroComprobante = null)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    var cmd = new SqlCommand(
+                        "INSERT INTO NotasCreditoDebitoVentas (ClienteID,FacturaID,Tipo,Fecha,Monto,Descripcion,NumeroComprobante) VALUES (@cid,@fid,@t,@f,@m,@d,@nc); SELECT SCOPE_IDENTITY();", c);
+                    cmd.Parameters.AddWithValue("@cid", cid);
+                    cmd.Parameters.AddWithValue("@fid", (object)facturaId ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@t", tipo);
+                    cmd.Parameters.AddWithValue("@f", DateTime.Now);
+                    cmd.Parameters.AddWithValue("@m", monto);
+                    cmd.Parameters.AddWithValue("@d", descripcion ?? "");
+                    cmd.Parameters.AddWithValue("@nc", (object)numeroComprobante ?? DBNull.Value);
+                    return Convert.ToInt32(cmd.ExecuteScalar());
+                }
+            }
+            catch { return 0; }
+        }
+
+        public static DataRow GetNotaVentaPorID(int id)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    var dt = new DataTable();
+                    var cmd = new SqlCommand(
+                        $"SELECT n.*, {SqlCamposClienteJoin} FROM NotasCreditoDebitoVentas n LEFT JOIN Clientes c ON n.ClienteID=c.ClienteID WHERE n.NotaID=@id", c);
+                    cmd.Parameters.AddWithValue("@id", id);
+                    new SqlDataAdapter(cmd).Fill(dt);
                     return dt.Rows.Count > 0 ? dt.Rows[0] : null;
                 }
             }

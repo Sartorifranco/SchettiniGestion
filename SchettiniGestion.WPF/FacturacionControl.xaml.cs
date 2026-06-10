@@ -77,22 +77,41 @@ namespace SchettiniGestion.WPF
             return (cmbTipoComprobante.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Factura";
         }
 
+        private bool EsDocumentoSinCobro(string tipo)
+        {
+            return tipo == "Presupuesto" || tipo == "Remito" || tipo == "Pedido"
+                || tipo == "Nota de Crédito" || tipo == "Nota de Débito";
+        }
+
+        private string ObtenerTextoBotonGuardar(string tipo)
+        {
+            switch (tipo)
+            {
+                case "Presupuesto": return "📄 GENERAR PRESUPUESTO";
+                case "Remito": return "📄 GENERAR REMITO";
+                case "Pedido": return "📄 GENERAR PEDIDO";
+                case "Nota de Crédito": return "📄 GENERAR NOTA DE CRÉDITO";
+                case "Nota de Débito": return "📄 GENERAR NOTA DE DÉBITO";
+                default: return "✅ COBRAR";
+            }
+        }
+
         private void ActualizarUiSegunTipoComprobante()
         {
             if (btnGuardarFactura == null) return;
 
             string tipo = ObtenerTipoComprobanteSeleccionado();
-            bool esPresupuesto = tipo == "Presupuesto";
+            bool sinCobro = EsDocumentoSinCobro(tipo);
 
-            btnGuardarFactura.Content = esPresupuesto ? "📄 GENERAR PRESUPUESTO" : "✅ COBRAR";
+            btnGuardarFactura.Content = ObtenerTextoBotonGuardar(tipo);
 
             if (pnlCondicionPago != null)
-                pnlCondicionPago.Visibility = esPresupuesto ? Visibility.Collapsed : Visibility.Visible;
+                pnlCondicionPago.Visibility = sinCobro ? Visibility.Collapsed : Visibility.Visible;
 
             if (btnPagoQR != null)
-                btnPagoQR.Visibility = esPresupuesto ? Visibility.Collapsed : Visibility.Visible;
+                btnPagoQR.Visibility = sinCobro ? Visibility.Collapsed : Visibility.Visible;
 
-            if (esPresupuesto)
+            if (sinCobro)
             {
                 if (pnlCalculoEfectivo != null)
                     pnlCalculoEfectivo.Visibility = Visibility.Collapsed;
@@ -349,11 +368,11 @@ namespace SchettiniGestion.WPF
             if (_clienteSeleccionado == null) { CustomMessageBox.Show("Seleccione cliente."); return; }
 
             string tipoCompTexto = ObtenerTipoComprobanteSeleccionado();
-            if (tipoCompTexto == "Presupuesto")
-            {
-                GuardarPresupuestoDesdePos();
-                return;
-            }
+            if (tipoCompTexto == "Presupuesto") { GuardarPresupuestoDesdePos(); return; }
+            if (tipoCompTexto == "Remito") { GuardarRemitoDesdePos(); return; }
+            if (tipoCompTexto == "Pedido") { GuardarPedidoDesdePos(); return; }
+            if (tipoCompTexto == "Nota de Crédito") { GuardarNotaVentaDesdePos("NC", "Nota de Crédito"); return; }
+            if (tipoCompTexto == "Nota de Débito") { GuardarNotaVentaDesdePos("ND", "Nota de Débito"); return; }
 
             foreach (var it in CarritoDeVenta)
             {
@@ -478,33 +497,68 @@ namespace SchettiniGestion.WPF
 
         private void GuardarPresupuestoDesdePos()
         {
+            GuardarDocumentoSinCobro(
+                () => DatabaseService.GuardarPresupuesto(Convert.ToInt32(_clienteSeleccionado["ClienteID"]), CarritoDeVenta.Sum(x => x.Subtotal), CarritoDeVenta.ToList()),
+                "Presupuesto", id => PrintService.ImprimirPresupuesto(id));
+        }
+
+        private void GuardarRemitoDesdePos()
+        {
+            GuardarDocumentoSinCobro(
+                () => DatabaseService.GuardarRemito(Convert.ToInt32(_clienteSeleccionado["ClienteID"]), CarritoDeVenta.ToList()),
+                "Remito", id => PrintService.ImprimirRemito(id));
+        }
+
+        private void GuardarPedidoDesdePos()
+        {
+            GuardarDocumentoSinCobro(
+                () => DatabaseService.GuardarPedido(Convert.ToInt32(_clienteSeleccionado["ClienteID"]), CarritoDeVenta.Sum(x => x.Subtotal), CarritoDeVenta.ToList()),
+                "Pedido", id => PrintService.ImprimirPedido(id));
+        }
+
+        private void GuardarNotaVentaDesdePos(string tipoCodigo, string tipoNombre)
+        {
+            decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
+            string descripcion = ConstruirDescripcionCarrito();
+            GuardarDocumentoSinCobro(
+                () => DatabaseService.GuardarNotaCreditoDebitoVenta(Convert.ToInt32(_clienteSeleccionado["ClienteID"]), tipoCodigo, total, descripcion),
+                tipoNombre, id => PrintService.ImprimirNotaCreditoDebitoVenta(id));
+        }
+
+        private string ConstruirDescripcionCarrito()
+        {
+            var partes = CarritoDeVenta.Take(6).Select(i => $"{i.Cantidad} x {i.Descripcion}").ToList();
+            string desc = string.Join("; ", partes);
+            if (CarritoDeVenta.Count > 6) desc += $" (+{CarritoDeVenta.Count - 6} ítems más)";
+            return desc;
+        }
+
+        private void GuardarDocumentoSinCobro(Func<int> guardar, string nombreDocumento, Action<int> imprimir)
+        {
             btnGuardarFactura.IsEnabled = false;
             try
             {
-                decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
-                int clienteId = Convert.ToInt32(_clienteSeleccionado["ClienteID"]);
-                int presupuestoId = DatabaseService.GuardarPresupuesto(clienteId, total, CarritoDeVenta.ToList());
-
-                if (presupuestoId <= 0)
+                int id = guardar();
+                if (id <= 0)
                 {
-                    CustomMessageBox.Show("No se pudo guardar el presupuesto.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show($"No se pudo guardar el {nombreDocumento.ToLower()}.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
                 if (CustomMessageBox.Show(
-                    $"Presupuesto #{presupuestoId:D8} guardado correctamente.\n¿Imprimir presupuesto?",
-                    "Presupuesto generado",
+                    $"{nombreDocumento} #{id:D8} guardado correctamente.\n¿Imprimir?",
+                    $"{nombreDocumento} generado",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
-                    PrintService.ImprimirPresupuesto(presupuestoId);
+                    imprimir(id);
                 }
 
                 LimpiarFormulario();
             }
             catch (Exception ex)
             {
-                CustomMessageBox.Show("Error al guardar presupuesto: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show($"Error al guardar {nombreDocumento.ToLower()}: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {

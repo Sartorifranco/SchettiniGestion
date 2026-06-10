@@ -11,13 +11,15 @@
             <StackPanel Orientation="Horizontal">
                 <TextBox x:Name="txtFiltro" Style="{StaticResource ModernTextBox}" Width="280" TextChanged="txtFiltro_TextChanged"/>
                 <Button Content="🔍 Buscar" Style="{StaticResource ButtonStyle}" Margin="8,0,0,0" Padding="10,6" Click="btnBuscar_Click"/>
+                <Button Content="🖨 Imprimir" Style="{StaticResource SecondaryButtonStyle}" Margin="8,0,0,0" Padding="10,6" Click="btnImprimir_Click"/>
                 <Button Content="🗑 Eliminar" Style="{StaticResource DeleteButtonStyle}" Margin="8,0,0,0" Padding="10,6" Click="btnEliminar_Click"/>
             </StackPanel>
         </Border>
         <DataGrid Grid.Row="1" x:Name="dgvRemitos"
                   Style="{StaticResource {x:Type DataGrid}}"
                   AutoGenerateColumns="False" IsReadOnly="True"
-                  HeadersVisibility="Column" CanUserAddRows="False" SelectionMode="Single">
+                  HeadersVisibility="Column" CanUserAddRows="False" SelectionMode="Single"
+                  MouseDoubleClick="dgvRemitos_MouseDoubleClick">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding RemitoID}" Width="60"/>
                 <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy}" Width="100"/>

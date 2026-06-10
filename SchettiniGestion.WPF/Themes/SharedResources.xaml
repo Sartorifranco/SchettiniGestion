@@ -20,6 +20,15 @@
     <SolidColorBrush x:Key="DangerColor" Color="#EF4444"/>
     <SolidColorBrush x:Key="WarningColor" Color="#F59E0B"/>
 
+    <!-- DatePicker: colores fijos en SharedResources para que siempre haya contraste legible -->
+    <SolidColorBrush x:Key="DatePickerInputBackground" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="DatePickerInputForeground" Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="CalendarBackground" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="CalendarForeground" Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="CalendarDayHoverBackground" Color="#E3F2FD"/>
+    <SolidColorBrush x:Key="CalendarDaySelectedBackground" Color="#1E88E5"/>
+    <SolidColorBrush x:Key="CalendarDaySelectedForeground" Color="#FFFFFF"/>
+
     <Style TargetType="TextBlock" x:Key="LabelStyle">
         <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
         <Setter Property="FontSize" Value="12"/>
@@ -254,19 +263,19 @@
     </Style>
 
     <!-- Calendario táctil: celdas grandes y contraste alto en el popup -->
-    <Style x:Key="TouchCalendarDayButtonStyle" TargetType="CalendarDayButton">
+    <Style x:Key="TouchCalendarDayButtonStyle" TargetType="primitives:CalendarDayButton">
         <Setter Property="MinWidth" Value="48"/>
         <Setter Property="MinHeight" Value="48"/>
         <Setter Property="FontSize" Value="17"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
-        <Setter Property="Foreground" Value="{DynamicResource CalendarForeground}"/>
+        <Setter Property="Foreground" Value="{StaticResource CalendarForeground}"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="CalendarDayButton">
+                <ControlTemplate TargetType="primitives:CalendarDayButton">
                     <Border x:Name="dayBorder"
                             Background="{TemplateBinding Background}"
                             CornerRadius="8"
@@ -275,11 +284,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="dayBorder" Property="Background" Value="{DynamicResource CalendarDayHoverBackground}"/>
+                            <Setter TargetName="dayBorder" Property="Background" Value="{StaticResource CalendarDayHoverBackground}"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="dayBorder" Property="Background" Value="{DynamicResource CalendarDaySelectedBackground}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource CalendarDaySelectedForeground}"/>
+                            <Setter TargetName="dayBorder" Property="Background" Value="{StaticResource CalendarDaySelectedBackground}"/>
+                            <Setter Property="Foreground" Value="{StaticResource CalendarDaySelectedForeground}"/>
                         </Trigger>
                         <Trigger Property="IsToday" Value="True">
                             <Setter TargetName="dayBorder" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
@@ -294,19 +303,19 @@
         </Setter>
     </Style>
 
-    <Style x:Key="TouchCalendarButtonStyle" TargetType="CalendarButton">
+    <Style x:Key="TouchCalendarButtonStyle" TargetType="primitives:CalendarButton">
         <Setter Property="MinWidth" Value="48"/>
         <Setter Property="MinHeight" Value="48"/>
         <Setter Property="FontSize" Value="16"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground" Value="{DynamicResource CalendarForeground}"/>
+        <Setter Property="Foreground" Value="{StaticResource CalendarForeground}"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="CalendarButton">
+                <ControlTemplate TargetType="primitives:CalendarButton">
                     <Border x:Name="navBorder"
                             Background="{TemplateBinding Background}"
                             CornerRadius="8"
@@ -315,7 +324,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="navBorder" Property="Background" Value="{DynamicResource CalendarDayHoverBackground}"/>
+                            <Setter TargetName="navBorder" Property="Background" Value="{StaticResource CalendarDayHoverBackground}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="navBorder" Property="Opacity" Value="0.85"/>
@@ -327,8 +336,8 @@
     </Style>
 
     <Style x:Key="TouchCalendarStyle" TargetType="Calendar">
-        <Setter Property="Background" Value="{DynamicResource CalendarBackground}"/>
-        <Setter Property="Foreground" Value="{DynamicResource CalendarForeground}"/>
+        <Setter Property="Background" Value="{StaticResource CalendarBackground}"/>
+        <Setter Property="Foreground" Value="{StaticResource CalendarForeground}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="8"/>
@@ -340,9 +349,9 @@
     </Style>
 
     <Style TargetType="primitives:DatePickerTextBox">
-        <Setter Property="Background" Value="{DynamicResource DatePickerInputBackground}"/>
-        <Setter Property="Foreground" Value="{DynamicResource DatePickerInputForeground}"/>
-        <Setter Property="CaretBrush" Value="{DynamicResource DatePickerInputForeground}"/>
+        <Setter Property="Background" Value="{StaticResource DatePickerInputBackground}"/>
+        <Setter Property="Foreground" Value="{StaticResource DatePickerInputForeground}"/>
+        <Setter Property="CaretBrush" Value="{StaticResource DatePickerInputForeground}"/>
         <Setter Property="FontSize" Value="16"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Padding" Value="10,8"/>
@@ -362,73 +371,95 @@
         </Setter>
     </Style>
 
-    <Style TargetType="DatePicker">
-        <Setter Property="Foreground" Value="{DynamicResource DatePickerInputForeground}"/>
-        <Setter Property="Background" Value="{DynamicResource DatePickerInputBackground}"/>
+    <Style x:Key="TouchDatePickerStyle" TargetType="DatePicker">
+        <Setter Property="Foreground" Value="{StaticResource DatePickerInputForeground}"/>
+        <Setter Property="Background" Value="{StaticResource DatePickerInputBackground}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="4"/>
-        <Setter Property="MinHeight" Value="48"/>
-        <Setter Property="MinWidth" Value="170"/>
-        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="MinHeight" Value="52"/>
+        <Setter Property="MinWidth" Value="190"/>
+        <Setter Property="FontSize" Value="17"/>
         <Setter Property="CalendarStyle" Value="{StaticResource TouchCalendarStyle}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="DatePicker">
-                    <Border x:Name="pickerBorder"
-                            Background="{DynamicResource DatePickerInputBackground}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="6"
-                            Padding="2">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <primitives:DatePickerTextBox x:Name="PART_TextBox"
-                                                            Grid.Column="0"
-                                                            Focusable="{TemplateBinding Focusable}"
-                                                            Foreground="{DynamicResource DatePickerInputForeground}"
-                                                            Background="{DynamicResource DatePickerInputBackground}"
-                                                            FontSize="{TemplateBinding FontSize}"
-                                                            VerticalContentAlignment="Center"/>
-                            <Button x:Name="PART_Button"
-                                    Grid.Column="1"
-                                    Width="48"
-                                    Height="48"
-                                    MinWidth="48"
-                                    MinHeight="48"
-                                    Focusable="False"
-                                    Foreground="{DynamicResource CalendarForeground}"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Cursor="Hand"
-                                    Content="📅"
-                                    FontSize="20"
-                                    VerticalAlignment="Center"
-                                    HorizontalAlignment="Center">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="btnBorder"
-                                                Background="{TemplateBinding Background}"
-                                                CornerRadius="8"
-                                                Margin="2">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="btnBorder" Property="Background" Value="{DynamicResource CalendarDayHoverBackground}"/>
-                                            </Trigger>
-                                            <Trigger Property="IsPressed" Value="True">
-                                                <Setter TargetName="btnBorder" Property="Opacity" Value="0.85"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                        </Grid>
-                    </Border>
+                    <Grid>
+                        <Border x:Name="pickerBorder"
+                                Background="{StaticResource DatePickerInputBackground}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="2">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <primitives:DatePickerTextBox x:Name="PART_TextBox"
+                                                                Grid.Column="0"
+                                                                Focusable="{TemplateBinding Focusable}"
+                                                                Foreground="{StaticResource DatePickerInputForeground}"
+                                                                Background="{StaticResource DatePickerInputBackground}"
+                                                                FontSize="{TemplateBinding FontSize}"
+                                                                FontWeight="SemiBold"
+                                                                VerticalContentAlignment="Center"/>
+                                <Button x:Name="PART_Button"
+                                        Grid.Column="1"
+                                        Width="48"
+                                        Height="48"
+                                        MinWidth="48"
+                                        MinHeight="48"
+                                        Focusable="False"
+                                        Foreground="{StaticResource CalendarForeground}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Cursor="Hand"
+                                        Content="📅"
+                                        FontSize="20"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Center">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="btnBorder"
+                                                    Background="{TemplateBinding Background}"
+                                                    CornerRadius="8"
+                                                    Margin="2">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource CalendarDayHoverBackground}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="btnBorder" Property="Opacity" Value="0.85"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <Popup x:Name="PART_Popup"
+                               AllowsTransparency="True"
+                               Placement="Bottom"
+                               PlacementTarget="{Binding ElementName=PART_TextBox}"
+                               StaysOpen="False"
+                               Focusable="False"
+                               PopupAnimation="Fade">
+                            <Border Background="{StaticResource CalendarBackground}"
+                                    BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="6"
+                                    SnapsToDevicePixels="True">
+                                <Calendar x:Name="PART_Calendar"
+                                          Style="{StaticResource TouchCalendarStyle}"
+                                          MinWidth="400"
+                                          MinHeight="380"/>
+                            </Border>
+                        </Popup>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="pickerBorder" Property="Opacity" Value="0.55"/>
@@ -441,4 +472,6 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <Style TargetType="DatePicker" BasedOn="{StaticResource TouchDatePickerStyle}"/>
 </ResourceDictionary>

@@ -15,6 +15,9 @@ namespace SchettiniGestion.WPF
 
         private void VentasControl_Loaded(object sender, RoutedEventArgs e)
         {
+            TouchDatePickerHelper.Apply(dtpDesde);
+            TouchDatePickerHelper.Apply(dtpHasta);
+
             // Por defecto mostramos el mes actual
             EstablecerFechas("Mes");
         }

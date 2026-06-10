@@ -41,12 +41,18 @@
 
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="DESDE" Style="{DynamicResource LabelStyle}"/>
-                    <DatePicker x:Name="dtpDesde" MinWidth="180"/>
+                    <DatePicker x:Name="dtpDesde"
+                                Style="{StaticResource TouchDatePickerStyle}"
+                                CalendarStyle="{StaticResource TouchCalendarStyle}"
+                                MinWidth="190"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2">
                     <TextBlock Text="HASTA" Style="{DynamicResource LabelStyle}"/>
-                    <DatePicker x:Name="dtpHasta" MinWidth="180"/>
+                    <DatePicker x:Name="dtpHasta"
+                                Style="{StaticResource TouchDatePickerStyle}"
+                                CalendarStyle="{StaticResource TouchCalendarStyle}"
+                                MinWidth="190"/>
                 </StackPanel>
 
                 <Button x:Name="btnBuscar" Grid.Column="4" Content="🔍 BUSCAR" Style="{StaticResource ButtonStyle}" MinWidth="140" VerticalAlignment="Bottom" Click="btnBuscar_Click"/>

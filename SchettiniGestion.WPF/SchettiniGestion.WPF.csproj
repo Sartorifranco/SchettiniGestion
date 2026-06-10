@@ -180,6 +180,7 @@
     </Compile>
     <Compile Include="SvgLogoHelper.cs" />
     <Compile Include="ThemeManager.cs" />
+    <Compile Include="TouchDatePickerHelper.cs" />
     <Compile Include="InputWindow.xaml.cs" />
     <Compile Include="CompraModalWindow.xaml.cs">
       <DependentUpon>CompraModalWindow.xaml</DependentUpon>

@@ -10,7 +10,7 @@ namespace SchettiniGestion.WPF
     internal static class SvgLogoHelper
     {
         private static readonly Uri PackLogoUri =
-            new Uri("pack://application:,,,/Resources/logo.svg", UriKind.Absolute);
+            new Uri("pack://application:,,,/SchettiniGestion.WPF;component/Resources/logo.svg", UriKind.Absolute);
 
         public static DrawingImage LoadEmbeddedLogo()
         {

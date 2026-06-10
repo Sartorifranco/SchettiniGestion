@@ -2,7 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:SchettiniGestion.WPF"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1000"
              Background="{DynamicResource BackgroundDark}"
@@ -41,15 +42,15 @@
 
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="DESDE" Style="{DynamicResource LabelStyle}"/>
-                    <DatePicker x:Name="dtpDesde" Height="45" Width="150" FontSize="16" VerticalContentAlignment="Center" Background="{DynamicResource SurfaceDark}" Foreground="{DynamicResource TextPrimary}"/>
+                    <local:TouchDateField x:Name="dtpDesde"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2">
                     <TextBlock Text="HASTA" Style="{DynamicResource LabelStyle}"/>
-                    <DatePicker x:Name="dtpHasta" Height="45" Width="150" FontSize="16" VerticalContentAlignment="Center" Background="{DynamicResource SurfaceDark}" Foreground="{DynamicResource TextPrimary}"/>
+                    <local:TouchDateField x:Name="dtpHasta"/>
                 </StackPanel>
 
-                <Button x:Name="btnBuscar" Grid.Column="4" Content="🔍 BUSCAR" Style="{StaticResource ButtonStyle}" Width="120" VerticalAlignment="Bottom" Height="35" Click="btnBuscar_Click"/>
+                <Button x:Name="btnBuscar" Grid.Column="4" Content="🔍 BUSCAR" Style="{StaticResource ButtonStyle}" MinWidth="140" VerticalAlignment="Bottom" Click="btnBuscar_Click"/>
 
                 <StackPanel Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Right">
                     <TextBlock Text="TOTAL PERÍODO" Foreground="{DynamicResource TextSecondary}" FontSize="12" HorizontalAlignment="Right"/>

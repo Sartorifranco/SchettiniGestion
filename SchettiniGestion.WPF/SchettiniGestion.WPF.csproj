@@ -280,6 +280,10 @@
     </Compile>
     <Compile Include="SvgLogoHelper.cs" />
     <Compile Include="ThemeManager.cs" />
+    <Compile Include="TouchDatePickerHelper.cs" />
+    <Compile Include="TouchDateField.xaml.cs">
+      <DependentUpon>TouchDateField.xaml</DependentUpon>
+    </Compile>
     <Compile Include="InputWindow.xaml.cs" />
     <Compile Include="ModernInputWindow.xaml.cs">
       <DependentUpon>ModernInputWindow.xaml</DependentUpon>
@@ -645,6 +649,10 @@
     <Compile Include="UsuariosControl.xaml.cs">
       <DependentUpon>UsuariosControl.xaml</DependentUpon>
     </Compile>
+    <Page Include="TouchDateField.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="VentasControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

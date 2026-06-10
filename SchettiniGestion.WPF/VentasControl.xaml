@@ -41,15 +41,15 @@
 
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="DESDE" Style="{DynamicResource LabelStyle}"/>
-                    <DatePicker x:Name="dtpDesde" Height="35" Width="140" FontSize="14" VerticalContentAlignment="Center" Background="{DynamicResource SurfaceDark}" Foreground="{DynamicResource TextPrimary}"/>
+                    <DatePicker x:Name="dtpDesde" MinWidth="180"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2">
                     <TextBlock Text="HASTA" Style="{DynamicResource LabelStyle}"/>
-                    <DatePicker x:Name="dtpHasta" Height="35" Width="140" FontSize="14" VerticalContentAlignment="Center" Background="{DynamicResource SurfaceDark}" Foreground="{DynamicResource TextPrimary}"/>
+                    <DatePicker x:Name="dtpHasta" MinWidth="180"/>
                 </StackPanel>
 
-                <Button x:Name="btnBuscar" Grid.Column="4" Content="🔍 BUSCAR" Style="{StaticResource ButtonStyle}" Width="120" VerticalAlignment="Bottom" Height="35" Click="btnBuscar_Click"/>
+                <Button x:Name="btnBuscar" Grid.Column="4" Content="🔍 BUSCAR" Style="{StaticResource ButtonStyle}" MinWidth="140" VerticalAlignment="Bottom" Click="btnBuscar_Click"/>
 
                 <StackPanel Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Right">
                     <TextBlock Text="TOTAL PERÍODO" Foreground="{DynamicResource TextSecondary}" FontSize="12" HorizontalAlignment="Right"/>

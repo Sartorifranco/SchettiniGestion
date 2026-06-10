@@ -273,6 +273,7 @@
     <Compile Include="CustomerScreenService.cs" />
     <Compile Include="Converters\PathToImageConverter.cs" />
     <Compile Include="CustomMessageBox.cs" />
+    <Compile Include="ModernMessageBox.cs" />
     <Compile Include="CustomMessageBoxWindow.xaml.cs">
       <DependentUpon>CustomMessageBoxWindow.xaml</DependentUpon>
     </Compile>

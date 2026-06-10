@@ -11,13 +11,6 @@ namespace SchettiniGestion.WPF
         public LoginWindow()
         {
             InitializeComponent();
-            try
-            {
-                var marca = SvgLogoHelper.LoadEmbeddedLogo();
-                if (marca != null && imgLogoLogin != null)
-                    imgLogoLogin.Source = marca;
-            }
-            catch { /* logo opcional */ }
             AutomationProperties.SetAutomationId(txtUsuario, "UITest_Usuario");
             AutomationProperties.SetAutomationId(txtPassword, "UITest_Password");
             AutomationProperties.SetAutomationId(btnIngresar, "UITest_Ingresar");

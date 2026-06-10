@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using System;
 using System.Data;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using SchettiniGestion;
@@ -9,6 +10,13 @@ namespace SchettiniGestion.WPF
 {
     public partial class ConfiguracionControl : UserControl
     {
+        /// <summary>Valores válidos para la columna Tipo del DataGrid de medios de pago.</summary>
+        public string[] TiposMedioPago { get; } = { "Efectivo", "Tarjeta", "Transferencia" };
+
+        private bool _hayPasswordAfipGuardadaEnBd;
+        private bool _passwordAfipTocadoPorUsuario;
+        private bool _suprimirEventoPasswordAfip;
+
         public ConfiguracionControl()
         {
             InitializeComponent();
@@ -31,12 +39,17 @@ namespace SchettiniGestion.WPF
             {
                 txtNombreFantasia.Text = dr["NombreFantasia"].ToString();
                 txtRazonSocial.Text = dr["RazonSocial"].ToString();
-                txtCuit.Text = dr["CUIT"].ToString();
+                txtCuit.Text = DatabaseService.ObtenerCuitEmpresaTextoBruto(dr);
                 txtDireccion.Text = dr["Direccion"].ToString();
                 txtTelefono.Text = dr["Telefono"].ToString();
                 txtEmail.Text = dr["Email"].ToString();
                 txtCertificadoPath.Text = dr["CertificadoPath"].ToString();
-                txtPasswordAfip.Password = dr["PasswordAfip"].ToString();
+                _hayPasswordAfipGuardadaEnBd = DatabaseService.TienePasswordAfipPersistida(dr);
+                _passwordAfipTocadoPorUsuario = false;
+                _suprimirEventoPasswordAfip = true;
+                try { txtPasswordAfip.Password = ""; }
+                finally { _suprimirEventoPasswordAfip = false; }
+                ActualizarAyudaContraseñaAfip();
                 txtPuntoVenta.Text = dr["PuntoVenta"].ToString();
 
                 if (dr.Table.Columns.Contains("MPAccessToken"))
@@ -68,6 +81,26 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        private void btnImportarImagen_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new OpenFileDialog
+                {
+                    Title = "Elegir imagen de promoción",
+                    Filter = "Imágenes|*.jpg;*.jpeg;*.png|JPEG (*.jpg;*.jpeg)|*.jpg;*.jpeg|PNG (*.png)|*.png"
+                };
+                if (dlg.ShowDialog() == true)
+                {
+                    txtRutaImagenPromocionImportada.Text = dlg.FileName;
+                }
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
         private void btnBuscarCarpetaPromo_Click(object sender, RoutedEventArgs e)
         {
             using (var dlg = new System.Windows.Forms.FolderBrowserDialog())
@@ -88,16 +121,30 @@ namespace SchettiniGestion.WPF
                     seg = 8;
                 if (!DatabaseService.ActualizarVisorPromociones(txtVisorPromoCarpeta?.Text ?? "", seg))
                 {
-                    MessageBox.Show("No se pudo guardar la configuración del visor.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ModernMessageBox.Show("No se pudo guardar la configuración del visor.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-                MessageBox.Show("Promociones del visor guardadas. Si la pantalla cliente está abierta, se actualizará al volver al inicio de venta.", "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageBox.Show("Promociones del visor guardadas. Si la pantalla cliente está abierta, se actualizará al volver al inicio de venta.", "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
                 try { CustomerScreenService.RefrescarSegunConfiguracion(); } catch { }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void txtPasswordAfip_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            if (_suprimirEventoPasswordAfip) return;
+            _passwordAfipTocadoPorUsuario = true;
+        }
+
+        private void ActualizarAyudaContraseñaAfip()
+        {
+            if (lblHintPasswordAfip == null) return;
+            lblHintPasswordAfip.Text = _hayPasswordAfipGuardadaEnBd
+                ? "Hay una contraseña guardada (no se muestra). Deje el campo vacío para conservarla; escriba solo si cambió el archivo o la clave."
+                : "Vacío hasta que cargue por primera vez su certificado.";
         }
 
         private void btnBuscarCertificado_Click(object sender, RoutedEventArgs e)
@@ -119,7 +166,7 @@ namespace SchettiniGestion.WPF
 
             if (string.IsNullOrEmpty(token))
             {
-                MessageBox.Show("Primero pegue su Access Token.", "Falta Token", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Primero pegue su Access Token.", "Falta Token", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -140,7 +187,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                ModernMessageBox.Show("Error: " + ex.Message);
             }
             finally
             {
@@ -158,11 +205,11 @@ namespace SchettiniGestion.WPF
 
             if (string.IsNullOrEmpty(token))
             {
-                MessageBox.Show("Primero ingrese su Access Token.", "Falta Token", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Primero ingrese su Access Token.", "Falta Token", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            if (MessageBox.Show("¿Desea crear automáticamente una caja llamada 'Caja SchTec Principal' y asignarle el ID 'SCH01'?", "Creación Automática", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No)
+            if (ModernMessageBox.Show("¿Desea crear automáticamente una caja llamada 'Caja SchTec Principal' y asignarle el ID 'SCH01'?", "Creación Automática", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No)
             {
                 return;
             }
@@ -184,20 +231,20 @@ namespace SchettiniGestion.WPF
                     string idNuevo = resultado.Split(':')[1];
                     txtMPPosId.Text = idNuevo; // Llenamos el campo automáticamente
 
-                    MessageBox.Show("¡Éxito! Caja creada y vinculada.\n\nID Asignado: " + idNuevo + "\n\nAhora GUARDE los cambios.", "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ModernMessageBox.Show("¡Éxito! Caja creada y vinculada.\n\nID Asignado: " + idNuevo + "\n\nAhora GUARDE los cambios.", "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else if (resultado.StartsWith("ERROR"))
                 {
-                    MessageBox.Show(resultado, "Error Mercado Pago", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ModernMessageBox.Show(resultado, "Error Mercado Pago", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else
                 {
-                    MessageBox.Show("Ocurrió un error: " + resultado);
+                    ModernMessageBox.Show("Ocurrió un error: " + resultado);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error crítico: " + ex.Message);
+                ModernMessageBox.Show("Error crítico: " + ex.Message);
             }
             finally
             {
@@ -217,6 +264,10 @@ namespace SchettiniGestion.WPF
                 if (decimal.TryParse(txtTipoCambioUSD?.Text?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal t))
                     tc = t;
 
+                string pwdAfip = txtPasswordAfip.Password ?? "";
+                bool conservarPwdVacío = string.IsNullOrWhiteSpace(pwdAfip) && _hayPasswordAfipGuardadaEnBd
+                    && !_passwordAfipTocadoPorUsuario;
+
                 bool exito = DatabaseService.GuardarConfiguracion(
                     txtNombreFantasia.Text,
                     txtRazonSocial.Text,
@@ -226,22 +277,35 @@ namespace SchettiniGestion.WPF
                     txtEmail.Text,
                     "",
                     txtCertificadoPath.Text,
-                    txtPasswordAfip.Password,
+                    pwdAfip,
                     pto,
                     txtMPToken.Text.Trim(),
                     txtMPUserId.Text.Trim(),
                     txtMPPosId.Text.Trim(),
                     true,
                     tc,
-                    chkAfipProduccion?.IsChecked == true
-                );
+                    chkAfipProduccion?.IsChecked == true,
+                    conservarPasswordAfipSiContraseniaVacia: conservarPwdVacío);
 
-                if (exito) MessageBox.Show("¡Datos del negocio guardados correctamente!");
-                else MessageBox.Show("Error al guardar datos.");
+                if (exito)
+                {
+                    if (!conservarPwdVacío && !string.IsNullOrWhiteSpace(pwdAfip))
+                        _hayPasswordAfipGuardadaEnBd = true;
+                    else if (!conservarPwdVacío && string.IsNullOrWhiteSpace(pwdAfip))
+                        _hayPasswordAfipGuardadaEnBd = false;
+                    _suprimirEventoPasswordAfip = true;
+                    try { txtPasswordAfip.Password = ""; }
+                    finally { _suprimirEventoPasswordAfip = false; }
+                    _passwordAfipTocadoPorUsuario = false;
+                    ActualizarAyudaContraseñaAfip();
+                }
+
+                if (exito) ModernMessageBox.Show("¡Datos del negocio guardados correctamente!");
+                else ModernMessageBox.Show("Error al guardar datos.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                ModernMessageBox.Show(ex.Message);
             }
         }
 
@@ -309,18 +373,18 @@ namespace SchettiniGestion.WPF
         {
             if (string.IsNullOrWhiteSpace(txtIpServidor.Text))
             {
-                MessageBox.Show("Por favor, ingrese una Dirección IP válida.");
+                ModernMessageBox.Show("Por favor, ingrese una Dirección IP válida.");
                 return;
             }
 
             bool usarIntegrado = chkUsarWindowsAuth.IsChecked == true;
             if (!usarIntegrado && string.IsNullOrWhiteSpace(txtUsuarioSQL.Text))
             {
-                MessageBox.Show("Si no usa autenticación Windows, debe ingresar Usuario SQL.");
+                ModernMessageBox.Show("Si no usa autenticación Windows, debe ingresar Usuario SQL.");
                 return;
             }
 
-            if (MessageBox.Show("Al guardar la configuración de red, el sistema se cerrará para aplicar los cambios.\n\n¿Desea continuar?", "Confirmar Reinicio", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            if (ModernMessageBox.Show("Al guardar la configuración de red, el sistema se cerrará para aplicar los cambios.\n\n¿Desea continuar?", "Confirmar Reinicio", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
                 bool exito = DatabaseService.GuardarNuevaConexion(
                     txtIpServidor.Text.Trim(),
@@ -332,12 +396,12 @@ namespace SchettiniGestion.WPF
 
                 if (exito)
                 {
-                    MessageBox.Show("Configuración guardada.\nEl sistema se cerrará ahora.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ModernMessageBox.Show("Configuración guardada.\nEl sistema se cerrará ahora.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                     Application.Current.Shutdown();
                 }
                 else
                 {
-                    MessageBox.Show("Hubo un error al intentar guardar en App.config. Verifique permisos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ModernMessageBox.Show("Hubo un error al intentar guardar en App.config. Verifique permisos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
@@ -375,18 +439,18 @@ namespace SchettiniGestion.WPF
             {
                 if (LicenseManager.ValidarLicencia())
                 {
-                    MessageBox.Show("¡Licencia activada correctamente!\n\nPor favor, reinicie el sistema para aplicar los cambios en los módulos.", "Activación Exitosa", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ModernMessageBox.Show("¡Licencia activada correctamente!\n\nPor favor, reinicie el sistema para aplicar los cambios en los módulos.", "Activación Exitosa", MessageBoxButton.OK, MessageBoxImage.Information);
                     Application.Current.Shutdown();
                 }
                 else
                 {
-                    MessageBox.Show("La licencia se guardó pero parece ser INVÁLIDA o está vencida.", "Advertencia", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ModernMessageBox.Show("La licencia se guardó pero parece ser INVÁLIDA o está vencida.", "Advertencia", MessageBoxButton.OK, MessageBoxImage.Warning);
                     CargarDatosLicencia();
                 }
             }
             else
             {
-                MessageBox.Show("Error al guardar la licencia en la base de datos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show("Error al guardar la licencia en la base de datos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -411,18 +475,31 @@ namespace SchettiniGestion.WPF
                 if (dgvMediosPago != null && (sender as System.Windows.Controls.Button)?.DataContext is DataRowView drv)
                 {
                     var r = drv.Row;
-                    int id = r["MedioPagoID"] != DBNull.Value ? Convert.ToInt32(r["MedioPagoID"]) : 0;
+                    int id = r["MedioID"] != DBNull.Value ? Convert.ToInt32(r["MedioID"]) : 0;
                     string nombre = r["Nombre"]?.ToString() ?? "";
                     bool activo = r["Activo"] != DBNull.Value && Convert.ToBoolean(r["Activo"]);
                     int orden = r["Orden"] != DBNull.Value ? Convert.ToInt32(r["Orden"]) : 0;
-                    if (DatabaseService.GuardarMedioPago(id, nombre, activo, orden))
+                    string tipo = "Efectivo";
+                    if (r.Table.Columns.Contains("Tipo") && r["Tipo"] != DBNull.Value && !string.IsNullOrWhiteSpace(r["Tipo"]?.ToString()))
+                        tipo = r["Tipo"].ToString().Trim();
+
+                    decimal recargoPct = 0m;
+                    if (r.Table.Columns.Contains("RecargoDescuentoPct") && r["RecargoDescuentoPct"] != DBNull.Value)
                     {
-                        MessageBox.Show("Medio de pago guardado.");
+                        var s = Convert.ToString(r["RecargoDescuentoPct"], CultureInfo.InvariantCulture)
+                            ?? r["RecargoDescuentoPct"].ToString();
+                        if (!decimal.TryParse(s.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out recargoPct))
+                            recargoPct = 0m;
+                    }
+
+                    if (DatabaseService.GuardarMedioPago(id, nombre, activo, orden, tipo, recargoPct))
+                    {
+                        ModernMessageBox.Show("Medio de pago guardado.");
                         CargarMediosPago();
                     }
                 }
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show(ex.Message); }
         }
 
         private void btnNuevoMedioPago_Click(object sender, RoutedEventArgs e)
@@ -434,14 +511,16 @@ namespace SchettiniGestion.WPF
                 foreach (DataRow r in dt.Rows)
                     if (r["Orden"] != DBNull.Value) maxOrden = Math.Max(maxOrden, Convert.ToInt32(r["Orden"]));
                 var newRow = dt.NewRow();
-                newRow["MedioPagoID"] = 0;
+                newRow["MedioID"] = 0;
                 newRow["Nombre"] = "Nuevo";
                 newRow["Activo"] = true;
                 newRow["Orden"] = maxOrden + 1;
+                if (dt.Columns.Contains("Tipo")) newRow["Tipo"] = "Efectivo";
+                if (dt.Columns.Contains("RecargoDescuentoPct")) newRow["RecargoDescuentoPct"] = 0m;
                 dt.Rows.Add(newRow);
                 dgvMediosPago.ItemsSource = dt.DefaultView;
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show(ex.Message); }
         }
 
         private void btnGenerarBackup_Click(object sender, RoutedEventArgs e)
@@ -458,14 +537,14 @@ namespace SchettiniGestion.WPF
                         this.Cursor = System.Windows.Input.Cursors.Wait;
                         BackupService.RealizarBackup(ruta);
                         this.Cursor = System.Windows.Input.Cursors.Arrow;
-                        MessageBox.Show("¡Copia de seguridad creada exitosamente!\n\nArchivo guardado en: " + ruta, "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                        ModernMessageBox.Show("¡Copia de seguridad creada exitosamente!\n\nArchivo guardado en: " + ruta, "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
             }
             catch (Exception ex)
             {
                 this.Cursor = System.Windows.Input.Cursors.Arrow;
-                MessageBox.Show("No se pudo crear el backup.\n\nDetalle: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show("No se pudo crear el backup.\n\nDetalle: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

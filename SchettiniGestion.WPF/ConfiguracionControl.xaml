@@ -89,11 +89,11 @@
                                     <TextBox x:Name="txtCertificadoPath" Style="{StaticResource ModuleTextBoxStyle}" IsReadOnly="True"
                                              VerticalAlignment="Center"/>
                                 </DockPanel>
-                                <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,8"
-                                           Text="Vacío hasta que cargue por primera vez su certificado."/>
 
-                                <TextBlock Text="Contraseña del Certificado:" Style="{StaticResource ModuleLabelStyle}"/>
-                                <PasswordBox x:Name="txtPasswordAfip" Height="35" Style="{StaticResource PasswordBoxStyle}" Padding="5"/>
+                                <TextBlock Text="Contraseña del Certificado (.pfx):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <PasswordBox x:Name="txtPasswordAfip" Style="{StaticResource PasswordBoxStyle}"
+                                             PasswordChanged="txtPasswordAfip_PasswordChanged"/>
+                                <TextBlock x:Name="lblHintPasswordAfip" Style="{StaticResource FieldHintTextStyle}" Margin="0,4,0,8"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1">
                                 <TextBlock Text="Punto de Venta:" Style="{StaticResource ModuleLabelStyle}"/>
@@ -179,6 +179,19 @@
                             <Button x:Name="btnBuscarCarpetaPromo" DockPanel.Dock="Right" Content="📁" Width="44" Margin="8,0,0,0"
                                     Click="btnBuscarCarpetaPromo_Click" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Elegir carpeta"/>
                             <TextBox x:Name="txtVisorPromoCarpeta" Style="{StaticResource ModuleTextBoxStyle}" ToolTip="Ruta completa a la carpeta"/>
+                        </DockPanel>
+
+                        <TextBlock Text="Imagen suelta para promoción (opcional):" Style="{StaticResource ModuleLabelStyle}"/>
+                        <DockPanel LastChildFill="True" Margin="0,0,0,12">
+                            <Button x:Name="btnImportarImagen" DockPanel.Dock="Left" Content="Subir imagen"
+                                    Click="btnImportarImagen_Click"
+                                    Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Padding="14,0"
+                                    MinHeight="44" MinWidth="120"/>
+                            <TextBox x:Name="txtRutaImagenPromocionImportada"
+                                     Style="{StaticResource ModuleTextBoxStyle}"
+                                     VerticalContentAlignment="Center"
+                                     IsReadOnly="True"
+                                     ToolTip="Ruta de la imagen elegida (.jpg / .png)"/>
                         </DockPanel>
 
                         <TextBlock Text="Segundos entre cambios (imágenes estáticas, 3–120):" Style="{StaticResource ModuleLabelStyle}"/>

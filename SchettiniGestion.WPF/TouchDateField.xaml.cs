@@ -24,7 +24,15 @@ namespace SchettiniGestion.WPF
         public TouchDateField()
         {
             InitializeComponent();
+            Loaded += TouchDateField_Loaded;
             ActualizarTexto();
+        }
+
+        private void TouchDateField_Loaded(object sender, RoutedEventArgs e)
+        {
+            var estilo = Application.Current.TryFindResource("TouchCalendarStyle") as Style;
+            if (estilo != null)
+                calInterno.Style = estilo;
         }
 
         private static void OnSelectedDateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

@@ -59,9 +59,11 @@
                 Padding="10">
             <Calendar x:Name="calInterno"
                       SelectedDatesChanged="calInterno_SelectedDatesChanged"
-                      Style="{StaticResource TouchCalendarStyle}"
                       MinWidth="400"
                       MinHeight="380"
+                      FontSize="17"
+                      Background="White"
+                      Foreground="#1A1A1A"
                       HorizontalAlignment="Center"/>
         </Border>
     </StackPanel>

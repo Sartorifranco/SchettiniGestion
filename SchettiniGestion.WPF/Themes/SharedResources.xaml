@@ -1,7 +1,8 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-                    xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework">
+                    xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework"
+                    xmlns:wpf="clr-namespace:SchettiniGestion.WPF">
 
     <!-- Recursos compartidos (no cambian entre Claro/Oscuro). Los colores de superficie/texto vienen de DarkTheme/LightTheme. -->
 
@@ -412,12 +413,14 @@
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
         <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="CultureInfo" Value="{x:Static wpf:AppCulture.Argentine}"/>
     </Style>
     <Style TargetType="xctk:IntegerUpDown" x:Key="ModuleIntegerUpDownStyle">
         <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
         <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="CultureInfo" Value="{x:Static wpf:AppCulture.Argentine}"/>
     </Style>
 
     <!-- Calendario táctil: celdas grandes y contraste alto en el popup -->

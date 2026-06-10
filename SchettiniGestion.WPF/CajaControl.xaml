@@ -4,7 +4,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:SchettiniGestion.WPF"
-             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1200"
              Background="{DynamicResource ModuleBackgroundBrush}"
@@ -76,65 +75,6 @@
                 </DataGrid>
             </DockPanel>
         </Border>
-
-        <Grid x:Name="popupMovimiento" Visibility="Collapsed" Background="{DynamicResource OverlayScrimBrush}">
-            <Border Background="{DynamicResource PanelBackgroundBrush}"
-                    BorderBrush="{DynamicResource BorderColor}"
-                    BorderThickness="1"
-                    CornerRadius="12"
-                    Width="440"
-                    MinHeight="360"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Padding="24">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock x:Name="lblPopupTitulo"
-                               Text="Registrar Movimiento"
-                               FontSize="22"
-                               FontWeight="Bold"
-                               Foreground="{DynamicResource TextPrimary}"
-                               Margin="0,0,0,20"/>
-
-                    <StackPanel Grid.Row="1">
-                        <TextBlock Text="Monto" Style="{DynamicResource ModalCaptionTextStyle}" Margin="0,0,0,6"/>
-                        <xctk:DecimalUpDown x:Name="numMontoManual"
-                                            Style="{StaticResource ModuleNumericUpDownStyle}"
-                                            FormatString="C2"
-                                            MinHeight="48"
-                                            FontSize="18"
-                                            Margin="0,0,0,18"/>
-
-                        <TextBlock Text="Concepto / Motivo" Style="{DynamicResource ModalCaptionTextStyle}" Margin="0,0,0,6"/>
-                        <TextBox x:Name="txtConceptoManual"
-                                 Style="{StaticResource ModuleTextBoxStyle}"
-                                 MinHeight="88"
-                                 TextWrapping="Wrap"
-                                 AcceptsReturn="True"
-                                 VerticalContentAlignment="Top"/>
-                    </StackPanel>
-
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                        <Button Content="Cancelar"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                MinWidth="110"
-                                MinHeight="48"
-                                Margin="0,0,10,0"
-                                Click="btnCancelarPopup_Click"/>
-                        <Button Content="Guardar"
-                                Style="{StaticResource ButtonStyle}"
-                                MinWidth="110"
-                                MinHeight="48"
-                                Click="btnGuardarMovimiento_Click"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-        </Grid>
 
     </Grid>
 </UserControl>

@@ -212,6 +212,9 @@
     <Compile Include="CobroModalWindow.xaml.cs">
       <DependentUpon>CobroModalWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CajaMovimientoModalWindow.xaml.cs">
+      <DependentUpon>CajaMovimientoModalWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ClienteRapidoModalWindow.xaml.cs">
       <DependentUpon>ClienteRapidoModalWindow.xaml</DependentUpon>
     </Compile>

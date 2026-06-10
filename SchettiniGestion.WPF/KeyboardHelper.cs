@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using Xceed.Wpf.Toolkit;
 
@@ -42,19 +43,53 @@ namespace SchettiniGestion.WPF
         /// <summary>Al enfocar un campo editable, abre el teclado en pantalla (OSK).</summary>
         public static void AttachTouchKeyboard(DependencyObject root)
         {
+            AttachTouchKeyboardInternal(root, onFocus: true);
+        }
+
+        /// <summary>Abre el teclado solo cuando el usuario toca o hace clic en el campo (no al abrir ventanas ni al foco programático).</summary>
+        public static void AttachTouchKeyboardOnPointer(DependencyObject root)
+        {
+            AttachTouchKeyboardInternal(root, onFocus: false);
+        }
+
+        private static void AttachTouchKeyboardInternal(DependencyObject root, bool onFocus)
+        {
             if (root == null) return;
 
             if (root is TextBox tb)
-                tb.GotFocus += TouchInput_GotFocus;
+            {
+                if (onFocus) tb.GotFocus += TouchInput_GotFocus;
+                else RegisterPointerHandlers(tb);
+            }
             else if (root is ComboBox cb && cb.IsEditable)
-                cb.GotFocus += TouchInput_GotFocus;
+            {
+                if (onFocus) cb.GotFocus += TouchInput_GotFocus;
+                else RegisterPointerHandlers(cb);
+            }
             else if (root is DecimalUpDown dud)
-                dud.GotFocus += TouchInput_GotFocus;
+            {
+                if (onFocus) dud.GotFocus += TouchInput_GotFocus;
+                else RegisterPointerHandlers(dud);
+            }
             else if (root is IntegerUpDown iud)
-                iud.GotFocus += TouchInput_GotFocus;
+            {
+                if (onFocus) iud.GotFocus += TouchInput_GotFocus;
+                else RegisterPointerHandlers(iud);
+            }
 
             for (int i = 0, n = VisualTreeHelper.GetChildrenCount(root); i < n; i++)
-                AttachTouchKeyboard(VisualTreeHelper.GetChild(root, i));
+                AttachTouchKeyboardInternal(VisualTreeHelper.GetChild(root, i), onFocus);
+        }
+
+        private static void RegisterPointerHandlers(UIElement element)
+        {
+            element.PreviewMouseDown += TouchInput_PointerActivate;
+            element.PreviewTouchDown += TouchInput_PointerActivate;
+        }
+
+        private static void TouchInput_PointerActivate(object sender, InputEventArgs e)
+        {
+            ShowOnScreenKeyboard();
         }
 
         private static void TouchInput_GotFocus(object sender, RoutedEventArgs e)

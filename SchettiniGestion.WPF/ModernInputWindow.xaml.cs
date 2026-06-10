@@ -13,7 +13,7 @@ namespace SchettiniGestion.WPF
         public ModernInputWindow(string titulo, string etiqueta, string valorInicial = "")
         {
             InitializeComponent();
-            KeyboardHelper.AttachTouchKeyboard(this);
+            KeyboardHelper.AttachTouchKeyboardOnPointer(this);
             Title = titulo;
             lblTitulo.Text = titulo;
             lblEtiqueta.Text = etiqueta;

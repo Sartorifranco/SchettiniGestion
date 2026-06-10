@@ -9,13 +9,9 @@ namespace SchettiniGestion.WPF
 {
     public partial class CajaControl : UserControl
     {
-        private string _tipoMovimientoActual = ""; // "Ingreso" o "Egreso"
-
         public CajaControl()
         {
             InitializeComponent();
-            numMontoManual.CultureInfo = AppCulture.Argentine;
-            KeyboardHelper.AttachTouchKeyboard(popupMovimiento);
         }
 
         private void CajaControl_Loaded(object sender, RoutedEventArgs e)
@@ -27,15 +23,12 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                // 1. Cargar Saldo Total
                 decimal saldo = DatabaseService.GetSaldoCaja();
                 lblSaldo.Text = AppCulture.FormatCurrency(saldo);
 
-                // Cambiar color si es negativo
                 if (saldo >= 0) lblSaldo.Foreground = new SolidColorBrush(Colors.LightGreen);
                 else lblSaldo.Foreground = new SolidColorBrush(Colors.Red);
 
-                // 2. Cargar Movimientos del Día
                 DataTable dt = DatabaseService.GetMovimientosCaja(DateTime.Now);
                 dgvMovimientos.ItemsSource = dt.DefaultView;
             }
@@ -45,39 +38,25 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        // --- BOTONES PRINCIPALES ---
-
         private void btnIngreso_Click(object sender, RoutedEventArgs e)
         {
-            AbrirPopup("Ingreso", "Ingresar Dinero");
+            RegistrarMovimiento("Ingreso", "Ingresar Dinero");
         }
 
         private void btnEgreso_Click(object sender, RoutedEventArgs e)
         {
-            AbrirPopup("Egreso", "Retirar Dinero");
+            RegistrarMovimiento("Egreso", "Retirar Dinero");
         }
 
-        // --- LÓGICA DEL POPUP ---
-
-        private void AbrirPopup(string tipo, string titulo)
+        private void RegistrarMovimiento(string tipo, string titulo)
         {
-            _tipoMovimientoActual = tipo;
-            lblPopupTitulo.Text = titulo;
-            numMontoManual.Value = 0;
-            txtConceptoManual.Text = "";
-            popupMovimiento.Visibility = Visibility.Visible;
-            numMontoManual.Focus();
-        }
+            var owner = Window.GetWindow(this);
+            var dlg = new CajaMovimientoModalWindow(titulo) { Owner = owner };
+            if (dlg.ShowDialog() != true)
+                return;
 
-        private void btnCancelarPopup_Click(object sender, RoutedEventArgs e)
-        {
-            popupMovimiento.Visibility = Visibility.Collapsed;
-        }
-
-        private void btnGuardarMovimiento_Click(object sender, RoutedEventArgs e)
-        {
-            decimal monto = numMontoManual.Value ?? 0;
-            string concepto = txtConceptoManual.Text.Trim();
+            decimal monto = dlg.Monto;
+            string concepto = dlg.Concepto;
 
             if (monto <= 0)
             {
@@ -90,14 +69,10 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
-            // Guardar en BD
-            bool exito = DatabaseService.RegistrarMovimientoCaja(concepto, _tipoMovimientoActual, monto);
-
-            if (exito)
+            if (DatabaseService.RegistrarMovimientoCaja(concepto, tipo, monto))
             {
                 CustomMessageBox.Show("Movimiento registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                popupMovimiento.Visibility = Visibility.Collapsed;
-                ActualizarPantalla(); // Refrescar saldo y grilla
+                ActualizarPantalla();
             }
         }
     }

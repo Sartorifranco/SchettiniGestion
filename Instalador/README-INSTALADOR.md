@@ -14,7 +14,10 @@ Objetivo: que el tester instale con **Siguiente → Siguiente → Listo** y teng
 
 ## Requisitos en la PC de build (tu máquina)
 
-1. Visual Studio 2022 con **.NET desktop development**
+1. **MSBuild** (cualquiera de estas opciones):
+   - Visual Studio 2022 con carga **Desarrollo de .NET de escritorio**, o
+   - **Build Tools for Visual Studio 2022** (solo compilador, sin IDE), o
+   - Compilar manualmente desde Visual Studio y luego `build-release.ps1 -SkipBuild`
 2. **Inno Setup 6** — https://jrsoftware.org/isdl.php
 3. (Opcional) **SqlLocalDB.msi** en `Instalador/prerequisites/` para instalar LocalDB sin pasos manuales  
    - Descarga: buscar *SQL Server Express LocalDB* en Microsoft  

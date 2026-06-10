@@ -8,7 +8,9 @@ param(
     [string]$Configuration = "Release",
     [ValidateSet("x64", "x86", "Any CPU")]
     [string]$Platform = "x64",
-    [switch]$BuildInstaller
+    [switch]$BuildInstaller,
+    [switch]$SkipBuild,
+    [string]$MsBuildPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,28 +20,81 @@ $staging = Join-Path $PSScriptRoot "staging"
 $outputRelative = "SchettiniGestion.WPF\bin\$Platform\$Configuration"
 
 function Find-MSBuild {
-    $candidates = @(
-        "${env:ProgramFiles}\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe",
-        "${env:ProgramFiles}\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe",
-        "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe",
-        "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe"
-    )
-    foreach ($p in $candidates) {
-        if (Test-Path $p) { return $p }
+    param([string]$ExplicitPath)
+
+    if (-not [string]::IsNullOrWhiteSpace($ExplicitPath)) {
+        if (Test-Path $ExplicitPath) { return (Resolve-Path $ExplicitPath).Path }
+        throw "No existe la ruta MSBuild indicada: $ExplicitPath"
     }
+
+    $found = @()
+
+    $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+    if (Test-Path $vswhere) {
+        $vswhereArgs = @(
+            "-latest", "-prerelease",
+            "-requires", "Microsoft.Component.MSBuild",
+            "-find", "MSBuild\**\Bin\MSBuild.exe"
+        )
+        $found += & $vswhere @vswhereArgs 2>$null
+
+        $vswhereArgsAll = @(
+            "-all", "-prerelease",
+            "-requires", "Microsoft.Component.MSBuild",
+            "-find", "MSBuild\**\Bin\MSBuild.exe"
+        )
+        $found += & $vswhere @vswhereArgsAll 2>$null
+    }
+
+    $editionRoots = @("Community", "Professional", "Enterprise", "BuildTools")
+    $yearRoots = @("2022", "2019")
+    $programFiles = @(${env:ProgramFiles}, ${env:ProgramFiles(x86)})
+    foreach ($root in $programFiles) {
+        if ([string]::IsNullOrWhiteSpace($root)) { continue }
+        foreach ($year in $yearRoots) {
+            foreach ($edition in $editionRoots) {
+                $found += Join-Path $root "Microsoft Visual Studio\$year\$edition\MSBuild\Current\Bin\MSBuild.exe"
+            }
+        }
+    }
+
     $fromPath = Get-Command msbuild -ErrorAction SilentlyContinue
-    if ($fromPath) { return $fromPath.Source }
-    throw "No se encontro MSBuild. Instale Visual Studio 2022 con carga de trabajo .NET desktop."
+    if ($fromPath) { $found += $fromPath.Source }
+
+    foreach ($p in ($found | Select-Object -Unique)) {
+        if (-not [string]::IsNullOrWhiteSpace($p) -and (Test-Path $p)) {
+            return (Resolve-Path $p).Path
+        }
+    }
+
+    $msg = @"
+No se encontro MSBuild en este equipo.
+
+Opciones:
+  1) Instalar Visual Studio 2022 con la carga 'Desarrollo de .NET de escritorio'
+     o 'Build Tools for Visual Studio 2022' con MSBuild.
+  2) Compilar desde Visual Studio: abrir SchettiniGestion.sln, elegir Release y x64,
+     menu Compilar > Compilar solucion. Luego ejecutar solo el empaquetado:
+       .\Instalador\build-release.ps1 -BuildInstaller -SkipBuild
+  3) Indicar la ruta manualmente:
+       .\Instalador\build-release.ps1 -MsBuildPath 'C:\Ruta\a\MSBuild.exe'
+"@
+    throw $msg
 }
 
-$banner = "== SchettiniGestion - build {0} / {1} ==" -f $Configuration, $Platform
-Write-Host $banner -ForegroundColor Cyan
+if (-not $SkipBuild) {
+    $banner = "== SchettiniGestion - build {0} / {1} ==" -f $Configuration, $Platform
+    Write-Host $banner -ForegroundColor Cyan
 
-$msbuild = Find-MSBuild
-Write-Host "MSBuild: $msbuild"
+    $msbuild = Find-MSBuild -ExplicitPath $MsBuildPath
+    Write-Host "MSBuild: $msbuild"
 
-& $msbuild $sln /t:Restore,Build /p:Configuration=$Configuration /p:Platform=$Platform /v:minimal
-if ($LASTEXITCODE -ne 0) { throw "MSBuild fallo con codigo $LASTEXITCODE" }
+    & $msbuild $sln /t:Restore,Build /p:Configuration=$Configuration /p:Platform=$Platform /v:minimal
+    if ($LASTEXITCODE -ne 0) { throw "MSBuild fallo con codigo $LASTEXITCODE" }
+}
+else {
+    Write-Host "Omitiendo compilacion (-SkipBuild). Usando binarios existentes." -ForegroundColor Yellow
+}
 
 $outDir = Join-Path $repoRoot $outputRelative
 $exePath = Join-Path $outDir "SchettiniGestion.WPF.exe"

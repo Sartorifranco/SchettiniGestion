@@ -4,8 +4,8 @@ namespace SchettiniGestion.WPF
 {
     public partial class CajaMovimientoModalWindow : Window
     {
-        public decimal Monto => numMonto.Value ?? 0;
-        public string Concepto => txtConcepto.Text?.Trim() ?? "";
+        public decimal Monto { get; private set; }
+        public string Concepto { get; private set; }
 
         public CajaMovimientoModalWindow(string titulo, string textoBotonGuardar = "Guardar")
         {
@@ -29,6 +29,8 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
+            Monto = numMonto.Value ?? 0;
+            Concepto = txtConcepto.Text?.Trim() ?? "";
             DialogResult = true;
             Close();
         }

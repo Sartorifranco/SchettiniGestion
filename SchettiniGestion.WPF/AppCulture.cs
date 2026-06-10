@@ -8,7 +8,7 @@ namespace SchettiniGestion.WPF
     /// <summary>Cultura y formato monetario para Argentina (peso $).</summary>
     public static class AppCulture
     {
-        public static CultureInfo Argentine { get; private set; } = CultureInfo.CreateSpecificCulture("es-AR");
+        public static readonly CultureInfo Argentine = CultureInfo.CreateSpecificCulture("es-AR");
 
         private static bool _initialized;
 
@@ -16,8 +16,6 @@ namespace SchettiniGestion.WPF
         {
             if (_initialized) return;
             _initialized = true;
-
-            Argentine = CultureInfo.CreateSpecificCulture("es-AR");
 
             CultureInfo.DefaultThreadCurrentCulture = Argentine;
             CultureInfo.DefaultThreadCurrentUICulture = Argentine;

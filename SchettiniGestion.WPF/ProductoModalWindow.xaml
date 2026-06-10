@@ -100,6 +100,13 @@
             <Setter Property="Padding" Value="16"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
+        <Style x:Key="ProductoKeyboardButtonStyle" TargetType="Button" BasedOn="{StaticResource OutlinePrimaryButtonStyle}">
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="MinWidth" Value="200"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+        </Style>
     </Window.Resources>
 
     <Border Background="{DynamicResource PanelBackgroundBrush}"
@@ -115,30 +122,40 @@
 
             <!-- Encabezado moderno (sin barra de título de Windows) -->
             <Grid Grid.Row="0" Margin="0,0,0,12">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock x:Name="txtTitulo"
-                               FontSize="22"
-                               FontWeight="Bold"
-                               Foreground="{DynamicResource TextPrimary}"
-                               VerticalAlignment="Center"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="⌨"
-                            Width="48"
-                            Height="48"
-                            Margin="0,0,8,0"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            FontSize="20"
-                            ToolTip="Teclado en pantalla"
-                            Click="btnTeclado_Click"/>
-                    <Button Content="✕"
-                            Width="48"
-                            Height="48"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            FontSize="16"
-                            ToolTip="Cerrar"
-                            Click="btnCancelar_Click"/>
-                </StackPanel>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="txtTitulo"
+                           Grid.Column="0"
+                           FontSize="22"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource TextPrimary}"
+                           VerticalAlignment="Center"/>
+                <Button Grid.Column="1"
+                        Style="{StaticResource ProductoKeyboardButtonStyle}"
+                        Margin="12,0,10,0"
+                        ToolTip="Abrir teclado en pantalla"
+                        Click="btnTeclado_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⌨"
+                                   FontSize="20"
+                                   Margin="0,0,10,0"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="Teclado en pantalla"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="2"
+                        Content="✕"
+                        Width="48"
+                        Height="48"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        FontSize="16"
+                        ToolTip="Cerrar"
+                        Click="btnCancelar_Click"/>
             </Grid>
 
             <!-- Contenido en pestañas (sin scrollbar principal) -->

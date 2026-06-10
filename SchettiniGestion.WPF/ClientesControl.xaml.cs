@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace SchettiniGestion.WPF
     public partial class ClientesControl : UserControl
     {
         private int _clienteIdSeleccionado = 0;
-        private DataTable _dtClientesOriginal;
+        private List<ClienteListadoItem> _clientesTodos = new List<ClienteListadoItem>();
 
         public ClientesControl()
         {
@@ -29,24 +30,33 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                _dtClientesOriginal = DatabaseService.GetClientes();
-                dgvClientes.ItemsSource = _dtClientesOriginal.DefaultView;
+                _clientesTodos = DatabaseService.GetClientesLista() ?? new List<ClienteListadoItem>();
                 AplicarFiltro();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar clientes: " + ex.Message);
+                CustomMessageBox.Show("Error al cargar clientes: " + ex.Message);
             }
         }
 
         private void AplicarFiltro()
         {
-            if (_dtClientesOriginal == null) return;
+            if (_clientesTodos == null)
+            {
+                dgvClientes.ItemsSource = null;
+                return;
+            }
+
             string t = (txtFiltroClientes?.Text ?? "").Trim();
-            if (string.IsNullOrEmpty(t))
-                _dtClientesOriginal.DefaultView.RowFilter = "";
-            else
-                _dtClientesOriginal.DefaultView.RowFilter = $"RazonSocial LIKE '%{t.Replace("'", "''")}%' OR CUIT LIKE '%{t.Replace("'", "''")}%'";
+            IEnumerable<ClienteListadoItem> q = _clientesTodos;
+            if (!string.IsNullOrEmpty(t))
+            {
+                q = q.Where(c =>
+                    (c.RazonSocial ?? "").IndexOf(t, StringComparison.OrdinalIgnoreCase) >= 0
+                    || (c.CUIT ?? "").IndexOf(t, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+
+            dgvClientes.ItemsSource = q.ToList();
         }
 
         private void txtFiltroClientes_TextChanged(object sender, TextChangedEventArgs e)
@@ -77,12 +87,12 @@ namespace SchettiniGestion.WPF
                 }
                 else
                 {
-                    MessageBox.Show(persona.Error ?? "No se encontró el CUIT en AFIP. Ingrese los datos manualmente.", "AFIP", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    CustomMessageBox.Show(persona.Error ?? "No se encontró el CUIT en AFIP. Ingrese los datos manualmente.", "AFIP", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al consultar AFIP: " + ex.Message + "\n\nIngrese los datos manualmente.", "AFIP", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Error al consultar AFIP: " + ex.Message + "\n\nIngrese los datos manualmente.", "AFIP", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally
             {
@@ -116,7 +126,7 @@ namespace SchettiniGestion.WPF
         {
             if (string.IsNullOrWhiteSpace(txtCuit.Text) || string.IsNullOrWhiteSpace(txtRazonSocial.Text))
             {
-                MessageBox.Show("Complete CUIT y Razón Social.");
+                CustomMessageBox.Show("Complete CUIT y Razón Social.");
                 return;
             }
 
@@ -128,19 +138,19 @@ namespace SchettiniGestion.WPF
 
             if (DatabaseService.GuardarCliente(_clienteIdSeleccionado, txtCuit.Text.Trim(), txtRazonSocial.Text.Trim(), condIva, txtDireccion.Text.Trim(), txtTelefono.Text.Trim(), txtEmail.Text.Trim(), permiteCtaCte, montoLimite))
             {
-                MessageBox.Show("Cliente guardado.");
+                CustomMessageBox.Show("Cliente guardado.");
                 CargarClientes();
                 LimpiarCampos();
             }
             else
             {
-                MessageBox.Show("Error al guardar.");
+                CustomMessageBox.Show("Error al guardar.");
             }
         }
 
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
-            if (_clienteIdSeleccionado != 0 && MessageBox.Show("¿Eliminar?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            if (_clienteIdSeleccionado != 0 && CustomMessageBox.Show("¿Eliminar?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
                 DatabaseService.EliminarCliente(_clienteIdSeleccionado);
                 CargarClientes();
@@ -150,25 +160,41 @@ namespace SchettiniGestion.WPF
 
         private void dgvClientes_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (dgvClientes.SelectedItem is DataRowView row)
+            if (!(dgvClientes.SelectedItem is ClienteListadoItem item))
+                return;
+
+            _clienteIdSeleccionado = item.ClienteID;
+            DataRow row = DatabaseService.BuscarClientePorID(item.ClienteID);
+            if (row == null)
             {
-                _clienteIdSeleccionado = Convert.ToInt32(row["ClienteID"]);
-                txtCuit.Text = ValorCol(row, "CUIT");
-                txtRazonSocial.Text = ValorCol(row, "RazonSocial");
-                EstablecerCondicionIVA(ValorCol(row, "CondicionIVA"));
-                txtTelefono.Text = ValorCol(row, "Telefono");
-                txtDireccion.Text = ValorCol(row, "Direccion");
-                txtEmail.Text = ValorCol(row, "Email");
-                chkPermiteCtaCte.IsChecked = row.Row.Table.Columns.Contains("PermiteCuentaCorriente") && row["PermiteCuentaCorriente"] != DBNull.Value && Convert.ToBoolean(row["PermiteCuentaCorriente"]);
-                txtMontoLimiteCtaCte.Text = ValorCol(row, "MontoLimiteCtaCte");
-                txtMontoLimiteCtaCte.IsEnabled = chkPermiteCtaCte.IsChecked == true;
+                txtCuit.Text = item.CUIT ?? "";
+                txtRazonSocial.Text = item.RazonSocial ?? "";
+                EstablecerCondicionIVA(item.CondicionIVA ?? "");
+                txtTelefono.Text = item.Telefono ?? "";
+                txtDireccion.Text = "";
+                txtEmail.Text = item.Email ?? "";
+                chkPermiteCtaCte.IsChecked = false;
+                txtMontoLimiteCtaCte.Text = "";
+                txtMontoLimiteCtaCte.IsEnabled = false;
                 btnEliminar.IsEnabled = true;
+                return;
             }
+
+            txtCuit.Text = ValorCol(row, "CUIT");
+            txtRazonSocial.Text = ValorCol(row, "RazonSocial");
+            EstablecerCondicionIVA(ValorCol(row, "CondicionIVA"));
+            txtTelefono.Text = ValorCol(row, "Telefono");
+            txtDireccion.Text = ValorCol(row, "Direccion");
+            txtEmail.Text = ValorCol(row, "Email");
+            chkPermiteCtaCte.IsChecked = row.Table.Columns.Contains("PermiteCuentaCorriente") && row["PermiteCuentaCorriente"] != DBNull.Value && Convert.ToBoolean(row["PermiteCuentaCorriente"]);
+            txtMontoLimiteCtaCte.Text = ValorCol(row, "MontoLimiteCtaCte");
+            txtMontoLimiteCtaCte.IsEnabled = chkPermiteCtaCte.IsChecked == true;
+            btnEliminar.IsEnabled = true;
         }
 
-        private static string ValorCol(DataRowView row, string col)
+        private static string ValorCol(DataRow row, string col)
         {
-            if (!row.Row.Table.Columns.Contains(col)) return "";
+            if (row?.Table == null || !row.Table.Columns.Contains(col)) return "";
             var o = row[col];
             return o == null || o == DBNull.Value ? "" : o.ToString();
         }

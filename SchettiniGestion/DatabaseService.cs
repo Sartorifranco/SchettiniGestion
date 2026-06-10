@@ -55,6 +55,17 @@ namespace SchettiniGestion
         public string Nombre { get; set; }
     }
 
+    /// <summary>Fila de listado para gestión de clientes (columnas usadas por el DataGrid).</summary>
+    public class ClienteListadoItem
+    {
+        public int ClienteID { get; set; }
+        public string CUIT { get; set; }
+        public string RazonSocial { get; set; }
+        public string CondicionIVA { get; set; }
+        public string Telefono { get; set; }
+        public string Email { get; set; }
+    }
+
     // ==========================================
     // SERVICIO DE BASE DE DATOS (SQL SERVER)
     // ==========================================
@@ -631,6 +642,45 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             }
             catch { }
             return dt;
+        }
+
+        /// <summary>Lista tipada para el grid de clientes.</summary>
+        public static List<ClienteListadoItem> GetClientesLista()
+        {
+            var list = new List<ClienteListadoItem>();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    const string sql = @"SELECT ClienteID,
+  ISNULL(CUIT, N'') AS CUIT,
+  ISNULL(RazonSocial, N'') AS RazonSocial,
+  ISNULL(CondicionIVA, N'') AS CondicionIVA,
+  ISNULL(Telefono, N'') AS Telefono,
+  ISNULL(Email, N'') AS Email
+FROM Clientes
+ORDER BY RazonSocial";
+                    using (var cmd = new SqlCommand(sql, c))
+                    using (var rd = cmd.ExecuteReader())
+                    {
+                        while (rd.Read())
+                        {
+                            list.Add(new ClienteListadoItem
+                            {
+                                ClienteID = Convert.ToInt32(rd["ClienteID"]),
+                                CUIT = rd["CUIT"]?.ToString() ?? "",
+                                RazonSocial = rd["RazonSocial"]?.ToString() ?? "",
+                                CondicionIVA = rd["CondicionIVA"]?.ToString() ?? "",
+                                Telefono = rd["Telefono"]?.ToString() ?? "",
+                                Email = rd["Email"]?.ToString() ?? ""
+                            });
+                        }
+                    }
+                }
+            }
+            catch { }
+            return list;
         }
 
         public static bool GuardarCliente(int id, string c, string r, string i)

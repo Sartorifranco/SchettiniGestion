@@ -116,9 +116,15 @@
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Background="{StaticResource SurfaceDark}" CornerRadius="15,0,0,15">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,0">
+                    <Border Width="120" Height="120" CornerRadius="60" ClipToBounds="True"
+                            Background="#0F172A" BorderBrush="{StaticResource BorderColor}" BorderThickness="1"
+                            HorizontalAlignment="Center" Margin="0,0,0,20">
+                        <Image x:Name="imgLogoLogin" Stretch="Uniform" Margin="14"
+                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Border>
                     <TextBlock Text="SCHETTINI" FontSize="32" FontWeight="Black" Foreground="{StaticResource PrimaryColor}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="GESTIÓN POS" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="GESTIÓN POS" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
 

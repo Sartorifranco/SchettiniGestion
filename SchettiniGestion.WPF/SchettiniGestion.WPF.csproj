@@ -14,6 +14,7 @@
     <WarningLevel>4</WarningLevel>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <!-- Proyecto legacy (packages.config): evita Copy de nuget.g.props inexistentes durante MarkupCompile -->
@@ -178,6 +179,7 @@
     <Compile Include="ProductoModalWindow.xaml.cs">
       <DependentUpon>ProductoModalWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="AppIconHelper.cs" />
     <Compile Include="SvgLogoHelper.cs" />
     <Compile Include="ThemeManager.cs" />
     <Compile Include="TouchDatePickerHelper.cs" />
@@ -623,6 +625,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Resources\app.ico" />
     <Resource Include="Resources\logo.svg" />
   </ItemGroup>
   <ItemGroup>

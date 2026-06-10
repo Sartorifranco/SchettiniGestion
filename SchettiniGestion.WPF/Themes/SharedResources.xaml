@@ -37,6 +37,15 @@
     </Style>
     <Style TargetType="TextBlock" x:Key="ModuleLabelStyle" BasedOn="{StaticResource LabelStyle}"/>
 
+    <!-- Texto de ayuda bajo campos: espaciado positivo y contraste legible -->
+    <Style x:Key="FieldHintTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Margin" Value="0,4,0,10"/>
+        <Setter Property="Opacity" Value="0.95"/>
+    </Style>
+
     <!-- Etiquetas de campo en ventanas modales (secundario del tema) -->
     <Style x:Key="ModalCaptionTextStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>

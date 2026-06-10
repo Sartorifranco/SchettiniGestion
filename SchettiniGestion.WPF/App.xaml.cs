@@ -18,6 +18,7 @@ namespace SchettiniGestion.WPF
             base.OnStartup(e);
 
             AppCulture.Initialize();
+            AppIconHelper.ApplyToAllWindows();
             ThemeManager.LoadSavedTheme();
 
             this.DispatcherUnhandledException += App_DispatcherUnhandledException;

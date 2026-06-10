@@ -14,7 +14,7 @@
                 <Style TargetType="TabItem">
                     <Setter Property="FontSize" Value="16"/>
                     <Setter Property="FontWeight" Value="Bold"/>
-                    <Setter Property="Foreground" Value="#AAA"/>
+                    <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
                     <Setter Property="Padding" Value="15,10"/>
                     <Setter Property="Template">
                         <Setter.Value>
@@ -23,9 +23,12 @@
                                     <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10"/>
                                 </Border>
                                 <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                    </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter TargetName="bdr" Property="BorderBrush" Value="#007ACC"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
@@ -79,10 +82,15 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Margin="0,0,10,0">
                                 <TextBlock Text="Certificado Digital (.pfx):" Style="{StaticResource ModuleLabelStyle}"/>
-                                <DockPanel>
-                                    <Button x:Name="btnBuscarCertificado" Content="📂" Width="40" Click="btnBuscarCertificado_Click" Style="{StaticResource SecondaryButtonStyle}"/>
-                                    <TextBox x:Name="txtCertificadoPath" Style="{StaticResource ModuleTextBoxStyle}" IsReadOnly="True"/>
+                                <DockPanel LastChildFill="True" Margin="0,0,0,4">
+                                    <Button x:Name="btnBuscarCertificado" DockPanel.Dock="Right" Content="📂" MinWidth="44" MinHeight="44"
+                                            Margin="8,0,0,0" Click="btnBuscarCertificado_Click" Style="{StaticResource SecondaryButtonStyle}"
+                                            ToolTip="Buscar certificado .pfx"/>
+                                    <TextBox x:Name="txtCertificadoPath" Style="{StaticResource ModuleTextBoxStyle}" IsReadOnly="True"
+                                             VerticalAlignment="Center"/>
                                 </DockPanel>
+                                <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,8"
+                                           Text="Vacío hasta que cargue por primera vez su certificado."/>
 
                                 <TextBlock Text="Contraseña del Certificado:" Style="{StaticResource ModuleLabelStyle}"/>
                                 <PasswordBox x:Name="txtPasswordAfip" Height="35" Style="{StaticResource PasswordBoxStyle}" Padding="5"/>
@@ -93,9 +101,10 @@
 
                                 <TextBlock Text="Tipo de cambio USD (para precios en dólares):" Style="{StaticResource ModuleLabelStyle}"/>
                                 <TextBox x:Name="txtTipoCambioUSD" Style="{StaticResource ModuleTextBoxStyle}"/>
-                                <TextBlock Text="Ej: 1050 para $1050 por 1 USD" Foreground="{DynamicResource TextSecondary}" FontSize="10" Margin="0,-5,0,0"/>
+                                <TextBlock Style="{StaticResource FieldHintTextStyle}" Text="Ej: 1050 para $1050 por 1 USD"/>
 
-                                <CheckBox x:Name="chkAfipProduccion" Content="Ambiente AFIP: producción (no homologación)" Margin="0,12,0,0"/>
+                                <CheckBox x:Name="chkAfipProduccion" Content="Ambiente AFIP: producción (no homologación)"
+                                          Foreground="{DynamicResource TextPrimary}" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Grid>
 
@@ -105,7 +114,8 @@
 
                         <TextBlock Text="Access Token:" Style="{StaticResource ModuleLabelStyle}"/>
                         <TextBox x:Name="txtMPToken" Style="{StaticResource ModuleTextBoxStyle}"/>
-                        <TextBlock Text="Debe ser 'Production Access Token' (empieza con APP_USR-)" Foreground="{DynamicResource TextSecondary}" FontSize="10" Margin="0,-5,0,10"/>
+                        <TextBlock Style="{StaticResource FieldHintTextStyle}"
+                                   Text="Debe ser 'Production Access Token' (empieza con APP_USR-)."/>
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -120,46 +130,48 @@
 
                             <StackPanel Grid.Column="1" Margin="5,0,0,0">
                                 <TextBlock Text="Pos ID (Caja):" Style="{StaticResource ModuleLabelStyle}"/>
-                                <Grid>
+                                <Grid Margin="0,0,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <TextBox x:Name="txtMPPosId" Grid.Column="0" Style="{StaticResource ModuleTextBoxStyle}"/>
+                                    <TextBox x:Name="txtMPPosId" Grid.Column="0" Style="{StaticResource ModuleTextBoxStyle}" VerticalAlignment="Center"/>
 
-                                    <Button x:Name="btnBuscarCajas" Grid.Column="1" Content="🔍" 
+                                    <Button x:Name="btnBuscarCajas" Grid.Column="1"
                                             ToolTip="Buscar datos y cajas"
                                             Click="btnBuscarCajas_Click"
-                                            Background="#334155" Foreground="{DynamicResource TextPrimary}" BorderThickness="0"
-                                            Width="35" Height="35" Margin="5,0,0,5" Cursor="Hand">
-                                        <Button.Resources>
-                                            <Style TargetType="Border">
-                                                <Setter Property="CornerRadius" Value="4"/>
-                                            </Style>
-                                        </Button.Resources>
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            MinWidth="48" MinHeight="44" Padding="12,0" Margin="8,0,0,0" Cursor="Hand">
+                                        <TextBlock Text="🔍" FontSize="16" VerticalAlignment="Center"/>
                                     </Button>
 
-                                    <Button x:Name="btnCrearCaja" Grid.Column="2" Content="🪄 Crear" 
+                                    <Button x:Name="btnCrearCaja" Grid.Column="2"
                                             ToolTip="Crear caja 'SCH01' automáticamente"
                                             Click="btnCrearCaja_Click"
                                             Background="#009EE3" Foreground="White" BorderThickness="0" FontWeight="Bold"
-                                            Width="60" Height="35" Margin="5,0,0,5" Cursor="Hand">
+                                            MinWidth="96" MinHeight="44" Padding="14,0" Margin="8,0,0,0" Cursor="Hand">
                                         <Button.Resources>
                                             <Style TargetType="Border">
-                                                <Setter Property="CornerRadius" Value="4"/>
+                                                <Setter Property="CornerRadius" Value="6"/>
                                             </Style>
                                         </Button.Resources>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="🪄" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Crear" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                     </Button>
                                 </Grid>
-                                <TextBlock Text="Use 'Crear' para generar una caja compatible (SCH01)." Foreground="{DynamicResource TextSecondary}" FontSize="10" Margin="0,-5,0,0"/>
+                                <TextBlock Style="{StaticResource FieldHintTextStyle}"
+                                           Text="Use 'Crear' para generar una caja compatible (SCH01)."/>
                             </StackPanel>
                         </Grid>
 
                         <Separator Background="{DynamicResource BorderColor}" Margin="0,24,0,16"/>
                         <TextBlock Text="Pantalla cliente (segundo monitor)" FontSize="18" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6" FontWeight="Bold"/>
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" LineHeight="18"
+                                   Margin="0,0,0,16" MaxWidth="900" HorizontalAlignment="Left"
                                    Text="Si usa dos monitores y activó el modo en la barra principal, aquí puede indicar una carpeta con archivos para rotar en la pantalla del cliente mientras no hay venta en curso. Deje la carpeta vacía para mostrar solo el logo. Formatos: JPG, PNG, BMP, GIF animado y videos cortos (MP4, WMV, AVI)."/>
 
                         <TextBlock Text="Carpeta de promociones (opcional):" Style="{StaticResource ModuleLabelStyle}"/>

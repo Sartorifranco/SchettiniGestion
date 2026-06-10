@@ -113,7 +113,10 @@ namespace SchettiniGestion.WPF
             }
             else
             {
-                CustomMessageBox.Show("Usuario o contraseña incorrectos.", "Acceso Denegado", MessageBoxButton.OK, MessageBoxImage.Error);
+                string mensaje = "Usuario o contraseña incorrectos.";
+                if (!string.IsNullOrWhiteSpace(DatabaseService.UltimoErrorValidacionLogin))
+                    mensaje += "\n\nDetalle técnico:\n" + DatabaseService.UltimoErrorValidacionLogin;
+                CustomMessageBox.Show(mensaje, "Acceso Denegado", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

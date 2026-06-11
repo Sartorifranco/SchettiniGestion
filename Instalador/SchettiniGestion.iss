@@ -39,8 +39,10 @@ Name: "desktopicon"; Description: "Crear acceso directo en el escritorio"; Group
 [Files]
 ; Generado por build-release.ps1 en la carpeta staging\
 Source: "staging\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; SQL LocalDB (opcional): descargar SqlLocalDB.msi y colocarlo en prerequisites\
-Source: "prerequisites\SqlLocalDB.msi"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: FileExists(ExpandConstant('{src}\prerequisites\SqlLocalDB.msi')) and (not LocalDbInstalled)
+; SQL LocalDB (opcional): colocar SqlLocalDB.msi en prerequisites\ antes de compilar
+#if FileExists(AddBackslash(SourcePath) + "prerequisites\SqlLocalDB.msi")
+Source: "prerequisites\SqlLocalDB.msi"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not LocalDbInstalled
+#endif
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -48,7 +50,9 @@ Name: "{group}\Desinstalar {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\SqlLocalDB.msi"" /qn IAcceptSqlLocalDBLicenseTerms=YES"; StatusMsg: "Instalando SQL Server LocalDB..."; Flags: waituntilterminated; Check: FileExists(ExpandConstant('{tmp}\SqlLocalDB.msi')) and (not LocalDbInstalled)
+#if FileExists(AddBackslash(SourcePath) + "prerequisites\SqlLocalDB.msi")
+Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\SqlLocalDB.msi"" /qn IAcceptSqlLocalDBLicenseTerms=YES"; StatusMsg: "Instalando SQL Server LocalDB..."; Flags: waituntilterminated; Check: not LocalDbInstalled
+#endif
 Filename: "{app}\{#MyAppExeName}"; Description: "Iniciar {#MyAppName} ahora"; Flags: nowait postinstall skipifsilent
 
 [Code]

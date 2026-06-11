@@ -32,6 +32,18 @@ cd C:\schpos\SchettiniGestion
 .\Instalador\build-release.ps1 -BuildInstaller
 ```
 
+Si MSBuild no se detecta pero Visual Studio está instalado:
+
+```powershell
+.\Instalador\build-release.ps1 -MsBuildPath "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" -BuildInstaller
+```
+
+Si ya compilaste en Visual Studio (Release, x64):
+
+```powershell
+.\Instalador\build-release.ps1 -SkipBuild -BuildInstaller
+```
+
 Salida: `Instalador\Output\SchettiniGestion-Setup-1.0.0-testing.exe`
 
 ## Generar licencias para testers

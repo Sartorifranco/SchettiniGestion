@@ -1,0 +1,87 @@
+<Window x:Class="SchettiniGestion.WPF.CajaMovimientoModalWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        Title="Movimiento de caja"
+        Width="480"
+        Height="420"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        Background="Transparent">
+
+    <Border Background="{DynamicResource PanelBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderColor}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="24">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid Margin="0,0,0,20">
+                <TextBlock x:Name="lblTitulo"
+                           Text="Movimiento"
+                           FontSize="22"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource TextPrimary}"
+                           VerticalAlignment="Center"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="⌨"
+                            Width="48"
+                            Height="48"
+                            Margin="0,0,8,0"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            FontSize="20"
+                            ToolTip="Teclado en pantalla"
+                            Click="btnTeclado_Click"/>
+                    <Button Content="✕"
+                            Width="48"
+                            Height="48"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            FontSize="16"
+                            ToolTip="Cerrar"
+                            Click="btnCancelar_Click"/>
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Grid.Row="1">
+                <TextBlock Text="Monto" Style="{DynamicResource ModalCaptionTextStyle}" Margin="0,0,0,6"/>
+                <xctk:DecimalUpDown x:Name="numMonto"
+                                    Style="{StaticResource ModuleNumericUpDownStyle}"
+                                    FormatString="C2"
+                                    Minimum="0"
+                                    MinHeight="48"
+                                    FontSize="18"
+                                    Margin="0,0,0,18"/>
+
+                <TextBlock Text="Concepto / Motivo" Style="{DynamicResource ModalCaptionTextStyle}" Margin="0,0,0,6"/>
+                <TextBox x:Name="txtConcepto"
+                         Style="{StaticResource ModuleTextBoxStyle}"
+                         MinHeight="100"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         VerticalContentAlignment="Top"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                <Button Content="Cancelar"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        MinWidth="120"
+                        MinHeight="48"
+                        Margin="0,0,10,0"
+                        Click="btnCancelar_Click"/>
+                <Button x:Name="btnGuardar"
+                        Content="Guardar"
+                        Style="{StaticResource ButtonStyle}"
+                        MinWidth="120"
+                        MinHeight="48"
+                        Click="btnGuardar_Click"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

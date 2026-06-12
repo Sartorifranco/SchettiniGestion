@@ -7,16 +7,6 @@
 #define MyAppExeName "SchettiniGestion.WPF.exe"
 #define MyAppUrl "https://github.com/Sartorifranco/SchettiniGestion"
 
-#if FileExists(AddBackslash(SourcePath) + "prerequisites\ndp48-x86-x64-allos-enu.exe")
-  #define Ndp48Bundled
-#endif
-#if FileExists(AddBackslash(SourcePath) + "prerequisites\SqlLocalDB.msi")
-  #define LocalDbBundled
-#endif
-#if FileExists(AddBackslash(SourcePath) + "prerequisites\licencia.key")
-  #define LicenciaBundled
-#endif
-
 [Setup]
 AppId={{A7B3C9D1-4E2F-5A6B-8C9D-0E1F2A3B4C5D}
 AppName={#MyAppName}
@@ -49,12 +39,8 @@ Name: "desktopicon"; Description: "Crear acceso directo en el escritorio"; Group
 [Files]
 ; Generado por build-release.ps1 en la carpeta staging\
 Source: "staging\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-#ifdef Ndp48Bundled
-Source: "prerequisites\ndp48-x86-x64-allos-enu.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not Net48Installed
-#endif
-#ifdef LocalDbBundled
-Source: "prerequisites\SqlLocalDB.msi"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not LocalDbInstalled
-#endif
+; SQL LocalDB — SqlLocalDB.msi debe estar en la misma carpeta que este script
+Source: "SqlLocalDB.msi"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -62,24 +48,10 @@ Name: "{group}\Desinstalar {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-#ifdef Ndp48Bundled
-Filename: "{tmp}\ndp48-x86-x64-allos-enu.exe"; Parameters: "/q /norestart"; StatusMsg: "Instalando .NET Framework 4.8..."; Flags: waituntilterminated; Check: not Net48Installed
-#endif
-#ifdef LocalDbBundled
-Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\SqlLocalDB.msi"" /qn IAcceptSqlLocalDBLicenseTerms=YES"; StatusMsg: "Instalando SQL Server LocalDB..."; Flags: waituntilterminated; Check: not LocalDbInstalled
-#endif
-Filename: "{app}\{#MyAppExeName}"; Parameters: "/bootstrap"; StatusMsg: "Preparando base de datos..."; Flags: waituntilterminated runhidden; Check: ShouldRunBootstrap
+Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\SqlLocalDB.msi"" /passive IACCEPTSQLLOCALDBLICENSETERMS=YES /norestart"; StatusMsg: "Instalando motor de base de datos (LocalDB)..."; Flags: waituntilterminated
 Filename: "{app}\{#MyAppExeName}"; Description: "Iniciar {#MyAppName} ahora"; Flags: nowait postinstall skipifsilent
 
 [Code]
-function Net48Installed: Boolean;
-var
-  Release: Cardinal;
-begin
-  Result := RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full', 'Release', Release)
-    and (Release >= 528040);
-end;
-
 function Net472OrHigherInstalled: Boolean;
 var
   Release: Cardinal;
@@ -96,28 +68,21 @@ begin
     and (ResultCode = 0);
 end;
 
-function ShouldRunBootstrap: Boolean;
-begin
-  Result := Net472OrHigherInstalled;
-end;
-
 function InitializeSetup: Boolean;
 begin
   Result := True;
-  if Net48Installed or Net472OrHigherInstalled then
-    Exit;
-#ifdef Ndp48Bundled
-  Exit;
-#endif
-  if MsgBox('No se detecto .NET Framework 4.7.2 o superior.' + #13#10 +
-    'Instale .NET Framework 4.8 desde Microsoft y vuelva a ejecutar el instalador.' + #13#10#13#10 +
-    'Desea continuar de todos modos?', mbConfirmation, MB_YESNO) = IDNO then
-    Result := False;
+  if not Net472OrHigherInstalled then
+  begin
+    if MsgBox('No se detectó .NET Framework 4.7.2 o superior.' + #13#10 +
+      'Instale .NET Framework 4.8 desde Microsoft y vuelva a ejecutar el instalador.' + #13#10#13#10 +
+      '¿Desea continuar de todos modos?', mbConfirmation, MB_YESNO) = IDNO then
+      Result := False;
+  end;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  CfgDir, CfgPath, CfgContent, LicSrc, LicDst: String;
+  CfgDir, CfgPath, CfgContent: String;
 begin
   if CurStep = ssPostInstall then
   begin
@@ -128,11 +93,6 @@ begin
       CreateDir(CfgDir);
     if not FileExists(CfgPath) then
       SaveStringToFile(CfgPath, CfgContent, False);
-
-    LicSrc := ExpandConstant('{app}\licencia.key');
-    LicDst := CfgDir + '\licencia.key';
-    if FileExists(LicSrc) and not FileExists(LicDst) then
-      FileCopy(LicSrc, LicDst, False);
   end;
 end;
 

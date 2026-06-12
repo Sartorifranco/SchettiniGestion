@@ -44,6 +44,29 @@ namespace SchettiniGestion.WPF
                     Shutdown();
                     return;
                 }
+
+                // PrimerUsoWindow guardó la nueva cadena de conexión.
+                // Hay que crear el esquema completo AHORA, antes de validar la licencia.
+                if (!IntentarInicializarConexion())
+                {
+                    MessageBox.Show(
+                        "No se pudo crear la base de datos con la configuración ingresada.\nVerifique los datos de conexión e intente nuevamente.",
+                        "Error de inicialización", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Shutdown();
+                    return;
+                }
+            }
+
+            // Garantía absoluta: forzar creación del esquema completo (BD + tablas)
+            // con la conexión activa antes de cualquier operación de licencia.
+            try { InicializarBaseDeDatosCompleta(DatabaseService.ConnectionString); }
+            catch (Exception exInit)
+            {
+                MessageBox.Show(
+                    "Error al inicializar la base de datos:\n\n" + exInit.Message,
+                    "Error de inicialización", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown();
+                return;
             }
 
             // Licencia: si no hay clave válida, asistente de activación (pegar texto o cargar archivo)
@@ -101,20 +124,36 @@ namespace SchettiniGestion.WPF
                 DatabaseService.CS_SQLEXPRESS,              // 3. SQL Server Express local
             };
 
+            string ultimoError = "";
             foreach (string cs in candidatos)
             {
                 try
                 {
                     InicializarBaseDeDatosCompleta(cs);
-                    // Si llegamos aquí, funcionó. Guardamos si era diferente al actual.
                     if (cs != DatabaseService.ConnectionString)
                         DatabaseService.ActualizarConexion(cs);
                     DatabaseService.InitializeDatabase();
                     DatabaseService.AsegurarUsuarioAdminInicial();
                     return true;
                 }
-                catch { /* probar siguiente */ }
+                catch (Exception ex)
+                {
+                    ultimoError = ex.Message;
+                    // Si el error es de DDL (ya conectó pero falló al crear tablas) no tiene
+                    // sentido probar el siguiente candidato — exponer el error al usuario.
+                    if (!ex.Message.Contains("No se puede abrir")
+                        && !ex.Message.Contains("Cannot open")
+                        && !ex.Message.Contains("network-related")
+                        && !ex.Message.Contains("A network")
+                        && !ex.Message.Contains("login failed")
+                        && !ex.Message.Contains("Login failed"))
+                    {
+                        throw new Exception($"Error al inicializar la base de datos:\n{ex.Message}", ex);
+                    }
+                    // Error de conexión → probar siguiente candidato
+                }
             }
+            _ = ultimoError; // suprime warning CS0219
             return false;
         }
 
@@ -124,7 +163,7 @@ namespace SchettiniGestion.WPF
             var builder = new SqlConnectionStringBuilder(connectionString);
             string targetDb = builder.InitialCatalog;
 
-            // Crear la BD si no existe (conectando a master del mismo servidor)
+            // ── Paso 1: crear la BD en master si no existe ──────────────────────────
             builder.InitialCatalog = "master";
             using (var conn = new SqlConnection(builder.ConnectionString))
             {
@@ -133,84 +172,114 @@ namespace SchettiniGestion.WPF
                 {
                     if (cmd.ExecuteScalar() == DBNull.Value)
                     {
-                        using (var cmdCreate = new SqlCommand($"CREATE DATABASE [{targetDb}]", conn))
-                            cmdCreate.ExecuteNonQuery();
-                        System.Threading.Thread.Sleep(1500);
+                        // Construir rutas con Path.Combine para garantizar el separador '\' correcto.
+                        // LocalDB sin FILENAME explícito puede concatenar el directorio de usuario
+                        // sin separador ("C:\Users\NombreSchPosDB.mdf" en vez de "...\NombreSchPosDB.mdf").
+                        string userProfile = System.IO.Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+                        string mdfPath = System.IO.Path.Combine(userProfile, targetDb + ".mdf");
+                        string ldfPath = System.IO.Path.Combine(userProfile, targetDb + "_log.ldf");
+                        string createSql =
+                            $"CREATE DATABASE [{targetDb}] " +
+                            $"ON  PRIMARY (NAME = N'{targetDb}', FILENAME = N'{mdfPath.Replace("'", "''")}', SIZE = 8MB, FILEGROWTH = 65536KB) " +
+                            $"LOG ON      (NAME = N'{targetDb}_log', FILENAME = N'{ldfPath.Replace("'", "''")}', SIZE = 8MB, FILEGROWTH = 65536KB)";
+                        new SqlCommand(createSql, conn).ExecuteNonQuery();
+                        // Esperar a que LocalDB termine de inicializar la BD recién creada.
+                        System.Threading.Thread.Sleep(2000);
                     }
                 }
             }
 
-            // Crear tablas si no existen
+            // ── Paso 2: conectar EXPLÍCITAMENTE a la BD objetivo y crear tablas ─────
             using (var conn = new SqlConnection(connectionString))
             {
                 conn.Open();
-                using (var cmdCheck = new SqlCommand("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Configuracion'", conn))
+                // ChangeDatabase garantiza que estamos en targetDb aunque el driver
+                // haya resuelto el string de conexión de forma distinta (LocalDB quirk).
+                conn.ChangeDatabase(targetDb);
+
+                // Verificar si ya existe el esquema base
+                int existeConfiguracion;
+                using (var cmdCheck = new SqlCommand(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Configuracion'", conn))
+                    existeConfiguracion = Convert.ToInt32(cmdCheck.ExecuteScalar());
+
+                if (existeConfiguracion == 0)
                 {
-                    if (Convert.ToInt32(cmdCheck.ExecuteScalar()) == 0)
+                    // Cada DDL en su propio SqlCommand: si uno falla el mensaje identifica cuál.
+                    var sentencias = new[]
                     {
-                        string scriptTablas = @"
-                            CREATE TABLE Configuracion (
-                                ID INT PRIMARY KEY IDENTITY(1,1),
-                                LicenciaPayload NVARCHAR(MAX),
-                                NombreFantasia NVARCHAR(200), RazonSocial NVARCHAR(200), CUIT NVARCHAR(50),
-                                Direccion NVARCHAR(200), Telefono NVARCHAR(50), Email NVARCHAR(100),
-                                LogoPath NVARCHAR(MAX), CertificadoPath NVARCHAR(MAX), PasswordAfip NVARCHAR(MAX),
-                                PuntoVenta INT, MPAccessToken NVARCHAR(MAX), MPUserId NVARCHAR(MAX), MPPosId NVARCHAR(MAX),
-                                UsaVisorCliente BIT DEFAULT 0
-                            );
-                            INSERT INTO Configuracion (NombreFantasia) VALUES ('Mi Negocio');
-                            CREATE TABLE Roles (RolID INT PRIMARY KEY IDENTITY(1,1), NombreRol NVARCHAR(50));
-                            CREATE TABLE Permisos (PermisoID INT PRIMARY KEY IDENTITY(1,1), NombrePermiso NVARCHAR(100));
-                            CREATE TABLE Roles_Permisos (RolID INT, PermisoID INT, PRIMARY KEY (RolID, PermisoID));
-                            CREATE TABLE Usuarios (UsuarioID INT PRIMARY KEY IDENTITY(1,1), NombreUsuario NVARCHAR(50), PasswordHash NVARCHAR(MAX), RolID INT, Rol NVARCHAR(50));
-                            INSERT INTO Roles (NombreRol) VALUES ('Administrador');
-                            INSERT INTO Permisos (NombrePermiso) VALUES ('ACCESO_TOTAL');
-                            CREATE TABLE Clientes (
-                                ClienteID INT PRIMARY KEY IDENTITY(1,1), CUIT NVARCHAR(50), RazonSocial NVARCHAR(200),
-                                CondicionIVA NVARCHAR(50), Direccion NVARCHAR(200), Telefono NVARCHAR(50), Email NVARCHAR(100),
-                                PermiteCuentaCorriente BIT DEFAULT 0, MontoLimiteCtaCte DECIMAL(18,2) NULL,
-                                SaldoDeuda DECIMAL(18,2) DEFAULT 0
-                            );
-                            CREATE TABLE Productos (
-                                ProductoID INT PRIMARY KEY IDENTITY(1,1), Codigo NVARCHAR(50), CodigoBarra NVARCHAR(50),
-                                Descripcion NVARCHAR(200), Categoria NVARCHAR(50), SubRubro NVARCHAR(100), Marca NVARCHAR(100), Proveedor NVARCHAR(100),
-                                TipoIVA NVARCHAR(20), PrecioCosto DECIMAL(18,2), Ganancia DECIMAL(18,2), ImpuestoInterno DECIMAL(18,2),
-                                PrecioVenta DECIMAL(18,2), StockActual INT, ImagenPath NVARCHAR(MAX)
-                            );
-                            CREATE TABLE Proveedores (
-                                ProveedorID INT PRIMARY KEY IDENTITY(1,1), CUIT NVARCHAR(50), RazonSocial NVARCHAR(200),
-                                Direccion NVARCHAR(200), CategoriaFiscal NVARCHAR(100), PersonaContacto NVARCHAR(100),
-                                Telefono NVARCHAR(50), PaginaWeb NVARCHAR(300), Email NVARCHAR(100), SaldoDeuda DECIMAL(18,2) DEFAULT 0
-                            );
-                            CREATE TABLE ListasPrecios (ListaID INT PRIMARY KEY IDENTITY(1,1), Nombre NVARCHAR(100), Porcentaje DECIMAL(18,2));
-                            CREATE TABLE Facturas (
-                                FacturaID INT PRIMARY KEY IDENTITY(1,1), ClienteID INT, Fecha DATETIME, Total DECIMAL(18,2),
-                                TipoComprobante NVARCHAR(50), CondicionVenta NVARCHAR(100), CAE NVARCHAR(50),
-                                VencimientoCAE NVARCHAR(20), NumeroComprobanteAFIP INT
-                            );
-                            CREATE TABLE FacturaDetalle (
-                                DetalleID INT PRIMARY KEY IDENTITY(1,1), FacturaID INT, ProductoID INT,
-                                Cantidad INT, PrecioUnitario DECIMAL(18,2)
-                            );
-                            CREATE TABLE MovimientosCaja (
-                                MovimientoID INT PRIMARY KEY IDENTITY(1,1), Fecha DATETIME, Concepto NVARCHAR(200),
-                                Tipo NVARCHAR(20), Monto DECIMAL(18,2), Usuario NVARCHAR(50)
-                            );
-                            CREATE TABLE MovimientosStock (
-                                MovimientoID INT PRIMARY KEY IDENTITY(1,1), ProductoID INT, FacturaID INT NULL,
-                                CompraID INT NULL, Fecha DATETIME, TipoMovimiento NVARCHAR(50), Cantidad INT
-                            );
-                            CREATE TABLE MovimientosCuentaCorriente (
-                                MovimientoID INT PRIMARY KEY IDENTITY(1,1), ClienteID INT NULL, ProveedorID INT NULL,
-                                Fecha DATETIME, Descripcion NVARCHAR(200), Monto DECIMAL(18,2), SaldoHistorico DECIMAL(18,2)
-                            );
-                            CREATE TABLE Presupuestos (PresupuestoID INT PRIMARY KEY IDENTITY(1,1), ClienteID INT, Fecha DATETIME, Total DECIMAL(18,2), Estado NVARCHAR(50));
-                            CREATE TABLE PresupuestoDetalle (DetalleID INT PRIMARY KEY IDENTITY(1,1), PresupuestoID INT, ProductoID INT, Cantidad INT, PrecioUnitario DECIMAL(18,2));
-                            CREATE TABLE Compras (CompraID INT PRIMARY KEY IDENTITY(1,1), ProveedorID INT, Fecha DATETIME, Total DECIMAL(18,2), TipoComprobante NVARCHAR(50));
-                            CREATE TABLE CompraDetalle (DetalleID INT PRIMARY KEY IDENTITY(1,1), CompraID INT, ProductoID INT, Cantidad INT, PrecioCosto DECIMAL(18,2));
-                        ";
-                        using (var cmdScript = new SqlCommand(scriptTablas, conn))
-                            cmdScript.ExecuteNonQuery();
+                        @"CREATE TABLE Configuracion (
+                            ID INT PRIMARY KEY IDENTITY(1,1),
+                            LicenciaPayload NVARCHAR(MAX) NULL,
+                            NombreFantasia  NVARCHAR(200) NULL, RazonSocial  NVARCHAR(200) NULL, CUIT NVARCHAR(50) NULL,
+                            Direccion       NVARCHAR(200) NULL, Telefono     NVARCHAR(50)  NULL, Email NVARCHAR(100) NULL,
+                            LogoPath        NVARCHAR(MAX) NULL, CertificadoPath NVARCHAR(MAX) NULL, PasswordAfip NVARCHAR(MAX) NULL,
+                            PuntoVenta      INT           NULL, MPAccessToken   NVARCHAR(MAX) NULL,
+                            MPUserId        NVARCHAR(MAX) NULL, MPPosId         NVARCHAR(MAX) NULL,
+                            AfipProduccion  BIT NOT NULL DEFAULT 0, UsaVisorCliente BIT NOT NULL DEFAULT 0
+                        )",
+                        "INSERT INTO Configuracion (NombreFantasia) VALUES ('Mi Negocio')",
+                        @"CREATE TABLE Roles (RolID INT PRIMARY KEY IDENTITY(1,1), NombreRol NVARCHAR(50))",
+                        @"CREATE TABLE Permisos (PermisoID INT PRIMARY KEY IDENTITY(1,1), NombrePermiso NVARCHAR(100))",
+                        @"CREATE TABLE Roles_Permisos (RolID INT, PermisoID INT, PRIMARY KEY (RolID, PermisoID))",
+                        @"CREATE TABLE Usuarios (UsuarioID INT PRIMARY KEY IDENTITY(1,1), NombreUsuario NVARCHAR(50), PasswordHash NVARCHAR(MAX), RolID INT, Rol NVARCHAR(50))",
+                        "INSERT INTO Roles   (NombreRol)     VALUES ('Administrador')",
+                        "INSERT INTO Permisos(NombrePermiso) VALUES ('ACCESO_TOTAL')",
+                        @"CREATE TABLE Clientes (
+                            ClienteID INT PRIMARY KEY IDENTITY(1,1), CUIT NVARCHAR(50), RazonSocial NVARCHAR(200),
+                            CondicionIVA NVARCHAR(50), Direccion NVARCHAR(200), Telefono NVARCHAR(50), Email NVARCHAR(100),
+                            PermiteCuentaCorriente BIT DEFAULT 0, MontoLimiteCtaCte DECIMAL(18,2) NULL, SaldoDeuda DECIMAL(18,2) DEFAULT 0
+                        )",
+                        @"CREATE TABLE Productos (
+                            ProductoID INT PRIMARY KEY IDENTITY(1,1), Codigo NVARCHAR(50), CodigoBarra NVARCHAR(50),
+                            Descripcion NVARCHAR(200), Categoria NVARCHAR(50), SubRubro NVARCHAR(100), Marca NVARCHAR(100), Proveedor NVARCHAR(100),
+                            TipoIVA NVARCHAR(20), PrecioCosto DECIMAL(18,2), Ganancia DECIMAL(18,2), ImpuestoInterno DECIMAL(18,2),
+                            PrecioVenta DECIMAL(18,2), StockActual INT, ImagenPath NVARCHAR(MAX)
+                        )",
+                        @"CREATE TABLE Proveedores (
+                            ProveedorID INT PRIMARY KEY IDENTITY(1,1), CUIT NVARCHAR(50), RazonSocial NVARCHAR(200),
+                            Direccion NVARCHAR(200), CategoriaFiscal NVARCHAR(100), PersonaContacto NVARCHAR(100),
+                            Telefono NVARCHAR(50), PaginaWeb NVARCHAR(300), Email NVARCHAR(100), SaldoDeuda DECIMAL(18,2) DEFAULT 0
+                        )",
+                        "CREATE TABLE ListasPrecios (ListaID INT PRIMARY KEY IDENTITY(1,1), Nombre NVARCHAR(100), Porcentaje DECIMAL(18,2))",
+                        @"CREATE TABLE Facturas (
+                            FacturaID INT PRIMARY KEY IDENTITY(1,1), ClienteID INT, Fecha DATETIME, Total DECIMAL(18,2),
+                            TipoComprobante NVARCHAR(50), CondicionVenta NVARCHAR(100), CAE NVARCHAR(50),
+                            VencimientoCAE NVARCHAR(20), NumeroComprobanteAFIP INT
+                        )",
+                        "CREATE TABLE FacturaDetalle (DetalleID INT PRIMARY KEY IDENTITY(1,1), FacturaID INT, ProductoID INT, Cantidad INT, PrecioUnitario DECIMAL(18,2))",
+                        @"CREATE TABLE MovimientosCaja (
+                            MovimientoID INT PRIMARY KEY IDENTITY(1,1), Fecha DATETIME, Concepto NVARCHAR(200),
+                            Tipo NVARCHAR(20), Monto DECIMAL(18,2), Usuario NVARCHAR(50)
+                        )",
+                        @"CREATE TABLE MovimientosStock (
+                            MovimientoID INT PRIMARY KEY IDENTITY(1,1), ProductoID INT, FacturaID INT NULL,
+                            CompraID INT NULL, Fecha DATETIME, TipoMovimiento NVARCHAR(50), Cantidad INT
+                        )",
+                        @"CREATE TABLE MovimientosCuentaCorriente (
+                            MovimientoID INT PRIMARY KEY IDENTITY(1,1), ClienteID INT NULL, ProveedorID INT NULL,
+                            Fecha DATETIME, Descripcion NVARCHAR(200), Monto DECIMAL(18,2), SaldoHistorico DECIMAL(18,2)
+                        )",
+                        "CREATE TABLE Presupuestos (PresupuestoID INT PRIMARY KEY IDENTITY(1,1), ClienteID INT, Fecha DATETIME, Total DECIMAL(18,2), Estado NVARCHAR(50))",
+                        "CREATE TABLE PresupuestoDetalle (DetalleID INT PRIMARY KEY IDENTITY(1,1), PresupuestoID INT, ProductoID INT, Cantidad INT, PrecioUnitario DECIMAL(18,2))",
+                        "CREATE TABLE Compras (CompraID INT PRIMARY KEY IDENTITY(1,1), ProveedorID INT, Fecha DATETIME, Total DECIMAL(18,2), TipoComprobante NVARCHAR(50))",
+                        "CREATE TABLE CompraDetalle (DetalleID INT PRIMARY KEY IDENTITY(1,1), CompraID INT, ProductoID INT, Cantidad INT, PrecioCosto DECIMAL(18,2))",
+                    };
+
+                    foreach (string sql in sentencias)
+                    {
+                        try
+                        {
+                            new SqlCommand(sql, conn).ExecuteNonQuery();
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new Exception(
+                                $"Error creando esquema en '{targetDb}'.\n" +
+                                $"Sentencia: {sql.TrimStart().Substring(0, Math.Min(80, sql.TrimStart().Length))}...\n" +
+                                $"SQL Server: {ex.Message}", ex);
+                        }
                     }
                 }
 

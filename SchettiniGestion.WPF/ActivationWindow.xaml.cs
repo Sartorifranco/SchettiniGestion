@@ -17,22 +17,10 @@ namespace SchettiniGestion.WPF
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            txtMachineId.Text = ObtenerMachineId();
-        }
-
-        private static string ObtenerMachineId()
-        {
-            try
-            {
-                string raw = $"{Environment.MachineName}-{Environment.UserDomainName}-{Environment.ProcessorCount}";
-                int hash = 0;
-                foreach (char c in raw) hash = hash * 31 + c;
-                return Math.Abs(hash).ToString("X8");
-            }
-            catch
-            {
-                return Environment.MachineName.ToUpper();
-            }
+            // LicenseManager.ObtenerHardwareId() usa WMI (CPU + placa madre) con SHA-256,
+            // el mismo algoritmo que emplea ValidarLicencia(). El operador copia este valor
+            // y lo pega en GeneradorLicencias al crear la licencia del cliente.
+            txtMachineId.Text = LicenseManager.ObtenerHardwareId();
         }
 
         private void btnCargarArchivoLicencia_Click(object sender, RoutedEventArgs e)
@@ -83,9 +71,13 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
-            if (!DatabaseService.GuardarNuevaLicencia(key))
+            try
             {
-                MostrarError("No se pudo guardar la licencia. Verifique la conexión a la base de datos.");
+                DatabaseService.GuardarNuevaLicencia(key);
+            }
+            catch (Exception exGuardar)
+            {
+                MostrarError("ERROR AL GUARDAR LICENCIA:\n" + exGuardar.Message);
                 return;
             }
 

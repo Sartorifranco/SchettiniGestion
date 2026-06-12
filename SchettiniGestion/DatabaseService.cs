@@ -14,6 +14,7 @@ using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
 using SqlDataAdapter = Microsoft.Data.SqlClient.SqlDataAdapter;
 using SqlException = Microsoft.Data.SqlClient.SqlException;
 using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlConnectionStringBuilder = Microsoft.Data.SqlClient.SqlConnectionStringBuilder;
 
 namespace SchettiniGestion
 {
@@ -128,15 +129,38 @@ namespace SchettiniGestion
         {
             try
             {
+                // Garantizar que la cadena siempre incluye Initial Catalog/Database.
+                // Si quien llama omite el catálogo, lo tomamos de la constante por defecto.
+                var bldr = new SqlConnectionStringBuilder(nuevaCadena.Trim());
+                if (string.IsNullOrWhiteSpace(bldr.InitialCatalog))
+                    bldr.InitialCatalog = new SqlConnectionStringBuilder(CS_LOCALDB).InitialCatalog;
+                string cadenaFinal = bldr.ConnectionString;
+
                 Directory.CreateDirectory(Path.GetDirectoryName(RutaConexionCfg));
-                File.WriteAllText(RutaConexionCfg, nuevaCadena.Trim());
-                _connectionString = nuevaCadena.Trim();
+                File.WriteAllText(RutaConexionCfg, cadenaFinal);
+                _connectionString = cadenaFinal;
                 return true;
             }
             catch { return false; }
         }
 
         public static string ConnectionString => _connectionString;
+
+        /// <summary>
+        /// Fuerza el contexto de una conexión ya abierta hacia la BD configurada.
+        /// Previene que LocalDB quede en 'master' en entornos de instalación limpia.
+        /// </summary>
+        private static void ForzarContextoBD(SqlConnection conn)
+        {
+            try
+            {
+                string catalog = new SqlConnectionStringBuilder(_connectionString).InitialCatalog;
+                if (!string.IsNullOrWhiteSpace(catalog) &&
+                    !string.Equals(conn.Database, catalog, StringComparison.OrdinalIgnoreCase))
+                    conn.ChangeDatabase(catalog);
+            }
+            catch { }
+        }
 
         public static Action<string> OnDbError;
 
@@ -246,6 +270,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    ForzarContextoBD(c);
                     AsegurarColumnasVisorPromo(c);
                     using (var cmd = new SqlCommand("UPDATE Configuracion SET VisorPromoCarpeta=@p, VisorPromoIntervaloSeg=@i WHERE ID=1", c))
                     {
@@ -270,6 +295,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    ForzarContextoBD(c);
                     AsegurarColumnasVisorPromo(c);
                     var dt = new DataTable();
                     new SqlDataAdapter("SELECT TOP 1 * FROM Configuracion", c).Fill(dt);
@@ -318,6 +344,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    ForzarContextoBD(c);
                     using (var cmd = new SqlCommand("UPDATE Configuracion SET UsaVisorCliente=@uvc WHERE ID=1", c))
                     {
                         cmd.Parameters.AddWithValue("@uvc", usaVisorCliente);
@@ -359,6 +386,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    ForzarContextoBD(c);
                     string sql = "UPDATE Configuracion SET NombreFantasia=@n, RazonSocial=@r, CUIT=@c, Direccion=@d, Telefono=@t, Email=@e, LogoPath=@l, CertificadoPath=@cp, PasswordAfip=@pa, PuntoVenta=@pv, MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, UsaVisorCliente=@uvc WHERE ID=1";
                     using (var cmd = new SqlCommand(sql, c))
                     {
@@ -2925,6 +2953,7 @@ ORDER BY p.Descripcion";
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    ForzarContextoBD(c);
                     AsegurarMigracionLite(c);
 
                     string updSql = omitirColumnaPwd
@@ -3108,6 +3137,43 @@ INSERT INTO Configuracion (
         }
 
         // --- Licencia ---
+        /// <summary>
+        /// Crea la tabla Configuracion y su fila base si no existen.
+        /// Se llama de forma defensiva desde GuardarNuevaLicencia para soportar
+        /// instalaciones donde el esquema todavía no fue inicializado.
+        /// </summary>
+        private static void AsegurarTablaConfiguracion(SqlConnection c)
+        {
+            try
+            {
+                new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Configuracion')
+BEGIN
+    CREATE TABLE Configuracion (
+        ID              INT             IDENTITY(1,1) PRIMARY KEY,
+        LicenciaPayload NVARCHAR(MAX)   NULL,
+        NombreFantasia  NVARCHAR(200)   NULL,
+        RazonSocial     NVARCHAR(200)   NULL,
+        CUIT            NVARCHAR(50)    NULL,
+        Direccion       NVARCHAR(200)   NULL,
+        Telefono        NVARCHAR(50)    NULL,
+        Email           NVARCHAR(100)   NULL,
+        LogoPath        NVARCHAR(MAX)   NULL,
+        CertificadoPath NVARCHAR(MAX)   NULL,
+        PasswordAfip    NVARCHAR(MAX)   NULL,
+        PuntoVenta      INT             NULL,
+        MPAccessToken   NVARCHAR(MAX)   NULL,
+        MPUserId        NVARCHAR(MAX)   NULL,
+        MPPosId         NVARCHAR(MAX)   NULL,
+        AfipProduccion  BIT             NOT NULL DEFAULT 0,
+        UsaVisorCliente BIT             NOT NULL DEFAULT 0
+    );
+    INSERT INTO Configuracion (NombreFantasia) VALUES ('Mi Negocio');
+END", c).ExecuteNonQuery();
+            }
+            catch { }
+        }
+
         private static void AsegurarColumnaLicenciaPayload(SqlConnection c)
         {
             try
@@ -3128,6 +3194,7 @@ IF NOT EXISTS (
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    ForzarContextoBD(c);
                     AsegurarColumnaLicenciaPayload(c);
                     var cmd = new SqlCommand("SELECT TOP 1 LicenciaPayload FROM Configuracion WHERE ID=1", c);
                     var r = cmd.ExecuteScalar();
@@ -3150,13 +3217,26 @@ IF NOT EXISTS (
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    AsegurarColumnaLicenciaPayload(c);
+                    ForzarContextoBD(c);               // garantiza contexto SchPosDB, no master
+                    AsegurarTablaConfiguracion(c);     // crea tabla + fila base si no existen
+                    AsegurarColumnaLicenciaPayload(c); // agrega columna si falta en tabla existente
 
-                    var cmd = new SqlCommand("UPDATE Configuracion SET LicenciaPayload=@v WHERE ID=1", c);
-                    cmd.Parameters.AddWithValue("@v", key);
-                    if (cmd.ExecuteNonQuery() == 0)
+                    // UPSERT atómico: si no existe la fila base la crea con defaults seguros
+                    // para todas las columnas requeridas, luego actualiza solo LicenciaPayload.
+                    using (var cmd = new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM Configuracion WHERE ID = 1)
+    INSERT INTO Configuracion (
+        ID, NombreFantasia, RazonSocial, CUIT, Direccion, Telefono,
+        Email, LogoPath, CertificadoPath, PasswordAfip, PuntoVenta,
+        MPAccessToken, MPUserId, MPPosId, AfipProduccion, LicenciaPayload
+    ) VALUES (
+        1, 'Mi Negocio', '', '', '', '',
+        '', '', '', '', 1,
+        '', '', '', 0, @v
+    );
+UPDATE Configuracion SET LicenciaPayload = @v WHERE ID = 1;", c))
                     {
-                        cmd.CommandText = "INSERT INTO Configuracion (ID, LicenciaPayload, NombreFantasia) VALUES (1, @v, 'Mi Negocio')";
+                        cmd.Parameters.AddWithValue("@v", key);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -3165,9 +3245,9 @@ IF NOT EXISTS (
                 LicenseManager.InvalidarCache();
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                throw new Exception("GuardarNuevaLicencia SQL: " + ex.Message, ex);
             }
         }
 

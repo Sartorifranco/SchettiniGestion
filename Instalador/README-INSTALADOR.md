@@ -1,38 +1,37 @@
 # Instalador SchettiniGestion — guía para testing
 
-Objetivo: que el tester instale con **Siguiente → Siguiente → Listo** y tenga el sistema funcionando en su PC, activándolo solo con la **clave** que vos generás.
+Objetivo: que el tester instale con **Siguiente → Siguiente → Listo** y tenga el sistema funcionando en su PC.
 
-## Qué incluye el instalador
+## Qué hace el instalador automáticamente
 
-| Componente | Cómo se resuelve |
-|------------|------------------|
-| Aplicación WPF | Carpeta `staging` generada por el build |
-| Base de datos | **SQL Server LocalDB** (recomendado) + creación automática de `SchPosDB` en el **primer inicio** |
-| Esquema / tablas | La propia app (`App.xaml.cs` + `DatabaseService`) |
-| Usuario inicial | `admin` (contraseña definida en `DatabaseService`; cambiarla en el módulo Usuarios) |
-| Licencia | **No** va en el instalador. Vos enviás la clave por separado |
+| Paso | Qué ocurre |
+|------|------------|
+| 1 | Copia la aplicación WPF y dependencias |
+| 2 | Instala **.NET Framework 4.8** si falta (offline, empaquetado) |
+| 3 | Instala **SQL Server LocalDB** si falta |
+| 4 | Escribe `conexion.cfg` en `%ProgramData%\SchettiniGestion` |
+| 5 | Ejecuta `SchettiniGestion.WPF.exe /bootstrap` (crea `SchPosDB`, tablas y usuario `admin`) |
+| 6 | (Opcional) Copia `licencia.key` si la incluiste al compilar |
+
+La **licencia** puede ir aparte (pegar clave en activación) o empaquetada para testing (ver abajo).
 
 ## Requisitos en la PC de build (tu máquina)
 
-1. **MSBuild** (cualquiera de estas opciones):
-   - Visual Studio 2022 con carga **Desarrollo de .NET de escritorio**, o
-   - **Build Tools for Visual Studio 2022** (solo compilador, sin IDE), o
-   - Compilar manualmente desde Visual Studio y luego `build-release.ps1 -SkipBuild`
+1. **MSBuild** — Visual Studio 2022 / Build Tools, o compilar en VS y usar `-SkipBuild`
 2. **Inno Setup 6** — https://jrsoftware.org/isdl.php
-3. (Opcional) **SqlLocalDB.msi** en `Instalador/prerequisites/` para instalar LocalDB sin pasos manuales  
-   - Descarga: buscar *SQL Server Express LocalDB* en Microsoft  
-   - Si no lo incluís, el tester debe tener LocalDB o SQL Express ya instalado
+3. **Internet** la primera vez que corrés `-BuildInstaller` (descarga LocalDB + .NET 4.8 offline, ~120 MB total)
 
-## Generar el Setup.exe
+## Generar el Setup.exe (un solo comando)
 
 ```powershell
 cd C:\schpos\SchettiniGestion
-.\Instalador\build-release.ps1
-# o todo en uno si Inno está instalado:
+git pull origin cursor/installer-testing-d53a
 .\Instalador\build-release.ps1 -BuildInstaller
 ```
 
-Si MSBuild no se detecta pero Visual Studio está instalado:
+Eso compila Release x64, descarga prerequisitos a `Instalador\prerequisites\`, arma `staging\` e invoca Inno Setup.
+
+Si MSBuild no se detecta:
 
 ```powershell
 .\Instalador\build-release.ps1 -MsBuildPath "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" -BuildInstaller
@@ -44,77 +43,81 @@ Si ya compilaste en Visual Studio (Release, x64):
 .\Instalador\build-release.ps1 -SkipBuild -BuildInstaller
 ```
 
-Salida: `Instalador\Output\SchettiniGestion-Setup-1.0.0-testing.exe`
+Solo descargar prerequisitos sin compilar:
+
+```powershell
+.\Instalador\download-prerequisites.ps1
+```
+
+**Salida:** `Instalador\Output\SchettiniGestion-Setup-1.0.0-testing.exe`
+
+### Incluir licencia en el Setup (opcional, para mañana)
+
+```powershell
+dotnet run --project LicenseGenerator
+# Copiar la clave generada a:
+#   Instalador\prerequisites\licencia.key
+.\Instalador\build-release.ps1 -SkipBuild -BuildInstaller
+```
+
+El tester no verá la pantalla de activación si la clave es válida.
 
 ## Generar licencias para testers
 
 ```powershell
-cd C:\schpos\SchettiniGestion
 dotnet run --project LicenseGenerator
 ```
 
 1. Completá CUIT/nombre, días de validez y módulos (`s` = sí).
 2. Copiá la **clave Base64** larga que imprime la consola.
-3. Enviásela al tester por mail/WhatsApp (no hace falta el ID de máquina con este formato).
+3. Enviásela al tester por mail/WhatsApp.
 
-### Cómo activa el tester
+### Cómo activa el tester (si no va licencia en el Setup)
 
 **Opción A — Pegar clave (recomendada)**  
-1. Instalar y abrir SchettiniGestion.  
-2. Pantalla **Activación de licencia** → pegar clave → **Activar**.
+Instalar → abrir SchettiniGestion → pantalla **Activación** → pegar clave → **Activar**.
 
 **Opción B — Archivo**  
-1. Crear `licencia.key` con la clave adentro (solo texto, una línea).  
-2. Copiarlo a la carpeta del programa o usar **Cargar archivo licencia.key** en la activación.
-
-**Opción C — Desde Configuración**  
-Módulo Configuración → pestaña Licencia (si ya entró con licencia de prueba).
+Crear `licencia.key` con la clave (una línea) en la carpeta del programa o en activación → **Cargar archivo**.
 
 ## Flujo del tester (resumen)
 
 ```
-Instalar Setup.exe → Siguiente… → Fin
+Setup.exe → Siguiente… → Fin
+        ↓
+[Instalador] .NET 4.8 + LocalDB + bootstrap BD (sin intervención)
         ↓
 Abrir SchettiniGestion
         ↓
 [Si no hay licencia] Activación → pegar clave
         ↓
-[Si no hay SQL] Asistente primer uso (LocalDB por defecto)
-        ↓
 Login admin → cambiar contraseña → usar el sistema
 ```
 
-## Licenciamiento vs Eligestion
-
-| Eligestion (referencia) | SchettiniGestion hoy |
-|-------------------------|----------------------|
-| Activación en línea | No implementada (futuro) |
-| Cargar archivo de licencia | Sí (`licencia.key` + botón en activación) |
-| QR / modo online | No implementado (futuro) |
-| Clave del desarrollador | Sí — `LicenseGenerator` (Base64 JSON) |
-
-El formato de clave es **JSON en Base64** con `ModulosPermitidos` tipo `ACCESO_FACTURACION`, `ACCESO_STOCK`, etc.
-
-> **Nota:** `GeneradorLicencias` usa cifrado AES distinto y **no** es compatible con la app. Usar solo **`LicenseGenerator`**.
-
-## Build Release sin licencia embebida
-
-En compilación **Release** no hay licencia de desarrollo embebida: sin clave válida aparece la pantalla de activación. En **Debug** sigue la licencia de prueba para desarrollo.
+Ya **no** debería aparecer el asistente de primer uso SQL en una PC limpia con LocalDB instalado por el Setup.
 
 ## Checklist antes de enviar a testing
 
-- [ ] `build-release.ps1` sin errores
-- [ ] Setup.exe probado en una VM o PC limpia
-- [ ] LocalDB instalado (por el MSI o manualmente)
-- [ ] Clave generada con los módulos que querés probar
-- [ ] Documentar al tester: usuario `admin` y que cambie la contraseña
-- [ ] AFIP en homologación hasta certificado de producción (`ENTREGA_AFIP_Y_AMBIENTE.md`)
+- [ ] `.\Instalador\build-release.ps1 -BuildInstaller` sin errores
+- [ ] Existe `Instalador\Output\SchettiniGestion-Setup-1.0.0-testing.exe`
+- [ ] (Opcional) `licencia.key` en prerequisites si querés saltar activación
+- [ ] Clave generada con los módulos a probar (si va aparte)
+- [ ] Documentar al tester: usuario `admin` y cambiar contraseña
+- [ ] AFIP en homologación hasta certificado de producción
 
 ## Solución de problemas
 
 | Problema | Qué hacer |
 |----------|-----------|
-| "No hay licencia activa" | Generar y pegar clave con `LicenseGenerator` |
-| Error de conexión SQL | Instalar LocalDB o ejecutar asistente de primer uso |
-| .NET faltante | Instalar .NET Framework 4.8 |
-| Clave "no válida" | Verificar que no tenga espacios/saltos de línea extra; regenerar con `LicenseGenerator` |
+| Falla descarga de prerequisitos | Ejecutar `download-prerequisites.ps1` con Internet; verificar antivirus |
+| "No hay licencia activa" | Generar y pegar clave, o incluir `licencia.key` al compilar |
+| Error de conexión SQL tras instalar | Reinstalar; verificar que LocalDB esté en `sqllocaldb info MSSQLLocalDB` |
+| Bootstrap falló | Abrir la app; intentará configurar BD al inicio |
+| .NET faltante y Setup sin offline | Volver a compilar con `-BuildInstaller` (descarga ndp48) |
+| Clave "no válida" | Sin espacios extra; regenerar con `LicenseGenerator` |
+
+## Licenciamiento
+
+Usar solo **`LicenseGenerator`** (Base64 JSON). `GeneradorLicencias` (AES) no es compatible.
+
+En **Release** no hay licencia embebida de desarrollo. En **Debug** sigue la licencia de prueba.

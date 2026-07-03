@@ -108,19 +108,34 @@ Copy-Item -Path (Join-Path $outDir "*") -Destination $staging -Recurse -Force
 
 Get-ChildItem $staging -Filter "*.pdb" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
 
+$prereqLic = Join-Path $PSScriptRoot "prerequisites\licencia.key"
+if (Test-Path $prereqLic) {
+    Copy-Item $prereqLic (Join-Path $staging "licencia.key") -Force
+    Write-Host "licencia.key incluida en staging (testing)." -ForegroundColor Yellow
+}
+
 Write-Host ""
 Write-Host "Carpeta lista para Inno Setup:" -ForegroundColor Green
 Write-Host "  $staging"
 Write-Host ""
 Write-Host "Pasos siguientes:" -ForegroundColor Yellow
-Write-Host ('  1. (Opcional) Coloque SqlLocalDB.msi en ' + (Join-Path $PSScriptRoot 'prerequisites'))
-Write-Host ('  2. Abra ' + (Join-Path $PSScriptRoot 'SchettiniGestion.iss') + ' en Inno Setup y compile (F9)')
+Write-Host ('  1. Ejecute con -BuildInstaller para descargar prerequisitos y generar Setup.exe')
+Write-Host ('  2. O abra ' + (Join-Path $PSScriptRoot 'SchettiniGestion.iss') + ' en Inno Setup (F9)')
 Write-Host ('  3. El Setup.exe quedara en ' + (Join-Path $PSScriptRoot 'Output'))
 Write-Host ""
-Write-Host "Licencias: ejecute LicenseGenerator y envie la clave al tester."
+Write-Host "Licencias: ejecute LicenseGenerator. Opcional: copie licencia.key a Instalador\prerequisites antes del build."
 Write-Host "Usuario inicial tras instalar: admin (cambiar contrasena en primer uso)."
 
 if ($BuildInstaller) {
+    $downloadScript = Join-Path $PSScriptRoot "download-prerequisites.ps1"
+    if (Test-Path $downloadScript) {
+        Write-Host ""
+        Write-Host "Descargando prerequisitos (LocalDB + .NET 4.8)..." -ForegroundColor Cyan
+        & $downloadScript
+    }
+    else {
+        Write-Warning "No se encontro download-prerequisites.ps1"
+    }
     $isccCandidates = @(
         "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
         "${env:ProgramFiles}\Inno Setup 6\ISCC.exe"

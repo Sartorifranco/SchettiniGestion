@@ -17,6 +17,16 @@ namespace SchettiniGestion.WPF
         {
             base.OnStartup(e);
 
+            if (EsModoBootstrap(e.Args))
+            {
+                ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                AppCulture.Initialize();
+                AsegurarArchivoConexionPorDefecto();
+                bool ok = IntentarInicializarConexion();
+                Shutdown(ok ? 0 : 1);
+                return;
+            }
+
             AppCulture.Initialize();
             AppIconHelper.ApplyToAllWindows();
             ThemeManager.LoadSavedTheme();
@@ -50,6 +60,31 @@ namespace SchettiniGestion.WPF
             var login = new LoginWindow();
             MainWindow = login;
             login.Show();
+        }
+
+        private static bool EsModoBootstrap(string[] args)
+        {
+            if (args == null) return false;
+            foreach (string a in args)
+            {
+                if (string.Equals(a, "/bootstrap", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(a, "-bootstrap", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        private static void AsegurarArchivoConexionPorDefecto()
+        {
+            try
+            {
+                string dir = System.IO.Path.GetDirectoryName(DatabaseService.RutaConexionCfg);
+                if (!string.IsNullOrEmpty(dir) && !System.IO.Directory.Exists(dir))
+                    System.IO.Directory.CreateDirectory(dir);
+                if (!System.IO.File.Exists(DatabaseService.RutaConexionCfg))
+                    System.IO.File.WriteAllText(DatabaseService.RutaConexionCfg, DatabaseService.CS_LOCALDB);
+            }
+            catch { }
         }
 
         /// <summary>

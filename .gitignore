@@ -33,3 +33,5 @@ Desktop.ini
 Instalador/staging/
 Instalador/Output/
 Instalador/prerequisites/*.msi
+Instalador/prerequisites/ndp48-*.exe
+Instalador/prerequisites/licencia.key

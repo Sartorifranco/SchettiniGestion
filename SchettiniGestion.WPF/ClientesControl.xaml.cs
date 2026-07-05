@@ -122,11 +122,42 @@ namespace SchettiniGestion.WPF
             LimpiarCampos();
         }
 
+        /// <summary>
+        /// Valida el CUIT/CUIL argentino usando el algoritmo módulo-11 de AFIP.
+        /// Acepta formatos con o sin guiones: 20-12345678-9 / 20123456789.
+        /// </summary>
+        private static bool EsCuitValido(string cuit)
+        {
+            string solo = System.Text.RegularExpressions.Regex.Replace(cuit ?? "", "[^0-9]", "");
+            if (solo.Length != 11) return false;
+
+            // Algoritmo módulo 11 AFIP
+            int[] pesos = { 5, 4, 3, 2, 7, 6, 5, 4, 3, 2 };
+            int suma = 0;
+            for (int i = 0; i < 10; i++)
+                suma += (solo[i] - '0') * pesos[i];
+
+            int resto = suma % 11;
+            int digitoEsperado = resto == 0 ? 0 : resto == 1 ? 9 : 11 - resto;
+            return (solo[10] - '0') == digitoEsperado;
+        }
+
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txtCuit.Text) || string.IsNullOrWhiteSpace(txtRazonSocial.Text))
             {
                 CustomMessageBox.Show("Complete CUIT y Razón Social.");
+                return;
+            }
+
+            if (!EsCuitValido(txtCuit.Text))
+            {
+                CustomMessageBox.Show(
+                    "El CUIT ingresado no es válido.\n\n" +
+                    "Verificá que tenga 11 dígitos y que el dígito verificador sea correcto.\n" +
+                    "Ejemplo: 20-12345678-9\n\n" +
+                    "Si el cliente no tiene CUIT, usá 00-00000000-0 para consumidor final.",
+                    "CUIT inválido", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 

@@ -125,26 +125,9 @@ namespace SchettiniGestion.WPF
             Application.Current.Shutdown();
         }
 
-        private void btnTeclado_Click(object sender, RoutedEventArgs e)
+        private void btnTeclado_Click_LEGACY(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                Process[] oskProcesses = Process.GetProcessesByName("osk");
-                if (oskProcesses.Length == 0)
-                {
-                    string path64 = @"C:\Windows\Www64\osk.exe";
-                    string path32 = @"C:\Windows\System32\osk.exe";
-
-                    if (System.IO.File.Exists(path64))
-                        Process.Start(path64);
-                    else
-                        Process.Start(path32);
-                }
-            }
-            catch (Exception ex)
-            {
-                CustomMessageBox.Show($"No se pudo iniciar el teclado: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            // Reemplazado por el teclado virtual integrado (KeyboardService)
         }
 
         private void Input_KeyDown(object sender, KeyEventArgs e)

@@ -1,3 +1,4 @@
+using System;
 using System.Data.SqlClient;
 
 namespace SchettiniGestion.WPF
@@ -21,7 +22,11 @@ namespace SchettiniGestion.WPF
                     return true;
                 }
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("BackupService error: " + ex.Message);
+                return false;
+            }
         }
     }
 }

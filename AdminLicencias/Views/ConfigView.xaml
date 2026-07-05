@@ -1,0 +1,99 @@
+<Page x:Class="AdminLicencias.Views.ConfigView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{StaticResource Surface}" Title="Configuración">
+
+    <StackPanel Margin="32,28" MaxWidth="700">
+        <TextBlock Text="Configuración" FontSize="22" FontWeight="Bold"
+                   Foreground="{StaticResource TextPrimary}" Margin="0,0,0,4"/>
+        <TextBlock FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,28"
+                   Text="Ajustes generales de la aplicación AdminLicencias."/>
+
+        <!-- ── Sección archivo de datos ─────────────────────────────── -->
+        <Border Background="{StaticResource SurfaceMidBrush}" CornerRadius="12" Padding="24" Margin="0,0,0,20">
+            <StackPanel>
+                <TextBlock Text="📁  Archivo de datos" FontSize="15" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8"/>
+                <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextSecondary}"
+                           Margin="0,0,0,16">
+                    Por defecto los datos se guardan localmente en tu PC. Podés cambiar la ubicación a una
+                    <Bold>carpeta de red compartida</Bold>, <Bold>OneDrive</Bold> o <Bold>Google Drive</Bold>
+                    para que varias personas compartan el mismo registro de clientes.
+                    Todos deben apuntar a la misma ruta desde sus respectivas PCs.
+                </TextBlock>
+
+                <TextBlock Text="Ruta actual del archivo" Style="{StaticResource FieldLabel}"/>
+                <Border Background="{StaticResource SurfaceLightBrush}" CornerRadius="6" Padding="12,10" Margin="0,0,0,14">
+                    <TextBlock x:Name="txtRutaActual" Foreground="{StaticResource Accent}"
+                               FontFamily="Consolas" FontSize="11" TextWrapping="Wrap"/>
+                </Border>
+
+                <TextBlock Text="Nueva ruta (dejá en blanco para restablecer al default)" Style="{StaticResource FieldLabel}"/>
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="10"/><ColumnDefinition Width="110"/></Grid.ColumnDefinitions>
+                    <TextBox x:Name="txtNuevaRuta" Style="{StaticResource Field}" Height="38" Grid.Column="0"
+                             ToolTip="Ej: C:\Users\Compartido\OneDrive\SCHPOSAdmin\datos.json  |  \\servidor\licencias\datos.json"/>
+                    <Button Grid.Column="2" Content="📂 Examinar" Style="{StaticResource BtnSecondary}"
+                            Click="Examinar_Click" FontSize="12"/>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Guardar ruta" Style="{StaticResource BtnPrimary}"
+                            Click="GuardarRuta_Click" Margin="0,0,10,0"/>
+                    <Button Content="Restablecer default" Style="{StaticResource BtnSecondary}"
+                            Click="Restablecer_Click"/>
+                </StackPanel>
+
+                <TextBlock x:Name="txtMsgRuta" FontSize="12" Margin="0,12,0,0"
+                           TextWrapping="Wrap" Visibility="Collapsed"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Sección cómo compartir ───────────────────────────────── -->
+        <Border Background="{StaticResource SurfaceMidBrush}" CornerRadius="12" Padding="24">
+            <StackPanel>
+                <TextBlock Text="💡  Cómo compartir en varios equipos" FontSize="15" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimary}" Margin="0,0,0,12"/>
+
+                <!-- OneDrive -->
+                <Border Background="{StaticResource SurfaceLightBrush}" CornerRadius="8" Padding="14,12" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="☁  Opción 1 — OneDrive / Google Drive (recomendado)"
+                                   FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" FontSize="13" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextSecondary}">
+1. Creá una carpeta compartida en OneDrive, por ejemplo: <Run Foreground="{StaticResource Accent}" FontFamily="Consolas">C:\Users\TuUsuario\OneDrive\SCHPOSAdmin</Run>
+&#10;2. En esta PC: usá "Examinar" y apuntá a esa carpeta como ruta del datos.json.
+&#10;3. Compartí esa carpeta de OneDrive con los demás usuarios de tu equipo.
+&#10;4. En las otras PCs: instalá AdminLicencias y configurá la misma ruta de red.
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Carpeta de red -->
+                <Border Background="{StaticResource SurfaceLightBrush}" CornerRadius="8" Padding="14,12" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="🖥  Opción 2 — Carpeta compartida en red local (LAN)"
+                                   FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" FontSize="13" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextSecondary}">
+1. En la PC "principal": compartí una carpeta (ej. <Run Foreground="{StaticResource Accent}" FontFamily="Consolas">C:\Compartido\SCHPOSAdmin</Run>) en la red local.
+&#10;2. En todas las PCs: configurá la ruta como <Run Foreground="{StaticResource Accent}" FontFamily="Consolas">\\NombrePCPrincipal\SCHPOSAdmin\datos.json</Run>
+&#10;⚠ Las ediciones simultáneas pueden generar conflictos. Se recomienda que solo una persona edite a la vez.
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Local -->
+                <Border Background="{StaticResource SurfaceLightBrush}" CornerRadius="8" Padding="14,12">
+                    <StackPanel>
+                        <TextBlock Text="💾  Opción 3 — Solo local (default)"
+                                   FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" FontSize="13" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextSecondary}">
+Los datos quedan en tu PC en <Run Foreground="{StaticResource Accent}" FontFamily="Consolas">%AppData%\SCHPOSAdmin\datos.json</Run>.
+Podés hacer backups manuales copiando ese archivo.
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</Page>

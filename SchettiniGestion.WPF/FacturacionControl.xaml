@@ -123,7 +123,8 @@
                                 </Grid.ColumnDefinitions>
                                 <Button Content="-" Click="btnRestar_Click" Background="Transparent" Foreground="{DynamicResource TextPrimary}" BorderThickness="0" FontSize="24" FontWeight="Bold"/>
                                 <TextBox x:Name="txtCantidad" Grid.Column="1" Text="1" Background="Transparent" Foreground="{DynamicResource TextPrimary}" BorderThickness="0" 
-                                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="20" FontWeight="Bold" PreviewTextInput="NumberValidationTextBox"/>
+                                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="20" FontWeight="Bold" PreviewTextInput="NumberValidationTextBox"
+                                         Tag="numeric"/>
                                 <Button Grid.Column="2" Content="+" Click="btnSumar_Click" Background="Transparent" Foreground="{DynamicResource TextPrimary}" BorderThickness="0" FontSize="24" FontWeight="Bold"/>
                             </Grid>
                         </Border>
@@ -327,7 +328,8 @@
                     <StackPanel x:Name="pnlCalculoEfectivo">
                         <TextBlock Text="Abonado ($)" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2"/>
                         <TextBox x:Name="txtMontoPagado" Style="{StaticResource WhiteTouchText}"
-                                 TextChanged="txtMontoPagado_TextChanged" PreviewTextInput="NumberValidationTextBox"/>
+                                 TextChanged="txtMontoPagado_TextChanged" PreviewTextInput="NumberValidationTextBox"
+                                 Tag="numeric"/>
 
                         <Grid Margin="0,5,0,0">
                             <TextBlock Text="Vuelto:" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" FontSize="16"/>
@@ -425,6 +427,9 @@
             </TabItem>
             <TabItem Header="Notas crédito/débito ventas">
                 <local:FacturacionNotasCreditoDebitoTab/>
+            </TabItem>
+            <TabItem Header="Historial de ventas">
+                <local:VentasControl/>
             </TabItem>
         </TabControl>
     </Grid>

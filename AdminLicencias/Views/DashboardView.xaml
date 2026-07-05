@@ -1,0 +1,176 @@
+<Page x:Class="AdminLicencias.Views.DashboardView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{StaticResource Surface}" Title="Dashboard">
+    <Page.Resources>
+        <!-- Tarjeta stat -->
+        <Style x:Key="StatCard" TargetType="Border">
+            <Setter Property="Background"     Value="{StaticResource SurfaceMidBrush}"/>
+            <Setter Property="CornerRadius"   Value="12"/>
+            <Setter Property="Padding"        Value="20,16"/>
+        </Style>
+        <Style x:Key="StatNum" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="38"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        </Style>
+        <Style x:Key="StatLbl" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="12"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Margin"     Value="0,4,0,0"/>
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,28">
+
+            <!-- Título -->
+            <TextBlock Text="Dashboard" FontSize="22" FontWeight="Bold"
+                       Foreground="{StaticResource TextPrimary}" Margin="0,0,0,4"/>
+            <TextBlock x:Name="txtFecha" FontSize="12" Foreground="{StaticResource TextSecondary}"
+                       Margin="0,0,0,24"/>
+
+            <!-- Fila de stats -->
+            <UniformGrid Columns="4" Margin="0,0,0,24">
+                <!-- Activos -->
+                <Border Style="{StaticResource StatCard}" Margin="0,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="✅" FontSize="22" Margin="0,0,0,8"/>
+                        <TextBlock x:Name="numActivos"    Style="{StaticResource StatNum}" Foreground="{StaticResource GreenBrush}"/>
+                        <TextBlock Text="Clientes activos" Style="{StaticResource StatLbl}"/>
+                    </StackPanel>
+                </Border>
+                <!-- Por vencer -->
+                <Border Style="{StaticResource StatCard}" Margin="0,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="⚠️" FontSize="22" Margin="0,0,0,8"/>
+                        <TextBlock x:Name="numPorVencer"  Style="{StaticResource StatNum}" Foreground="{StaticResource OrangeBrush}"/>
+                        <TextBlock Text="Por vencer (≤30 días)" Style="{StaticResource StatLbl}"/>
+                    </StackPanel>
+                </Border>
+                <!-- Vencidos -->
+                <Border Style="{StaticResource StatCard}" Margin="0,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="🔴" FontSize="22" Margin="0,0,0,8"/>
+                        <TextBlock x:Name="numVencidos"   Style="{StaticResource StatNum}" Foreground="{StaticResource RedBrush}"/>
+                        <TextBlock Text="Vencidos / sin licencia" Style="{StaticResource StatLbl}"/>
+                    </StackPanel>
+                </Border>
+                <!-- Total clientes -->
+                <Border Style="{StaticResource StatCard}">
+                    <StackPanel>
+                        <TextBlock Text="👥" FontSize="22" Margin="0,0,0,8"/>
+                        <TextBlock x:Name="numTotal"      Style="{StaticResource StatNum}"/>
+                        <TextBlock Text="Clientes totales" Style="{StaticResource StatLbl}"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Fila ingresos -->
+            <UniformGrid Columns="3" Margin="0,0,0,28">
+                <Border Style="{StaticResource StatCard}" Margin="0,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="$ Mes actual" Style="{StaticResource StatLbl}" Margin="0"/>
+                        <TextBlock x:Name="ingMes" FontSize="28" FontWeight="Bold"
+                                   Foreground="{StaticResource Accent}"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource StatCard}" Margin="0,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="$ Año actual" Style="{StaticResource StatLbl}" Margin="0"/>
+                        <TextBlock x:Name="ingAnio" FontSize="28" FontWeight="Bold"
+                                   Foreground="{StaticResource TextPrimary}"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource StatCard}">
+                    <StackPanel>
+                        <TextBlock Text="$ Total histórico" Style="{StaticResource StatLbl}" Margin="0"/>
+                        <TextBlock x:Name="ingTotal" FontSize="28" FontWeight="Bold"
+                                   Foreground="{StaticResource TextSecondary}"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Próximos a vencer -->
+            <TextBlock Text="⚠  Próximos a vencer / vencidos recientes" FontSize="15" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimary}" Margin="0,0,0,12"/>
+
+            <Border Background="{StaticResource SurfaceMidBrush}" CornerRadius="12" Padding="0">
+                <DataGrid x:Name="gridVencer" AutoGenerateColumns="False" IsReadOnly="True"
+                          Background="Transparent" BorderThickness="0"
+                          RowBackground="Transparent" AlternatingRowBackground="#1A273449"
+                          GridLinesVisibility="None" HeadersVisibility="Column"
+                          ColumnHeaderHeight="36" RowHeight="38" SelectionMode="Single"
+                          CanUserResizeRows="False" CanUserSortColumns="True">
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Background"   Value="Transparent"/>
+                            <Setter Property="Foreground"   Value="{StaticResource TextSecondary}"/>
+                            <Setter Property="FontSize"     Value="11"/>
+                            <Setter Property="Padding"      Value="12,0"/>
+                            <Setter Property="BorderBrush"  Value="{StaticResource SurfaceLightBrush}"/>
+                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="Foreground"   Value="{StaticResource TextPrimary}"/>
+                            <Setter Property="Background"   Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Padding"      Value="12,0"/>
+                            <Setter Property="FontSize"     Value="13"/>
+                        </Style>
+                    </DataGrid.CellStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Cliente"     Binding="{Binding RazonSocial}" Width="*"/>
+                        <DataGridTextColumn Header="CUIT"        Binding="{Binding CUIT}"        Width="130"/>
+                        <DataGridTextColumn Header="Ciudad"      Binding="{Binding Ciudad}"      Width="120"/>
+                        <DataGridTextColumn Header="Vencimiento" Binding="{Binding Vencimiento}"  Width="120"/>
+                        <DataGridTextColumn Header="Días rest."  Binding="{Binding DiasRestantes}" Width="90"/>
+                        <DataGridTemplateColumn Header="Estado"  Width="110">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="4" Padding="8,3" HorizontalAlignment="Left" Margin="12,4">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Estado}" Value="Activa">
+                                                        <Setter Property="Background" Value="#1422C55E"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Estado}" Value="PorVencer">
+                                                        <Setter Property="Background" Value="#14F59E0B"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Estado}" Value="Vencida">
+                                                        <Setter Property="Background" Value="#14EF4444"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding Estado}" FontSize="11" FontWeight="SemiBold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Estado}" Value="Activa">
+                                                            <Setter Property="Foreground" Value="{StaticResource GreenBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Estado}" Value="PorVencer">
+                                                            <Setter Property="Foreground" Value="{StaticResource OrangeBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Estado}" Value="Vencida">
+                                                            <Setter Property="Foreground" Value="{StaticResource RedBrush}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

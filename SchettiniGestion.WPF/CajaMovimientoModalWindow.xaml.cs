@@ -13,12 +13,6 @@ namespace SchettiniGestion.WPF
             lblTitulo.Text = titulo;
             btnGuardar.Content = textoBotonGuardar;
             numMonto.CultureInfo = AppCulture.Argentine;
-            KeyboardHelper.AttachTouchKeyboardOnPointer(this);
-        }
-
-        private void btnTeclado_Click(object sender, RoutedEventArgs e)
-        {
-            KeyboardHelper.ShowOnScreenKeyboard();
         }
 
         private void btnCancelar_Click(object sender, RoutedEventArgs e)

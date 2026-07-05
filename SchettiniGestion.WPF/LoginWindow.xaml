@@ -133,7 +133,7 @@
                             </Canvas>
                         </Viewbox>
                     </Border>
-                    <TextBlock Text="SCHETTINI" FontSize="32" FontWeight="Black" Foreground="{StaticResource PrimaryColor}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="SCHPOS" FontSize="32" FontWeight="Black" Foreground="{StaticResource PrimaryColor}" HorizontalAlignment="Center"/>
                     <TextBlock Text="GESTIÓN POS" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>

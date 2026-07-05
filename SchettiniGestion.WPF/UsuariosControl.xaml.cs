@@ -143,18 +143,24 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardarUsuario_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtNombreUsuario.Text)
-                || string.IsNullOrWhiteSpace(txtPassword.Password)
-                || cmbRolesUsuario.SelectedItem == null)
+            bool esNuevo = _usuarioIdSeleccionado == 0;
+
+            if (string.IsNullOrWhiteSpace(txtNombreUsuario.Text) || cmbRolesUsuario.SelectedItem == null)
             {
-                MessageBox.Show("Complete Nombre de Usuario, Contraseña y Rol.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Complete Nombre de Usuario y Rol.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (esNuevo && string.IsNullOrWhiteSpace(txtPassword.Password))
+            {
+                MessageBox.Show("Ingrese una contraseña para el nuevo usuario.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             try
             {
                 Rol rolSeleccionado = (Rol)cmbRolesUsuario.SelectedItem;
-                string hash = PasswordHasher.HashPassword(txtPassword.Password);
+                // Al editar: si la contraseña quedó en blanco, se conserva la existente
+                string hash = string.IsNullOrWhiteSpace(txtPassword.Password) ? "" : PasswordHasher.HashPassword(txtPassword.Password);
 
                 bool exito = DatabaseService.GuardarUsuarioConHash(
                     _usuarioIdSeleccionado,

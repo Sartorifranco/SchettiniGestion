@@ -25,6 +25,9 @@ namespace SchettiniGestion.WPF
         private DispatcherTimer _timerVerificacionMP;
         private string _referenciaPagoMP = "";
         private bool _esperandoPagoMP = false;
+        // Pago Mercado Pago QR aprobado → cobranza pre-armada para saltear CobroModalWindow
+        private bool _pagoMPAprobado = false;
+        private List<CobranzaItem> _parcelas_MP = null;
 
         /// <summary>Si se asigna (ej. "Remito", "Pedido"), preselecciona ese tipo al cargar. Usado cuando se abre desde Nuevo Remito/Pedido.</summary>
         public string TipoComprobanteInicial { get; set; }
@@ -292,11 +295,20 @@ namespace SchettiniGestion.WPF
                 if (info.Estado == "approved")
                 {
                     _timerVerificacionMP.Stop();
-                    _esperandoPagoMP = false;
+                    _esperandoPagoMP  = false;
                     _referenciaPagoMP = info.IdOperacion;
 
                     CustomerScreenService.ActualizarMensajeQR("¡PAGO APROBADO!", Brushes.LightGreen);
                     await Task.Delay(1500);
+
+                    // Armar cobranza Mercado Pago pre-confirmada para saltear CobroModalWindow
+                    decimal totalMP = CarritoDeVenta.Sum(x => x.Subtotal);
+                    int mpMedioId   = ObtenerMedioPagoIdMercadoPago();
+                    _parcelas_MP    = new List<CobranzaItem>
+                    {
+                        new CobranzaItem { MedioPagoID = mpMedioId, nombreMedio = "Mercado Pago QR", monto = totalMP }
+                    };
+                    _pagoMPAprobado = true;
 
                     SeleccionarCondicionMP();
                     btnGuardarFactura.IsEnabled = true;
@@ -308,6 +320,27 @@ namespace SchettiniGestion.WPF
                 else if (info.Estado == "rejected") CustomerScreenService.ActualizarMensajeQR("Pago Rechazado.", Brushes.Red);
             }
             catch { }
+        }
+
+        /// <summary>
+        /// Devuelve el MedioPagoID cuyo nombre contenga "mercado" o "mp".
+        /// Si no existe, devuelve 0 (genérico).
+        /// </summary>
+        private int ObtenerMedioPagoIdMercadoPago()
+        {
+            try
+            {
+                var dt = DatabaseService.GetMediosPagoCompleto();
+                foreach (System.Data.DataRow row in dt.Rows)
+                {
+                    string nombre = (row["Nombre"] as string ?? row["NombreMedio"] as string) ?? "";
+                    if (nombre.IndexOf("mercado", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        nombre.IndexOf(" mp",     StringComparison.OrdinalIgnoreCase) >= 0)
+                        return Convert.ToInt32(row[0]);
+                }
+            }
+            catch { }
+            return 0;
         }
 
         private void CancelarModoQR()
@@ -423,6 +456,29 @@ namespace SchettiniGestion.WPF
             btnGuardarFactura.IsEnabled = false;
             try
             {
+                // ── PASO 1: cobro PRIMERO para que el cajero confirme antes de ir a AFIP ──
+                var win = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
+                List<CobranzaItem> cobranzasConfirmadas;
+
+                if (_pagoMPAprobado && _parcelas_MP != null)
+                {
+                    // Pago QR ya aprobado → usar cobranza pre-armada, sin modal
+                    cobranzasConfirmadas = _parcelas_MP;
+                    _pagoMPAprobado = false;
+                    _parcelas_MP    = null;
+                }
+                else
+                {
+                    var cobroModal = new CobroModalWindow(win, total);
+                    if (cobroModal.ShowDialog() != true)
+                    {
+                        btnGuardarFactura.IsEnabled = true;
+                        return;
+                    }
+                    cobranzasConfirmadas = cobroModal.Cobranzas;
+                }
+
+                // ── PASO 2: AFIP (solo si el cobro fue confirmado) ──
                 string cae = null;
                 string vtoCae = null;
                 int nroComprobante = 0;
@@ -442,26 +498,25 @@ namespace SchettiniGestion.WPF
                     }
                     else
                     {
-                        CustomMessageBox.Show("❌ ERROR AFIP: " + resultadoAfip.Error);
+                        CustomMessageBox.Show(
+                            "❌ AFIP rechazó la factura electrónica.\n\n" +
+                            "Detalle: " + resultadoAfip.Error + "\n\n" +
+                            "⚠️ IMPORTANTE: el cobro fue confirmado pero la venta NO quedó registrada.\n\n" +
+                            "Opciones:\n" +
+                            "• Intentar de nuevo (el cobro ya fue recibido, NO vuelva a cobrar).\n" +
+                            "• Cambiar el tipo a 'Ticket' para guardar sin código AFIP.",
+                            "Error AFIP — venta no registrada");
                         btnGuardarFactura.IsEnabled = true;
                         return;
                     }
                 }
 
-                var win = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
-                var cobroModal = new CobroModalWindow(win, total);
-                if (cobroModal.ShowDialog() != true)
-                {
-                    btnGuardarFactura.IsEnabled = true;
-                    return;
-                }
-
-                string condicionTicket = string.Join(" + ", cobroModal.Cobranzas.Select(c => $"{c.nombreMedio} {c.monto:C2}"));
+                string condicionTicket = string.Join(" + ", cobranzasConfirmadas.Select(c => $"{c.nombreMedio} {c.monto:C2}"));
                 string condVent = (cmbCondicionVenta.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Contado";
                 int cliID = Convert.ToInt32(_clienteSeleccionado["ClienteID"]);
                 int? listaId = cmbListaPrecios.SelectedItem is DataRowView lr ? (int?)Convert.ToInt32(lr["ListaID"]) : null;
 
-                var parcelas = cobroModal.Cobranzas.ConvertAll(ci => new FacturaCobranzaParcela
+                var parcelas = cobranzasConfirmadas.ConvertAll(ci => new FacturaCobranzaParcela
                 {
                     MedioPagoID = ci.MedioPagoID,
                     NombreMedio = ci.nombreMedio ?? "",
@@ -487,7 +542,31 @@ namespace SchettiniGestion.WPF
                     LimpiarFormulario();
                 }
                 else
-                    CustomMessageBox.Show("No se pudo guardar la factura.");
+                {
+                    string detalleSql = !string.IsNullOrEmpty(DatabaseService.UltimoError)
+                        ? "\n\nError técnico: " + DatabaseService.UltimoError
+                        : "";
+
+                    if (!string.IsNullOrEmpty(cae))
+                    {
+                        // AFIP aprobó y cobro confirmado, pero el INSERT en BD falló → situación crítica
+                        CustomMessageBox.Show(
+                            "⛔ ERROR CRÍTICO: La venta no se guardó en el sistema.\n\n" +
+                            "El cobro fue recibido y AFIP ya emitió el comprobante:\n" +
+                            $"CAE: {cae}  |  Vto: {vtoCae}  |  Nro: {nroComprobante}\n\n" +
+                            "⚠️ NO vuelva a cobrar al cliente.\n" +
+                            "Anote el CAE y comuníquese con soporte." +
+                            detalleSql,
+                            "Error al guardar — cobro ya realizado",
+                            MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    else
+                    {
+                        CustomMessageBox.Show(
+                            "No se pudo guardar la factura. El cobro NO fue procesado." + detalleSql,
+                            "Error al guardar", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
             }
             catch (Exception ex)
             {

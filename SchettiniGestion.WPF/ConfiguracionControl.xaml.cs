@@ -16,6 +16,7 @@ namespace SchettiniGestion.WPF
         private bool _hayPasswordAfipGuardadaEnBd;
         private bool _passwordAfipTocadoPorUsuario;
         private bool _suprimirEventoPasswordAfip;
+        private string _logoPathActual = "";
 
         public ConfiguracionControl()
         {
@@ -44,6 +45,8 @@ namespace SchettiniGestion.WPF
                 txtTelefono.Text = dr["Telefono"].ToString();
                 txtEmail.Text = dr["Email"].ToString();
                 txtCertificadoPath.Text = dr["CertificadoPath"].ToString();
+                if (dr.Table.Columns.Contains("LogoPath") && dr["LogoPath"] != DBNull.Value)
+                    _logoPathActual = dr["LogoPath"].ToString();
                 _hayPasswordAfipGuardadaEnBd = DatabaseService.TienePasswordAfipPersistida(dr);
                 _passwordAfipTocadoPorUsuario = false;
                 _suprimirEventoPasswordAfip = true;
@@ -275,7 +278,7 @@ namespace SchettiniGestion.WPF
                     txtDireccion.Text,
                     txtTelefono.Text,
                     txtEmail.Text,
-                    "",
+                    _logoPathActual,
                     txtCertificadoPath.Text,
                     pwdAfip,
                     pto,
@@ -316,6 +319,7 @@ namespace SchettiniGestion.WPF
             {
                 var datos = DatabaseService.GetDatosConexionActual();
 
+                // Mostrar el servidor completo (con instancia si aplica, ej: .\SQLEXPRESS o 192.168.1.5\SQLEXPRESS)
                 txtIpServidor.Text = datos["Servidor"];
                 txtPuertoServidor.Text = datos["Puerto"];
                 chkUsarWindowsAuth.IsChecked = datos.ContainsKey("UsaIntegrado") && datos["UsaIntegrado"] == "1";
@@ -396,12 +400,18 @@ namespace SchettiniGestion.WPF
 
                 if (exito)
                 {
-                    ModernMessageBox.Show("Configuración guardada.\nEl sistema se cerrará ahora.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ModernMessageBox.Show(
+                        "Configuración de red guardada correctamente.\n\n" +
+                        "El sistema se cerrará ahora. Al volver a abrirlo, se conectará al servidor configurado.\n\n" +
+                        "Si la conexión falla al reiniciar, verifique que el servidor SQL esté activo y accesible en la red.",
+                        "Configuración guardada",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
                     Application.Current.Shutdown();
                 }
                 else
                 {
-                    ModernMessageBox.Show("Hubo un error al intentar guardar en App.config. Verifique permisos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ModernMessageBox.Show("No se pudo guardar la configuración de red.\nVerifique permisos de escritura en:\n" + SchettiniGestion.DatabaseService.RutaConexionCfg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
@@ -533,11 +543,18 @@ namespace SchettiniGestion.WPF
 
                     if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                     {
-                        string ruta = dialog.SelectedPath;
+                        // Construir nombre de archivo con timestamp
+                        string nombreArchivo = $"SchPOS_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak";
+                        string rutaArchivo   = System.IO.Path.Combine(dialog.SelectedPath, nombreArchivo);
+
                         this.Cursor = System.Windows.Input.Cursors.Wait;
-                        BackupService.RealizarBackup(ruta);
+                        bool ok = BackupService.RealizarBackup(rutaArchivo);
                         this.Cursor = System.Windows.Input.Cursors.Arrow;
-                        ModernMessageBox.Show("¡Copia de seguridad creada exitosamente!\n\nArchivo guardado en: " + ruta, "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                        if (ok)
+                            ModernMessageBox.Show($"¡Copia de seguridad creada exitosamente!\n\nArchivo: {rutaArchivo}", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                        else
+                            ModernMessageBox.Show("No se pudo crear la copia de seguridad.\n\nVerifique permisos de escritura y que el servicio SQL Server esté activo.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }

@@ -74,26 +74,52 @@ namespace SchettiniGestion.WPF
                 }
 
                 if (lista.Count == 0)
+                {
                     lista = CrearMediosFallback();
+                    _usandoFallback = true;
+                }
 
                 cmbMediosPago.ItemsSource = lista;
                 cmbMediosPago.SelectedIndex = 0;
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine("[CobroModal] Error cargando medios de pago: " + ex.Message);
                 cmbMediosPago.ItemsSource = CrearMediosFallback();
                 cmbMediosPago.SelectedIndex = 0;
+                _usandoFallback = true;
+            }
+
+            if (_usandoFallback)
+            {
+                // Los IDs del fallback podrían no coincidir con los de la BD.
+                // Avisamos al operador para que configure los medios de pago.
+                var aviso = new System.Windows.Controls.TextBlock
+                {
+                    Text = "⚠️ Los medios de pago no pudieron cargarse desde la base de datos. Configure los medios en Configuración.",
+                    Foreground = System.Windows.Media.Brushes.OrangeRed,
+                    FontSize = 12,
+                    TextWrapping = System.Windows.TextWrapping.Wrap,
+                    Margin = new System.Windows.Thickness(0, 4, 0, 0)
+                };
+                // Insertar aviso justo encima del combo si el panel padre lo permite
+                if (cmbMediosPago.Parent is System.Windows.Controls.Panel panel)
+                {
+                    int idx = panel.Children.IndexOf(cmbMediosPago);
+                    if (idx >= 0) panel.Children.Insert(idx, aviso);
+                }
             }
         }
+
+        private bool _usandoFallback = false;
 
         private static List<MedioPagoOpcion> CrearMediosFallback()
         {
             return new List<MedioPagoOpcion>
             {
-                new MedioPagoOpcion { MedioID = 1, Nombre = "Efectivo" },
-                new MedioPagoOpcion { MedioID = 2, Nombre = "Tarjeta Débito" },
-                new MedioPagoOpcion { MedioID = 3, Nombre = "Tarjeta Crédito" },
-                new MedioPagoOpcion { MedioID = 4, Nombre = "Transferencia" }
+                new MedioPagoOpcion { MedioID = 0, Nombre = "Efectivo (sin ID)" },
+                new MedioPagoOpcion { MedioID = 0, Nombre = "Tarjeta (sin ID)" },
+                new MedioPagoOpcion { MedioID = 0, Nombre = "Transferencia (sin ID)" }
             };
         }
 

@@ -43,6 +43,18 @@ namespace SchettiniGestion.WPF
             }
 
             string cuit = txtCuit.Text.Trim();
+
+            // Validar CUIT solo si fue ingresado (en cliente rápido puede ser opcional)
+            if (!string.IsNullOrEmpty(cuit) && !EsCuitValido(cuit))
+            {
+                CustomMessageBox.Show(
+                    "El CUIT ingresado no es válido. Verificá el dígito verificador.\n" +
+                    "Si no tenés el CUIT, dejá el campo vacío o usá 00-00000000-0 para consumidor final.",
+                    "CUIT inválido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                txtCuit.Focus();
+                return;
+            }
+
             string condIva = (cmbCondicionIVA.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Content?.ToString() ?? "Consumidor Final";
             string telefono = txtTelefono.Text.Trim();
             string email = txtEmail.Text.Trim();
@@ -68,6 +80,19 @@ namespace SchettiniGestion.WPF
         {
             DialogResult = false;
             Close();
+        }
+
+        private static bool EsCuitValido(string cuit)
+        {
+            string solo = System.Text.RegularExpressions.Regex.Replace(cuit ?? "", "[^0-9]", "");
+            if (solo.Length != 11) return false;
+            int[] pesos = { 5, 4, 3, 2, 7, 6, 5, 4, 3, 2 };
+            int suma = 0;
+            for (int i = 0; i < 10; i++)
+                suma += (solo[i] - '0') * pesos[i];
+            int resto = suma % 11;
+            int digitoEsperado = resto == 0 ? 0 : resto == 1 ? 9 : 11 - resto;
+            return (solo[10] - '0') == digitoEsperado;
         }
     }
 }

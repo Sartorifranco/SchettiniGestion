@@ -1,0 +1,286 @@
+<Page x:Class="AdminLicencias.Views.ClientesView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{StaticResource Surface}" Title="Clientes">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <!-- Panel detalle, visible solo cuando hay selección -->
+            <ColumnDefinition x:Name="colDetalle" Width="0"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ══ Lista ══════════════════════════════════════════════════════ -->
+        <Grid Grid.Column="0" Margin="32,28,16,28">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Encabezado -->
+            <DockPanel Grid.Row="0" Margin="0,0,0,16" LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left">
+                    <TextBlock Text="Clientes" FontSize="22" FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimary}"/>
+                    <TextBlock x:Name="txtTotalClientes" FontSize="12"
+                               Foreground="{StaticResource TextSecondary}" Margin="0,2,0,0"/>
+                </StackPanel>
+                <Button DockPanel.Dock="Right" Content="+ Nuevo Cliente"
+                        Style="{StaticResource BtnPrimary}" Click="NuevoCliente_Click"
+                        VerticalAlignment="Center"/>
+            </DockPanel>
+
+            <!-- Búsqueda -->
+            <Grid Grid.Row="1" Margin="0,0,0,14">
+                <TextBox x:Name="txtBuscar" Style="{StaticResource Field}"
+                         Height="38" TextChanged="Buscar_Changed"
+                         Text="" Tag="Buscar por nombre, CUIT, ciudad…"/>
+                <TextBlock Text="🔍  Buscar por nombre, CUIT o ciudad…"
+                           Foreground="{StaticResource TextSecondary}" FontSize="12"
+                           IsHitTestVisible="False" VerticalAlignment="Center" Margin="12,0">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Text, ElementName=txtBuscar}" Value="">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+
+            <!-- Tabla — fila * llena el espacio restante -->
+            <Border Grid.Row="2" Background="{StaticResource SurfaceMidBrush}"
+                    CornerRadius="12" ClipToBounds="True">
+                <DataGrid x:Name="gridClientes" AutoGenerateColumns="False" IsReadOnly="True"
+                          Background="Transparent" BorderThickness="0"
+                          RowBackground="Transparent" AlternatingRowBackground="#0F273449"
+                          GridLinesVisibility="None" HeadersVisibility="Column"
+                          ColumnHeaderHeight="36" RowHeight="44"
+                          SelectionMode="Single" CanUserResizeRows="False"
+                          SelectionChanged="Grid_SelectionChanged">
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Background"   Value="Transparent"/>
+                            <Setter Property="Foreground"   Value="{StaticResource TextSecondary}"/>
+                            <Setter Property="FontSize"     Value="11"/>
+                            <Setter Property="Padding"      Value="12,0"/>
+                            <Setter Property="BorderBrush"  Value="{StaticResource SurfaceLightBrush}"/>
+                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#1A2563EB"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#0F2563EB"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+                    <DataGrid.CellStyle>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="Foreground"      Value="{StaticResource TextPrimary}"/>
+                            <Setter Property="Background"      Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Padding"         Value="12,0"/>
+                            <Setter Property="FontSize"        Value="13"/>
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                        </Style>
+                    </DataGrid.CellStyle>
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Estado" Width="20">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Ellipse Width="8" Height="8" Margin="12,0,0,0"
+                                             HorizontalAlignment="Center">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Fill" Value="{StaticResource GrayBrush}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding EstadoColor}" Value="green">
+                                                        <Setter Property="Fill" Value="{StaticResource GreenBrush}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding EstadoColor}" Value="orange">
+                                                        <Setter Property="Fill" Value="{StaticResource OrangeBrush}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding EstadoColor}" Value="red">
+                                                        <Setter Property="Fill" Value="{StaticResource RedBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Razón Social"  Binding="{Binding RazonSocial}" Width="*"  MinWidth="150"/>
+                        <DataGridTextColumn Header="CUIT"          Binding="{Binding CUIT}"        Width="130"/>
+                        <DataGridTextColumn Header="Ciudad"        Binding="{Binding Ciudad}"      Width="110"/>
+                        <DataGridTextColumn Header="Contacto"      Binding="{Binding Contacto}"    Width="130"/>
+                        <DataGridTextColumn Header="Versión"       Binding="{Binding Version}"     Width="90"/>
+                        <DataGridTextColumn Header="Vencimiento"   Binding="{Binding Vencimiento}" Width="120"/>
+                        <DataGridTextColumn Header="Días rest."    Binding="{Binding DiasRestantes}" Width="90"/>
+                        <DataGridTemplateColumn Header="Lic." Width="90">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="4" Padding="8,3" HorizontalAlignment="Left" Margin="12,4">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding EstadoColor}" Value="green">
+                                                        <Setter Property="Background" Value="#1422C55E"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding EstadoColor}" Value="orange">
+                                                        <Setter Property="Background" Value="#14F59E0B"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding EstadoColor}" Value="red">
+                                                        <Setter Property="Background" Value="#14EF4444"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding EstadoColor}" Value="gray">
+                                                        <Setter Property="Background" Value="#14FFFFFF"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding LicEstado}" FontSize="11" FontWeight="SemiBold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding EstadoColor}" Value="green">
+                                                            <Setter Property="Foreground" Value="{StaticResource GreenBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding EstadoColor}" Value="orange">
+                                                            <Setter Property="Foreground" Value="{StaticResource OrangeBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding EstadoColor}" Value="red">
+                                                            <Setter Property="Foreground" Value="{StaticResource RedBrush}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding EstadoColor}" Value="gray">
+                                                            <Setter Property="Foreground" Value="{StaticResource GrayBrush}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </Grid>
+
+        <!-- ══ Panel de detalle ═══════════════════════════════════════════ -->
+        <Border Grid.Column="1" Background="{StaticResource SurfaceMidBrush}"
+                BorderBrush="{StaticResource SurfaceLightBrush}" BorderThickness="1,0,0,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="panelDetalle" Margin="20,24">
+
+                    <!-- Cerrar -->
+                    <DockPanel Margin="0,0,0,16">
+                        <TextBlock x:Name="txtDetalleNombre" FontSize="16" FontWeight="Bold"
+                                   Foreground="{StaticResource TextPrimary}" DockPanel.Dock="Left"
+                                   TextWrapping="Wrap"/>
+                        <Button Content="✕" DockPanel.Dock="Right" Click="CerrarDetalle_Click"
+                                Background="Transparent" Foreground="{StaticResource TextSecondary}"
+                                BorderThickness="0" Cursor="Hand" FontSize="14" VerticalAlignment="Top"/>
+                    </DockPanel>
+
+                    <!-- Datos básicos -->
+                    <TextBlock Text="INFORMACIÓN" Style="{StaticResource FieldLabel}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                            <TextBlock Text="CUIT" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock x:Name="dCUIT" Foreground="{StaticResource TextPrimary}" FontSize="13"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Ciudad" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock x:Name="dCiudad" Foreground="{StaticResource TextPrimary}" FontSize="13"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Margin="0,8,0,4">
+                        <TextBlock Text="Contacto" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock x:Name="dContacto" Foreground="{StaticResource TextPrimary}" FontSize="13"/>
+                    </StackPanel>
+                    <Grid Margin="0,8,0,4">
+                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                            <TextBlock Text="Teléfono" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock x:Name="dTelefono" Foreground="{StaticResource TextPrimary}" FontSize="13"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Email" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock x:Name="dEmail" Foreground="{StaticResource TextPrimary}" FontSize="13" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Grid>
+                    <Grid Margin="0,8,0,4">
+                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                            <TextBlock Text="Puestos" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock x:Name="dPuestos" Foreground="{StaticResource TextPrimary}" FontSize="13"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Alta" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock x:Name="dAlta" Foreground="{StaticResource TextPrimary}" FontSize="13"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Servidor / ping -->
+                    <Separator/>
+                    <TextBlock Text="SERVIDOR SQL" Style="{StaticResource FieldLabel}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <Grid Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock x:Name="dIP" Foreground="{StaticResource TextPrimary}" FontSize="13"
+                                       Text="Sin IP configurada"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="Probar" Click="TestConexion_Click"
+                                Style="{StaticResource BtnSecondary}" Padding="10,6" FontSize="12"/>
+                    </Grid>
+                    <TextBlock x:Name="txtPingResult" FontSize="12" TextWrapping="Wrap"
+                               Foreground="{StaticResource TextSecondary}" Margin="0,4,0,0"/>
+
+                    <!-- Última licencia -->
+                    <Separator/>
+                    <TextBlock Text="ÚLTIMA LICENCIA" Style="{StaticResource FieldLabel}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <StackPanel x:Name="panelUltimaLic">
+                        <TextBlock x:Name="dLicVersion"    Foreground="{StaticResource TextPrimary}"   FontSize="13" Margin="0,0,0,2"/>
+                        <TextBlock x:Name="dLicVencimiento" Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,2"/>
+                        <TextBlock x:Name="dLicModulos"    Foreground="{StaticResource TextSecondary}" FontSize="11"
+                                   TextWrapping="Wrap" Margin="0,0,0,6"/>
+                        <TextBlock x:Name="dLicMonto"      Foreground="{StaticResource Accent}"        FontSize="13" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <TextBlock x:Name="dSinLicencia" Text="Sin licencias registradas."
+                               Foreground="{StaticResource GrayBrush}" FontSize="13" Visibility="Collapsed"/>
+
+                    <!-- Notas -->
+                    <Separator/>
+                    <TextBlock Text="NOTAS INTERNAS" Style="{StaticResource FieldLabel}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock x:Name="dNotas" Foreground="{StaticResource TextSecondary}" FontSize="12"
+                               TextWrapping="Wrap"/>
+
+                    <!-- Acciones -->
+                    <Separator Margin="0,16,0,8"/>
+                    <Button Content="🔑  Generar nueva licencia" Style="{StaticResource BtnPrimary}"
+                            Click="GenLicencia_Click" Margin="0,0,0,8"/>
+                    <Button Content="✏  Editar cliente" Style="{StaticResource BtnSecondary}"
+                            Click="EditarCliente_Click" Margin="0,0,0,8"/>
+                    <Button Content="📋  Ver historial completo" Style="{StaticResource BtnSecondary}"
+                            Click="VerHistorial_Click"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</Page>

@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="SchettiniGestion · Versión Lite"
+        Title="SCHPOS · Versión Lite"
         MinWidth="880"
         MinHeight="560"
         Height="768"
@@ -207,7 +207,7 @@
                                Margin="0,0,0,8">
                         <Run Text="Panel principal"/>
                         <Run Text=" · " Foreground="{DynamicResource BorderColor}"/>
-                        <Run Text="SchettiniGestion" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                        <Run Text="SCHPOS" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
                     </TextBlock>
 
                     <ScrollViewer Grid.Row="1"
@@ -261,17 +261,18 @@
                                     Margin="0,0,16,0"
                                     Cursor="Hand"
                                     Background="{DynamicResource HoverBackground}"
-                                    BorderBrush="{DynamicResource BorderColor}"
-                                    BorderThickness="1"
-                                    Foreground="{DynamicResource TextPrimary}">
+                                    BorderBrush="{DynamicResource VKAccentBar}"
+                                    BorderThickness="2"
+                                    Foreground="{DynamicResource TextPrimary}"
+                                    ToolTip="Activar / desactivar teclado táctil">
                                 <Button.Resources>
                                     <Style TargetType="Border">
                                         <Setter Property="CornerRadius" Value="10"/>
                                     </Style>
                                 </Button.Resources>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="⌨" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="Teclado" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="txtIconoTeclado" Text="⌨" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="txtLabelTeclado" Text="Teclado ON" VerticalAlignment="Center" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Button>
 

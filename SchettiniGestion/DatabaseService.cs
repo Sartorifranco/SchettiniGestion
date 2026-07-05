@@ -88,7 +88,7 @@ namespace SchettiniGestion
         /// <summary>Archivo donde se guarda la conexión activa (creado en primera ejecución o desde Configuración).</summary>
         public static readonly string RutaConexionCfg = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "SchettiniGestion", "conexion.cfg");
+            "SCHPOS", "conexion.cfg");
 
         private static string _connectionString = ObtenerConnectionString();
 
@@ -163,27 +163,31 @@ namespace SchettiniGestion
         }
 
         public static Action<string> OnDbError;
+        public static string UltimoError { get; private set; }
 
         // Constantes de Permisos
-        public const string PERMISO_USUARIOS = "ACCESOUSUARIOS";
-        public const string PERMISO_CLIENTES = "ACCESOCLIENTES";
-        public const string PERMISO_PRODUCTOS = "ACCESOPRODUCTOS";
-        public const string PERMISO_STOCK = "ACCESOSTOCK";
-        public const string PERMISO_FACTURACION = "ACCESOFACTURACION";
-        public const string PERMISO_VENTAS = "ACCESOVENTAS";
-        public const string PERMISO_PERMISOS = "ACCESOPERMISOS";
-        public const string PERMISO_PROVEEDORES = "ACCESOPROVEEDORES";
-        public const string PERMISO_COMPRAS = "ACCESOCOMPRAS";
-        public const string PERMISO_PRECIOS = "ACCESOPRECIOS";
-        public const string PERMISO_CAJA = "ACCESOCAJA";
-        public const string PERMISO_PRESUPUESTOS = "ACCESOPRESUPUESTOS";
-        public const string PERMISO_CUENTASCORRIENTES = "ACCESOCUENTASCORRIENTES";
-        public const string PERMISO_LISTASPRECIOS = "ACCESOLISTASPRECIOS";
-        public const string PERMISO_CONFIGURACION = "ACCESOCONFIGURACION";
+        // IMPORTANTE: deben coincidir exactamente con los seeds de App.xaml.cs
+        public const string PERMISO_USUARIOS          = "ACCESO_USUARIOS";
+        public const string PERMISO_CLIENTES          = "ACCESO_CLIENTES";
+        public const string PERMISO_PRODUCTOS         = "ACCESO_PRODUCTOS";
+        public const string PERMISO_STOCK             = "ACCESO_STOCK";
+        public const string PERMISO_FACTURACION       = "ACCESO_FACTURACION";
+        public const string PERMISO_VENTAS            = "ACCESO_VENTAS";
+        public const string PERMISO_PERMISOS          = "ACCESO_PERMISOS";
+        public const string PERMISO_PROVEEDORES       = "ACCESO_PROVEEDORES";
+        public const string PERMISO_COMPRAS           = "ACCESO_COMPRAS";
+        public const string PERMISO_PRECIOS           = "ACCESO_PRECIOS";
+        public const string PERMISO_CAJA              = "ACCESO_CAJA";
+        public const string PERMISO_PRESUPUESTOS      = "ACCESO_PRESUPUESTOS";
+        public const string PERMISO_CUENTASCORRIENTES = "ACCESO_CUENTASCORRIENTES";
+        public const string PERMISO_LISTASPRECIOS     = "ACCESO_LISTASPRECIOS";
+        public const string PERMISO_CONFIGURACION     = "ACCESO_CONFIGURACION";
 
         private static void NotificarError(string mensaje)
         {
+            UltimoError = mensaje;
             OnDbError?.Invoke(mensaje);
+            System.Diagnostics.Debug.WriteLine("[DatabaseService] Error: " + mensaje);
         }
 
         /// <summary>
@@ -445,8 +449,9 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
         public const string UsuarioVistaEjemploContraseña = "123456";
 
         /// <summary>
-        /// TEMPORAL (depuración): fuerza <c>UPDATE</c> del hash PBKDF2 para <c>admin</c> y <see cref="UsuarioVistaEjemploNombre"/>
-        /// con <see cref="UsuarioBootstrapAdminContraseña"/>; <c>INSERT</c> si no existen. Quitar antes de entrega a cliente.
+        /// Garantiza que exista al menos un usuario <c>admin</c> con rol Administrador.
+        /// Solo asigna la contraseña por defecto (<see cref="UsuarioBootstrapAdminContraseña"/>) si el hash
+        /// está vacío/nulo (primera instalación). En instalaciones existentes no modifica la contraseña.
         /// </summary>
         public static void AsegurarUsuariosBootstrap()
         {
@@ -456,6 +461,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    // Crear 'admin' solo si no existe (o restaurar hash si quedó vacío)
                     if (AplicarHashBootstrapAUsuario(c, "admin", ph) == 0)
                     {
                         using (var ins = new SqlCommand(
@@ -465,28 +471,44 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                             ins.ExecuteNonQuery();
                         }
                     }
-                    if (AplicarHashBootstrapAUsuario(c, UsuarioVistaEjemploNombre, ph) == 0)
-                    {
-                        using (var ins = new SqlCommand(
-                            "INSERT INTO Usuarios (NombreUsuario,PasswordHash,RolID,Rol) VALUES (@u,@h,1,N'Administrador')", c))
-                        {
-                            ins.Parameters.AddWithValue("@u", UsuarioVistaEjemploNombre);
-                            ins.Parameters.AddWithValue("@h", ph);
-                            ins.ExecuteNonQuery();
-                        }
-                    }
+                    // Nota: el usuario 'vista' de debug NO se crea en producción.
+                    // Si existe en una BD migrada de desarrollo, permanece sin cambios.
                 }
             }
             catch (Exception ex) { NotificarError("AsegurarUsuariosBootstrap: " + ex.Message); }
         }
 
-        /// <summary>Alias de compatibilidad para arranque y primer uso. Ver <see cref="AsegurarUsuariosBootstrap"/>.</summary>
+        /// <summary>Alias de compatibilidad para arranque y primer uso.</summary>
         public static void AsegurarUsuarioAdminInicial() => AsegurarUsuariosBootstrap();
+
+        /// <summary>
+        /// Devuelve true si el usuario está usando la contraseña por defecto de instalación.
+        /// Se usa en LoginWindow para mostrar aviso de cambio de contraseña.
+        /// </summary>
+        public static bool UsandoContraseñaPorDefecto(string nombreUsuario)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    string h = LeerPasswordHashUsuario(c, (nombreUsuario ?? "").Trim());
+                    if (string.IsNullOrEmpty(h)) return false;
+                    return PasswordHasher.VerifyPassword(UsuarioBootstrapAdminContraseña, h)
+                        || PasswordHasher.VerifyPassword(UsuarioBootstrapAdminContraseñaLegadaMigracion, h);
+                }
+            }
+            catch { return false; }
+        }
 
         private static int AplicarHashBootstrapAUsuario(SqlConnection c, string nombreUsuario, string hashPh)
         {
+            // Solo actualiza el rol (no la contraseña) si el usuario ya existe con hash válido.
+            // Si el hash está vacío o nulo, inicializa la contraseña bootstrap.
             using (var up = new SqlCommand(
-                @"UPDATE Usuarios SET PasswordHash=@h, RolID=1, Rol=N'Administrador'
+                @"UPDATE Usuarios
+                  SET PasswordHash = CASE WHEN (PasswordHash IS NULL OR LTRIM(PasswordHash) = '') THEN @h ELSE PasswordHash END,
+                      RolID = 1, Rol = N'Administrador'
                   WHERE LOWER(LTRIM(RTRIM(NombreUsuario))) = LOWER(LTRIM(RTRIM(@u)))", c))
             {
                 up.Parameters.AddWithValue("@h", hashPh);
@@ -524,7 +546,9 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             UltimoErrorValidacionLogin = null;
             try
             {
-                AsegurarUsuariosBootstrap();
+                // NO llamar AsegurarUsuariosBootstrap() aquí — resetearía la contraseña
+                // del admin en cada intento de login. Solo se llama desde App.xaml.cs al
+                // iniciar si la tabla está vacía, o abajo si el usuario bootstrap no se encuentra.
                 p = NormalizarClaveIngreso(p);
                 string uTrim = (u ?? "").Trim();
 
@@ -1598,6 +1622,51 @@ ORDER BY p.Descripcion";
             }
         }
 
+        /// <summary>
+        /// Migración de nombres de permisos sin guión bajo (ACCESOVENTAS) al formato
+        /// con guión bajo (ACCESO_VENTAS). Se ejecuta una sola vez; es idempotente.
+        /// </summary>
+        public static void MigrarNombresPermisosConGuionBajo()
+        {
+            var mapa = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "ACCESOUSUARIOS",          "ACCESO_USUARIOS"          },
+                { "ACCESOCLIENTES",          "ACCESO_CLIENTES"          },
+                { "ACCESOPRODUCTOS",         "ACCESO_PRODUCTOS"         },
+                { "ACCESOSTOCK",             "ACCESO_STOCK"             },
+                { "ACCESOFACTURACION",       "ACCESO_FACTURACION"       },
+                { "ACCESOVENTAS",            "ACCESO_VENTAS"            },
+                { "ACCESOPERMISOS",          "ACCESO_PERMISOS"          },
+                { "ACCESOPROVEEDORES",       "ACCESO_PROVEEDORES"       },
+                { "ACCESOCOMPRAS",           "ACCESO_COMPRAS"           },
+                { "ACCESOPRECIOS",           "ACCESO_PRECIOS"           },
+                { "ACCESOCAJA",              "ACCESO_CAJA"              },
+                { "ACCESOPRESUPUESTOS",      "ACCESO_PRESUPUESTOS"      },
+                { "ACCESOCUENTASCORRIENTES", "ACCESO_CUENTASCORRIENTES" },
+                { "ACCESOLISTASPRECIOS",     "ACCESO_LISTASPRECIOS"     },
+                { "ACCESOCONFIGURACION",     "ACCESO_CONFIGURACION"     },
+            };
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    foreach (var kvp in mapa)
+                    {
+                        using (var cmd = new SqlCommand(@"
+                            UPDATE Permisos SET NombrePermiso = @nuevo
+                            WHERE NombrePermiso = @viejo", c))
+                        {
+                            cmd.Parameters.AddWithValue("@viejo", kvp.Key);
+                            cmd.Parameters.AddWithValue("@nuevo", kvp.Value);
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) { NotificarError("MigrarNombresPermisosConGuionBajo: " + ex.Message); }
+        }
+
         public static void InicializarPermisosBaseDatos()
         {
             var permisosBase = typeof(DatabaseService)
@@ -1795,13 +1864,22 @@ ORDER BY p.Descripcion";
                                         det.Parameters.AddWithValue("@prec", i.PrecioUnitario);
                                         det.ExecuteNonQuery();
                                     }
+                                    // Descuento atómico con verificación de stock suficiente.
+                                    // Si otro terminal vendió el mismo ítem simultáneamente,
+                                    // @@ROWCOUNT = 0 indica que el stock ya no alcanza → rollback.
+                                    int rowsActualizados;
                                     using (var up = new SqlCommand(
-                                        "UPDATE Productos SET StockActual=StockActual-@cant WHERE ProductoID=@pid", c, tr))
+                                        "UPDATE Productos SET StockActual=StockActual-@cant WHERE ProductoID=@pid AND StockActual >= @cant", c, tr))
                                     {
                                         up.Parameters.AddWithValue("@cant", i.Cantidad);
                                         up.Parameters.AddWithValue("@pid", i.ProductoID);
-                                        up.ExecuteNonQuery();
+                                        rowsActualizados = up.ExecuteNonQuery();
                                     }
+                                    if (rowsActualizados == 0)
+                                        throw new InvalidOperationException(
+                                            $"Stock insuficiente para '{i.Descripcion}' al momento de registrar la venta. " +
+                                            "Otro terminal puede haber vendido el mismo producto. " +
+                                            "Actualice el carrito y vuelva a intentar.");
                                     using (var cmdStk = new SqlCommand(
                                         "INSERT INTO MovimientosStock (ProductoID,FacturaID,Fecha,TipoMovimiento,Cantidad) VALUES (@pid,@fid,@f,'Venta',@cant)", c, tr))
                                     {
@@ -1899,6 +1977,12 @@ ORDER BY p.Descripcion";
                                 tr.Commit();
                                 return fid;
                         }
+                        catch (InvalidOperationException)
+                        {
+                            // Error de stock insuficiente: re-lanzar para que la UI lo muestre al cajero.
+                            try { tr.Rollback(); } catch { }
+                            throw;
+                        }
                         catch (Exception ex)
                         {
                             try { tr.Rollback(); } catch { }
@@ -1908,7 +1992,17 @@ ORDER BY p.Descripcion";
                     }
                 }
             }
-            catch { return 0; }
+            catch (InvalidOperationException)
+            {
+                // Stock insuficiente detectado fuera de la transacción (ej: error de conexión al transaccionar).
+                // Re-lanzar para que la UI muestre el mensaje específico al cajero.
+                throw;
+            }
+            catch (Exception ex)
+            {
+                NotificarError("GuardarFactura (conexión): " + ex.Message);
+                return 0;
+            }
         }
 
         /// <summary>Método corto para pruebas automatizadas: cond debe ser texto de forma de cobro («Contado» o «Cuenta Corriente»).</summary>
@@ -2279,6 +2373,33 @@ ORDER BY p.Descripcion";
             }
             catch { }
             return s;
+        }
+
+        /// <summary>
+        /// Devuelve el desglose de ventas del día agrupado por medio de pago,
+        /// consultando la tabla FacturasCobranza (generada al guardar cada factura).
+        /// Útil para el cierre de caja con desglose real por Efectivo / Tarjeta / Transferencia.
+        /// </summary>
+        public static DataTable GetDesgloseMediosPagoHoy()
+        {
+            var dt = new DataTable();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    var cmd = new SqlCommand(@"
+                        SELECT fc.NombreMedio, SUM(fc.Monto) AS Total
+                        FROM FacturasCobranza fc
+                        INNER JOIN Facturas f ON fc.FacturaID = f.FacturaID
+                        WHERE CAST(f.Fecha AS DATE) = CAST(GETDATE() AS DATE)
+                        GROUP BY fc.NombreMedio
+                        ORDER BY Total DESC", c);
+                    new SqlDataAdapter(cmd).Fill(dt);
+                }
+            }
+            catch { }
+            return dt;
         }
 
         /// <summary>Guarda presupuesto y devuelve PresupuestoID; 0 si falla.</summary>
@@ -2903,6 +3024,7 @@ ORDER BY p.Descripcion";
             {
                 ["Servidor"] = "127.0.0.1",
                 ["Puerto"] = "1433",
+                ["ServidorCompleto"] = "127.0.0.1",
                 ["Usuario"] = "",
                 ["Password"] = "",
                 ["UsaIntegrado"] = "0"
@@ -2910,8 +3032,25 @@ ORDER BY p.Descripcion";
             try
             {
                 var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(_connectionString);
-                result["Servidor"] = builder.DataSource ?? "127.0.0.1";
-                result["Usuario"] = builder.UserID ?? "";
+                string dataSource = builder.DataSource ?? "127.0.0.1";
+                result["ServidorCompleto"] = dataSource;
+
+                // Parsear IP/servidor y puerto desde DataSource.
+                // Formatos posibles: "SERVIDOR", "SERVIDOR\INSTANCIA", "IP,PUERTO", "IP\INSTANCIA,PUERTO"
+                string servidor = dataSource;
+                string puerto   = "1433";
+
+                // Puerto separado por coma (ej. "192.168.1.5,1434")
+                int comaIdx = dataSource.LastIndexOf(',');
+                if (comaIdx >= 0)
+                {
+                    servidor = dataSource.Substring(0, comaIdx).Trim();
+                    puerto   = dataSource.Substring(comaIdx + 1).Trim();
+                }
+
+                result["Servidor"] = servidor;
+                result["Puerto"]   = puerto;
+                result["Usuario"]  = builder.UserID ?? "";
                 result["Password"] = builder.Password ?? "";
                 result["UsaIntegrado"] = builder.IntegratedSecurity ? "1" : "0";
             }
@@ -2925,13 +3064,25 @@ ORDER BY p.Descripcion";
             {
                 string ds = string.IsNullOrWhiteSpace(puerto) || puerto == "1433" ? servidor : $"{servidor},{puerto}";
                 string cs = integrado
-                    ? $"Server={ds};Database=SchPosDB;Integrated Security=True;TrustServerCertificate=True;"
-                    : $"Server={ds};Database=SchPosDB;User Id={usuario};Password={password};TrustServerCertificate=True;";
+                    ? $"Server={ds};Database=SchPosDB;Integrated Security=True;Encrypt=False;TrustServerCertificate=True;"
+                    : $"Server={ds};Database=SchPosDB;User Id={usuario};Password={password};Encrypt=False;TrustServerCertificate=True;";
 
-                var config = System.Configuration.ConfigurationManager.OpenExeConfiguration(System.Configuration.ConfigurationUserLevel.None);
-                config.ConnectionStrings.ConnectionStrings["SchPosDB"].ConnectionString = cs;
-                config.Save(System.Configuration.ConfigurationSaveMode.Modified);
-                System.Configuration.ConfigurationManager.RefreshSection("connectionStrings");
+                // Fuente de verdad: conexion.cfg (leído en cada arranque por ObtenerConnectionString)
+                ActualizarConexion(cs);
+
+                // Secundario: actualizar App.config para compatibilidad (puede fallar en instalaciones con permisos restringidos)
+                try
+                {
+                    var config = System.Configuration.ConfigurationManager.OpenExeConfiguration(System.Configuration.ConfigurationUserLevel.None);
+                    if (config.ConnectionStrings.ConnectionStrings["SchPosDB"] != null)
+                    {
+                        config.ConnectionStrings.ConnectionStrings["SchPosDB"].ConnectionString = cs;
+                        config.Save(System.Configuration.ConfigurationSaveMode.Modified);
+                        System.Configuration.ConfigurationManager.RefreshSection("connectionStrings");
+                    }
+                }
+                catch { /* App.config es solo backup; el fallo no es crítico */ }
+
                 return true;
             }
             catch { return false; }
@@ -3378,12 +3529,36 @@ UPDATE Configuracion SET LicenciaPayload = @v WHERE ID = 1;", c))
                 {
                     try
                     {
+                        // Validar y descontar stock dentro de la misma transacción
+                        foreach (var it in items)
+                        {
+                            if (it.ProductoID <= 0) continue;
+                            using (var chk = new SqlCommand(
+                                "SELECT ISNULL(StockActual,0) FROM Productos WHERE ProductoID=@pid", c, tr))
+                            {
+                                chk.Parameters.AddWithValue("@pid", it.ProductoID);
+                                var stockObj = chk.ExecuteScalar();
+                                int stockActual = stockObj == null || stockObj == DBNull.Value ? 0 : Convert.ToInt32(stockObj);
+                                if (stockActual < it.Cantidad)
+                                    throw new InvalidOperationException(
+                                        $"Stock insuficiente para '{it.Descripcion}': disponible {stockActual}, requerido {it.Cantidad}.");
+                            }
+                            using (var upd = new SqlCommand(
+                                "UPDATE Productos SET StockActual = StockActual - @cant WHERE ProductoID=@pid AND StockActual >= @cant", c, tr))
+                            {
+                                upd.Parameters.AddWithValue("@pid", it.ProductoID);
+                                upd.Parameters.AddWithValue("@cant", it.Cantidad);
+                                upd.ExecuteNonQuery();
+                            }
+                        }
+
                         var cmd = new SqlCommand(
                             "INSERT INTO Remitos (ClienteID,FacturaID,Fecha,Estado,Observaciones) VALUES (@cid,NULL,@f,'Emitido',@o); SELECT SCOPE_IDENTITY();", c, tr);
                         cmd.Parameters.AddWithValue("@cid", cid);
                         cmd.Parameters.AddWithValue("@f", DateTime.Now);
                         cmd.Parameters.AddWithValue("@o", (object)observaciones ?? DBNull.Value);
                         int rid = Convert.ToInt32(cmd.ExecuteScalar());
+                        var fecha = DateTime.Now;
                         foreach (var it in items)
                         {
                             var det = new SqlCommand(
@@ -3393,11 +3568,34 @@ UPDATE Configuracion SET LicenciaPayload = @v WHERE ID = 1;", c))
                             det.Parameters.AddWithValue("@cant", it.Cantidad);
                             det.Parameters.AddWithValue("@pu", it.PrecioUnitario);
                             det.ExecuteNonQuery();
+
+                            // Registrar movimiento de stock (egreso por remito)
+                            if (it.ProductoID > 0)
+                            {
+                                using (var mov = new SqlCommand(
+                                    "INSERT INTO MovimientosStock (ProductoID,FacturaID,Fecha,TipoMovimiento,Cantidad) VALUES (@pid,NULL,@f,'Remito',@cant)", c, tr))
+                                {
+                                    mov.Parameters.AddWithValue("@pid",  it.ProductoID);
+                                    mov.Parameters.AddWithValue("@f",    fecha);
+                                    mov.Parameters.AddWithValue("@cant", -it.Cantidad);
+                                    mov.ExecuteNonQuery();
+                                }
+                            }
                         }
                         tr.Commit();
                         return rid;
                     }
-                    catch { tr.Rollback(); return 0; }
+                    catch (InvalidOperationException)
+                    {
+                        try { tr.Rollback(); } catch { }
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        try { tr.Rollback(); } catch { }
+                        NotificarError("GuardarRemito: " + ex.Message);
+                        return 0;
+                    }
                 }
             }
         }

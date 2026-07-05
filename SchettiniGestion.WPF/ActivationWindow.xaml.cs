@@ -9,18 +9,39 @@ namespace SchettiniGestion.WPF
 {
     public partial class ActivationWindow : Window
     {
+        private double _originalTop = double.NaN;
+
         public ActivationWindow()
         {
             InitializeComponent();
-            Loaded += OnLoaded;
+            Loaded   += OnLoaded;
+            Unloaded += (s, e) => KeyboardService.VisibilityChanged -= OnKeyboardVisibilityChanged;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            // LicenseManager.ObtenerHardwareId() usa WMI (CPU + placa madre) con SHA-256,
-            // el mismo algoritmo que emplea ValidarLicencia(). El operador copia este valor
-            // y lo pega en GeneradorLicencias al crear la licencia del cliente.
             txtMachineId.Text = LicenseManager.ObtenerHardwareId();
+            KeyboardService.VisibilityChanged += OnKeyboardVisibilityChanged;
+            if (KeyboardService.IsEnabled && KeyboardService.KeyboardTop < double.MaxValue)
+                OnKeyboardVisibilityChanged(true);
+        }
+
+        private void OnKeyboardVisibilityChanged(bool visible)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (visible)
+                {
+                    if (double.IsNaN(_originalTop)) _originalTop = Top;
+                    double kbTop = KeyboardService.KeyboardTop;
+                    Top = Math.Max(4, (kbTop - ActualHeight) / 2.0);
+                }
+                else if (!double.IsNaN(_originalTop))
+                {
+                    Top        = _originalTop;
+                    _originalTop = double.NaN;
+                }
+            });
         }
 
         private void btnCargarArchivoLicencia_Click(object sender, RoutedEventArgs e)

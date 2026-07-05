@@ -29,7 +29,6 @@ namespace SchettiniGestion.WPF
             _modoDuplicar = duplicar;
             _onGuardado = onGuardado;
             CargarCombos();
-            KeyboardHelper.AttachTouchKeyboardOnPointer(this);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -59,11 +58,6 @@ namespace SchettiniGestion.WPF
                     txtCodigoBarra.Text = "";
                 }
             }
-        }
-
-        private void btnTeclado_Click(object sender, RoutedEventArgs e)
-        {
-            KeyboardHelper.ShowOnScreenKeyboard();
         }
 
         private void CargarCombos()

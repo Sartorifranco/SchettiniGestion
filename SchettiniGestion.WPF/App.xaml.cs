@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -31,8 +32,14 @@ namespace SchettiniGestion.WPF
             AppIconHelper.ApplyToAllWindows();
             ThemeManager.LoadSavedTheme();
 
+            // Registrar teclado virtual inteligente (responde a cualquier TextBox/PasswordBox).
+            KeyboardService.Initialize();
+
             this.DispatcherUnhandledException += App_DispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+            // Despertar LocalDB antes de cualquier intento de conexión (resuelve Error 26).
+            DespertarLocalDB();
 
             // Intentar conectar y crear BD. Si falla, mostrar asistente de primer uso.
             if (!IntentarInicializarConexion())
@@ -113,48 +120,116 @@ namespace SchettiniGestion.WPF
         /// <summary>
         /// Intenta conectar con la cadena actual y, si falla, prueba fallbacks automáticos.
         /// Retorna true si logra inicializar la BD correctamente.
+        /// IMPORTANTE: si el usuario configuró manualmente un servidor de red en conexion.cfg,
+        /// NO se hace fallback a LocalDB para evitar revertir silenciosamente a una BD vacía local.
         /// </summary>
         private bool IntentarInicializarConexion()
         {
-            // Cadenas a probar en orden
-            string[] candidatos = new string[]
-            {
-                DatabaseService.ConnectionString,           // 1. conexion.cfg o App.config
-                DatabaseService.CS_LOCALDB,                 // 2. LocalDB (instalación nueva)
-                DatabaseService.CS_SQLEXPRESS,              // 3. SQL Server Express local
-            };
+            string csConfigurado = DatabaseService.ConnectionString;
+
+            // Detectar si la conexión guardada fue configurada manualmente (no es LocalDB por defecto).
+            bool esConexionPersonalizada = EsConexionPersonalizada(csConfigurado);
+
+            // Si hay conexión personalizada, intentar solo con esa cadena (sin fallbacks que borrarían la config).
+            // Si es la default (LocalDB), intentar también Express como alternativa local.
+            string[] candidatos = esConexionPersonalizada
+                ? new[] { csConfigurado }
+                : new[] { csConfigurado, DatabaseService.CS_LOCALDB, DatabaseService.CS_SQLEXPRESS };
+
+            const int MaxReintentos = 3;
+            const int EsperaEntreReintentos = 2000; // ms
 
             string ultimoError = "";
             foreach (string cs in candidatos)
             {
-                try
+                // Política de reintentos por candidato (cubre arranque lento de LocalDB).
+                for (int intento = 1; intento <= MaxReintentos; intento++)
                 {
-                    InicializarBaseDeDatosCompleta(cs);
-                    if (cs != DatabaseService.ConnectionString)
-                        DatabaseService.ActualizarConexion(cs);
-                    DatabaseService.InitializeDatabase();
-                    DatabaseService.AsegurarUsuarioAdminInicial();
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    ultimoError = ex.Message;
-                    // Si el error es de DDL (ya conectó pero falló al crear tablas) no tiene
-                    // sentido probar el siguiente candidato — exponer el error al usuario.
-                    if (!ex.Message.Contains("No se puede abrir")
-                        && !ex.Message.Contains("Cannot open")
-                        && !ex.Message.Contains("network-related")
-                        && !ex.Message.Contains("A network")
-                        && !ex.Message.Contains("login failed")
-                        && !ex.Message.Contains("Login failed"))
+                    try
                     {
-                        throw new Exception($"Error al inicializar la base de datos:\n{ex.Message}", ex);
+                        InicializarBaseDeDatosCompleta(cs);
+                        // Solo actualizar conexion.cfg si usamos un candidato distinto al configurado
+                        // (fallback automático a LocalDB en primera instalación).
+                        if (cs != csConfigurado)
+                            DatabaseService.ActualizarConexion(cs);
+                        DatabaseService.InitializeDatabase();
+                        DatabaseService.MigrarNombresPermisosConGuionBajo();
+                        DatabaseService.AsegurarUsuarioAdminInicial();
+                        return true;
                     }
-                    // Error de conexión → probar siguiente candidato
+                    catch (Exception ex)
+                    {
+                        ultimoError = ex.Message;
+
+                        bool esErrorConexion =
+                            ex.Message.Contains("No se puede abrir")  ||
+                            ex.Message.Contains("Cannot open")        ||
+                            ex.Message.Contains("network-related")    ||
+                            ex.Message.Contains("A network")          ||
+                            ex.Message.Contains("Error 26")           ||
+                            ex.Message.Contains("error 26")           ||
+                            ex.Message.Contains("login failed")       ||
+                            ex.Message.Contains("Login failed");
+
+                        if (!esErrorConexion)
+                        {
+                            // Error de DDL: no tiene sentido reintentar ni probar otro candidato.
+                            throw new Exception($"Error al inicializar la base de datos:\n{ex.Message}", ex);
+                        }
+
+                        if (intento < MaxReintentos)
+                        {
+                            // Error de conexión: esperar y reintentar con el mismo candidato.
+                            System.Threading.Thread.Sleep(EsperaEntreReintentos);
+                        }
+                        // Si agotó los reintentos, el bucle for termina y se prueba el siguiente candidato.
+                    }
                 }
             }
-            _ = ultimoError; // suprime warning CS0219
+
+            // Si la conexión personalizada falló, mostrar error claro en lugar de silencio.
+            if (esConexionPersonalizada && !string.IsNullOrEmpty(ultimoError))
+            {
+                MessageBox.Show(
+                    "No se pudo conectar al servidor de base de datos configurado.\n\n" +
+                    "Servidor: " + csConfigurado.Split(';')[0] + "\n" +
+                    "Error: " + ultimoError + "\n\n" +
+                    "Verifique que el servidor SQL esté encendido y accesible en la red.\n" +
+                    "Para cambiar la configuración de red, utilice el asistente de primer uso.",
+                    "Error de conexión al servidor",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+
+            _ = ultimoError;
             return false;
+        }
+
+        /// <summary>
+        /// Devuelve true si el connection string guardado en conexion.cfg fue configurado
+        /// manualmente por el usuario (apunta a servidor remoto o SQL Express personalizado)
+        /// y no debe ser sobreescrito con LocalDB en caso de fallo temporal.
+        /// </summary>
+        private static bool EsConexionPersonalizada(string cs)
+        {
+            if (string.IsNullOrWhiteSpace(cs)) return false;
+            try
+            {
+                var b = new SqlConnectionStringBuilder(cs);
+                string src = (b.DataSource ?? "").ToLowerInvariant().Trim();
+                // LocalDB o localhost sin instancia nombrada = default, no personalizada.
+                if (src.Contains("(localdb)")) return false;
+                if (src == "." || src == "localhost" || src == "(local)") return false;
+                if (src.StartsWith(".\\") || src.StartsWith("localhost\\") || src.StartsWith("(local)\\"))
+                {
+                    // SQL Express local con instancia nombrada: no sobreescribir, pero tampoco es "remoto".
+                    // Solo hacer fallback si es la primera instalación (conexion.cfg no existe aún).
+                    return System.IO.File.Exists(DatabaseService.RutaConexionCfg);
+                }
+                // Cualquier otra cosa (IP, nombre de servidor remoto) = personalizada.
+                return true;
+            }
+            catch { return false; }
         }
 
         private void InicializarBaseDeDatosCompleta(string connectionString = null)
@@ -163,39 +238,58 @@ namespace SchettiniGestion.WPF
             var builder = new SqlConnectionStringBuilder(connectionString);
             string targetDb = builder.InitialCatalog;
 
-            // ── Paso 1: crear la BD en master si no existe ──────────────────────────
+            // Siempre conectar a master primero.
+            // Nunca se abre una conexión directa a Database=SchPosDB antes de confirmar
+            // que la BD existe: evita "Cannot open database requested by the login"
+            // en instalaciones limpias.
             builder.InitialCatalog = "master";
-            using (var conn = new SqlConnection(builder.ConnectionString))
+            string masterCs = builder.ConnectionString;
+
+            using (var conn = new SqlConnection(masterCs))
             {
                 conn.Open();
+
+                // ── Paso 1: crear la BD si no existe ──────────────────────────────
                 using (var cmd = new SqlCommand($"SELECT db_id(N'{targetDb}')", conn))
                 {
                     if (cmd.ExecuteScalar() == DBNull.Value)
                     {
-                        // Construir rutas con Path.Combine para garantizar el separador '\' correcto.
-                        // LocalDB sin FILENAME explícito puede concatenar el directorio de usuario
-                        // sin separador ("C:\Users\NombreSchPosDB.mdf" en vez de "...\NombreSchPosDB.mdf").
-                        string userProfile = System.IO.Path.Combine(
-                            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-                        string mdfPath = System.IO.Path.Combine(userProfile, targetDb + ".mdf");
-                        string ldfPath = System.IO.Path.Combine(userProfile, targetDb + "_log.ldf");
-                        string createSql =
-                            $"CREATE DATABASE [{targetDb}] " +
-                            $"ON  PRIMARY (NAME = N'{targetDb}', FILENAME = N'{mdfPath.Replace("'", "''")}', SIZE = 8MB, FILEGROWTH = 65536KB) " +
-                            $"LOG ON      (NAME = N'{targetDb}_log', FILENAME = N'{ldfPath.Replace("'", "''")}', SIZE = 8MB, FILEGROWTH = 65536KB)";
+                        string createSql;
+
+                        // En LocalDB: especificamos rutas para que los archivos queden en el perfil del usuario
+                        // (requerido por LocalDB que no tiene carpeta de datos propia accesible).
+                        // En SQL Server remoto o Express: NO especificamos FILENAME; el motor usa sus propias
+                        // rutas por defecto en el servidor. Intentar escribir rutas locales del cliente causaría
+                        // un error "The path is not valid" en el servidor remoto.
+                        bool esLocalDb = builder.DataSource.IndexOf("(localdb)", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                        if (esLocalDb)
+                        {
+                            string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                            string mdfPath = System.IO.Path.Combine(userProfile, targetDb + ".mdf");
+                            string ldfPath = System.IO.Path.Combine(userProfile, targetDb + "_log.ldf");
+                            createSql =
+                                $"CREATE DATABASE [{targetDb}] " +
+                                $"ON  PRIMARY (NAME = N'{targetDb}', FILENAME = N'{mdfPath.Replace("'", "''")}', SIZE = 8MB, FILEGROWTH = 65536KB) " +
+                                $"LOG ON      (NAME = N'{targetDb}_log', FILENAME = N'{ldfPath.Replace("'", "''")}', SIZE = 8MB, FILEGROWTH = 65536KB)";
+                        }
+                        else
+                        {
+                            // SQL Server Express/Standard/Developer remoto:
+                            // dejar que el motor elija las rutas en el servidor.
+                            createSql = $"CREATE DATABASE [{targetDb}]";
+                        }
+
                         new SqlCommand(createSql, conn).ExecuteNonQuery();
-                        // Esperar a que LocalDB termine de inicializar la BD recién creada.
-                        System.Threading.Thread.Sleep(2000);
+                        // Breve pausa para que LocalDB registre la BD recién creada (no necesaria en SQL Server).
+                        if (esLocalDb)
+                            System.Threading.Thread.Sleep(2000);
                     }
                 }
-            }
 
-            // ── Paso 2: conectar EXPLÍCITAMENTE a la BD objetivo y crear tablas ─────
-            using (var conn = new SqlConnection(connectionString))
-            {
-                conn.Open();
-                // ChangeDatabase garantiza que estamos en targetDb aunque el driver
-                // haya resuelto el string de conexión de forma distinta (LocalDB quirk).
+                // ── Paso 2: cambiar al contexto de la BD objetivo SIN abrir nueva conexión ──
+                // ChangeDatabase reutiliza la conexión ya establecida con el servidor,
+                // evitando el error "Cannot open database" en una conexión nueva.
                 conn.ChangeDatabase(targetDb);
 
                 // Verificar si ya existe el esquema base
@@ -624,6 +718,64 @@ namespace SchettiniGestion.WPF
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             MessageBox.Show("Error Fatal: " + (e.ExceptionObject as Exception)?.Message);
+        }
+
+        /// <summary>
+        /// Crea e inicia la instancia MSSQLLocalDB de forma silenciosa.
+        /// Garantiza que el motor esté corriendo antes de intentar cualquier conexión,
+        /// evitando el Error 26 ("no se encontró la instancia del servidor").
+        /// Defensa 1: busca sqllocaldb.exe por ruta absoluta en versiones conocidas de SQL Server.
+        /// Defensa 2: espera 3 segundos tras WaitForExit para que Windows levante los servicios internos.
+        /// </summary>
+        private static void DespertarLocalDB()
+        {
+            try
+            {
+                // Defensa 1: buscar sqllocaldb.exe por ruta absoluta en versiones 160→120.
+                string sqlLocalDbExe = null;
+                string[] versions = { "160", "150", "140", "130", "120" };
+                string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+                foreach (string ver in versions)
+                {
+                    foreach (string root in new[] { programFiles, programFilesX86 })
+                    {
+                        string candidate = System.IO.Path.Combine(
+                            root, "Microsoft SQL Server", ver, "Tools", "Binn", "sqllocaldb.exe");
+                        if (System.IO.File.Exists(candidate))
+                        {
+                            sqlLocalDbExe = candidate;
+                            break;
+                        }
+                    }
+                    if (sqlLocalDbExe != null) break;
+                }
+
+                // Si no se encontró por ruta absoluta, confiar en el PATH del sistema.
+                if (sqlLocalDbExe == null)
+                    sqlLocalDbExe = "sqllocaldb";
+
+                // Crear la instancia (sin efecto si ya existe) y luego arrancarla.
+                foreach (string args in new[] { "create MSSQLLocalDB", "start MSSQLLocalDB" })
+                {
+                    using (var p = new Process())
+                    {
+                        p.StartInfo = new ProcessStartInfo
+                        {
+                            FileName        = sqlLocalDbExe,
+                            Arguments       = args,
+                            CreateNoWindow  = true,
+                            UseShellExecute = false,
+                        };
+                        p.Start();
+                        p.WaitForExit();
+                    }
+                }
+
+                // Defensa 2: tiempo de gracia para que Windows levante los servicios internos de SQL.
+                System.Threading.Thread.Sleep(3000);
+            }
+            catch { /* Si LocalDB no está instalado el error se surfaceará al conectar */ }
         }
     }
 }

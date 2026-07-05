@@ -1,10 +1,10 @@
-; Inno Setup — SchettiniGestion (testing / entrega cliente)
+; Inno Setup — SCHPOS (testing / entrega cliente)
 ; Requiere Inno Setup 6: https://jrsoftware.org/isdl.php
 
-#define MyAppName "SchettiniGestion"
-#define MyAppVersion "1.0.0-testing"
+#define MyAppName "SCHPOS"
+#define MyAppVersion "1.0.0"
 #define MyAppPublisher "Schettini Tec"
-#define MyAppExeName "SchettiniGestion.WPF.exe"
+#define MyAppExeName "SCHPOS.exe"
 #define MyAppUrl "https://github.com/Sartorifranco/SchettiniGestion"
 
 [Setup]
@@ -19,7 +19,7 @@ DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 LicenseFile=
 OutputDir=Output
-OutputBaseFilename=SchettiniGestion-Setup-{#MyAppVersion}
+OutputBaseFilename=SCHPOS-Setup-{#MyAppVersion}
 SetupIconFile=..\SchettiniGestion.WPF\Resources\app.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/ultra64
@@ -49,7 +49,7 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\SqlLocalDB.msi"" /passive IACCEPTSQLLOCALDBLICENSETERMS=YES /norestart"; StatusMsg: "Instalando motor de base de datos (LocalDB)..."; Flags: waituntilterminated
-Filename: "{app}\{#MyAppExeName}"; Description: "Iniciar {#MyAppName} ahora"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Iniciar {#MyAppName} ahora"; Flags: nowait postinstall skipifsilent runasoriginaluser
 
 [Code]
 function Net472OrHigherInstalled: Boolean;
@@ -86,7 +86,7 @@ var
 begin
   if CurStep = ssPostInstall then
   begin
-    CfgDir := ExpandConstant('{commonappdata}\SchettiniGestion');
+    CfgDir := ExpandConstant('{commonappdata}\SCHPOS');
     CfgPath := CfgDir + '\conexion.cfg';
     CfgContent := 'Server=(LocalDB)\MSSQLLocalDB;Database=SchPosDB;Integrated Security=True;Encrypt=False;';
     if not DirExists(CfgDir) then

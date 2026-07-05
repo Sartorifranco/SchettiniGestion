@@ -44,8 +44,26 @@ namespace SchettiniGestion.WPF
         {
             ActualizarBotonTema();
             ActualizarHeaderUsuario();
+
+            // Doble-chequeo de licencia en tiempo de ejecución (defensa ante manipulación post-inicio)
+            if (!LicenseManager.ValidarLicencia())
+            {
+                OcultarTodoPorFalloLicencia();
+                MessageBox.Show(
+                    "La licencia no es válida o ha expirado.\nEl acceso a los módulos ha sido desactivado.",
+                    "Licencia inválida",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
             AplicarPermisosLite();
             SincronizarModoPantallaDesdeBase();
+            ActualizarBtnTeclado();
+
+            // Pantalla de bienvenida por defecto al abrir
+            try { mainContentArea.Content = new InicioControl(); }
+            catch { /* InicioControl es opcional; no bloquear el arranque */ }
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -129,12 +147,14 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                btnVentasFacturacion.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_VENTAS) ? Visibility.Visible : Visibility.Collapsed;
-                btnGestionStock.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_STOCK) ? Visibility.Visible : Visibility.Collapsed;
-                btnClientes.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_CLIENTES) ? Visibility.Visible : Visibility.Collapsed;
-                btnCaja.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_CAJA) ? Visibility.Visible : Visibility.Collapsed;
-                btnUsuariosPermisos.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_USUARIOS) ? Visibility.Visible : Visibility.Collapsed;
-                btnConfiguracion.Visibility = SesionUsuario.TienePermiso(DatabaseService.PERMISO_CONFIGURACION) ? Visibility.Visible : Visibility.Collapsed;
+                // PuedeModulo = LicenseManager.IsModuleEnabled AND SesionUsuario.TienePermiso
+                // Garantiza que los botones principales también respeten la licencia activa.
+                btnVentasFacturacion.Visibility = PuedeModulo(DatabaseService.PERMISO_VENTAS) ? Visibility.Visible : Visibility.Collapsed;
+                btnGestionStock.Visibility      = PuedeModulo(DatabaseService.PERMISO_STOCK)  ? Visibility.Visible : Visibility.Collapsed;
+                btnClientes.Visibility          = PuedeModulo(DatabaseService.PERMISO_CLIENTES) ? Visibility.Visible : Visibility.Collapsed;
+                btnCaja.Visibility              = PuedeModulo(DatabaseService.PERMISO_CAJA)   ? Visibility.Visible : Visibility.Collapsed;
+                btnUsuariosPermisos.Visibility  = PuedeModulo(DatabaseService.PERMISO_USUARIOS) ? Visibility.Visible : Visibility.Collapsed;
+                btnConfiguracion.Visibility     = PuedeModulo(DatabaseService.PERMISO_CONFIGURACION) ? Visibility.Visible : Visibility.Collapsed;
 
             }
             catch (Exception ex)
@@ -199,7 +219,7 @@ namespace SchettiniGestion.WPF
             }
 
             SetModuloActivo(btnVentasFacturacion);
-            mainContentArea.Content = new VentasControl();
+            mainContentArea.Content = new FacturacionControl();
         }
 
         private void productosMenuItem_Click(object sender, RoutedEventArgs e)
@@ -217,11 +237,11 @@ namespace SchettiniGestion.WPF
         {
             if (!SesionUsuario.TienePermiso(DatabaseService.PERMISO_STOCK))
             {
-                MessageBox.Show("No tiene permiso para acceder al stock/productos.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("No tiene permiso para acceder al stock.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             SetModuloActivo(btnGestionStock);
-            mainContentArea.Content = new ProductosControl();
+            mainContentArea.Content = new StockControl();
         }
 
         private void clientesMenuItem_Click(object sender, RoutedEventArgs e)
@@ -333,19 +353,24 @@ namespace SchettiniGestion.WPF
 
         private void btnTeclado_Click(object sender, RoutedEventArgs e)
         {
-            string windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-            string oskPath64 = System.IO.Path.Combine(windir, "System32", "osk.exe");
-            string oskPath32 = System.IO.Path.Combine(windir, "sysnative", "osk.exe");
-            string targetPath = System.IO.File.Exists(oskPath64) ? oskPath64 : oskPath32;
+            KeyboardService.Toggle();
+            ActualizarBtnTeclado();
+        }
 
-            try
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = targetPath, UseShellExecute = true });
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("No se pudo iniciar el teclado.\n\nError: " + ex.Message, "Error de teclado");
-            }
+        private void ActualizarBtnTeclado()
+        {
+            if (btnTeclado == null) return;
+            bool on = KeyboardService.IsEnabled;
+            // Cambiar icono y etiqueta según estado
+            var iconBlock  = btnTeclado.FindName("txtIconoTeclado") as System.Windows.Controls.TextBlock;
+            var labelBlock = btnTeclado.FindName("txtLabelTeclado") as System.Windows.Controls.TextBlock;
+            if (iconBlock  != null) iconBlock.Text  = on ? "⌨" : "⌨";
+            if (labelBlock != null) labelBlock.Text  = on ? "Teclado ON" : "Teclado OFF";
+
+            btnTeclado.BorderBrush = on
+                ? (System.Windows.Media.Brush)FindResource("VKAccentBar")
+                : (System.Windows.Media.Brush)FindResource("BorderColor");
+            btnTeclado.Opacity = on ? 1.0 : 0.55;
         }
 
         private void btnTema_Click(object sender, RoutedEventArgs e)

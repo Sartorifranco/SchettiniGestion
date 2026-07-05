@@ -54,12 +54,6 @@ namespace SchettiniGestion.WPF
                 Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Right
             };
-            var btnTeclado = CrearBotonSecundario("⌨", 48, 48, "Teclado en pantalla");
-            btnTeclado.FontSize = 20;
-            btnTeclado.Margin = new Thickness(0, 0, 8, 0);
-            btnTeclado.Click += (_, __) => KeyboardHelper.ShowOnScreenKeyboard();
-            headerButtons.Children.Add(btnTeclado);
-
             var btnCerrar = CrearBotonSecundario("✕", 48, 48, "Cerrar");
             btnCerrar.Click += (_, __) => { DialogResult = false; Close(); };
             headerButtons.Children.Add(btnCerrar);
@@ -122,7 +116,6 @@ namespace SchettiniGestion.WPF
 
             root.Child = grid;
             Content = root;
-            KeyboardHelper.AttachTouchKeyboardOnPointer(this);
         }
 
         private static TextBlock CrearEtiqueta(string texto)

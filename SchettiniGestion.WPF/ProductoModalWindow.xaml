@@ -125,7 +125,6 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="txtTitulo"
                            Grid.Column="0"
@@ -134,21 +133,6 @@
                            Foreground="{DynamicResource TextPrimary}"
                            VerticalAlignment="Center"/>
                 <Button Grid.Column="1"
-                        Style="{StaticResource ProductoKeyboardButtonStyle}"
-                        Margin="12,0,10,0"
-                        ToolTip="Abrir teclado en pantalla"
-                        Click="btnTeclado_Click">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="⌨"
-                                   FontSize="20"
-                                   Margin="0,0,10,0"
-                                   VerticalAlignment="Center"/>
-                        <TextBlock Text="Teclado en pantalla"
-                                   VerticalAlignment="Center"
-                                   FontWeight="SemiBold"/>
-                    </StackPanel>
-                </Button>
-                <Button Grid.Column="2"
                         Content="✕"
                         Width="48"
                         Height="48"

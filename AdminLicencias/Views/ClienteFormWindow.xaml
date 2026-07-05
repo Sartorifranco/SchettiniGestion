@@ -1,0 +1,102 @@
+<Window x:Class="AdminLicencias.Views.ClienteFormWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Datos del cliente" Width="520" Height="630"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="{StaticResource SurfaceMidBrush}">
+
+    <Grid Margin="28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Name="lblTitulo" Text="Nuevo Cliente" FontSize="18" FontWeight="Bold"
+                   Foreground="{StaticResource TextPrimary}" Grid.Row="0" Margin="0,0,0,20"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Razón social -->
+                <TextBlock Text="Razón Social *" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="txtRazon" Style="{StaticResource Field}" Height="38" Margin="0,0,0,14"/>
+
+                <!-- CUIT -->
+                <TextBlock Text="CUIT / CUIL" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="txtCUIT" Style="{StaticResource Field}" Height="38" Margin="0,0,0,14"/>
+
+                <!-- Contacto + teléfono -->
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Nombre de contacto" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="txtContacto" Style="{StaticResource Field}" Height="38"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Teléfono / WhatsApp" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="txtTelefono" Style="{StaticResource Field}" Height="38"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Email -->
+                <TextBlock Text="Email" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="txtEmail" Style="{StaticResource Field}" Height="38" Margin="0,0,0,14"/>
+
+                <!-- Ciudad + provincia -->
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Ciudad" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="txtCiudad" Style="{StaticResource Field}" Height="38"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Provincia" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="txtProvincia" Style="{StaticResource Field}" Height="38"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- IP servidor + puerto -->
+                <TextBlock Text="IP del servidor SQL (opcional — para test de conexión)"
+                           Style="{StaticResource FieldLabel}"/>
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="16"/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions>
+                    <TextBox x:Name="txtIP" Style="{StaticResource Field}" Height="38" Grid.Column="0"
+                             ToolTip="Ej: 192.168.1.100"/>
+                    <TextBox x:Name="txtPuerto" Style="{StaticResource Field}" Height="38" Grid.Column="2"
+                             Text="1433" ToolTip="Puerto SQL (default 1433)"/>
+                </Grid>
+
+                <!-- Puestos + canal contacto -->
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Cantidad de puestos" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="txtPuestos" Style="{StaticResource Field}" Height="38" Text="1"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Canal de contacto preferido" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox x:Name="cbCanal" Style="{StaticResource Combo}" Height="38">
+                            <ComboBoxItem Content="WhatsApp" IsSelected="True"/>
+                            <ComboBoxItem Content="Email"/>
+                            <ComboBoxItem Content="Teléfono"/>
+                        </ComboBox>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Notas -->
+                <TextBlock Text="Notas internas" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="txtNotas" Style="{StaticResource Field}" Height="72"
+                         TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                         Margin="0,0,0,4"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Botones -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Cancelar" Style="{StaticResource BtnSecondary}"
+                    Click="Cancelar_Click" Margin="0,0,10,0"/>
+            <Button Content="Guardar" Style="{StaticResource BtnPrimary}"
+                    Click="Guardar_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

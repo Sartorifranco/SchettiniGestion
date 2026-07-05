@@ -7,7 +7,7 @@ param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Release",
     [ValidateSet("x64", "x86", "Any CPU")]
-    [string]$Platform = "x64",
+    [string]$Platform = "Any CPU",
     [switch]$BuildInstaller,
     [switch]$SkipBuild,
     [string]$MsBuildPath = ""
@@ -17,7 +17,10 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $sln = Join-Path $repoRoot "SchettiniGestion.sln"
 $staging = Join-Path $PSScriptRoot "staging"
-$outputRelative = "SchettiniGestion.WPF\bin\$Platform\$Configuration"
+# AnyCPU compila a bin\Release\ (sin subcarpeta de plataforma)
+# x64/x86 compilan a bin\x64\Release\ o bin\x86\Release\
+$platformFolder = if ($Platform -eq "Any CPU") { "" } else { "$Platform\" }
+$outputRelative = "SchettiniGestion.WPF\bin\${platformFolder}$Configuration"
 
 function Find-MSBuild {
     param([string]$ExplicitPath)
@@ -47,7 +50,8 @@ function Find-MSBuild {
     }
 
     $editionRoots = @("Community", "Professional", "Enterprise", "BuildTools")
-    $yearRoots = @("2022", "2019")
+    # Incluir VS18 (versión "18" usada en algunas instalaciones de VS 2022)
+    $yearRoots = @("2022", "2019", "18", "17")
     $programFiles = @(${env:ProgramFiles}, ${env:ProgramFiles(x86)})
     foreach ($root in $programFiles) {
         if ([string]::IsNullOrWhiteSpace($root)) { continue }
@@ -83,7 +87,7 @@ Opciones:
 }
 
 if (-not $SkipBuild) {
-    $banner = "== SchettiniGestion - build {0} / {1} ==" -f $Configuration, $Platform
+    $banner = "== SCHPOS - build {0} / {1} ==" -f $Configuration, $Platform
     Write-Host $banner -ForegroundColor Cyan
 
     $msbuild = Find-MSBuild -ExplicitPath $MsBuildPath
@@ -97,7 +101,7 @@ else {
 }
 
 $outDir = Join-Path $repoRoot $outputRelative
-$exePath = Join-Path $outDir "SchettiniGestion.WPF.exe"
+$exePath = Join-Path $outDir "SCHPOS.exe"
 if (-not (Test-Path $exePath)) {
     throw "No se encontro el ejecutable en: $outDir"
 }

@@ -30,23 +30,14 @@
                            FontWeight="Bold"
                            Foreground="{DynamicResource TextPrimary}"
                            VerticalAlignment="Center"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="⌨"
-                            Width="48"
-                            Height="48"
-                            Margin="0,0,8,0"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            FontSize="20"
-                            ToolTip="Teclado en pantalla"
-                            Click="btnTeclado_Click"/>
-                    <Button Content="✕"
-                            Width="48"
-                            Height="48"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            FontSize="16"
-                            ToolTip="Cerrar"
-                            Click="btnCancelar_Click"/>
-                </StackPanel>
+                <Button Content="✕"
+                        HorizontalAlignment="Right"
+                        Width="48"
+                        Height="48"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        FontSize="16"
+                        ToolTip="Cerrar"
+                        Click="btnCancelar_Click"/>
             </Grid>
 
             <StackPanel Grid.Row="1">

@@ -7,7 +7,7 @@
     <ProjectGuid>{4179A661-2477-4F8D-81A8-35735FAE775B}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>SchettiniGestion.WPF</RootNamespace>
-    <AssemblyName>SchettiniGestion.WPF</AssemblyName>
+    <AssemblyName>SCHPOS</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -236,8 +236,12 @@
       <DependentUpon>TouchDateField.xaml</DependentUpon>
     </Compile>
     <Compile Include="InputWindow.xaml.cs" />
+    <Compile Include="KeyboardService.cs" />
     <Compile Include="ModernInputWindow.xaml.cs">
       <DependentUpon>ModernInputWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="VirtualKeyboardWindow.xaml.cs">
+      <DependentUpon>VirtualKeyboardWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="CompraModalWindow.xaml.cs">
       <DependentUpon>CompraModalWindow.xaml</DependentUpon>
@@ -446,6 +450,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ModernInputWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="VirtualKeyboardWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

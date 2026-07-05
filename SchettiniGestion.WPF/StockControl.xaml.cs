@@ -102,6 +102,9 @@ namespace SchettiniGestion.WPF
             cmbTipoMovimiento.SelectedIndex = 0;
 
             LimpiarCampos();
+
+            // Cargar stock automáticamente al abrir (sin esperar que el usuario busque)
+            try { CargarStockGeneral(); } catch { }
         }
 
         private void LimpiarCampos()

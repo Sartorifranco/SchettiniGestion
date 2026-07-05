@@ -206,7 +206,7 @@
 
                     <TextBlock Grid.Column="0" VerticalAlignment="Center" FontSize="10" Foreground="{DynamicResource TextSecondary}"
 
-                               Text="© Schettini Gestión — Soporte: info@schettini.com.ar"/>
+                               Text="© SCHPOS — Soporte: info@schettini.com.ar"/>
 
                     <Button Grid.Column="1" Content="Cancelar" Style="{StaticResource SecondaryButtonStyle}"
 

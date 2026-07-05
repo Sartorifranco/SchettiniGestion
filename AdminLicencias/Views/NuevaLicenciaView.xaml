@@ -1,0 +1,184 @@
+<Page x:Class="AdminLicencias.Views.NuevaLicenciaView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{StaticResource Surface}" Title="Nueva Licencia">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="32,28">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="28"/>
+                <ColumnDefinition Width="400"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ══ Formulario izquierdo ══════════════════════════════════ -->
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Generar Licencia" FontSize="22" FontWeight="Bold"
+                           Foreground="{StaticResource TextPrimary}" Margin="0,0,0,4"/>
+                <TextBlock FontSize="12" Foreground="{StaticResource TextSecondary}"
+                           Margin="0,0,0,24" Text="Completá los datos para generar y guardar la clave AES."/>
+
+                <!-- Cliente -->
+                <TextBlock Text="Cliente *" Style="{StaticResource FieldLabel}"/>
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="10"/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>
+                    <ComboBox x:Name="cbCliente" Style="{StaticResource Combo}" Grid.Column="0"
+                              SelectionChanged="CbCliente_Changed"
+                              DisplayMemberPath="RazonSocial"/>
+                    <Button Grid.Column="2" Content="+ Nuevo" Style="{StaticResource BtnSecondary}"
+                            Click="NuevoCliente_Click" FontSize="12"/>
+                </Grid>
+
+                <!-- CUIT (auto) -->
+                <TextBlock Text="CUIT del cliente" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="txtCuit" Style="{StaticResource Field}" Height="38" IsReadOnly="True"
+                         Opacity="0.7" Margin="0,0,0,14"/>
+
+                <!-- Hardware ID -->
+                <TextBlock Text="Hardware ID del equipo del cliente *" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="txtHWID" Style="{StaticResource Field}" Height="38"
+                         ToolTip="Copiarlo desde la pantalla de activación de SCHPOS en el equipo del cliente."
+                         Margin="0,0,0,14"/>
+
+                <!-- Días / vencimiento -->
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Días de validez" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="txtDias" Style="{StaticResource Field}" Height="38" Text="365"
+                                 TextChanged="Dias_Changed"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Fecha de vencimiento" Style="{StaticResource FieldLabel}"/>
+                        <DatePicker x:Name="dpVence" Height="38"
+                                    SelectedDateChanged="Dp_Changed"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Módulos -->
+                <TextBlock Text="Módulos habilitados" Style="{StaticResource FieldLabel}" FontWeight="SemiBold"
+                           Margin="0,4,0,10"/>
+                <Border Background="{StaticResource SurfaceMidBrush}" CornerRadius="10" Padding="16">
+                    <UniformGrid Columns="2" x:Name="gridModulos">
+                        <CheckBox x:Name="chkFacturacion"   Content="Facturación / POS"   Tag="ACCESO_FACTURACION"    Margin="0,5"/>
+                        <CheckBox x:Name="chkProductos"     Content="Productos"             Tag="ACCESO_PRODUCTOS"      Margin="0,5"/>
+                        <CheckBox x:Name="chkStock"         Content="Stock"                 Tag="ACCESO_STOCK"          Margin="0,5"/>
+                        <CheckBox x:Name="chkVentas"        Content="Ventas (historial)"    Tag="ACCESO_VENTAS"         Margin="0,5"/>
+                        <CheckBox x:Name="chkClientes"      Content="Clientes"              Tag="ACCESO_CLIENTES"       Margin="0,5"/>
+                        <CheckBox x:Name="chkProveedores"   Content="Proveedores"           Tag="ACCESO_PROVEEDORES"    Margin="0,5"/>
+                        <CheckBox x:Name="chkCompras"       Content="Compras"               Tag="ACCESO_COMPRAS"        Margin="0,5"/>
+                        <CheckBox x:Name="chkCaja"          Content="Caja / Tesorería"      Tag="ACCESO_CAJA"           Margin="0,5"/>
+                        <CheckBox x:Name="chkPresupuestos"  Content="Presupuestos"          Tag="ACCESO_PRESUPUESTOS"   Margin="0,5"/>
+                        <CheckBox x:Name="chkPrecios"       Content="Precios"               Tag="ACCESO_PRECIOS"        Margin="0,5"/>
+                        <CheckBox x:Name="chkListas"        Content="Listas de precios"     Tag="ACCESO_LISTASPRECIOS"  Margin="0,5"/>
+                        <CheckBox x:Name="chkCuentas"       Content="Cuentas corrientes"    Tag="ACCESO_CUENTASCORRIENTES" Margin="0,5"/>
+                    </UniformGrid>
+                </Border>
+                <TextBlock Text="(Usuarios y Permisos se incluyen siempre de forma implícita)"
+                           FontSize="10" Foreground="{StaticResource TextSecondary}" Margin="0,6,0,14"/>
+
+                <!-- Venta -->
+                <Separator/>
+                <TextBlock Text="DATOS DE VENTA" Foreground="{StaticResource TextSecondary}"
+                           FontSize="11" FontWeight="SemiBold" Margin="0,8,0,12"/>
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="16"/><ColumnDefinition Width="180"/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Monto cobrado ($)" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="txtMonto" Style="{StaticResource Field}" Height="38" Text="0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Método de pago" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox x:Name="cbPago" Style="{StaticResource Combo}">
+                            <ComboBoxItem Content="Transferencia" IsSelected="True"/>
+                            <ComboBoxItem Content="Efectivo"/>
+                            <ComboBoxItem Content="Mercado Pago"/>
+                            <ComboBoxItem Content="Tarjeta"/>
+                            <ComboBoxItem Content="Sin cargo"/>
+                        </ComboBox>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Versión SCHPOS" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="txtVersion" Style="{StaticResource Field}" Height="38" Text="1.0.0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="¿Es renovación?" Style="{StaticResource FieldLabel}"/>
+                        <CheckBox x:Name="chkRenovacion" Content="Sí, reemplaza una licencia anterior"
+                                  Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Text="Observaciones" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="txtObs" Style="{StaticResource Field}" Height="64"
+                         TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,20"/>
+
+                <Button Content="🔑  Generar y guardar licencia" Style="{StaticResource BtnPrimary}"
+                        Click="Generar_Click" Height="44" FontSize="14"/>
+            </StackPanel>
+
+            <!-- ══ Panel resultado ════════════════════════════════════════ -->
+            <Border Grid.Column="2" Background="{StaticResource SurfaceMidBrush}"
+                    CornerRadius="14" Padding="24" VerticalAlignment="Top">
+                <StackPanel>
+                    <TextBlock Text="Clave generada" FontSize="15" FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimary}" Margin="0,0,0,4"/>
+                    <TextBlock Text="Enviá esta clave al cliente para que la pegue en la pantalla de Activación."
+                               FontSize="11" Foreground="{StaticResource TextSecondary}"
+                               TextWrapping="Wrap" Margin="0,0,0,16"/>
+
+                    <!-- Clave -->
+                    <Border Background="{StaticResource SurfaceLightBrush}" CornerRadius="8" Padding="14">
+                        <TextBox x:Name="txtClave" IsReadOnly="True" TextWrapping="Wrap"
+                                 Background="Transparent" Foreground="{StaticResource Accent}"
+                                 BorderThickness="0" FontSize="11" FontFamily="Consolas"
+                                 Text="(aparecerá aquí tras generar)" MaxHeight="200"
+                                 VerticalScrollBarVisibility="Auto"/>
+                    </Border>
+
+                    <Button Content="📋  Copiar al portapapeles" Style="{StaticResource BtnPrimary}"
+                            Click="Copiar_Click" Margin="0,12,0,0"/>
+
+                    <!-- Resumen -->
+                    <Separator Margin="0,16"/>
+                    <TextBlock Text="RESUMEN" Foreground="{StaticResource TextSecondary}"
+                               FontSize="10" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                    <StackPanel x:Name="panelResumen" Visibility="Collapsed">
+                        <Grid Margin="0,3">
+                            <TextBlock Text="Cliente:"     Foreground="{StaticResource TextSecondary}" FontSize="12"/>
+                            <TextBlock x:Name="resCliente" Foreground="{StaticResource TextPrimary}"   FontSize="12" Margin="80,0,0,0"/>
+                        </Grid>
+                        <Grid Margin="0,3">
+                            <TextBlock Text="HWID:"        Foreground="{StaticResource TextSecondary}" FontSize="12"/>
+                            <TextBlock x:Name="resHWID"    Foreground="{StaticResource TextPrimary}"   FontSize="11" Margin="80,0,0,0" FontFamily="Consolas"/>
+                        </Grid>
+                        <Grid Margin="0,3">
+                            <TextBlock Text="Vence:"       Foreground="{StaticResource TextSecondary}" FontSize="12"/>
+                            <TextBlock x:Name="resVence"   Foreground="{StaticResource OrangeBrush}"   FontSize="12" Margin="80,0,0,0" FontWeight="SemiBold"/>
+                        </Grid>
+                        <Grid Margin="0,3">
+                            <TextBlock Text="Módulos:"     Foreground="{StaticResource TextSecondary}" FontSize="12"/>
+                            <TextBlock x:Name="resModulos" Foreground="{StaticResource TextPrimary}"   FontSize="11" Margin="80,0,0,0" TextWrapping="Wrap"/>
+                        </Grid>
+                        <Grid Margin="0,3">
+                            <TextBlock Text="Monto:"       Foreground="{StaticResource TextSecondary}" FontSize="12"/>
+                            <TextBlock x:Name="resMonto"   Foreground="{StaticResource GreenBrush}"    FontSize="12" Margin="80,0,0,0" FontWeight="SemiBold"/>
+                        </Grid>
+                        <Border Background="#1422C55E" CornerRadius="6" Padding="10,6" Margin="0,12,0,0">
+                            <TextBlock Text="✅  Licencia guardada correctamente en el registro de clientes."
+                                       Foreground="{StaticResource GreenBrush}" FontSize="11"
+                                       TextWrapping="Wrap"/>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</Page>

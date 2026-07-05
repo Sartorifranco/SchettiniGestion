@@ -11,7 +11,7 @@ namespace SchettiniGestion
     {
         public static readonly string RutaLicenciaProgramData = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "SchettiniGestion",
+            "SCHPOS",
             "licencia.key");
 
         public static string ObtenerRutaLicenciaEjecutable()

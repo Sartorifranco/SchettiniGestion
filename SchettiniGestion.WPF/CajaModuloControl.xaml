@@ -26,6 +26,9 @@
             <TabItem Header="📄  Planilla diaria">
                 <local:PlanillaDiariaControl Margin="0,8,0,0"/>
             </TabItem>
+            <TabItem Header="🔒  Cierre de caja">
+                <local:CierreCajaControl Margin="0,8,0,0"/>
+            </TabItem>
         </TabControl>
     </Grid>
 </UserControl>

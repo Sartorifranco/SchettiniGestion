@@ -28,7 +28,7 @@ namespace SchettiniGestion.WPF
         private const string URL_PADRON_HOMO = "https://awshomo.afip.gov.ar/sr-padron/webservices/personaServiceA4";
         private const string URL_PADRON_PROD = "https://aws.afip.gov.ar/sr-padron/webservices/personaServiceA4";
 
-        public static async Task<ResultadoAfip> FacturarAsync(int tipoComprobante, int puntoVenta, double importeTotal, long cuitCliente, List<FacturaItem> items)
+        public static async Task<ResultadoAfip> FacturarAsync(int tipoComprobante, int puntoVenta, double importeTotal, long cuitCliente, List<FacturaItem> items, string condicionIvaCliente = null)
         {
             var resultado = new ResultadoAfip();
 
@@ -36,9 +36,14 @@ namespace SchettiniGestion.WPF
             {
                 bool prod = DatabaseService.GetAfipAmbienteProduccion();
                 DataRow config = DatabaseService.GetConfiguracion();
-                long cuitEmpresa = Convert.ToInt64(config["CUIT"].ToString().Replace("-", "").Trim());
-                string rutaCert = config["CertificadoPath"].ToString();
-                string passCert = config["PasswordAfip"].ToString();
+                string cuitRaw = config["CUIT"]?.ToString().Replace("-", "").Trim() ?? "";
+                if (string.IsNullOrEmpty(cuitRaw) || !long.TryParse(cuitRaw, out long cuitEmpresa))
+                {
+                    resultado.Error = "CUIT de la empresa no configurado o inválido. Vaya a Configuración > Negocio y AFIP.";
+                    return resultado;
+                }
+                string rutaCert = config["CertificadoPath"]?.ToString() ?? "";
+                string passCert = config["PasswordAfip"]?.ToString() ?? "";
 
                 // 1. LOGIN
                 LoginTicket ticket;
@@ -82,18 +87,15 @@ namespace SchettiniGestion.WPF
                     }
                 }
 
-                // --- AJUSTE AN├ôNIMO + RG 5616 ---
-                int docTipo = 99; // Consumidor Final (An├│nimo)
+                // --- Documento y condición IVA del receptor ---
+                int docTipo = 99; // Consumidor Final (Anónimo)
                 long docNro = 0;
-                // C├│digo 5 = Consumidor Final (Obligatorio por RG 5616 en Homologaci├│n)
-                int condicionIvaReceptor = 5;
+                int condicionIvaReceptor = MapearCondicionIvaAfip(condicionIvaCliente, cuitCliente);
 
                 if (prod && cuitCliente > 0)
                 {
                     docTipo = 80;
                     docNro = cuitCliente;
-                    // En producci├│n con CUIT, la condici├│n depende del cliente (ej: 1=Resp Inscripto)
-                    // Por ahora en modo prueba forzamos 5.
                 }
 
                 string fecha = DateTime.Now.ToString("yyyyMMdd");
@@ -301,6 +303,20 @@ namespace SchettiniGestion.WPF
             if (c.Contains("EX") || c == "4") return "Exento";
             if (c.Contains("MT") || c == "MONOTRIBUTO" || c == "6") return "Monotributo";
             return "Consumidor Final";
+        }
+
+        /// <summary>Mapea la condición IVA del cliente al código AFIP (CondicionIVAReceptorId).</summary>
+        private static int MapearCondicionIvaAfip(string condicionIva, long cuitCliente)
+        {
+            if (cuitCliente <= 0) return 5;
+            string c = (condicionIva ?? "").Trim().ToLowerInvariant();
+            if (string.IsNullOrEmpty(c)) return 5;
+            if (c.Contains("inscripto") && !c.Contains("no")) return 1;
+            if (c.Contains("monotrib")) return 6;
+            if (c.Contains("exento")) return 4;
+            if (c.Contains("no alcanz") || c.Contains("no responsable")) return 15;
+            if (c.Contains("consumidor")) return 5;
+            return 5;
         }
 
         private static async Task<LoginTicket> ObtenerTicketAccesoPadron(string rutaCert, string pass, bool produccion)

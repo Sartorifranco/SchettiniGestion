@@ -49,13 +49,7 @@ namespace SchettiniGestion
                 return false; // Sesión no iniciada
             }
 
-            // Un Admin (RolID 1) siempre tiene todos los permisos, sin importar la tabla.
-            if (RolID == 1)
-            {
-                return true;
-            }
-
-            // Para otros roles, comprobamos la lista
+            // Un Admin (RolID 1) debe tener permisos asignados en BD; no bypass automático.
             return Permisos.Contains(permiso);
         }
 

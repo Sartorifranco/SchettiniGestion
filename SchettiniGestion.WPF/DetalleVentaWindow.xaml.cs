@@ -86,28 +86,26 @@ namespace SchettiniGestion.WPF
                 {
                     Title = "Detalle de Factura";
                     lblTitulo.Text = "Detalle de Factura / Venta";
-                    var dtF = DatabaseService.GetFacturasPorFecha(DateTime.MinValue, DateTime.MaxValue);
-                    DataRow row = null;
-                    foreach (DataRow r in dtF.Rows)
-                        if (Convert.ToInt32(r["FacturaID"]) == _id) { row = r; break; }
-
+                    _encabezado = DatabaseService.GetFacturaPorID(_id);
                     _detalle = DatabaseService.GetFacturaDetalle(_id);
 
-                    if (row != null)
+                    if (_encabezado != null)
                     {
-                        lblTipo.Text = row["TipoComprobante"]?.ToString() ?? "—";
-                        lblFecha.Text = Convert.ToDateTime(row["Fecha"]).ToString("dd/MM/yyyy HH:mm");
-                        int? nro = row["NumeroComprobanteAFIP"] != DBNull.Value ? (int?)Convert.ToInt32(row["NumeroComprobanteAFIP"]) : null;
+                        lblTipo.Text = _encabezado["TipoComprobante"]?.ToString() ?? "—";
+                        lblFecha.Text = Convert.ToDateTime(_encabezado["Fecha"]).ToString("dd/MM/yyyy HH:mm");
+                        int? nro = _encabezado["NumeroComprobanteAFIP"] != DBNull.Value ? (int?)Convert.ToInt32(_encabezado["NumeroComprobanteAFIP"]) : null;
                         lblNumero.Text = nro.HasValue ? nro.Value.ToString() : "—";
-                        lblTotal.Text = Convert.ToDecimal(row["Total"]).ToString("C2");
+                        lblTotal.Text = Convert.ToDecimal(_encabezado["Total"]).ToString("C2");
                         lblEstado.Text = "Emitida";
+                        if (string.IsNullOrWhiteSpace(lblCliente.Text) || lblCliente.Text == "—")
+                            lblCliente.Text = _encabezado["ClienteNombre"]?.ToString() ?? "—";
 
-                        string cae = row["CAE"]?.ToString();
+                        string cae = _encabezado["CAE"]?.ToString();
                         if (!string.IsNullOrWhiteSpace(cae))
                         {
                             pnlCae.Visibility = Visibility.Visible;
                             lblCae.Text = cae;
-                            lblVtoCae.Text = row["VencimientoCAE"]?.ToString() ?? "—";
+                            lblVtoCae.Text = _encabezado["VencimientoCAE"]?.ToString() ?? "—";
                         }
                     }
                 }
@@ -125,7 +123,7 @@ namespace SchettiniGestion.WPF
                         {
                             Codigo = r.Table.Columns.Contains("Codigo") ? r["Codigo"]?.ToString() ?? "" : "",
                             Descripcion = r.Table.Columns.Contains("Descripcion") ? r["Descripcion"]?.ToString() ?? "" : "",
-                            Cantidad = r.Table.Columns.Contains("Cantidad") ? Convert.ToInt32(r["Cantidad"]) : 0,
+                            Cantidad = r.Table.Columns.Contains("Cantidad") ? Convert.ToDecimal(r["Cantidad"]) : 0,
                             PrecioUnitario = r.Table.Columns.Contains("PrecioUnitario") ? Convert.ToDecimal(r["PrecioUnitario"]) : 0
                         });
                     }
@@ -165,10 +163,7 @@ namespace SchettiniGestion.WPF
                     case "Presupuesto": PrintService.ImprimirPresupuesto(_id); break;
                     case "Remito": PrintService.ImprimirRemito(_id); break;
                     case "Pedido": PrintService.ImprimirPedido(_id); break;
-                    default:
-                        MessageBox.Show("Impresión de facturas desde este panel no disponible aún.\nUse la opción de impresión al guardar la venta.",
-                            "Información", MessageBoxButton.OK, MessageBoxImage.Information);
-                        break;
+                    default: PrintService.ImprimirFactura(_id); break;
                 }
             }
             catch (Exception ex)
@@ -186,7 +181,7 @@ namespace SchettiniGestion.WPF
         {
             public string Codigo { get; set; }
             public string Descripcion { get; set; }
-            public int Cantidad { get; set; }
+            public decimal Cantidad { get; set; }
             public decimal PrecioUnitario { get; set; }
             public decimal Subtotal => Cantidad * PrecioUnitario;
             public string PrecioUnitarioFmt => PrecioUnitario.ToString("C2");

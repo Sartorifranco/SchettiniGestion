@@ -4,16 +4,12 @@
 
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 
-        Title="Mensaje" Height="250" Width="500"
-
+        Title="Mensaje" Width="520" MinHeight="180" MaxHeight="600"
+        SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
-
         WindowStyle="None"
-
         ResizeMode="NoResize"
-
         AllowsTransparency="True"
-
         Background="Transparent">
 
 
@@ -54,7 +50,7 @@
 
 
 
-        <Grid Margin="20">
+        <Grid Margin="24,20,24,24">
 
             <Grid.RowDefinitions>
 

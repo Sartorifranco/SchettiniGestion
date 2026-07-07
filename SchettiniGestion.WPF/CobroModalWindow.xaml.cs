@@ -156,7 +156,9 @@ namespace SchettiniGestion.WPF
             var medio = cmbMediosPago.SelectedItem as MedioPagoOpcion;
             if (medio == null) return;
 
-            if (!decimal.TryParse(txtMonto.Text.Replace(",", "."), System.Globalization.NumberStyles.Number,
+            // Formato argentino: "9.000,00" → quitar separador de miles (.) → reemplazar decimal (,→.) → "9000.00"
+            string montoStr = txtMonto.Text.Trim().Replace(".", "").Replace(",", ".");
+            if (!decimal.TryParse(montoStr, System.Globalization.NumberStyles.Number,
                 System.Globalization.CultureInfo.InvariantCulture, out decimal monto) || monto <= 0)
             {
                 CustomMessageBox.Show("Ingrese un monto válido mayor a cero.", "Monto inválido", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -164,7 +166,18 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
-            var existente = _cobros.FirstOrDefault(c => c.nombreMedio == medio.Nombre);
+            decimal pendienteAntes = _total - _cobros.Sum(c => c.monto);
+            if (pendienteAntes <= 0)
+            {
+                CustomMessageBox.Show("El total ya fue cubierto.", "Cobro completo", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            bool esEfectivo = (medio.Nombre ?? "").IndexOf("efectivo", StringComparison.OrdinalIgnoreCase) >= 0;
+            // En efectivo permitir billete mayor (vuelto); en otros medios solo lo imputable
+            if (!esEfectivo && monto > pendienteAntes) monto = pendienteAntes;
+
+            var existente = _cobros.FirstOrDefault(c => c.MedioPagoID == medio.MedioID && medio.MedioID > 0)
+                ?? _cobros.FirstOrDefault(c => c.nombreMedio == medio.Nombre);
             if (existente != null)
             {
                 _cobros.Remove(existente);

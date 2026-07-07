@@ -89,7 +89,6 @@
                         </Grid.ColumnDefinitions>
                         <ComboBox x:Name="cmbMediosPago"
                                   Style="{StaticResource TouchComboBoxStyle}"
-                                  DisplayMemberPath="Nombre"
                                   SelectedValuePath="MedioID"
                                   Margin="0,0,8,0"
                                   SelectionChanged="cmbMediosPago_SelectionChanged">

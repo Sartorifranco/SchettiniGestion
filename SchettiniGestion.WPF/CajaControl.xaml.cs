@@ -74,6 +74,13 @@ namespace SchettiniGestion.WPF
                 CustomMessageBox.Show("Movimiento registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 ActualizarPantalla();
             }
+            else
+            {
+                string detalle = !string.IsNullOrEmpty(DatabaseService.UltimoError)
+                    ? "\n\n" + DatabaseService.UltimoError : "";
+                CustomMessageBox.Show("No se pudo registrar el movimiento." + detalle, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

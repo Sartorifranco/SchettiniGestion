@@ -1,7 +1,9 @@
 using Microsoft.Win32;
 using System;
 using System.Data;
+using System.Drawing.Printing;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using SchettiniGestion;
@@ -30,6 +32,63 @@ namespace SchettiniGestion.WPF
             CargarDatosLicencia();
             CargarMediosPago();
             AplicarVisibilidadCredencialesSQL();
+            CargarImpresoras();
+        }
+
+        // --- LOGO ---
+        private void MostrarPreviewLogo(string ruta)
+        {
+            if (!string.IsNullOrWhiteSpace(ruta) && System.IO.File.Exists(ruta))
+            {
+                try
+                {
+                    var bi = new System.Windows.Media.Imaging.BitmapImage();
+                    bi.BeginInit();
+                    bi.UriSource = new Uri(ruta, UriKind.Absolute);
+                    bi.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                    bi.EndInit();
+                    imgLogoPreview.Source = bi;
+                    imgLogoPreview.Visibility = Visibility.Visible;
+                    lblLogoPlaceholder.Visibility = Visibility.Collapsed;
+                    lblLogoRuta.Text = ruta;
+                    return;
+                }
+                catch { }
+            }
+            imgLogoPreview.Source = null;
+            imgLogoPreview.Visibility = Visibility.Collapsed;
+            lblLogoPlaceholder.Visibility = Visibility.Visible;
+            lblLogoRuta.Text = "";
+        }
+
+        private void btnCargarLogo_Click(object sender, RoutedEventArgs e)
+        {
+            var ofd = new Microsoft.Win32.OpenFileDialog
+            {
+                Title  = "Seleccionar logo del negocio",
+                Filter = "Imágenes (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp"
+            };
+            if (ofd.ShowDialog() != true) return;
+
+            // Copiar el logo a la carpeta del ejecutable para que siempre sea accesible
+            string ext = System.IO.Path.GetExtension(ofd.FileName).ToLower();
+            string destino = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logo_empresa" + ext);
+            try
+            {
+                System.IO.File.Copy(ofd.FileName, destino, overwrite: true);
+                _logoPathActual = destino;
+                MostrarPreviewLogo(destino);
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show("No se pudo copiar el logo: " + ex.Message);
+            }
+        }
+
+        private void btnQuitarLogo_Click(object sender, RoutedEventArgs e)
+        {
+            _logoPathActual = "";
+            MostrarPreviewLogo("");
         }
 
         // --- PESTAÑA 1: NEGOCIO ---
@@ -47,6 +106,16 @@ namespace SchettiniGestion.WPF
                 txtCertificadoPath.Text = dr["CertificadoPath"].ToString();
                 if (dr.Table.Columns.Contains("LogoPath") && dr["LogoPath"] != DBNull.Value)
                     _logoPathActual = dr["LogoPath"].ToString();
+                MostrarPreviewLogo(_logoPathActual);
+
+                if (dr.Table.Columns.Contains("LogoEnA4"))
+                    chkLogoEnA4.IsChecked = dr["LogoEnA4"] != DBNull.Value && Convert.ToBoolean(dr["LogoEnA4"]);
+                else chkLogoEnA4.IsChecked = true;
+
+                if (dr.Table.Columns.Contains("LogoEnTicket"))
+                    chkLogoEnTicket.IsChecked = dr["LogoEnTicket"] != DBNull.Value && Convert.ToBoolean(dr["LogoEnTicket"]);
+                else chkLogoEnTicket.IsChecked = true;
+
                 _hayPasswordAfipGuardadaEnBd = DatabaseService.TienePasswordAfipPersistida(dr);
                 _passwordAfipTocadoPorUsuario = false;
                 _suprimirEventoPasswordAfip = true;
@@ -263,6 +332,23 @@ namespace SchettiniGestion.WPF
                 int pto = 0;
                 int.TryParse(txtPuntoVenta.Text, out pto);
 
+                string cuit = txtCuit.Text?.Trim() ?? "";
+                if (!string.IsNullOrWhiteSpace(cuit))
+                {
+                    string cuitDigits = cuit.Replace("-", "").Replace(" ", "");
+                    if (cuitDigits.Length != 11 || !cuitDigits.All(char.IsDigit))
+                    {
+                        ModernMessageBox.Show("CUIT inválido. Debe tener 11 dígitos (ej: 20-12345678-9).");
+                        return;
+                    }
+                }
+
+                if (pto <= 0 || pto > 99999)
+                {
+                    ModernMessageBox.Show("Punto de venta AFIP inválido. Debe ser un número entre 1 y 99999.");
+                    return;
+                }
+
                 decimal? tc = null;
                 if (decimal.TryParse(txtTipoCambioUSD?.Text?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal t))
                     tc = t;
@@ -288,7 +374,9 @@ namespace SchettiniGestion.WPF
                     true,
                     tc,
                     chkAfipProduccion?.IsChecked == true,
-                    conservarPasswordAfipSiContraseniaVacia: conservarPwdVacío);
+                    conservarPasswordAfipSiContraseniaVacia: conservarPwdVacío,
+                    logoEnTicket: chkLogoEnTicket?.IsChecked == true,
+                    logoEnA4: chkLogoEnA4?.IsChecked == true);
 
                 if (exito)
                 {
@@ -375,6 +463,13 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardarConexion_Click(object sender, RoutedEventArgs e)
         {
+            if (SesionUsuario.RolID != 1)
+            {
+                ModernMessageBox.Show("Solo un administrador puede cambiar la conexión a la base de datos.", "Acceso denegado",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(txtIpServidor.Text))
             {
                 ModernMessageBox.Show("Por favor, ingrese una Dirección IP válida.");
@@ -535,34 +630,143 @@ namespace SchettiniGestion.WPF
 
         private void btnGenerarBackup_Click(object sender, RoutedEventArgs e)
         {
+            var sfd = new Microsoft.Win32.SaveFileDialog
+            {
+                Title      = "Guardar copia de seguridad",
+                Filter     = "Backup SQL Server (*.bak)|*.bak",
+                FileName   = $"SchPOS_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak",
+                DefaultExt = ".bak"
+            };
+            if (sfd.ShowDialog() != true) return;
+
+            this.Cursor = System.Windows.Input.Cursors.Wait;
+            string error = BackupService.RealizarBackup(sfd.FileName);
+            this.Cursor = System.Windows.Input.Cursors.Arrow;
+
+            if (error == null)
+                ModernMessageBox.Show(
+                    $"¡Copia de seguridad creada exitosamente!\n\nArchivo: {sfd.FileName}",
+                    "Copia guardada", MessageBoxButton.OK, MessageBoxImage.Information);
+            else
+                ModernMessageBox.Show(
+                    "No se pudo crear la copia de seguridad.\n\n" +
+                    "Detalle del error:\n" + error + "\n\n" +
+                    "Tip: El servicio SQL Server debe tener permiso de escritura en la carpeta elegida.\n" +
+                    "Probá guardarlo en C:\\Backups o en el escritorio del servidor.",
+                    "Error al hacer backup", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        private void btnRestaurarBackup_Click(object sender, RoutedEventArgs e)
+        {
+            if (SesionUsuario.RolID != 1)
+            {
+                ModernMessageBox.Show("Solo un administrador puede restaurar copias de seguridad.", "Acceso denegado",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (ModernMessageBox.Show(
+                    "⚠ ATENCIÓN: Esta acción reemplazará TODOS los datos actuales (ventas, clientes, productos) con los del archivo de backup seleccionado.\n\n" +
+                    "Esta operación NO se puede deshacer.\n\n" +
+                    "¿Está seguro que desea continuar?",
+                    "Confirmar restauración", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+
+            var ofd = new Microsoft.Win32.OpenFileDialog
+            {
+                Title  = "Seleccionar archivo de backup",
+                Filter = "Backup SQL Server (*.bak)|*.bak|Todos los archivos (*.*)|*.*"
+            };
+            if (ofd.ShowDialog() != true) return;
+
+            // Segunda confirmación
+            if (ModernMessageBox.Show(
+                    $"Vas a restaurar desde:\n{ofd.FileName}\n\n" +
+                    "Se perderán TODOS los datos actuales. ¿Confirmar?",
+                    "Última confirmación", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+
+            this.Cursor = System.Windows.Input.Cursors.Wait;
+            string error = BackupService.RestaurarBackup(ofd.FileName);
+            this.Cursor = System.Windows.Input.Cursors.Arrow;
+
+            if (error == null)
+            {
+                ModernMessageBox.Show(
+                    "✔ Base de datos restaurada exitosamente.\n\nEl sistema se cerrará para reconectar.",
+                    "Restauración exitosa", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.Application.Current.Shutdown();
+            }
+            else
+            {
+                ModernMessageBox.Show(
+                    "No se pudo restaurar la base de datos.\n\n" +
+                    "Detalle del error:\n" + error + "\n\n" +
+                    "Asegurate de que el archivo .bak fue generado desde este mismo sistema y que el servicio SQL Server tiene acceso al archivo.",
+                    "Error al restaurar", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // --- PESTAÑA IMPRESORAS ---
+        private void CargarImpresoras()
+        {
             try
             {
-                using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
-                {
-                    dialog.Description = "Seleccione dónde guardar la Copia de Seguridad";
+                var impresoras = PrinterSettings.InstalledPrinters
+                    .Cast<string>()
+                    .OrderBy(x => x)
+                    .ToList();
 
-                    if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                    {
-                        // Construir nombre de archivo con timestamp
-                        string nombreArchivo = $"SchPOS_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.bak";
-                        string rutaArchivo   = System.IO.Path.Combine(dialog.SelectedPath, nombreArchivo);
+                // Agregar opción vacía al inicio (= pedir cada vez)
+                impresoras.Insert(0, "(Preguntar cada vez)");
 
-                        this.Cursor = System.Windows.Input.Cursors.Wait;
-                        bool ok = BackupService.RealizarBackup(rutaArchivo);
-                        this.Cursor = System.Windows.Input.Cursors.Arrow;
+                cmbImpresoraTicket.ItemsSource = impresoras;
+                cmbImpresoraA4.ItemsSource = new System.Collections.Generic.List<string>(impresoras);
 
-                        if (ok)
-                            ModernMessageBox.Show($"¡Copia de seguridad creada exitosamente!\n\nArchivo: {rutaArchivo}", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                        else
-                            ModernMessageBox.Show("No se pudo crear la copia de seguridad.\n\nVerifique permisos de escritura y que el servicio SQL Server esté activo.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
+                var (ticket, a4) = DatabaseService.GetImpresoras();
+                cmbImpresoraTicket.SelectedItem = string.IsNullOrWhiteSpace(ticket) ? "(Preguntar cada vez)" : ticket;
+                cmbImpresoraA4.SelectedItem     = string.IsNullOrWhiteSpace(a4)     ? "(Preguntar cada vez)" : a4;
             }
             catch (Exception ex)
             {
-                this.Cursor = System.Windows.Input.Cursors.Arrow;
-                ModernMessageBox.Show("No se pudo crear el backup.\n\nDetalle: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show("Error al listar impresoras: " + ex.Message);
             }
+        }
+
+        private void btnGuardarImpresoras_Click(object sender, RoutedEventArgs e)
+        {
+            string ticket = cmbImpresoraTicket.SelectedItem?.ToString();
+            string a4     = cmbImpresoraA4.SelectedItem?.ToString();
+
+            if (ticket == "(Preguntar cada vez)") ticket = null;
+            if (a4     == "(Preguntar cada vez)") a4     = null;
+
+            if (DatabaseService.GuardarImpresoras(ticket, a4))
+                ModernMessageBox.Show("Configuración de impresoras guardada correctamente.", "Guardado", MessageBoxButton.OK, MessageBoxImage.Information);
+            else
+                ModernMessageBox.Show("No se pudo guardar la configuración.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        private void btnTestTicket_Click(object sender, RoutedEventArgs e)
+        {
+            string nombre = cmbImpresoraTicket.SelectedItem?.ToString();
+            if (nombre == "(Preguntar cada vez)" || string.IsNullOrWhiteSpace(nombre))
+            {
+                ModernMessageBox.Show("Seleccioná una impresora primero.");
+                return;
+            }
+            PrintService.ImprimirPaginaDePrueba(nombre, "Ticket");
+        }
+
+        private void btnTestA4_Click(object sender, RoutedEventArgs e)
+        {
+            string nombre = cmbImpresoraA4.SelectedItem?.ToString();
+            if (nombre == "(Preguntar cada vez)" || string.IsNullOrWhiteSpace(nombre))
+            {
+                ModernMessageBox.Show("Seleccioná una impresora primero.");
+                return;
+            }
+            PrintService.ImprimirPaginaDePrueba(nombre, "A4");
         }
     }
 }

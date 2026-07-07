@@ -27,8 +27,9 @@
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="15,0,0,0">
                     <Button x:Name="btnNuevo" Content="➕ Nuevo Producto" Style="{StaticResource ButtonStyle}" Padding="15,10" Margin="0,0,10,0" Click="btnNuevo_Click"/>
-                    <Button x:Name="btnDescargarPlantilla" Content="📥 Plantilla CSV" Style="{StaticResource SecondaryButtonStyle}" Padding="10,8" Margin="0,0,10,0" Click="btnDescargarPlantilla_Click"/>
-                    <Button x:Name="btnImportarExcel" Content="📗 Importar Masivo" Style="{StaticResource SecondaryButtonStyle}" Padding="10,8" Click="btnImportarExcel_Click"/>
+                    <Button x:Name="btnDescargarPlantilla" Content="📥 Plantilla CSV" Style="{StaticResource SecondaryButtonStyle}" Padding="10,8" Margin="0,0,6,0" Click="btnDescargarPlantilla_Click"/>
+                    <Button x:Name="btnDescargarPlantillaXlsx" Content="📊 Plantilla Excel" Style="{StaticResource SecondaryButtonStyle}" Padding="10,8" Margin="0,0,10,0" Click="btnDescargarPlantillaXlsx_Click"/>
+                    <Button x:Name="btnImportarExcel" Content="📂 Importar Masivo (CSV / Excel)" Style="{StaticResource SecondaryButtonStyle}" Padding="10,8" Click="btnImportarExcel_Click"/>
                 </StackPanel>
             </Grid>
         </Border>

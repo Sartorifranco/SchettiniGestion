@@ -73,6 +73,61 @@
 
                         <Separator Background="{DynamicResource BorderColor}" Margin="0,20"/>
 
+                        <!-- ══════════ LOGO DEL NEGOCIO ══════════ -->
+                        <TextBlock Text="Logo del Negocio" FontSize="18" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4"/>
+                        <TextBlock Text="PNG, JPG o BMP recomendado. Se mostrará en los encabezados de impresión."
+                                   Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,14"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Preview del logo -->
+                            <Border Grid.Column="0" Width="160" Height="120" CornerRadius="8"
+                                    Background="{DynamicResource CardBackgroundBrush}"
+                                    BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5"
+                                    Margin="0,0,20,0">
+                                <Grid>
+                                    <TextBlock x:Name="lblLogoPlaceholder" Text="Sin logo" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondary}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Image x:Name="imgLogoPreview" Stretch="Uniform" Margin="10"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="Collapsed"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Controles -->
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <Button x:Name="btnCargarLogo" Content="📁  Cargar logo"
+                                            Style="{StaticResource ButtonStyle}" Padding="14,10"
+                                            Click="btnCargarLogo_Click" Margin="0,0,10,0"/>
+                                    <Button x:Name="btnQuitarLogo" Content="✕  Quitar logo"
+                                            Style="{StaticResource DeleteButtonStyle}" Padding="14,10"
+                                            Click="btnQuitarLogo_Click"/>
+                                </StackPanel>
+
+                                <TextBlock Text="Mostrar logo en:" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,8"/>
+                                <CheckBox x:Name="chkLogoEnA4" Margin="0,0,0,6"
+                                          Foreground="{DynamicResource TextPrimary}" FontSize="13"
+                                          Content="📄  Documentos A4 (facturas, presupuestos, remitos)"/>
+                                <CheckBox x:Name="chkLogoEnTicket"
+                                          Foreground="{DynamicResource TextPrimary}" FontSize="13"
+                                          Content="🧾  Tickets de caja (impresora 80 mm / 58 mm)"/>
+
+                                <TextBlock x:Name="lblLogoRuta" Text="" FontSize="11" Margin="0,10,0,0"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Separator Background="{DynamicResource BorderColor}" Margin="0,20"/>
+
                         <TextBlock Text="Facturación Electrónica (AFIP)" FontSize="18" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10" FontWeight="Bold"/>
 
                         <Grid>
@@ -305,28 +360,97 @@
             </TabItem>
 
             <TabItem Header="🧰 Mantenimiento">
-                <Grid Margin="0">
-                    <StackPanel MaxWidth="600" HorizontalAlignment="Left">
-                        <TextBlock Text="SEGURIDAD DE DATOS" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,20"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel MaxWidth="620" HorizontalAlignment="Left" Margin="0,10,0,0">
+                        <TextBlock Text="SEGURIDAD DE DATOS" FontSize="20" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,20"/>
 
-                        <TextBlock Text="Copias de Seguridad (Backups)" FontSize="16" Foreground="{DynamicResource SuccessColor}" FontWeight="Bold" Margin="0,0,0,10"/>
-                        <TextBlock Text="Genere una copia de todos sus datos (Clientes, Productos, Ventas) para guardarla en un lugar seguro (Pendrive, Nube, etc)." 
-                                   Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,20"/>
+                        <!-- BACKUP -->
+                        <TextBlock Text="💾  Generar copia de seguridad" FontSize="16" FontWeight="Bold"
+                                   Foreground="{DynamicResource SuccessColor}" Margin="0,0,0,8"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,6"
+                                   Text="Guarda todos los datos (clientes, productos, ventas) en un archivo .bak. Guardalo en un pendrive o en la nube."/>
+                        <TextBlock TextWrapping="Wrap" FontStyle="Italic" Foreground="{DynamicResource TextSecondary}"
+                                   Margin="0,0,0,16"
+                                   Text="⚠ El archivo se genera en el servidor SQL. Elegí una carpeta accesible desde esa PC (ej: C:\Backups o el escritorio del servidor)."/>
+                        <Button x:Name="btnGenerarBackup" Content="💾  Generar copia de seguridad"
+                                Style="{StaticResource ButtonStyle}" Padding="20,12" HorizontalAlignment="Left"
+                                Click="btnGenerarBackup_Click"/>
+                        <TextBlock Text="✔ Recomendado: al menos una vez por semana."
+                                   Foreground="{DynamicResource TextSecondary}" FontStyle="Italic" Margin="0,8,0,0"/>
 
-                        <Button x:Name="btnGenerarBackup" Content="💾 GENERAR COPIA DE SEGURIDAD" 
-                                Click="btnGenerarBackup_Click"
-                                Background="#007ACC" Foreground="White" FontWeight="Bold" Height="50" Margin="0,20,0,0" Cursor="Hand">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="5"/>
-                                </Style>
-                            </Button.Resources>
-                        </Button>
+                        <!-- Separador -->
+                        <Separator Margin="0,24,0,24" Background="{DynamicResource BorderColor}"/>
 
-                        <TextBlock Text="* Se recomienda hacer esto al menos una vez por semana." 
-                                   Foreground="{DynamicResource TextSecondary}" FontStyle="Italic" Margin="0,10,0,0"/>
+                        <!-- RESTORE -->
+                        <TextBlock Text="📂  Restaurar copia de seguridad" FontSize="16" FontWeight="Bold"
+                                   Foreground="#E57373" Margin="0,0,0,8"/>
+                        <Border Background="#FFF3E0" CornerRadius="6" Padding="14,10" Margin="0,0,0,14">
+                            <TextBlock TextWrapping="Wrap" FontSize="13">
+                                <Run FontWeight="Bold" Foreground="#E65100">⚠ ATENCIÓN:</Run>
+                                <Run Foreground="#BF360C"> Restaurar reemplaza TODOS los datos actuales con los del archivo de backup. Esta acción no se puede deshacer. El sistema se cerrará automáticamente al terminar para reconectar.</Run>
+                            </TextBlock>
+                        </Border>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,16"
+                                   Text="Seleccioná el archivo .bak generado previamente por este sistema para restaurar la base de datos."/>
+                        <Button x:Name="btnRestaurarBackup" Content="📂  Restaurar desde archivo .bak"
+                                Style="{StaticResource DeleteButtonStyle}" Padding="20,12" HorizontalAlignment="Left"
+                                Click="btnRestaurarBackup_Click"/>
                     </StackPanel>
-                </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="🖨️ Impresoras">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel MaxWidth="620" HorizontalAlignment="Left" Margin="0,10,0,0">
+                        <TextBlock Text="CONFIGURACIÓN DE IMPRESORAS" FontSize="20" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,20"
+                                   Text="Seleccioná la impresora para cada tipo de documento. Si dejás vacío, el sistema mostrará el diálogo de selección cada vez."/>
+
+                        <!-- Ticket / Recibo POS -->
+                        <TextBlock Text="Impresora de Tickets (POS / Recibos)" FontSize="15" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,8"
+                                   Text="Usada al cobrar una venta, cierre de caja, etc. Generalmente una impresora térmica de 80 mm."/>
+                        <Grid Margin="0,0,0,20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="cmbImpresoraTicket" Grid.Column="0"
+                                      Style="{StaticResource TouchComboBoxStyle}"
+                                      Height="44" FontSize="14" Margin="0,0,8,0"/>
+                            <Button x:Name="btnTestTicket" Grid.Column="1"
+                                    Content="🖨️ Probar" Padding="14,10"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Click="btnTestTicket_Click"/>
+                        </Grid>
+
+                        <!-- A4 / Documentos -->
+                        <TextBlock Text="Impresora A4 (Facturas, Presupuestos, Remitos)" FontSize="15" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,8"
+                                   Text="Usada para imprimir documentos tamaño A4."/>
+                        <Grid Margin="0,0,0,24">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="cmbImpresoraA4" Grid.Column="0"
+                                      Style="{StaticResource TouchComboBoxStyle}"
+                                      Height="44" FontSize="14" Margin="0,0,8,0"/>
+                            <Button x:Name="btnTestA4" Grid.Column="1"
+                                    Content="🖨️ Probar" Padding="14,10"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Click="btnTestA4_Click"/>
+                        </Grid>
+
+                        <Button x:Name="btnGuardarImpresoras" Content="💾 Guardar configuración de impresoras"
+                                Style="{StaticResource ButtonStyle}" Padding="20,12" HorizontalAlignment="Left"
+                                Click="btnGuardarImpresoras_Click"/>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
 
             <TabItem Header="💳 Medios de Pago">

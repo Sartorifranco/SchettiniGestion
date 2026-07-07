@@ -62,17 +62,20 @@ namespace SchettiniGestion.WPF
 
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
-            if (dgvListas.SelectedItem is DataRowView row)
+            DataRowView row = (sender as Button)?.DataContext as DataRowView
+                ?? dgvListas.SelectedItem as DataRowView;
+            if (row == null) return;
+
+            int id = Convert.ToInt32(row["ListaID"]);
+            if (CustomMessageBox.Show("¿Eliminar esta lista?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
-                int id = Convert.ToInt32(row["ListaID"]);
-                if (CustomMessageBox.Show("¿Eliminar esta lista?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                if (DatabaseService.EliminarListaPrecio(id))
                 {
-                    if (DatabaseService.EliminarListaPrecio(id))
-                    {
-                        CargarListas();
-                        Limpiar();
-                    }
+                    CargarListas();
+                    Limpiar();
                 }
+                else
+                    CustomMessageBox.Show("No se pudo eliminar la lista.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

@@ -311,10 +311,27 @@ namespace SchettiniGestion.WPF
                     _pagoMPAprobado = true;
 
                     SeleccionarCondicionMP();
-                    btnGuardarFactura.IsEnabled = true;
-                    btnGuardarFactura_Click(sender, new RoutedEventArgs());
-
                     btnPagoQR.Content = "📱 Mercado Pago QR";
+
+                    if (CustomMessageBox.Show(
+                            $"Pago QR aprobado: {totalMP:C2}\n\n¿Confirmar y registrar la venta?",
+                            "Mercado Pago — confirmar venta",
+                            MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                    {
+                        btnGuardarFactura.IsEnabled = true;
+                        btnGuardarFactura_Click(sender, new RoutedEventArgs());
+                    }
+                    else
+                    {
+                        _pagoMPAprobado = false;
+                        _parcelas_MP = null;
+                        btnGuardarFactura.IsEnabled = true;
+                        CustomMessageBox.Show(
+                            "El pago ya fue acreditado en Mercado Pago.\n\n" +
+                            "Si no registra la venta, deberá gestionar la devolución manualmente en MP.",
+                            "Pago QR recibido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        CustomerScreenService.Actualizar(CarritoDeVenta.ToList(), CarritoDeVenta.Sum(x => x.Subtotal));
+                    }
                 }
                 else if (info.Estado == "in_process") CustomerScreenService.ActualizarMensajeQR("Procesando...", Brushes.Yellow);
                 else if (info.Estado == "rejected") CustomerScreenService.ActualizarMensajeQR("Pago Rechazado.", Brushes.Red);
@@ -333,10 +350,13 @@ namespace SchettiniGestion.WPF
                 var dt = DatabaseService.GetMediosPagoCompleto();
                 foreach (System.Data.DataRow row in dt.Rows)
                 {
-                    string nombre = (row["Nombre"] as string ?? row["NombreMedio"] as string) ?? "";
+                    string nombre = row["Nombre"]?.ToString();
+                    if (string.IsNullOrEmpty(nombre) && row.Table.Columns.Contains("NombreMedio"))
+                        nombre = row["NombreMedio"]?.ToString();
+                    nombre = nombre ?? "";
                     if (nombre.IndexOf("mercado", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                        nombre.IndexOf(" mp",     StringComparison.OrdinalIgnoreCase) >= 0)
-                        return Convert.ToInt32(row[0]);
+                        nombre.IndexOf(" mp", StringComparison.OrdinalIgnoreCase) >= 0)
+                        return Convert.ToInt32(row["MedioID"]);
                 }
             }
             catch { }
@@ -402,7 +422,9 @@ namespace SchettiniGestion.WPF
         private async void btnGuardarFactura_Click(object sender, RoutedEventArgs e)
         {
             if (CarritoDeVenta.Count == 0) { CustomMessageBox.Show("Agregue productos."); return; }
-            if (_clienteSeleccionado == null) { CustomMessageBox.Show("Seleccione cliente."); return; }
+            // Si no hay cliente seleccionado, usar Consumidor Final automáticamente
+            if (_clienteSeleccionado == null) CargarClientePorDefecto();
+            if (_clienteSeleccionado == null) { CustomMessageBox.Show("No se pudo cargar el cliente por defecto. Verificá la conexión a la base de datos."); return; }
 
             string tipoCompTexto = ObtenerTipoComprobanteSeleccionado();
             if (tipoCompTexto == "Presupuesto") { GuardarPresupuestoDesdePos(); return; }
@@ -454,8 +476,22 @@ namespace SchettiniGestion.WPF
             }
 
             btnGuardarFactura.IsEnabled = false;
+            bool cobroConfirmado = false;
             try
             {
+                bool afipConfigurado = AfipEstaConfigurado(config);
+                if (tipoCompTexto == "Factura" && !afipConfigurado)
+                {
+                    if (CustomMessageBox.Show(
+                            "AFIP no está configurado (CUIT y certificado).\n\n" +
+                            "La venta se guardará sin CAE ni numeración fiscal.\n\n¿Desea continuar?",
+                            "Factura sin AFIP", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                    {
+                        btnGuardarFactura.IsEnabled = true;
+                        return;
+                    }
+                }
+
                 // ── PASO 1: cobro PRIMERO para que el cajero confirme antes de ir a AFIP ──
                 var win = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
                 List<CobranzaItem> cobranzasConfirmadas;
@@ -466,6 +502,12 @@ namespace SchettiniGestion.WPF
                     cobranzasConfirmadas = _parcelas_MP;
                     _pagoMPAprobado = false;
                     _parcelas_MP    = null;
+                    cobroConfirmado = true;
+                }
+                else if (EsCuentaCorriente((cmbCondicionVenta.SelectedItem as ComboBoxItem)?.Content?.ToString()))
+                {
+                    // Cuenta corriente: no cobrar en caja ahora, solo registrar deuda
+                    cobranzasConfirmadas = new List<CobranzaItem>();
                 }
                 else
                 {
@@ -476,6 +518,7 @@ namespace SchettiniGestion.WPF
                         return;
                     }
                     cobranzasConfirmadas = cobroModal.Cobranzas;
+                    cobroConfirmado = cobranzasConfirmadas != null && cobranzasConfirmadas.Count > 0;
                 }
 
                 // ── PASO 2: AFIP (solo si el cobro fue confirmado) ──
@@ -483,13 +526,15 @@ namespace SchettiniGestion.WPF
                 string vtoCae = null;
                 int nroComprobante = 0;
 
-                if (tipoAfip > 0)
+                // Solo llamar AFIP si está configurado (tiene CUIT y certificado)
+                if (tipoAfip > 0 && afipConfigurado)
                 {
                     CustomerScreenService.ActualizarMensajeQR("Facturando AFIP...", Brushes.Orange);
                     string cuitLimpio = _clienteSeleccionado["CUIT"].ToString().Replace("-", "").Trim();
                     long cuitCliente = 0;
                     long.TryParse(cuitLimpio, out cuitCliente);
-                    var resultadoAfip = await AfipService.FacturarAsync(tipoAfip, puntoVentaConfig, (double)total, cuitCliente, CarritoDeVenta.ToList());
+                    var resultadoAfip = await AfipService.FacturarAsync(tipoAfip, puntoVentaConfig, (double)total, cuitCliente, CarritoDeVenta.ToList(),
+                        _clienteSeleccionado["CondicionIVA"]?.ToString());
                     if (resultadoAfip.Exito)
                     {
                         cae = resultadoAfip.CAE;
@@ -532,12 +577,7 @@ namespace SchettiniGestion.WPF
                     string msgExito = "Venta Guardada.";
                     if (!string.IsNullOrEmpty(cae)) msgExito += "\n¡Factura Electrónica Aprobada!";
                     if (CustomMessageBox.Show($"{msgExito}\n¿Imprimir comprobante?", "Éxito", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                    {
-                        DataTable dt = new DataTable();
-                        dt.Columns.Add("Codigo"); dt.Columns.Add("Descripcion"); dt.Columns.Add("Cantidad"); dt.Columns.Add("Subtotal");
-                        foreach (var item in CarritoDeVenta) dt.Rows.Add(item.Codigo, item.Descripcion, item.Cantidad, item.Subtotal);
-                        PrintService.ImprimirTicketVenta(tipoCompTexto, nroComprobante, _clienteSeleccionado["RazonSocial"].ToString(), DateTime.Now, dt, total, condicionTicket, cae, vtoCae);
-                    }
+                        PrintService.ImprimirFactura(fid);
                     await Task.Delay(2000);
                     LimpiarFormulario();
                 }
@@ -563,14 +603,29 @@ namespace SchettiniGestion.WPF
                     else
                     {
                         CustomMessageBox.Show(
-                            "No se pudo guardar la factura. El cobro NO fue procesado." + detalleSql,
-                            "Error al guardar", MessageBoxButton.OK, MessageBoxImage.Error);
+                            "No se pudo guardar la factura.\n\n" +
+                            "⚠️ IMPORTANTE: el cobro ya fue confirmado pero la venta NO quedó registrada.\n" +
+                            "NO vuelva a cobrar al cliente. Intente guardar de nuevo." +
+                            detalleSql,
+                            "Error al guardar — cobro ya realizado",
+                            MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
+            catch (InvalidOperationException ex)
+            {
+                CustomMessageBox.Show(
+                    ex.Message + (cobroConfirmado
+                        ? "\n\n⚠️ El cobro ya fue confirmado. NO vuelva a cobrar al cliente.\nActualice el carrito e intente guardar de nuevo."
+                        : ""),
+                    "Error al guardar", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             catch (Exception ex)
             {
-                CustomMessageBox.Show("ERROR: " + ex.Message);
+                string avisoCobro = cobroConfirmado
+                    ? "\n\n⚠️ El cobro ya fue confirmado. NO vuelva a cobrar al cliente."
+                    : "";
+                CustomMessageBox.Show("ERROR: " + ex.Message + avisoCobro);
             }
             finally
             {
@@ -742,7 +797,37 @@ namespace SchettiniGestion.WPF
         }
 
         private void CargarListasPrecios() { try { cmbListaPrecios.ItemsSource = DatabaseService.GetListasPrecios().DefaultView; cmbListaPrecios.SelectedIndex = 0; } catch { } }
-        private void CargarClientePorDefecto() { _clienteSeleccionado = DatabaseService.BuscarCliente("00-00000000-0"); if (_clienteSeleccionado != null) lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString(); }
+
+        private static bool AfipEstaConfigurado(DataRow config)
+        {
+            if (config == null) return false;
+            string cuit = config["CUIT"]?.ToString().Replace("-", "").Trim() ?? "";
+            string cert = config["CertificadoPath"]?.ToString().Trim() ?? "";
+            return cuit.Length >= 10 && !string.IsNullOrEmpty(cert) && System.IO.File.Exists(cert);
+        }
+
+        private static bool EsCuentaCorriente(string condicionVenta)
+        {
+            if (string.IsNullOrWhiteSpace(condicionVenta)) return false;
+            return condicionVenta.IndexOf("Cta", StringComparison.OrdinalIgnoreCase) >= 0
+                || condicionVenta.IndexOf("Corriente", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private void CargarClientePorDefecto()
+        {
+            _clienteSeleccionado = DatabaseService.BuscarCliente("00-00000000-0");
+            if (_clienteSeleccionado == null)
+            {
+                // Si no existe, lo creamos y lo buscamos de nuevo
+                DatabaseService.AsegurarConsumidorFinal();
+                _clienteSeleccionado = DatabaseService.BuscarCliente("00-00000000-0");
+            }
+            if (_clienteSeleccionado != null)
+            {
+                lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
+                txtBuscarCliente.Text = "";
+            }
+        }
         private decimal ObtenerPorcentajeLista() { if (cmbListaPrecios.SelectedItem is DataRowView row) return Convert.ToDecimal(row["Porcentaje"]); return 0; }
         private void RecalcularCarritoConNuevaLista()
         {

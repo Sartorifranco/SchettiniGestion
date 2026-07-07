@@ -98,6 +98,17 @@ namespace SchettiniGestion
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "SCHPOS", "conexion.cfg");
 
+        /// <summary>Carpeta de datos de la app (escribible sin permisos de admin). Ej: C:\ProgramData\SCHPOS</summary>
+        public static string CarpetaDatosSchpos => Path.GetDirectoryName(RutaConexionCfg);
+
+        public static string AsegurarCarpetaDatosSchpos()
+        {
+            string dir = CarpetaDatosSchpos;
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+            return dir;
+        }
+
         private static string _connectionString = ObtenerConnectionString();
 
         /// <summary>

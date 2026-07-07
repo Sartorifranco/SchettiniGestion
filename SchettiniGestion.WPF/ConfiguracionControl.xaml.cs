@@ -70,9 +70,9 @@ namespace SchettiniGestion.WPF
             };
             if (ofd.ShowDialog() != true) return;
 
-            // Copiar el logo a la carpeta del ejecutable para que siempre sea accesible
+            // Copiar el logo a ProgramData\SCHPOS (escribible sin ser administrador)
             string ext = System.IO.Path.GetExtension(ofd.FileName).ToLower();
-            string destino = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logo_empresa" + ext);
+            string destino = System.IO.Path.Combine(DatabaseService.AsegurarCarpetaDatosSchpos(), "logo_empresa" + ext);
             try
             {
                 System.IO.File.Copy(ofd.FileName, destino, overwrite: true);

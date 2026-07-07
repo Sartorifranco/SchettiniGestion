@@ -260,6 +260,11 @@
                         <TextBlock x:Name="dLicVencimiento" Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,2"/>
                         <TextBlock x:Name="dLicModulos"    Foreground="{StaticResource TextSecondary}" FontSize="11"
                                    TextWrapping="Wrap" Margin="0,0,0,6"/>
+                        <StackPanel Margin="0,0,0,6">
+                            <TextBlock Text="Hardware ID" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock x:Name="dLicHWID" Foreground="{StaticResource TextPrimary}" FontSize="12"
+                                       FontFamily="Consolas" TextWrapping="Wrap"/>
+                        </StackPanel>
                         <TextBlock x:Name="dLicMonto"      Foreground="{StaticResource Accent}"        FontSize="13" FontWeight="SemiBold"/>
                     </StackPanel>
                     <TextBlock x:Name="dSinLicencia" Text="Sin licencias registradas."

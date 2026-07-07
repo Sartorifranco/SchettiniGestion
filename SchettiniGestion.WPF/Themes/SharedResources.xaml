@@ -685,4 +685,83 @@
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="0"/>
     </Style>
+
+    <!-- ScrollBar oscuro y delgado (evita la barra blanca de Windows en tema oscuro) -->
+    <Style x:Key="ScrollBarThumbVertical" TargetType="{x:Type Thumb}">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="IsTabStop" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Thumb}">
+                    <Border x:Name="thumb" Background="{DynamicResource BorderColor}" CornerRadius="3" Margin="1,2"/>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="thumb" Property="Background" Value="{DynamicResource TextSecondary}"/>
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="thumb" Property="Background" Value="{StaticResource PrimaryColor}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ScrollBarThumbHorizontal" TargetType="{x:Type Thumb}" BasedOn="{StaticResource ScrollBarThumbVertical}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Thumb}">
+                    <Border x:Name="thumb" Background="{DynamicResource BorderColor}" CornerRadius="3" Margin="2,1"/>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="thumb" Property="Background" Value="{DynamicResource TextSecondary}"/>
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="thumb" Property="Background" Value="{StaticResource PrimaryColor}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type ScrollBar}">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Width" Value="8"/>
+        <Setter Property="MinWidth" Value="8"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ScrollBar}">
+                    <Grid Background="Transparent">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource ScrollBarThumbVertical}"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="Width" Value="Auto"/>
+                <Setter Property="MinWidth" Value="0"/>
+                <Setter Property="Height" Value="8"/>
+                <Setter Property="MinHeight" Value="8"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ScrollBar}">
+                            <Grid Background="Transparent">
+                                <Track x:Name="PART_Track">
+                                    <Track.Thumb>
+                                        <Thumb Style="{StaticResource ScrollBarThumbHorizontal}"/>
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
 </ResourceDictionary>

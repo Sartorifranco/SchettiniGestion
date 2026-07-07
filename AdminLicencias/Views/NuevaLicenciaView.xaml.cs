@@ -20,6 +20,15 @@ namespace AdminLicencias.Views
 
             CargarClientes(clientePreseleccionado);
             dpVence.SelectedDate = DateTime.Today.AddDays(365);
+            PrecargarHwid(clientePreseleccionado);
+        }
+
+        private void PrecargarHwid(Cliente cliente)
+        {
+            if (cliente == null) return;
+            var ultima = DataStore.UltimaLicencia(cliente.Id);
+            if (ultima != null && !string.IsNullOrWhiteSpace(ultima.HWID))
+                txtHWID.Text = ultima.HWID.Trim().ToUpperInvariant();
         }
 
         // ── Clientes ──────────────────────────────────────────────────────
@@ -148,9 +157,10 @@ namespace AdminLicencias.Views
             foreach (var ch in checks)
                 if (ch.IsChecked == true) lista.Add(ch.Tag.ToString());
 
-            // Implícitos
-            if (!lista.Contains("ACCESO_USUARIOS"))  lista.Add("ACCESO_USUARIOS");
-            if (!lista.Contains("ACCESO_PERMISOS"))  lista.Add("ACCESO_PERMISOS");
+            // Siempre incluidos en toda licencia (no opcionales).
+            lista.Add("ACCESO_USUARIOS");
+            lista.Add("ACCESO_PERMISOS");
+            lista.Add("ACCESO_CONFIGURACION");
             // Facturación requiere Productos
             if (lista.Contains("ACCESO_FACTURACION") && !lista.Contains("ACCESO_PRODUCTOS"))
                 lista.Add("ACCESO_PRODUCTOS");

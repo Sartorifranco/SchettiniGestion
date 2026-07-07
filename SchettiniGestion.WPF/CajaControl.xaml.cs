@@ -23,6 +23,10 @@ namespace SchettiniGestion.WPF
         {
             try
             {
+                bannerSinApertura.Visibility = DatabaseService.TieneAperturaCajaHoy()
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+
                 decimal saldo = DatabaseService.GetSaldoCaja();
                 lblSaldo.Text = AppCulture.FormatCurrency(saldo);
 
@@ -66,6 +70,14 @@ namespace SchettiniGestion.WPF
             if (string.IsNullOrEmpty(concepto))
             {
                 CustomMessageBox.Show("Debe ingresar un concepto o motivo.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (string.Equals(concepto, DatabaseService.ConceptoFondoFijo, StringComparison.OrdinalIgnoreCase))
+            {
+                CustomMessageBox.Show(
+                    "El fondo fijo se registra desde la pestaña «Apertura de caja», no como ingreso manual.",
+                    "Usar apertura de caja", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 

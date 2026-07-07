@@ -313,7 +313,8 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
                                     <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="IVA"/>
-                                    <ComboBox x:Name="cmbTipoIVA" Style="{StaticResource ProductoTouchCombo}">
+                                    <ComboBox x:Name="cmbTipoIVA" Style="{StaticResource ProductoTouchCombo}"
+                                              SelectionChanged="cmbTipoIVA_SelectionChanged">
                                         <ComboBoxItem Content="21.0"/>
                                         <ComboBoxItem Content="10.5"/>
                                         <ComboBoxItem Content="0.0"/>
@@ -348,10 +349,22 @@
                                     <xctk:DecimalUpDown x:Name="numPrecioFinal"
                                                         Style="{StaticResource ProductoTouchDecimal}"
                                                         Minimum="0"
-                                                        FormatString="N2"
-                                                        ValueChanged="CalcularPrecio_ValueChanged"/>
+                                                        FormatString="N2"/>
                                 </StackPanel>
                             </Grid>
+                            <CheckBox x:Name="chkCobraIvaAlCliente"
+                                      Content="Cobrar IVA al cliente"
+                                      Style="{StaticResource ProductoTouchCheckBox}"
+                                      IsChecked="True"
+                                      Margin="0,0,0,6"
+                                      Checked="chkCobraIvaAlCliente_Changed"
+                                      Unchecked="chkCobraIvaAlCliente_Changed"/>
+                            <TextBlock x:Name="txtAyudaPrecioIva"
+                                       Text="El precio de venta incluye IVA (se discrimina en factura)."
+                                       FontSize="11"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       Margin="0,0,0,12"
+                                       TextWrapping="Wrap"/>
                             <TextBlock x:Name="txtSinListas"
                                        Text="(Sin listas de precio configuradas)"
                                        Style="{DynamicResource ModalCaptionTextStyle}"

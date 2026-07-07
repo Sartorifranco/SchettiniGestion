@@ -44,6 +44,14 @@ namespace SchettiniGestion
         public decimal Monto { get; set; }
     }
 
+    public class PosConfigPredeterminada
+    {
+        public int? ListaPrecioID { get; set; }
+        public string TipoComprobante { get; set; }
+        public string CondicionVenta { get; set; }
+        public bool ConfigExpandida { get; set; } = true;
+    }
+
     public class Rol
     {
         public int RolId { get; set; }
@@ -213,6 +221,11 @@ namespace SchettiniGestion
 
         // Configuración
         private static bool _columnasVisorPromoVerificadas;
+        private static bool _columnaCondicionTicketFacturasOk;
+        private static bool _tablaAperturasCajaOk;
+
+        /// <summary>Concepto estándar del movimiento de caja al abrir turno.</summary>
+        public const string ConceptoFondoFijo = "FONDO FIJO";
 
         private static readonly object _lockMigrLite = new object();
         private static bool _columnasMigracionLiteOk;
@@ -282,6 +295,8 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Factur
   ALTER TABLE Facturas ADD ListaID INT NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='CondicionVenta')
   ALTER TABLE Facturas ADD CondicionVenta NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='CondicionTicket')
+  ALTER TABLE Facturas ADD CondicionTicket NVARCHAR(300) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='StockMinimo')
   ALTER TABLE Productos ADD StockMinimo INT NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='UsaVariantes')
@@ -306,6 +321,18 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Produc
   ALTER TABLE Productos ADD AceptaStockNegativo BIT NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='TipoMoneda')
   ALTER TABLE Productos ADD TipoMoneda NVARCHAR(10) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='CobraIvaAlCliente')
+  ALTER TABLE Productos ADD CobraIvaAlCliente BIT NOT NULL DEFAULT 1;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='PosListaPrecioID')
+  ALTER TABLE Configuracion ADD PosListaPrecioID INT NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='PosTipoComprobante')
+  ALTER TABLE Configuracion ADD PosTipoComprobante NVARCHAR(50) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='PosCondicionVenta')
+  ALTER TABLE Configuracion ADD PosCondicionVenta NVARCHAR(50) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='PosConfigExpandida')
+  ALTER TABLE Configuracion ADD PosConfigExpandida BIT NOT NULL DEFAULT 1;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='MenuLateralColapsado')
+  ALTER TABLE Configuracion ADD MenuLateralColapsado BIT NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturaDetalle' AND COLUMN_NAME='DescuentoPorcentaje')
   ALTER TABLE FacturaDetalle ADD DescuentoPorcentaje DECIMAL(9,4) NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturaDetalle' AND COLUMN_NAME='RecargoPorcentaje')
@@ -332,6 +359,42 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 _columnasVisorPromoVerificadas = true;
             }
             catch { /* BD sin tabla Configuracion o sin permisos ALTER */ }
+        }
+
+        private static void AsegurarColumnaCondicionTicketFacturas(SqlConnection c)
+        {
+            if (_columnaCondicionTicketFacturasOk) return;
+            try
+            {
+                AsegurarMigracionLite(c);
+                using (var cmd = new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='CondicionTicket')
+  ALTER TABLE Facturas ADD CondicionTicket NVARCHAR(300) NULL;", c))
+                    cmd.ExecuteNonQuery();
+                _columnaCondicionTicketFacturasOk = true;
+            }
+            catch { /* BD sin tabla Facturas o sin permisos ALTER */ }
+        }
+
+        private static void AsegurarTablaAperturasCaja(SqlConnection c)
+        {
+            if (_tablaAperturasCajaOk) return;
+            try
+            {
+                using (var cmd = new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='AperturasCaja')
+  CREATE TABLE dbo.AperturasCaja (
+    AperturaID   INT IDENTITY(1,1) PRIMARY KEY,
+    Fecha        DATETIME NOT NULL,
+    MontoFondoFijo DECIMAL(18,2) NOT NULL,
+    Observaciones NVARCHAR(500) NULL,
+    Usuario      NVARCHAR(50) NULL,
+    MovimientoID INT NULL
+  );", c))
+                    cmd.ExecuteNonQuery();
+                _tablaAperturasCajaOk = true;
+            }
+            catch { /* sin permiso CREATE/ALTER */ }
         }
 
         /// <summary>Carpeta con archivos de promoción para la pantalla cliente (imágenes, GIF, videos cortos). Solo aplica si UsaVisorCliente está activo.</summary>
@@ -378,6 +441,85 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             }
             catch { }
             return null;
+        }
+
+        /// <summary>Preferencias predeterminadas del POS (lista, comprobante, pago).</summary>
+        public static PosConfigPredeterminada ObtenerConfigPosPredeterminada()
+        {
+            var cfg = new PosConfigPredeterminada();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    var dt = new DataTable();
+                    new SqlDataAdapter("SELECT TOP 1 PosListaPrecioID, PosTipoComprobante, PosCondicionVenta, PosConfigExpandida FROM Configuracion", c).Fill(dt);
+                    if (dt.Rows.Count == 0) return cfg;
+                    var r = dt.Rows[0];
+                    if (r["PosListaPrecioID"] != DBNull.Value) cfg.ListaPrecioID = Convert.ToInt32(r["PosListaPrecioID"]);
+                    cfg.TipoComprobante = r["PosTipoComprobante"]?.ToString();
+                    cfg.CondicionVenta = r["PosCondicionVenta"]?.ToString();
+                    if (r["PosConfigExpandida"] != DBNull.Value) cfg.ConfigExpandida = Convert.ToBoolean(r["PosConfigExpandida"]);
+                }
+            }
+            catch { }
+            return cfg;
+        }
+
+        public static bool GuardarConfigPosPredeterminada(PosConfigPredeterminada cfg)
+        {
+            if (cfg == null) return false;
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    using (var cmd = new SqlCommand(@"UPDATE Configuracion SET
+PosListaPrecioID=@lid, PosTipoComprobante=@tc, PosCondicionVenta=@cv, PosConfigExpandida=@exp WHERE ID=1", c))
+                    {
+                        cmd.Parameters.AddWithValue("@lid", (object)cfg.ListaPrecioID ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@tc", string.IsNullOrWhiteSpace(cfg.TipoComprobante) ? (object)DBNull.Value : cfg.TipoComprobante.Trim());
+                        cmd.Parameters.AddWithValue("@cv", string.IsNullOrWhiteSpace(cfg.CondicionVenta) ? (object)DBNull.Value : cfg.CondicionVenta.Trim());
+                        cmd.Parameters.AddWithValue("@exp", cfg.ConfigExpandida);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex) { NotificarError(ex.Message); return false; }
+        }
+
+        public static bool ObtenerMenuLateralColapsado()
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    var o = new SqlCommand("SELECT TOP 1 MenuLateralColapsado FROM Configuracion", c).ExecuteScalar();
+                    if (o != null && o != DBNull.Value) return Convert.ToBoolean(o);
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        public static bool GuardarMenuLateralColapsado(bool colapsado)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    new SqlCommand($"UPDATE Configuracion SET MenuLateralColapsado={(colapsado ? 1 : 0)} WHERE ID=1", c).ExecuteNonQuery();
+                }
+                return true;
+            }
+            catch (Exception ex) { NotificarError(ex.Message); return false; }
         }
 
         /// <summary>CUIT del emisor solo dígitos (para WSAA/AFIP).</summary>
@@ -1301,7 +1443,8 @@ ORDER BY p.Descripcion";
             decimal costo, decimal gan, decimal imp, decimal venta, int stock, string img,
             string tipoMoneda, bool permiteModPrecio, bool esStockeable, bool aceptaStockNeg,
             bool usaVariantes, bool esCombo, decimal? stockMinimo, decimal? stockIdeal,
-            string codigoExterno, string varianteColor, string varianteTalle, string varianteUnidadMedida)
+            string codigoExterno, string varianteColor, string varianteTalle, string varianteUnidadMedida,
+            bool cobraIvaAlCliente = true)
         {
             try
             {
@@ -1340,7 +1483,8 @@ WHERE ProductoID=@id", c))
                     using (var up = new SqlCommand(@"
 UPDATE Productos SET UsaVariantes=@uv, EsCombo=@ec, StockMinimo=@sm, StockIdeal=@si, TipoMoneda=@tm,
 PermiteModificarPrecioVenta=@pmp, EsStockeable=@es, AceptaStockNegativo=@asn,
-CodigoExterno=@ce, VarianteColor=@vc, VarianteTalle=@vt, VarianteUnidadMedida=@vu
+CodigoExterno=@ce, VarianteColor=@vc, VarianteTalle=@vt, VarianteUnidadMedida=@vu,
+CobraIvaAlCliente=@civa
 WHERE ProductoID=@pid", c))
                     {
                         up.Parameters.AddWithValue("@uv", usaVariantes);
@@ -1355,6 +1499,7 @@ WHERE ProductoID=@pid", c))
                         up.Parameters.AddWithValue("@vc", (object)varianteColor ?? DBNull.Value);
                         up.Parameters.AddWithValue("@vt", (object)varianteTalle ?? DBNull.Value);
                         up.Parameters.AddWithValue("@vu", (object)varianteUnidadMedida ?? DBNull.Value);
+                        up.Parameters.AddWithValue("@civa", cobraIvaAlCliente);
                         up.Parameters.AddWithValue("@pid", pid);
                         up.ExecuteNonQuery();
                     }
@@ -1501,7 +1646,7 @@ WHERE ProductoID=@pid", c))
                 {
                     c.Open();
                     string like = "%" + (q ?? "").Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
-                    using (var cmd = new SqlCommand("SELECT TOP 10 * FROM Productos WHERE (Codigo LIKE @p OR CodigoBarra LIKE @p OR Descripcion LIKE @p) AND StockActual > 0", c))
+                    using (var cmd = new SqlCommand("SELECT TOP 10 * FROM Productos WHERE (Codigo LIKE @p OR CodigoBarra LIKE @p OR Descripcion LIKE @p)", c))
                     {
                         cmd.Parameters.AddWithValue("@p", like);
                         new SqlDataAdapter(cmd).Fill(dt);
@@ -1617,6 +1762,18 @@ WHERE ProductoID=@pid", c))
             return d;
         }
 
+        /// <summary>Nombres canónicos de permisos definidos en constantes PERMISO_*.</summary>
+        public static List<string> ObtenerNombresPermisosCatalogo()
+        {
+            return typeof(DatabaseService)
+                .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string) && f.Name.StartsWith("PERMISO_", StringComparison.Ordinal))
+                .Select(f => f.GetRawConstantValue() as string)
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
         public static HashSet<string> GetPermisosNombresPorRol(int rolId)
         {
             var permisos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -1625,6 +1782,10 @@ WHERE ProductoID=@pid", c))
                 foreach (var p in GetPermisos())
                     if (!string.IsNullOrWhiteSpace(p.Nombre))
                         permisos.Add(p.Nombre.Trim());
+                // Instalaciones nuevas pueden tener solo ACCESO_TOTAL en BD hasta el seeder;
+                // el administrador debe poder operar todos los módulos definidos en código.
+                foreach (var nombre in ObtenerNombresPermisosCatalogo())
+                    permisos.Add(nombre);
                 return permisos;
             }
             try
@@ -1842,14 +2003,7 @@ WHERE ProductoID=@pid", c))
 
         public static void InicializarPermisosBaseDatos()
         {
-            var permisosBase = typeof(DatabaseService)
-                .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-                .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string) && f.Name.StartsWith("PERMISO_", StringComparison.Ordinal))
-                .Select(f => f.GetRawConstantValue() as string)
-                .Where(v => !string.IsNullOrWhiteSpace(v))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
+            var permisosBase = ObtenerNombresPermisosCatalogo();
             if (permisosBase.Count == 0) return;
 
             using (var c = new SqlConnection(_connectionString))
@@ -1998,6 +2152,7 @@ WHERE ProductoID=@pid", c))
                 {
                     c.Open();
                     AsegurarMigracionLite(c);
+                    AsegurarColumnaCondicionTicketFacturas(c);
 
                     bool tieneTabFc;
                     using (var q = new SqlCommand("SELECT CASE WHEN OBJECT_ID(N'FacturasCobranza','U') IS NULL THEN 0 ELSE 1 END", c))
@@ -2009,8 +2164,8 @@ WHERE ProductoID=@pid", c))
                         {
                             DateTime fecha = DateTime.Now;
                             string sqlFac = @"INSERT INTO Facturas 
-                                (ClienteID,Fecha,Total,TipoComprobante,CondicionVenta,CAE,VencimientoCAE,NumeroComprobanteAFIP,ListaID)
-                                VALUES (@cid,@f,@t,@tc,@cv,@cae,@vto,@nAfip,@lista);
+                                (ClienteID,Fecha,Total,TipoComprobante,CondicionVenta,CondicionTicket,CAE,VencimientoCAE,NumeroComprobanteAFIP,ListaID)
+                                VALUES (@cid,@f,@t,@tc,@cv,@ct,@cae,@vto,@nAfip,@lista);
                                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
                             int fid = 0;
                             using (var cmdFac = new SqlCommand(sqlFac, c, tr))
@@ -2020,6 +2175,7 @@ WHERE ProductoID=@pid", c))
                                 cmdFac.Parameters.AddWithValue("@t", t);
                                 cmdFac.Parameters.AddWithValue("@tc", tc ?? "");
                                 cmdFac.Parameters.AddWithValue("@cv", condVent);
+                                cmdFac.Parameters.AddWithValue("@ct", string.IsNullOrWhiteSpace(textoDetalleCobranzasOpcional) ? (object)DBNull.Value : textoDetalleCobranzasOpcional.Trim());
                                 cmdFac.Parameters.AddWithValue("@cae", (object)cae ?? DBNull.Value);
                                 cmdFac.Parameters.AddWithValue("@vto", (object)vtoCae ?? DBNull.Value);
                                 cmdFac.Parameters.AddWithValue("@nAfip", nroComprobanteAfip <= 0 ? (object)DBNull.Value : nroComprobanteAfip);
@@ -2299,6 +2455,7 @@ WHERE ProductoID=@pid", c))
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    AsegurarColumnaCondicionTicketFacturas(c);
                     var cmd = new SqlCommand(@"
 SELECT f.FacturaID, f.Fecha, f.TipoComprobante, f.Total, f.CondicionVenta,
        f.NumeroComprobanteAFIP, f.CAE, f.VencimientoCAE, f.CondicionTicket,
@@ -2608,6 +2765,207 @@ FROM FacturaDetalle fd JOIN Productos p ON fd.ProductoID = p.ProductoID WHERE fd
                 }
             }
             catch { }
+            return dt;
+        }
+
+        public static bool TieneAperturaCajaHoy()
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarTablaAperturasCaja(c);
+                    var cmd = new SqlCommand(
+                        "SELECT COUNT(*) FROM AperturasCaja WHERE CAST(Fecha AS DATE) = CAST(GETDATE() AS DATE)", c);
+                    return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+                }
+            }
+            catch { return false; }
+        }
+
+        public static bool TieneCierreCajaHoy()
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    var cmd = new SqlCommand(
+                        "SELECT COUNT(*) FROM CierresCaja WHERE CAST(Fecha AS DATE) = CAST(GETDATE() AS DATE)", c);
+                    return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+                }
+            }
+            catch { return false; }
+        }
+
+        public static DataRow GetAperturaCajaHoy()
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarTablaAperturasCaja(c);
+                    var cmd = new SqlCommand(@"
+SELECT TOP 1 AperturaID, Fecha, MontoFondoFijo, Observaciones, Usuario, MovimientoID
+FROM AperturasCaja
+WHERE CAST(Fecha AS DATE) = CAST(GETDATE() AS DATE)
+ORDER BY Fecha DESC", c);
+                    var dt = new DataTable();
+                    new SqlDataAdapter(cmd).Fill(dt);
+                    return dt.Rows.Count > 0 ? dt.Rows[0] : null;
+                }
+            }
+            catch { return null; }
+        }
+
+        /// <returns>True si registró la apertura.</returns>
+        public static bool AbrirCaja(decimal montoFondoFijo, string observaciones = null)
+        {
+            if (montoFondoFijo < 0) return false;
+            if (TieneAperturaCajaHoy())
+            {
+                NotificarError("Ya existe una apertura de caja registrada para hoy.");
+                return false;
+            }
+
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarTablaAperturasCaja(c);
+                    using (var tr = c.BeginTransaction())
+                    {
+                        try
+                        {
+                            int movId = 0;
+                            using (var cmdMov = new SqlCommand(@"
+INSERT INTO MovimientosCaja (Fecha,Concepto,Tipo,Monto,Usuario)
+VALUES (@f,@con,'Ingreso',@m,@u);
+SELECT CAST(SCOPE_IDENTITY() AS INT);", c, tr))
+                            {
+                                cmdMov.Parameters.AddWithValue("@f", DateTime.Now);
+                                cmdMov.Parameters.AddWithValue("@con", ConceptoFondoFijo);
+                                cmdMov.Parameters.AddWithValue("@m", montoFondoFijo);
+                                cmdMov.Parameters.AddWithValue("@u", SesionUsuario.NombreUsuario ?? "");
+                                movId = Convert.ToInt32(cmdMov.ExecuteScalar());
+                            }
+
+                            using (var cmdAp = new SqlCommand(@"
+INSERT INTO AperturasCaja (Fecha,MontoFondoFijo,Observaciones,Usuario,MovimientoID)
+VALUES (@f,@m,@obs,@u,@mid)", c, tr))
+                            {
+                                cmdAp.Parameters.AddWithValue("@f", DateTime.Now);
+                                cmdAp.Parameters.AddWithValue("@m", montoFondoFijo);
+                                cmdAp.Parameters.AddWithValue("@obs", string.IsNullOrWhiteSpace(observaciones) ? (object)DBNull.Value : observaciones.Trim());
+                                cmdAp.Parameters.AddWithValue("@u", SesionUsuario.NombreUsuario ?? "");
+                                cmdAp.Parameters.AddWithValue("@mid", movId > 0 ? (object)movId : DBNull.Value);
+                                cmdAp.ExecuteNonQuery();
+                            }
+
+                            tr.Commit();
+                            return true;
+                        }
+                        catch (Exception ex)
+                        {
+                            try { tr.Rollback(); } catch { }
+                            NotificarError(ex.Message);
+                            return false;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificarError("AbrirCaja: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>Resumen del día para cierre: fondo fijo (apertura), ingresos/egresos sin contar el fondo fijo.</summary>
+        public static void GetResumenCajaDelDia(out decimal fondoFijo, out decimal ingresos, out decimal egresos, out decimal saldoCierre)
+        {
+            fondoFijo = 0; ingresos = 0; egresos = 0; saldoCierre = GetSaldoCaja();
+            var ap = GetAperturaCajaHoy();
+            if (ap != null && ap["MontoFondoFijo"] != DBNull.Value)
+                fondoFijo = Convert.ToDecimal(ap["MontoFondoFijo"]);
+
+            var dt = GetMovimientosCaja(DateTime.Today);
+            foreach (DataRow r in dt.Rows)
+            {
+                decimal m = Convert.ToDecimal(r["Monto"]);
+                string tipo = r["Tipo"]?.ToString() ?? "";
+                string concepto = r["Concepto"]?.ToString() ?? "";
+                if (tipo == "Ingreso")
+                {
+                    if (!string.Equals(concepto, ConceptoFondoFijo, StringComparison.OrdinalIgnoreCase))
+                        ingresos += m;
+                }
+                else if (tipo == "Egreso")
+                    egresos += m;
+            }
+        }
+
+        /// <param name="estadoFiltro">Todos, Cobrada o Pendiente.</param>
+        public static DataTable GetFacturasEstadoCobranza(DateTime desde, DateTime hasta, string estadoFiltro = "Todos")
+        {
+            var dt = new DataTable();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarColumnaCondicionTicketFacturas(c);
+                    string filtroEstado = "";
+                    if (string.Equals(estadoFiltro, "Cobrada", StringComparison.OrdinalIgnoreCase))
+                        filtroEstado = " AND EstadoCobro = N'Cobrada'";
+                    else if (string.Equals(estadoFiltro, "Pendiente", StringComparison.OrdinalIgnoreCase))
+                        filtroEstado = " AND EstadoCobro = N'Pendiente'";
+
+                    string sql = $@"
+SELECT * FROM (
+  SELECT f.FacturaID,
+         f.Fecha,
+         ISNULL(cl.RazonSocial, N'Consumidor Final') AS Cliente,
+         f.TipoComprobante,
+         f.Total,
+         f.CondicionVenta,
+         CASE
+           WHEN f.CondicionVenta LIKE N'%Corriente%'
+             OR f.CondicionVenta LIKE N'%Cta%'
+             OR f.CondicionVenta LIKE N'%cte%'
+             THEN N'Pendiente'
+           WHEN EXISTS (SELECT 1 FROM FacturasCobranza fc WHERE fc.FacturaID = f.FacturaID)
+             THEN N'Cobrada'
+           ELSE N'Pendiente'
+         END AS EstadoCobro,
+         ISNULL(NULLIF(LTRIM(RTRIM(f.CondicionTicket)), N''),
+           (SELECT STUFF((
+             SELECT N', ' + fc.NombreMedio + N' ' + FORMAT(fc.Monto, N'C', N'es-AR')
+             FROM FacturasCobranza fc
+             WHERE fc.FacturaID = f.FacturaID
+             FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, N''))
+         ) AS MediosCobro,
+         ISNULL((
+           SELECT SUM(fc.Monto) FROM FacturasCobranza fc WHERE fc.FacturaID = f.FacturaID
+         ), 0) AS MontoCobrado
+  FROM Facturas f
+  LEFT JOIN Clientes cl ON f.ClienteID = cl.ClienteID
+  WHERE f.Fecha >= @d AND f.Fecha < DATEADD(day, 1, CAST(@h AS DATE))
+) q
+WHERE 1=1{filtroEstado}
+ORDER BY Fecha DESC";
+                    using (var cmd = new SqlCommand(sql, c))
+                    {
+                        cmd.Parameters.AddWithValue("@d", desde.Date);
+                        cmd.Parameters.AddWithValue("@h", hasta.Date);
+                        new SqlDataAdapter(cmd).Fill(dt);
+                    }
+                }
+            }
+            catch (Exception ex) { NotificarError("GetFacturasEstadoCobranza: " + ex.Message); }
             return dt;
         }
 
@@ -3412,6 +3770,25 @@ INSERT INTO Configuracion (
             if (t.Contains("EXE") || t == "0" || t.Contains("NO GRAVA")) return 0m;
             Match m = Regex.Match(raw.Replace(',', '.'), @"(\d+(?:\.\d+)?)");
             return m.Success && decimal.TryParse(m.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal p) ? p : 21m;
+        }
+
+        /// <summary>Alícuota IVA a aplicar en venta según configuración del producto.</summary>
+        public static decimal ObtenerAlicuotaIvaVentaProducto(DataRow producto)
+        {
+            if (producto == null) return 21m;
+            if (producto.Table.Columns.Contains("CobraIvaAlCliente")
+                && producto["CobraIvaAlCliente"] != DBNull.Value
+                && !Convert.ToBoolean(producto["CobraIvaAlCliente"]))
+                return 0m;
+            return ObtenerPctIvaPorTipoProducto(producto.Table.Columns.Contains("TipoIVA") ? producto["TipoIVA"] : null);
+        }
+
+        public static bool ProductoCobraIvaAlCliente(DataRow producto)
+        {
+            if (producto == null) return true;
+            if (!producto.Table.Columns.Contains("CobraIvaAlCliente") || producto["CobraIvaAlCliente"] == DBNull.Value)
+                return true;
+            return Convert.ToBoolean(producto["CobraIvaAlCliente"]);
         }
 
         // --- Clientes ---

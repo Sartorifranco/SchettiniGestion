@@ -76,6 +76,7 @@ namespace GeneradorLicencias
 
             licencia.ModulosPermitidos.Add("ACCESO_USUARIOS");
             licencia.ModulosPermitidos.Add("ACCESO_PERMISOS");
+            licencia.ModulosPermitidos.Add("ACCESO_CONFIGURACION");
 
             if (licencia.ModulosPermitidos.Contains("ACCESO_FACTURACION") && !licencia.ModulosPermitidos.Contains("ACCESO_PRODUCTOS"))
             {

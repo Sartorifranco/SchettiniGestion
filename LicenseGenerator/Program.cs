@@ -77,6 +77,7 @@ namespace LicenseGenerator
             // Módulos implícitos (siempre incluidos)
             licencia.ModulosPermitidos.Add("ACCESO_USUARIOS");
             licencia.ModulosPermitidos.Add("ACCESO_PERMISOS");
+            licencia.ModulosPermitidos.Add("ACCESO_CONFIGURACION");
 
             // Si tiene Facturación, aseguramos que también tiene Productos
             if (licencia.ModulosPermitidos.Contains("ACCESO_FACTURACION")

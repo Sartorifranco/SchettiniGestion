@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,6 +12,8 @@ namespace SchettiniGestion.WPF
         private readonly EventHandler _themeChangedHandler;
         private bool _sincronizandoModoPantalla;
         private Button _navActivo;
+        private bool _menuColapsado;
+        private readonly Dictionary<Button, string> _textosNavCompletos = new Dictionary<Button, string>();
 
         public PrincipalWindow()
         {
@@ -57,9 +60,14 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
+            // Recargar permisos tras asegurar catálogo en BD (la sesión se creó en el login, antes del seeder).
+            if (!string.IsNullOrWhiteSpace(SesionUsuario.NombreUsuario))
+                DatabaseService.CargarSesionUsuario(SesionUsuario.NombreUsuario);
+
             AplicarPermisosLite();
             SincronizarModoPantallaDesdeBase();
             ActualizarBtnTeclado();
+            InicializarMenuLateral();
 
             // Pantalla de bienvenida por defecto al abrir
             try { mainContentArea.Content = new InicioControl(); }
@@ -392,6 +400,72 @@ namespace SchettiniGestion.WPF
                 if (txtTema != null) txtTema.Text = ThemeManager.IsDark ? "Tema oscuro" : "Tema claro";
             }
             catch { }
+        }
+
+        private void InicializarMenuLateral()
+        {
+            RegistrarTextoNav(btnVentasFacturacion);
+            RegistrarTextoNav(btnProductos);
+            RegistrarTextoNav(btnGestionStock);
+            RegistrarTextoNav(btnListasPrecios);
+            RegistrarTextoNav(btnClientes);
+            RegistrarTextoNav(btnCaja);
+            RegistrarTextoNav(btnUsuariosPermisos);
+            RegistrarTextoNav(btnConfiguracion);
+            RegistrarTextoNav(btnCerrarSesion);
+            RegistrarTextoNav(btnSalirSistema);
+            AplicarMenuColapsado(DatabaseService.ObtenerMenuLateralColapsado(), persistir: false);
+        }
+
+        private void RegistrarTextoNav(Button btn)
+        {
+            if (btn == null) return;
+            _textosNavCompletos[btn] = btn.Content?.ToString() ?? "";
+        }
+
+        private void btnToggleMenuLateral_Click(object sender, RoutedEventArgs e)
+        {
+            AplicarMenuColapsado(!_menuColapsado, persistir: true);
+        }
+
+        private void AplicarMenuColapsado(bool colapsado, bool persistir)
+        {
+            _menuColapsado = colapsado;
+            if (colMenuLateral != null)
+                colMenuLateral.Width = colapsado ? new GridLength(72) : new GridLength(280);
+
+            if (btnToggleMenuLateral != null)
+                btnToggleMenuLateral.Content = colapsado ? "▶" : "◀";
+
+            var visTitulos = colapsado ? Visibility.Collapsed : Visibility.Visible;
+            if (txtMenuTitulo != null) txtMenuTitulo.Visibility = visTitulos;
+            if (txtVersionLite != null) txtVersionLite.Visibility = visTitulos;
+            if (txtVersionFooter != null) txtVersionFooter.Visibility = visTitulos;
+            if (pnlLogoMenu != null) pnlLogoMenu.Visibility = colapsado ? Visibility.Collapsed : Visibility.Visible;
+
+            foreach (var kv in _textosNavCompletos)
+            {
+                var btn = kv.Key;
+                var full = kv.Value ?? "";
+                if (colapsado)
+                {
+                    int sp = full.IndexOf(' ');
+                    btn.Content = sp > 0 ? full.Substring(0, sp) : full;
+                    btn.ToolTip = full;
+                    btn.HorizontalContentAlignment = HorizontalAlignment.Center;
+                    btn.Padding = new Thickness(8, 12, 8, 12);
+                }
+                else
+                {
+                    btn.Content = full;
+                    btn.ToolTip = null;
+                    btn.HorizontalContentAlignment = HorizontalAlignment.Left;
+                    btn.Padding = new Thickness(16, 12, 16, 12);
+                }
+            }
+
+            if (persistir)
+                DatabaseService.GuardarMenuLateralColapsado(colapsado);
         }
     }
 }

@@ -2,7 +2,7 @@
 ; Requiere Inno Setup 6: https://jrsoftware.org/isdl.php
 
 #define MyAppName "SCHPOS"
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "2.0.5"
 #define MyAppPublisher "Schettini Tec"
 #define MyAppExeName "SCHPOS.exe"
 #define MyAppUrl "https://github.com/Sartorifranco/SchettiniGestion"

@@ -306,6 +306,15 @@
     <Compile Include="CuponesTarjetasControl.xaml.cs">
       <DependentUpon>CuponesTarjetasControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="AperturaCajaControl.xaml.cs">
+      <DependentUpon>AperturaCajaControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="CobranzasControl.xaml.cs">
+      <DependentUpon>CobranzasControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="CierreCajaConfirmacionWindow.xaml.cs">
+      <DependentUpon>CierreCajaConfirmacionWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CierreCajaControl.xaml.cs">
       <DependentUpon>CierreCajaControl.xaml</DependentUpon>
     </Compile>
@@ -395,6 +404,18 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ConsultaCajaControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AperturaCajaControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CobranzasControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CierreCajaConfirmacionWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

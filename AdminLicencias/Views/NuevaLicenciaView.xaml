@@ -78,7 +78,7 @@
                         <CheckBox x:Name="chkCuentas"       Content="Cuentas corrientes"    Tag="ACCESO_CUENTASCORRIENTES" Margin="0,5"/>
                     </UniformGrid>
                 </Border>
-                <TextBlock Text="(Usuarios y Permisos se incluyen siempre de forma implícita)"
+                <TextBlock Text="Siempre incluidos: Usuarios, Permisos y Configuración del sistema."
                            FontSize="10" Foreground="{StaticResource TextSecondary}" Margin="0,6,0,14"/>
 
                 <!-- Venta -->

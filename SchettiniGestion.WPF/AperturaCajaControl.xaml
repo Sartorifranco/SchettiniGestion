@@ -1,0 +1,78 @@
+<UserControl x:Class="SchettiniGestion.WPF.AperturaCajaControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource BackgroundDark}"
+             Loaded="Control_Loaded">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Apertura de Caja" FontSize="22" FontWeight="Bold"
+                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,15"/>
+
+        <Border x:Name="borderEstado" Grid.Row="1" CornerRadius="8" Padding="16,12" Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock x:Name="lblEstadoTitulo" FontSize="16" FontWeight="SemiBold"/>
+                <TextBlock x:Name="lblEstadoDetalle" FontSize="13" Foreground="{DynamicResource TextSecondary}"
+                           TextWrapping="Wrap" Margin="0,6,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <Border x:Name="panelAbrir" Grid.Row="2" Background="{DynamicResource SurfaceDark}"
+                CornerRadius="8" Padding="20" Margin="0,0,0,16">
+            <StackPanel MaxWidth="520">
+                <TextBlock Text="Fondo fijo inicial"
+                           Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,6"/>
+                <TextBlock Text="Es el efectivo con el que arranca la caja al abrir el turno. Se registra como movimiento «FONDO FIJO»."
+                           Foreground="{DynamicResource TextSecondary}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+                <TextBlock Text="Monto del fondo fijo *" Style="{StaticResource ModalCaptionTextStyle}"/>
+                <TextBox x:Name="txtFondoFijo" Style="{StaticResource ModuleTextBoxStyle}"
+                         FontSize="22" FontWeight="SemiBold" MinHeight="52" Margin="0,0,0,14"/>
+
+                <TextBlock Text="Observaciones (opcional)" Style="{StaticResource ModalCaptionTextStyle}"/>
+                <TextBox x:Name="txtObservaciones" Style="{StaticResource ModuleTextBoxStyle}"
+                         MinHeight="70" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,18"/>
+
+                <Button x:Name="btnAbrirCaja" Content="🔓 Abrir caja del día"
+                        Style="{StaticResource SuccessButtonStyle}"
+                        HorizontalAlignment="Right" Padding="18,12" FontSize="15"
+                        Click="btnAbrirCaja_Click"/>
+            </StackPanel>
+        </Border>
+
+        <Border x:Name="panelAbierta" Grid.Row="2" Background="{DynamicResource SurfaceDark}"
+                CornerRadius="8" Padding="20" Margin="0,0,0,16" Visibility="Collapsed">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="FONDO FIJO" Foreground="{DynamicResource TextSecondary}" FontSize="11"/>
+                    <TextBlock x:Name="lblFondoFijo" FontSize="24" FontWeight="Bold"
+                               Foreground="{StaticResource SuccessColor}" Margin="0,4,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                    <TextBlock Text="HORA APERTURA" Foreground="{DynamicResource TextSecondary}" FontSize="11"/>
+                    <TextBlock x:Name="lblHoraApertura" FontSize="18" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                    <TextBlock Text="USUARIO" Foreground="{DynamicResource TextSecondary}" FontSize="11"/>
+                    <TextBlock x:Name="lblUsuarioApertura" FontSize="18" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <TextBlock Grid.Row="3" Foreground="{DynamicResource TextSecondary}" FontSize="12"
+                   TextWrapping="Wrap" VerticalAlignment="Top"
+                   Text="Flujo recomendado: 1) Apertura con fondo fijo → 2) Ventas y movimientos del día → 3) Cierre de caja."/>
+    </Grid>
+</UserControl>

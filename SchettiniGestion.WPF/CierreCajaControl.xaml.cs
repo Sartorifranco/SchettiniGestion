@@ -27,17 +27,7 @@ namespace SchettiniGestion.WPF
                 var dt = DatabaseService.GetMovimientosCaja(DateTime.Today);
                 dgvMovimientos.ItemsSource = dt.DefaultView;
 
-                _ingresos = 0; _egresos = 0;
-                foreach (DataRow r in dt.Rows)
-                {
-                    decimal m = Convert.ToDecimal(r["Monto"]);
-                    if (r["Tipo"]?.ToString() == "Ingreso") _ingresos += m;
-                    else _egresos += m;
-                }
-
-                // El saldo anterior es el saldo total menos los del día
-                decimal saldoTotal = DatabaseService.GetSaldoCaja();
-                _saldoApertura = saldoTotal - _ingresos + _egresos;
+                DatabaseService.GetResumenCajaDelDia(out _saldoApertura, out _ingresos, out _egresos, out decimal saldoTotal);
 
                 lblSaldoApertura.Text = _saldoApertura.ToString("C2");
                 lblIngresos.Text = _ingresos.ToString("C2");
@@ -46,51 +36,44 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar datos: " + ex.Message);
+                CustomMessageBox.Show("Error al cargar datos: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private static bool YaTieneCierreHoy()
-        {
-            try
-            {
-                using (var c = new System.Data.SqlClient.SqlConnection(DatabaseService.ConnectionString))
-                {
-                    c.Open();
-                    var cmd = new System.Data.SqlClient.SqlCommand(
-                        "SELECT COUNT(*) FROM CierresCaja WHERE CAST(Fecha AS DATE) = CAST(GETDATE() AS DATE)", c);
-                    return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
-                }
-            }
-            catch { return false; }
-        }
+        private static bool YaTieneCierreHoy() => DatabaseService.TieneCierreCajaHoy();
 
         private void btnCerrarCaja_Click(object sender, RoutedEventArgs e)
         {
+            var owner = Window.GetWindow(this);
+
+            if (!DatabaseService.TieneAperturaCajaHoy())
+            {
+                CustomMessageBox.Show(
+                    "No hay apertura de caja registrada para hoy.\n\n" +
+                    "Primero abrí la caja en la pestaña «Apertura de caja» indicando el fondo fijo.",
+                    "Sin apertura", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             // Advertir si ya existe un cierre registrado hoy
             if (YaTieneCierreHoy())
             {
-                var confirmar = MessageBox.Show(
+                if (CustomMessageBox.Show(
                     "⚠️  Ya existe un cierre de caja registrado para hoy.\n\n" +
                     "Registrar otro cierre puede duplicar los totales en los informes.\n\n" +
                     "¿Desea registrar un cierre adicional de todas formas?",
                     "Cierre ya registrado",
                     MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-                if (confirmar != MessageBoxResult.Yes) return;
+                    MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                    return;
             }
 
-            var res = MessageBox.Show(
-                $"¿Confirma el cierre de caja?\n\nSaldo apertura: {_saldoApertura:C2}\nIngresos: {_ingresos:C2}\nEgresos: {_egresos:C2}\nSaldo cierre: {(_saldoApertura + _ingresos - _egresos):C2}",
-                "Confirmar Cierre", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            if (res != MessageBoxResult.Yes) return;
+            decimal saldoCierre = _saldoApertura + _ingresos - _egresos;
+            if (!CierreCajaConfirmacionWindow.Mostrar(_saldoApertura, _ingresos, _egresos, saldoCierre, owner))
+                return;
 
             try
             {
-                decimal saldoCierre = _saldoApertura + _ingresos - _egresos;
-
-                // Desglose real por medio de pago desde FacturasCobranza del día
                 decimal totalEfectivo = 0, totalTarjeta = 0, totalTransferencia = 0;
                 var desglose = DatabaseService.GetDesgloseMediosPagoHoy();
                 foreach (DataRow dr in desglose.Rows)
@@ -102,7 +85,7 @@ namespace SchettiniGestion.WPF
                     else if (medio.Contains("tarjeta") || medio.Contains("débito") || medio.Contains("crédito") || medio.Contains("debito") || medio.Contains("credito"))
                         totalTarjeta += monto;
                     else
-                        totalTransferencia += monto; // transferencia, MP, cheque, etc.
+                        totalTransferencia += monto;
                 }
 
                 using (var c = new System.Data.SqlClient.SqlConnection(DatabaseService.ConnectionString))
@@ -124,12 +107,12 @@ namespace SchettiniGestion.WPF
                     cmd.ExecuteNonQuery();
                 }
 
-                MessageBox.Show("Cierre de caja registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                CustomMessageBox.Show("Cierre de caja registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 CargarResumen();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al registrar cierre: " + ex.Message);
+                CustomMessageBox.Show("Error al registrar cierre: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

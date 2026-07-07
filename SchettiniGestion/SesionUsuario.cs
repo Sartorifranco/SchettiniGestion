@@ -49,7 +49,9 @@ namespace SchettiniGestion
                 return false; // Sesión no iniciada
             }
 
-            // Un Admin (RolID 1) debe tener permisos asignados en BD; no bypass automático.
+            if (Permisos.Contains("ACCESO_TOTAL"))
+                return true;
+
             return Permisos.Contains(permiso);
         }
 

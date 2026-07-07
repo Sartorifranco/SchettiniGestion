@@ -13,12 +13,19 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Control de Caja y Movimientos" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource HeaderForegroundBrush}" Margin="0,0,0,20"/>
+        <Border x:Name="bannerSinApertura" Grid.Row="0" Background="#3A2E1B" BorderBrush="#F59E0B"
+                BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,14" Visibility="Collapsed">
+            <TextBlock Text="⚠ No hay apertura de caja hoy. Abrí el turno en la pestaña «Apertura de caja» con el fondo fijo antes de operar."
+                       Foreground="#F59E0B" TextWrapping="Wrap" FontSize="13"/>
+        </Border>
 
-        <Grid Grid.Row="1" Margin="0,0,0,20">
+        <TextBlock Grid.Row="1" Text="Control de Caja y Movimientos" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource HeaderForegroundBrush}" Margin="0,0,0,20"/>
+
+        <Grid Grid.Row="2" Margin="0,0,0,20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -55,13 +62,13 @@
             </StackPanel>
         </Grid>
 
-        <Border Grid.Row="2" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5" Padding="10" BorderBrush="{DynamicResource BorderDarkBrush}" BorderThickness="1">
+        <Border Grid.Row="3" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5" Padding="10" BorderBrush="{DynamicResource BorderDarkBrush}" BorderThickness="1">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Movimientos del Día" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
 
                 <DataGrid x:Name="dgvMovimientos" Style="{StaticResource ModuleDataGridStyle}" AutoGenerateColumns="False" IsReadOnly="True">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="ID" Binding="{Binding CajaID}" Width="60"/>
+                        <DataGridTextColumn Header="ID" Binding="{Binding MovimientoID}" Width="60"/>
                         <DataGridTextColumn Header="Hora" Binding="{Binding Fecha, StringFormat={}{0:HH:mm}}" Width="80"/>
                         <DataGridTextColumn Header="Concepto" Binding="{Binding Concepto}" Width="*"/>
                         <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="100"/>

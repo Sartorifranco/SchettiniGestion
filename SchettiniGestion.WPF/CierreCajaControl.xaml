@@ -23,7 +23,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel>
-                    <TextBlock Text="SALDO APERTURA" Foreground="{DynamicResource TextSecondary}" FontSize="11"/>
+                    <TextBlock Text="SALDO APERTURA (FONDO FIJO)" Foreground="{DynamicResource TextSecondary}" FontSize="11"/>
                     <TextBlock x:Name="lblSaldoApertura" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" HorizontalAlignment="Center">

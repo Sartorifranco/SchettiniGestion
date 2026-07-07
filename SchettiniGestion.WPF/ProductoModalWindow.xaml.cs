@@ -21,6 +21,7 @@ namespace SchettiniGestion.WPF
         private string _rutaImagen = "";
         private bool _modoDuplicar;
         private Action _onGuardado;
+        private bool _suspendCalculoPrecio;
 
         public ProductoModalWindow(int productoId, bool duplicar, Action onGuardado)
         {
@@ -233,17 +234,20 @@ namespace SchettiniGestion.WPF
             if (chk?.Tag is ListaPrecioItem item && item.LabelPrecio != null)
             {
                 decimal precioBase = numPrecioFinal?.Value ?? 0;
-                decimal iva = ObtenerIvaDecimal();
                 decimal precioLista = precioBase * (1 + item.Porcentaje / 100m);
-                decimal precioConIva = precioLista * (1 + iva / 100m);
+                bool cobraIva = chkCobraIvaAlCliente?.IsChecked == true;
+                string txt = cobraIva
+                    ? $" → ${precioLista:N2} (IVA incl.)"
+                    : $" → ${precioLista:N2} (sin IVA)";
                 decimal tipoCambio = DatabaseService.GetTipoCambioUSD() ?? 0;
                 string moneda = (cmbTipoMoneda?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Pesos";
-                string txt = $" → ${precioConIva:N2} (IVA inc.)";
                 if (tipoCambio > 0)
                 {
-                    decimal usd = moneda == "USD" ? precioConIva : precioConIva / tipoCambio;
-                    decimal ars = moneda == "USD" ? precioConIva * tipoCambio : precioConIva;
-                    txt = $" → ${ars:N0} ARS / USD {usd:N2}";
+                    decimal usd = moneda == "USD" ? precioLista : precioLista / tipoCambio;
+                    decimal ars = moneda == "USD" ? precioLista * tipoCambio : precioLista;
+                    txt = cobraIva
+                        ? $" → ${ars:N0} ARS / USD {usd:N2} (IVA incl.)"
+                        : $" → ${ars:N0} ARS / USD {usd:N2} (sin IVA)";
                 }
                 item.LabelPrecio.Text = chk.IsChecked == true ? txt : "";
             }
@@ -299,10 +303,19 @@ namespace SchettiniGestion.WPF
                 }
             }
 
+            _suspendCalculoPrecio = true;
+            try
+            {
             numCosto.Value = r["PrecioCosto"] != DBNull.Value ? Convert.ToDecimal(r["PrecioCosto"]) : 0;
             numGanancia.Value = r["Ganancia"] != DBNull.Value ? Convert.ToDecimal(r["Ganancia"]) : 30;
             numPrecioFinal.Value = r["PrecioVenta"] != DBNull.Value ? Convert.ToDecimal(r["PrecioVenta"]) : 0;
             _stockActual = r["StockActual"] != DBNull.Value ? Convert.ToInt32(r["StockActual"]) : 0;
+
+            if (r.Table.Columns.Contains("CobraIvaAlCliente") && r["CobraIvaAlCliente"] != DBNull.Value)
+                chkCobraIvaAlCliente.IsChecked = Convert.ToBoolean(r["CobraIvaAlCliente"]);
+            else
+                chkCobraIvaAlCliente.IsChecked = true;
+            ActualizarAyudaPrecioIva();
 
             chkPermiteModificarPrecioVenta.IsChecked = r.Table.Columns.Contains("PermiteModificarPrecioVenta") && r["PermiteModificarPrecioVenta"] != DBNull.Value && Convert.ToBoolean(r["PermiteModificarPrecioVenta"]);
             chkEsStockeable.IsChecked = !r.Table.Columns.Contains("EsStockeable") || r["EsStockeable"] == DBNull.Value || Convert.ToBoolean(r["EsStockeable"]);
@@ -352,6 +365,8 @@ namespace SchettiniGestion.WPF
             chkUsaVariantes_Changed(null, null);
             chkEsCombo_Changed(null, null);
             CalcularPreciosListas(null, null);
+            }
+            finally { _suspendCalculoPrecio = false; }
         }
 
         private static string V(DataRow r, string col) => r.Table.Columns.Contains(col) && r[col] != DBNull.Value ? r[col].ToString() : "";
@@ -390,6 +405,9 @@ namespace SchettiniGestion.WPF
             txtVarianteTalle.Text = "";
             txtVarianteUnidadMedida.Text = "";
             txtComponentes.Text = "";
+            _suspendCalculoPrecio = true;
+            try
+            {
             numCosto.Value = 0;
             numGanancia.Value = 30;
             numPrecioFinal.Value = 0;
@@ -409,6 +427,10 @@ namespace SchettiniGestion.WPF
             chkEsStockeable_Changed(null, null);
             chkUsaVariantes_Changed(null, null);
             chkEsCombo_Changed(null, null);
+            chkCobraIvaAlCliente.IsChecked = true;
+            ActualizarAyudaPrecioIva();
+            }
+            finally { _suspendCalculoPrecio = false; }
         }
 
         private void CargarImagen(string ruta)
@@ -429,11 +451,35 @@ namespace SchettiniGestion.WPF
 
         private void CalcularPrecio_ValueChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            if (numCosto == null || numGanancia == null || numPrecioFinal == null) return;
+            if (_suspendCalculoPrecio || numCosto == null || numGanancia == null || numPrecioFinal == null) return;
             decimal costo = numCosto.Value ?? 0;
             decimal gan = numGanancia.Value ?? 0;
-            numPrecioFinal.Value = costo + (costo * gan / 100);
+            decimal basePrecio = costo + (costo * gan / 100m);
+            if (chkCobraIvaAlCliente?.IsChecked == true)
+                numPrecioFinal.Value = Math.Round(basePrecio * (1 + ObtenerIvaDecimal() / 100m), 2);
+            else
+                numPrecioFinal.Value = basePrecio;
             CalcularPreciosListas(null, null);
+        }
+
+        private void cmbTipoIVA_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            CalcularPrecio_ValueChanged(numCosto, null);
+            ActualizarAyudaPrecioIva();
+        }
+
+        private void chkCobraIvaAlCliente_Changed(object sender, RoutedEventArgs e)
+        {
+            ActualizarAyudaPrecioIva();
+            CalcularPrecio_ValueChanged(numCosto, null);
+        }
+
+        private void ActualizarAyudaPrecioIva()
+        {
+            if (txtAyudaPrecioIva == null) return;
+            txtAyudaPrecioIva.Text = chkCobraIvaAlCliente?.IsChecked == true
+                ? "El precio de venta incluye IVA (se discrimina en factura)."
+                : "El precio de venta no incluye IVA (no se cobra IVA al cliente).";
         }
 
         private void chkGenerarCodigoBarra_Changed(object sender, RoutedEventArgs e)
@@ -524,7 +570,8 @@ namespace SchettiniGestion.WPF
                 txtCodigoExterno?.Text?.Trim(),
                 chkUsaVariantes?.IsChecked == true ? txtVarianteColor?.Text?.Trim() : null,
                 chkUsaVariantes?.IsChecked == true ? txtVarianteTalle?.Text?.Trim() : null,
-                chkUsaVariantes?.IsChecked == true ? txtVarianteUnidadMedida?.Text?.Trim() : null
+                chkUsaVariantes?.IsChecked == true ? txtVarianteUnidadMedida?.Text?.Trim() : null,
+                chkCobraIvaAlCliente?.IsChecked != false
             );
 
             if (productoId <= 0)

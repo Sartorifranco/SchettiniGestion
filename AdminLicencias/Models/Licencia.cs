@@ -56,6 +56,7 @@ namespace AdminLicencias.Models
                     ["ACCESO_CUENTASCORRIENTES"] = "Cta.Cte.",
                     ["ACCESO_USUARIOS"]          = "Usuarios",
                     ["ACCESO_PERMISOS"]          = "Permisos",
+                    ["ACCESO_CONFIGURACION"]     = "Configuración",
                 };
                 var lista = new List<string>();
                 foreach (var m in Modulos)

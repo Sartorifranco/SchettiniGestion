@@ -163,7 +163,8 @@ namespace SchettiniGestion
                         "ACCESO_VENTAS",      "ACCESO_STOCK",     "ACCESO_USUARIOS",
                         "ACCESO_PERMISOS",    "ACCESO_PROVEEDORES","ACCESO_COMPRAS",
                         "ACCESO_PRECIOS",     "ACCESO_CAJA",      "ACCESO_PRESUPUESTOS",
-                        "ACCESO_CUENTASCORRIENTES", "ACCESO_LISTASPRECIOS"
+                        "ACCESO_CUENTASCORRIENTES", "ACCESO_LISTASPRECIOS",
+                        "ACCESO_CONFIGURACION"
                     }
                 };
                 return true;
@@ -215,13 +216,26 @@ namespace SchettiniGestion
             return true;
         }
 
+        private static readonly HashSet<string> ModulosImplicitos = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "ACCESO_USUARIOS",
+            "ACCESO_PERMISOS",
+            "ACCESO_CONFIGURACION"
+        };
+
         public static bool IsModuleEnabled(string moduleName)
         {
+            if (string.IsNullOrWhiteSpace(moduleName))
+                return false;
+            string mod = moduleName.ToUpperInvariant();
+            if (ModulosImplicitos.Contains(mod))
+                return true;
+
             if (_licenciaActual == null)
                 CargarLicencia();
             if (_licenciaActual?.ModulosPermitidos == null)
                 return false;
-            return _licenciaActual.ModulosPermitidos.Contains(moduleName.ToUpperInvariant());
+            return _licenciaActual.ModulosPermitidos.Contains(mod);
         }
 
         public static string ObtenerFechaVencimiento()

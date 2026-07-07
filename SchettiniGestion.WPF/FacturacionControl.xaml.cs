@@ -17,7 +17,23 @@ namespace SchettiniGestion.WPF
 {
     public partial class FacturacionControl : UserControl
     {
+        public class PosProductoVm
+        {
+            public DataRow Row { get; set; }
+            public int ProductoID { get; set; }
+            public string Codigo { get; set; }
+            public string CodigoBarra { get; set; }
+            public string Descripcion { get; set; }
+            public decimal PrecioLista { get; set; }
+            public int StockActual { get; set; }
+            public bool SinStock { get; set; }
+            public string StockTexto { get; set; }
+            public string ImagenPath { get; set; }
+        }
+
         private ObservableCollection<FacturaItem> CarritoDeVenta;
+        private ObservableCollection<PosProductoVm> CatalogoProductos;
+        private List<PosProductoVm> _catalogoCompleto = new List<PosProductoVm>();
         private DataRow _clienteSeleccionado;
         private DataRow _productoSeleccionado;
         private bool _ignorarPerdidaFoco = false;
@@ -36,8 +52,12 @@ namespace SchettiniGestion.WPF
         {
             InitializeComponent();
             CarritoDeVenta = new ObservableCollection<FacturaItem>();
+            CatalogoProductos = new ObservableCollection<PosProductoVm>();
             dgvFactura.ItemsSource = CarritoDeVenta;
             icCardsFactura.ItemsSource = CarritoDeVenta;
+            icCarrito.ItemsSource = CarritoDeVenta;
+            dgvCatalogo.ItemsSource = CatalogoProductos;
+            icCatalogo.ItemsSource = CatalogoProductos;
 
             CustomerScreenService.OnClienteEligioPago += ProcesarPagoCliente;
             this.Unloaded += FacturacionControl_Unloaded;
@@ -46,6 +66,8 @@ namespace SchettiniGestion.WPF
         private void FacturacionControl_Loaded(object sender, RoutedEventArgs e)
         {
             CargarListasPrecios();
+            AplicarConfigPredeterminadaPos();
+            CargarCatalogo();
             CargarClientePorDefecto();
             CustomerScreenService.Iniciar();
             CustomerScreenService.Resetear();
@@ -68,6 +90,224 @@ namespace SchettiniGestion.WPF
             }
 
             ActualizarUiSegunTipoComprobante();
+            btnVistaCatalogoLista_Click(null, null);
+        }
+
+        private void CargarCatalogo()
+        {
+            _catalogoCompleto.Clear();
+            var dt = DatabaseService.GetProductos("");
+            if (dt != null)
+            {
+                decimal pctLista = ObtenerPorcentajeLista();
+                foreach (DataRow r in dt.Rows)
+                {
+                    if (r["Codigo"]?.ToString() == "VAR") continue;
+                    _catalogoCompleto.Add(CrearVmCatalogo(r, pctLista));
+                }
+            }
+            FiltrarCatalogo();
+        }
+
+        private static PosProductoVm CrearVmCatalogo(DataRow r, decimal pctLista)
+        {
+            bool esStockeable = !r.Table.Columns.Contains("EsStockeable") || r["EsStockeable"] == DBNull.Value || Convert.ToBoolean(r["EsStockeable"]);
+            int stock = r["StockActual"] != DBNull.Value ? Convert.ToInt32(r["StockActual"]) : 0;
+            bool sinStock = esStockeable && stock <= 0;
+            decimal precioBase = r["PrecioVenta"] != DBNull.Value ? Convert.ToDecimal(r["PrecioVenta"]) : 0;
+            return new PosProductoVm
+            {
+                Row = r,
+                ProductoID = Convert.ToInt32(r["ProductoID"]),
+                Codigo = r["Codigo"]?.ToString() ?? "",
+                CodigoBarra = r.Table.Columns.Contains("CodigoBarra") ? r["CodigoBarra"]?.ToString() ?? "" : "",
+                Descripcion = r["Descripcion"]?.ToString() ?? "",
+                PrecioLista = Math.Round(precioBase * (1 + pctLista / 100m), 2),
+                StockActual = stock,
+                SinStock = sinStock,
+                StockTexto = esStockeable ? (sinStock ? "Sin stock" : stock.ToString()) : "—",
+                ImagenPath = r.Table.Columns.Contains("ImagenPath") ? r["ImagenPath"]?.ToString() : null
+            };
+        }
+
+        private void RefrescarPreciosCatalogo()
+        {
+            decimal pctLista = ObtenerPorcentajeLista();
+            foreach (var p in _catalogoCompleto)
+            {
+                decimal precioBase = p.Row["PrecioVenta"] != DBNull.Value ? Convert.ToDecimal(p.Row["PrecioVenta"]) : 0;
+                p.PrecioLista = Math.Round(precioBase * (1 + pctLista / 100m), 2);
+            }
+            dgvCatalogo.Items.Refresh();
+            icCatalogo.Items.Refresh();
+        }
+
+        private void FiltrarCatalogo()
+        {
+            string q = (txtBuscarProducto?.Text ?? "").Trim().ToUpperInvariant();
+            CatalogoProductos.Clear();
+            foreach (var p in _catalogoCompleto)
+            {
+                if (string.IsNullOrEmpty(q)
+                    || (p.Codigo ?? "").ToUpperInvariant().Contains(q)
+                    || (p.Descripcion ?? "").ToUpperInvariant().Contains(q)
+                    || (p.CodigoBarra ?? "").ToUpperInvariant().Contains(q))
+                    CatalogoProductos.Add(p);
+            }
+            if (lblCantidadCatalogo != null)
+                lblCantidadCatalogo.Text = $"{CatalogoProductos.Count} producto(s) mostrados";
+        }
+
+        private void AgregarProductoAlCarritoDesdeRow(DataRow row)
+        {
+            if (row == null) return;
+            _productoSeleccionado = row;
+            AgregarProductoSeleccionadoAlCarrito();
+        }
+
+        private void AgregarProductoAlCarritoDesdeVm(PosProductoVm vm)
+        {
+            if (vm?.Row == null) return;
+            AgregarProductoAlCarritoDesdeRow(vm.Row);
+        }
+
+        private void CatalogoCard_Click(object sender, MouseButtonEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is PosProductoVm vm)
+                AgregarProductoAlCarritoDesdeVm(vm);
+        }
+
+        private void dgvCatalogo_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (dgvCatalogo.SelectedItem is PosProductoVm vm)
+                AgregarProductoAlCarritoDesdeVm(vm);
+        }
+
+        private void btnVistaCatalogoLista_Click(object sender, RoutedEventArgs e)
+        {
+            if (dgvCatalogo == null) return;
+            dgvCatalogo.Visibility = Visibility.Visible;
+            if (svCatalogoCards != null) svCatalogoCards.Visibility = Visibility.Collapsed;
+            if (btnVistaCatalogoLista != null) btnVistaCatalogoLista.Style = (Style)FindResource("ButtonStyle");
+            if (btnVistaCatalogoCards != null) btnVistaCatalogoCards.Style = (Style)FindResource("SecondaryButtonStyle");
+        }
+
+        private void btnVistaCatalogoCards_Click(object sender, RoutedEventArgs e)
+        {
+            if (dgvCatalogo == null) return;
+            dgvCatalogo.Visibility = Visibility.Collapsed;
+            if (svCatalogoCards != null) svCatalogoCards.Visibility = Visibility.Visible;
+            if (btnVistaCatalogoCards != null) btnVistaCatalogoCards.Style = (Style)FindResource("ButtonStyle");
+            if (btnVistaCatalogoLista != null) btnVistaCatalogoLista.Style = (Style)FindResource("SecondaryButtonStyle");
+        }
+
+        private void btnDescuentoGlobal_Click(object sender, RoutedEventArgs e)
+        {
+            if (CarritoDeVenta.Count == 0)
+            {
+                CustomMessageBox.Show("No hay productos en el pedido.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            var win = CrearInputModal("Descuento total", "Porcentaje de descuento para TODA la venta:", "0", soloNumeros: true);
+            if (win.ShowDialog() == true
+                && decimal.TryParse(win.ResponseText?.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal pct)
+                && pct >= 0 && pct <= 100)
+            {
+                foreach (var item in CarritoDeVenta)
+                    item.DescuentoPorcentaje = pct;
+                ActualizarTotal();
+            }
+        }
+
+        private void btnBorrarVenta_Click(object sender, RoutedEventArgs e)
+        {
+            if (CarritoDeVenta.Count == 0) return;
+            if (CustomMessageBox.Show("¿Borrar todos los productos del pedido?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                LimpiarFormulario();
+        }
+
+        private void AplicarConfigPredeterminadaPos()
+        {
+            var cfg = DatabaseService.ObtenerConfigPosPredeterminada();
+            if (expConfigVenta != null)
+                expConfigVenta.IsExpanded = cfg.ConfigExpandida;
+            if (!string.IsNullOrWhiteSpace(cfg.TipoComprobante))
+                SeleccionarComboPorTexto(cmbTipoComprobante, cfg.TipoComprobante);
+            if (!string.IsNullOrWhiteSpace(cfg.CondicionVenta))
+                SeleccionarComboPorTexto(cmbCondicionVenta, cfg.CondicionVenta);
+            if (cfg.ListaPrecioID.HasValue && cmbListaPrecios != null)
+            {
+                _cargandoListas = true;
+                try { cmbListaPrecios.SelectedValue = cfg.ListaPrecioID.Value; }
+                catch { }
+                finally { _cargandoListas = false; }
+            }
+        }
+
+        private static void SeleccionarComboPorTexto(ComboBox cb, string texto)
+        {
+            if (cb == null || string.IsNullOrWhiteSpace(texto)) return;
+            for (int i = 0; i < cb.Items.Count; i++)
+            {
+                if ((cb.Items[i] as ComboBoxItem)?.Content?.ToString() == texto)
+                {
+                    cb.SelectedIndex = i;
+                    return;
+                }
+            }
+        }
+
+        private PosConfigPredeterminada RecolectarConfigPosActual()
+        {
+            int? listaId = null;
+            if (cmbListaPrecios?.SelectedValue != null && cmbListaPrecios.SelectedValue != DBNull.Value)
+            {
+                try { listaId = Convert.ToInt32(cmbListaPrecios.SelectedValue); }
+                catch { }
+            }
+            else if (cmbListaPrecios?.SelectedItem is DataRowView rv)
+                listaId = Convert.ToInt32(rv["ListaID"]);
+
+            return new PosConfigPredeterminada
+            {
+                ListaPrecioID = listaId,
+                TipoComprobante = (cmbTipoComprobante?.SelectedItem as ComboBoxItem)?.Content?.ToString(),
+                CondicionVenta = (cmbCondicionVenta?.SelectedItem as ComboBoxItem)?.Content?.ToString(),
+                ConfigExpandida = expConfigVenta?.IsExpanded != false
+            };
+        }
+
+        private void btnGuardarConfigPredeterminada_Click(object sender, RoutedEventArgs e)
+        {
+            if (DatabaseService.GuardarConfigPosPredeterminada(RecolectarConfigPosActual()))
+                CustomMessageBox.Show("Configuración del POS guardada como predeterminada.\nSe aplicará en cada nueva venta.", "Guardado", MessageBoxButton.OK, MessageBoxImage.Information);
+            else
+                CustomMessageBox.Show("No se pudo guardar la configuración.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        private void btnCarritoSumar_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.Tag is FacturaItem item)
+            {
+                item.Cantidad++;
+                ActualizarTotal();
+            }
+        }
+
+        private void btnCarritoRestar_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.Tag is FacturaItem item)
+            {
+                if (item.Cantidad > 1) item.Cantidad--;
+                else CarritoDeVenta.Remove(item);
+                ActualizarTotal();
+            }
+        }
+
+        private void RefrescarVistaCarrito()
+        {
+            dgvFactura.Items.Refresh();
+            icCardsFactura.Items.Refresh();
+            icCarrito.Items.Refresh();
         }
 
         private void cmbTipoComprobante_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -181,8 +421,7 @@ namespace SchettiniGestion.WPF
             if (item != null) item.Cantidad += cant;
             else
             {
-                decimal alicuota = DatabaseService.ObtenerPctIvaPorTipoProducto(
-                    _productoSeleccionado.Table.Columns.Contains("TipoIVA") ? _productoSeleccionado["TipoIVA"] : null);
+                decimal alicuota = DatabaseService.ObtenerAlicuotaIvaVentaProducto(_productoSeleccionado);
                 CarritoDeVenta.Add(new FacturaItem
                 {
                     ProductoID = id,
@@ -194,7 +433,7 @@ namespace SchettiniGestion.WPF
                     ImagenPath = imgPath
                 });
             }
-            dgvFactura.Items.Refresh();
+            RefrescarVistaCarrito();
             popupProducto.IsOpen = false;
             LimpiarProducto();
             ActualizarTotal();
@@ -750,10 +989,16 @@ namespace SchettiniGestion.WPF
             lblNeto.Text = neto.ToString("C2");
             lblIVA.Text = ivaTotal.ToString("C2");
             lblTotal.Text = totalConDescRec.ToString("C2");
+            if (lblCantidadItems != null)
+            {
+                int unidades = CarritoDeVenta.Sum(x => x.Cantidad);
+                lblCantidadItems.Text = CarritoDeVenta.Count == 0
+                    ? "0 productos en el pedido"
+                    : $"{CarritoDeVenta.Count} producto(s) · {unidades} unidad(es)";
+            }
             CustomerScreenService.Actualizar(CarritoDeVenta.ToList(), totalConDescRec);
 
-            dgvFactura.Items.Refresh();
-            icCardsFactura.Items.Refresh();
+            RefrescarVistaCarrito();
         }
 
         // --- SOPORTE UI ---
@@ -769,7 +1014,8 @@ namespace SchettiniGestion.WPF
 
         private void btnEliminarItem_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as Button)?.DataContext is FacturaItem item) { CarritoDeVenta.Remove(item); ActualizarTotal(); }
+            var item = ObtenerItemCarrito(sender);
+            if (item != null) { CarritoDeVenta.Remove(item); ActualizarTotal(); }
         }
 
         private void btnCancelarFactura_Click(object sender, RoutedEventArgs e) { LimpiarFormulario(); }
@@ -790,13 +1036,24 @@ namespace SchettiniGestion.WPF
                     AlicuotaIvaPct = 21m,
                     ImagenPath = null
                 });
-                dgvFactura.Items.Refresh();
+                RefrescarVistaCarrito();
                 ActualizarTotal();
                 LimpiarProducto();
             }
         }
 
-        private void CargarListasPrecios() { try { cmbListaPrecios.ItemsSource = DatabaseService.GetListasPrecios().DefaultView; cmbListaPrecios.SelectedIndex = 0; } catch { } }
+        private void CargarListasPrecios()
+        {
+            try
+            {
+                _cargandoListas = true;
+                cmbListaPrecios.ItemsSource = DatabaseService.GetListasPrecios().DefaultView;
+                if (cmbListaPrecios.Items.Count > 0 && cmbListaPrecios.SelectedIndex < 0)
+                    cmbListaPrecios.SelectedIndex = 0;
+            }
+            catch { }
+            finally { _cargandoListas = false; }
+        }
 
         private static bool AfipEstaConfigurado(DataRow config)
         {
@@ -839,10 +1096,11 @@ namespace SchettiniGestion.WPF
                 if (prod != null)
                 {
                     item.PrecioUnitario = Convert.ToDecimal(prod["PrecioVenta"]) * (1 + (porcentaje / 100));
-                    item.AlicuotaIvaPct = DatabaseService.ObtenerPctIvaPorTipoProducto(prod.Table.Columns.Contains("TipoIVA") ? prod["TipoIVA"] : null);
+                    item.AlicuotaIvaPct = DatabaseService.ObtenerAlicuotaIvaVentaProducto(prod);
                 }
             }
-            dgvFactura.Items.Refresh();
+            RefrescarPreciosCatalogo();
+            RefrescarVistaCarrito();
             ActualizarTotal();
         }
         private void cmbListaPrecios_SelectionChanged(object sender, SelectionChangedEventArgs e) { if (!_cargandoListas) RecalcularCarritoConNuevaLista(); }
@@ -862,6 +1120,7 @@ namespace SchettiniGestion.WPF
         private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (_ignorarPerdidaFoco) return;
+            FiltrarCatalogo();
             if (txtBuscarProducto.Text.Length < 1) { popupProducto.IsOpen = false; _productoSeleccionado = null; return; }
             try
             {
@@ -1038,40 +1297,56 @@ namespace SchettiniGestion.WPF
         // --- Mini botones: Descuento, Recargo, Editar, Eliminar ---
         private void btnDescuentoItem_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as Button)?.DataContext is FacturaItem item)
+            var item = ObtenerItemCarrito(sender);
+            if (item == null) return;
+            var win = CrearInputModal("Descuento del ítem", "Porcentaje de descuento solo para este producto:", item.DescuentoPorcentaje.ToString("N0"), soloNumeros: true);
+            if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 100)
             {
-                var win = new InputWindow("Descuento", "Porcentaje de descuento:", item.DescuentoPorcentaje.ToString("N0"));
-                if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 100)
-                {
-                    item.DescuentoPorcentaje = pct;
-                    ActualizarTotal();
-                }
+                item.DescuentoPorcentaje = pct;
+                ActualizarTotal();
             }
         }
         private void btnRecargoItem_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as Button)?.DataContext is FacturaItem item)
+            var item = ObtenerItemCarrito(sender);
+            if (item == null) return;
+            var win = CrearInputModal("Recargo del ítem", "Porcentaje de recargo solo para este producto:", item.RecargoPorcentaje.ToString("N0"), soloNumeros: true);
+            if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 100)
             {
-                var win = new InputWindow("Recargo", "Porcentaje de recargo:", item.RecargoPorcentaje.ToString("N0"));
-                if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 100)
-                {
-                    item.RecargoPorcentaje = pct;
-                    ActualizarTotal();
-                }
+                item.RecargoPorcentaje = pct;
+                ActualizarTotal();
             }
         }
         private void btnEditarItem_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as Button)?.DataContext is FacturaItem item)
+            var item = ObtenerItemCarrito(sender);
+            if (item == null) return;
+            var winPrecio = CrearInputModal("Editar precio", "Nuevo precio unitario de este producto:", item.PrecioUnitario.ToString("N2"), soloNumeros: true);
+            if (winPrecio.ShowDialog() == true && decimal.TryParse(winPrecio.ResponseText?.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal prec) && prec >= 0)
             {
-                var winCant = new InputWindow("Editar cantidad", "Nueva cantidad:", item.Cantidad.ToString());
-                if (winCant.ShowDialog() == true && int.TryParse(winCant.ResponseText, out int cant) && cant > 0) { item.Cantidad = cant; ActualizarTotal(); return; }
-                var winPrecio = new InputWindow("Editar precio", "Nuevo precio unitario:", item.PrecioUnitario.ToString("N2"));
-                if (winPrecio.ShowDialog() == true && decimal.TryParse(winPrecio.ResponseText?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal prec) && prec >= 0) { item.PrecioUnitario = prec; ActualizarTotal(); }
+                item.PrecioUnitario = prec;
+                ActualizarTotal();
             }
         }
 
         // --- AYUDA ATAJOS ---
         private void btnAyudaAtajos_Click(object sender, RoutedEventArgs e) { new AyudaAtajosWindow().ShowDialog(); }
+
+        private static FacturaItem ObtenerItemCarrito(object sender)
+        {
+            if (!(sender is Button btn)) return null;
+            if (btn.Tag is FacturaItem desdeTag) return desdeTag;
+            if (btn.DataContext is FacturaItem desdeCtx) return desdeCtx;
+            return null;
+        }
+
+        private ModernInputWindow CrearInputModal(string titulo, string etiqueta, string valorInicial, bool soloNumeros = false)
+        {
+            return new ModernInputWindow(titulo, etiqueta, valorInicial)
+            {
+                Owner = Window.GetWindow(this),
+                SoloNumeros = soloNumeros
+            };
+        }
     }
 }

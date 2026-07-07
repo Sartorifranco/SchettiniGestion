@@ -80,6 +80,7 @@ namespace AdminLicencias.Views
                 dLicVersion.Text    = $"SCHPOS {lic.VersionSchpos}";
                 dLicVencimiento.Text = $"Vence: {lic.FechaVencimiento:dd/MM/yyyy}  ({lic.DiasRestantes} días)";
                 dLicModulos.Text    = lic.ModulosResumen;
+                dLicHWID.Text       = string.IsNullOrWhiteSpace(lic.HWID) ? "—" : lic.HWID;
                 dLicMonto.Text      = lic.MontoVenta > 0
                     ? lic.MontoVenta.ToString("C0", new System.Globalization.CultureInfo("es-AR"))
                     : "Sin monto registrado";

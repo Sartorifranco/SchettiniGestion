@@ -154,6 +154,7 @@ namespace SchettiniGestion.WPF
                             DatabaseService.ActualizarConexion(cs);
                         DatabaseService.InitializeDatabase();
                         DatabaseService.MigrarNombresPermisosConGuionBajo();
+                        DatabaseService.InicializarPermisosBaseDatos();
                         DatabaseService.AsegurarUsuarioAdminInicial();
                         return true;
                     }
@@ -514,6 +515,16 @@ namespace SchettiniGestion.WPF
                           Usuario NVARCHAR(50)
                       );",
 
+                    @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='AperturasCaja')
+                      CREATE TABLE AperturasCaja (
+                          AperturaID INT PRIMARY KEY IDENTITY(1,1),
+                          Fecha DATETIME,
+                          MontoFondoFijo DECIMAL(18,2),
+                          Observaciones NVARCHAR(500),
+                          Usuario NVARCHAR(50),
+                          MovimientoID INT NULL
+                      );",
+
                     @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='FacturasCobranza')
                       CREATE TABLE FacturasCobranza (
                           CobranzaID INT PRIMARY KEY IDENTITY(1,1),
@@ -677,7 +688,7 @@ namespace SchettiniGestion.WPF
                           ('ACCESO_FACTURACION'),('ACCESO_VENTAS'),('ACCESO_PRODUCTOS'),('ACCESO_CLIENTES'),
                           ('ACCESO_STOCK'),('ACCESO_COMPRAS'),('ACCESO_PROVEEDORES'),('ACCESO_PRECIOS'),
                           ('ACCESO_LISTASPRECIOS'),('ACCESO_CAJA'),('ACCESO_PRESUPUESTOS'),
-                          ('ACCESO_CUENTASCORRIENTES'),('ACCESO_USUARIOS'),('ACCESO_PERMISOS'),('ACCESO_TOTAL');",
+                          ('ACCESO_CUENTASCORRIENTES'),('ACCESO_USUARIOS'),('ACCESO_PERMISOS'),('ACCESO_CONFIGURACION'),('ACCESO_TOTAL');",
 
                     @"IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='VisorPromoCarpeta')
                       ALTER TABLE Configuracion ADD VisorPromoCarpeta NVARCHAR(500) NULL;

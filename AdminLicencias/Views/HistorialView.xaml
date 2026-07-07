@@ -172,6 +172,7 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                     <DataGridTextColumn Header="Monto"       Binding="{Binding Monto}"         Width="100"/>
+                    <DataGridTextColumn Header="HWID"        Binding="{Binding HWID}"          Width="140"/>
                     <DataGridTextColumn Header="Método"      Binding="{Binding Metodo}"        Width="110"/>
                     <DataGridTextColumn Header="Renovación"  Binding="{Binding EsRenovacion}"  Width="100"/>
                     <DataGridTextColumn Header="Módulos"     Binding="{Binding Modulos}"       Width="*" MinWidth="160"/>

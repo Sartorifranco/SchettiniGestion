@@ -99,7 +99,7 @@ namespace SchettiniGestion.WPF
         private void btnNuevoRol_Click(object sender, RoutedEventArgs e)
         {
             // 1. Abrimos la ventanita para pedir el nombre
-            InputWindow input = new InputWindow("Crear Nuevo Rol");
+            var input = new ModernInputWindow("Crear Nuevo Rol", "Nombre del rol:") { Owner = Window.GetWindow(this) };
             if (input.ShowDialog() == true)
             {
                 string nuevoNombre = input.ResponseText.Trim();

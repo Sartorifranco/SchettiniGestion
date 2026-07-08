@@ -118,7 +118,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SchettiniGestion\SchettiniGestion.csproj">
+      <Project>{f2f0d54b-cd96-429b-b632-1c29e111ae75}</Project>
+      <Name>SchettiniGestion</Name>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="packages.config" />
+    <Content Include="..\SchettiniGestion\ModulosCatalog.json" Link="ModulosCatalog.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

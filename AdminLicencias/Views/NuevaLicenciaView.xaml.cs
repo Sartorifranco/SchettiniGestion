@@ -1,10 +1,12 @@
 using AdminLicencias.Models;
 using AdminLicencias.Services;
+using SchettiniGestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace AdminLicencias.Views
 {
@@ -12,15 +14,105 @@ namespace AdminLicencias.Views
     {
         private readonly MainWindow _main;
         private bool _suppressDateSync = false;
+        private readonly List<CheckBox> _checksModulos = new List<CheckBox>();
+
+        private static readonly string[] OrdenGrupos =
+        {
+            ModulosCatalog.GrupoLiteBase,
+            ModulosCatalog.GrupoModuloAdicional,
+            ModulosCatalog.GrupoExtraUnico,
+            ModulosCatalog.GrupoAbonoMensual
+        };
 
         public NuevaLicenciaView(MainWindow main, Cliente clientePreseleccionado)
         {
             InitializeComponent();
             _main = main;
 
+            ConstruirCheckboxesModulos();
+            AplicarPresetLite();
             CargarClientes(clientePreseleccionado);
             dpVence.SelectedDate = DateTime.Today.AddDays(365);
             PrecargarHwid(clientePreseleccionado);
+        }
+
+        private void ConstruirCheckboxesModulos()
+        {
+            panelModulosLicencia.Children.Clear();
+            _checksModulos.Clear();
+
+            foreach (string grupo in OrdenGrupos)
+            {
+                var mods = ModulosCatalog.ObtenerPorGrupo(grupo);
+                if (mods.Count == 0) continue;
+
+                panelModulosLicencia.Children.Add(new TextBlock
+                {
+                    Text = ModulosCatalog.ObtenerTituloGrupo(grupo),
+                    FontWeight = FontWeights.SemiBold,
+                    Foreground = (Brush)FindResource("TextPrimary"),
+                    Margin = new Thickness(0, grupo == ModulosCatalog.GrupoLiteBase ? 0 : 14, 0, 6)
+                });
+
+                if (grupo == ModulosCatalog.GrupoAbonoMensual)
+                {
+                    panelModulosLicencia.Children.Add(new TextBlock
+                    {
+                        Text = "Renovar periódicamente al emitir una nueva licencia con estos ítems tildados.",
+                        FontSize = 10,
+                        Foreground = (Brush)FindResource("TextSecondary"),
+                        TextWrapping = TextWrapping.Wrap,
+                        Margin = new Thickness(0, 0, 0, 6)
+                    });
+                }
+
+                var grid = new System.Windows.Controls.Primitives.UniformGrid
+                {
+                    Columns = 2,
+                    Margin = new Thickness(0, 0, 0, 4)
+                };
+
+                foreach (var mod in mods)
+                {
+                    string etiqueta = mod.EsAbonoMensual ? mod.Nombre + "  (abono)" : mod.Nombre;
+                    var chk = new CheckBox
+                    {
+                        Content = etiqueta,
+                        Tag = mod.Codigo,
+                        Margin = new Thickness(0, 5, 0, 5)
+                    };
+                    grid.Children.Add(chk);
+                    _checksModulos.Add(chk);
+                }
+
+                panelModulosLicencia.Children.Add(grid);
+            }
+
+            var implicitos = ModulosCatalog.ObtenerImplicitos()
+                .Select(ModulosCatalog.ObtenerNombreLegible)
+                .ToList();
+
+            txtModulosImplicitos.Text = implicitos.Count > 0
+                ? "Siempre incluidos: " + string.Join(", ", implicitos) + "."
+                : "";
+        }
+
+        private void AplicarPresetLite()
+        {
+            var lite = new HashSet<string>(ModulosCatalog.ObtenerPresetLite(), StringComparer.OrdinalIgnoreCase);
+            foreach (var chk in _checksModulos)
+            {
+                if (chk.Tag is string codigo)
+                    chk.IsChecked = lite.Contains(codigo);
+            }
+        }
+
+        private void PresetLite_Click(object sender, RoutedEventArgs e) => AplicarPresetLite();
+
+        private void LimpiarModulos_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var chk in _checksModulos)
+                chk.IsChecked = false;
         }
 
         private void PrecargarHwid(Cliente cliente)
@@ -62,8 +154,6 @@ namespace AdminLicencias.Views
         // ── Sincronización días ↔ fecha ──────────────────────────────────
         private void Dias_Changed(object s, TextChangedEventArgs e)
         {
-            // dpVence puede ser null si este evento se dispara durante InitializeComponent
-            // antes de que el DatePicker sea creado por el BAML loader
             if (_suppressDateSync || dpVence == null) return;
             if (int.TryParse(txtDias.Text, out int d) && d > 0)
             {
@@ -88,7 +178,6 @@ namespace AdminLicencias.Views
         // ── Generar ───────────────────────────────────────────────────────
         private void Generar_Click(object s, RoutedEventArgs e)
         {
-            // Validaciones
             if (cbCliente.SelectedItem == null)
             { MessageBox.Show("Seleccioná un cliente.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
@@ -106,7 +195,6 @@ namespace AdminLicencias.Views
                 System.Globalization.NumberStyles.Any,
                 System.Globalization.CultureInfo.InvariantCulture, out decimal m) ? m : 0;
 
-            // Generar clave
             string clave;
             try { clave = LicenseService.GenerarClave(cliente.CUIT, hwid, vence, modulos); }
             catch (Exception ex)
@@ -114,7 +202,6 @@ namespace AdminLicencias.Views
 
             txtClave.Text = clave;
 
-            // Guardar en registro
             var lic = new Licencia
             {
                 ClienteId        = cliente.Id,
@@ -130,7 +217,6 @@ namespace AdminLicencias.Views
                 Observaciones    = txtObs.Text.Trim()
             };
 
-            // Si es renovación, vincular con la anterior
             if (lic.EsRenovacion)
             {
                 var anterior = DataStore.UltimaLicencia(cliente.Id);
@@ -139,7 +225,6 @@ namespace AdminLicencias.Views
 
             DataStore.GuardarLicencia(lic);
 
-            // Mostrar resumen
             resCliente.Text  = cliente.RazonSocial;
             resHWID.Text     = hwid;
             resVence.Text    = vence.ToString("dd/MM/yyyy") + $"  ({lic.DiasRestantes} días)";
@@ -150,25 +235,14 @@ namespace AdminLicencias.Views
 
         private List<string> RecolectarModulos()
         {
-            var lista = new List<string>();
-            var checks = new[] { chkFacturacion, chkProductos, chkStock, chkVentas,
-                                  chkClientes, chkProveedores, chkCompras, chkCaja,
-                                  chkPresupuestos, chkPrecios, chkListas, chkCuentas };
-            foreach (var ch in checks)
-                if (ch.IsChecked == true) lista.Add(ch.Tag.ToString());
+            var seleccionados = _checksModulos
+                .Where(ch => ch.IsChecked == true && ch.Tag != null)
+                .Select(ch => ch.Tag.ToString())
+                .ToList();
 
-            // Siempre incluidos en toda licencia (no opcionales).
-            lista.Add("ACCESO_USUARIOS");
-            lista.Add("ACCESO_PERMISOS");
-            lista.Add("ACCESO_CONFIGURACION");
-            // Facturación requiere Productos
-            if (lista.Contains("ACCESO_FACTURACION") && !lista.Contains("ACCESO_PRODUCTOS"))
-                lista.Add("ACCESO_PRODUCTOS");
-
-            return lista;
+            return ModulosCatalog.ResolverLicencia(seleccionados);
         }
 
-        // ── Copiar ────────────────────────────────────────────────────────
         private void Copiar_Click(object s, RoutedEventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(txtClave.Text) &&

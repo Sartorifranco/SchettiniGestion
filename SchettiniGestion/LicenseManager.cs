@@ -157,15 +157,14 @@ namespace SchettiniGestion
                     CuitCliente = "DEBUG-DEVELOPER",
                     FechaExpiracion = DateTime.Now.AddYears(10),
                     HardwareID = "",
-                    ModulosPermitidos = new List<string>
+                    ModulosPermitidos = ModulosCatalog.ResolverLicencia(new List<string>
                     {
-                        "ACCESO_FACTURACION", "ACCESO_PRODUCTOS", "ACCESO_CLIENTES",
-                        "ACCESO_VENTAS",      "ACCESO_STOCK",     "ACCESO_USUARIOS",
-                        "ACCESO_PERMISOS",    "ACCESO_PROVEEDORES","ACCESO_COMPRAS",
-                        "ACCESO_PRECIOS",     "ACCESO_CAJA",      "ACCESO_PRESUPUESTOS",
-                        "ACCESO_CUENTASCORRIENTES", "ACCESO_LISTASPRECIOS",
-                        "ACCESO_CONFIGURACION"
-                    }
+                        "ACCESO_VENTAS", "ACCESO_FACTURACION", "ACCESO_PRODUCTOS", "ACCESO_STOCK",
+                        "ACCESO_CLIENTES", "ACCESO_CAJA", "ACCESO_LISTASPRECIOS", "ACCESO_PRECIOS",
+                        "ACCESO_PRESUPUESTOS", "ACCESO_COMPRAS", "ACCESO_PROVEEDORES",
+                        "ACCESO_CUENTASCORRIENTES", "ACCESO_RED", "ACCESO_AFIP", "ACCESO_VISOR_CLIENTE",
+                        "ACCESO_MERCADOPAGO_QR", "ACCESO_SOPORTE"
+                    })
                 };
                 return true;
 #else
@@ -216,19 +215,41 @@ namespace SchettiniGestion
             return true;
         }
 
-        private static readonly HashSet<string> ModulosImplicitos = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        /// <summary>Módulos que indican licencia «completa» anterior a extras monetizables (no quitar funciones).</summary>
+        private static readonly string[] MarcadoresLicenciaLegacy = new[]
         {
-            "ACCESO_USUARIOS",
-            "ACCESO_PERMISOS",
-            "ACCESO_CONFIGURACION"
+            "ACCESO_LISTASPRECIOS", "ACCESO_PRECIOS", "ACCESO_PRESUPUESTOS",
+            "ACCESO_COMPRAS", "ACCESO_PROVEEDORES", "ACCESO_CUENTASCORRIENTES"
         };
+
+
+        private static HashSet<string> ObtenerModulosImplicitos()
+        {
+            return new HashSet<string>(ModulosCatalog.ObtenerImplicitos(), StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Licencias emitidas antes del esquema Lite/Pro conservan todos los extras.</summary>
+        public static bool EsLicenciaLegacyCompleta()
+        {
+            if (_licenciaActual == null)
+                CargarLicencia();
+            if (_licenciaActual?.ModulosPermitidos == null)
+                return false;
+
+            foreach (var marcador in MarcadoresLicenciaLegacy)
+            {
+                if (_licenciaActual.ModulosPermitidos.Contains(marcador))
+                    return true;
+            }
+            return false;
+        }
 
         public static bool IsModuleEnabled(string moduleName)
         {
             if (string.IsNullOrWhiteSpace(moduleName))
                 return false;
             string mod = moduleName.ToUpperInvariant();
-            if (ModulosImplicitos.Contains(mod))
+            if (ObtenerModulosImplicitos().Contains(mod))
                 return true;
 
             if (_licenciaActual == null)
@@ -237,6 +258,25 @@ namespace SchettiniGestion
                 return false;
             return _licenciaActual.ModulosPermitidos.Contains(mod);
         }
+
+        /// <summary>Extras monetizables (RED, AFIP, visor, MP QR, soporte). Respeta licencias legacy.</summary>
+        public static bool IsExtraEnabled(string extraCode)
+        {
+            if (string.IsNullOrWhiteSpace(extraCode))
+                return false;
+
+            string mod = extraCode.ToUpperInvariant();
+            if (IsModuleEnabled(mod))
+                return true;
+
+            return EsLicenciaLegacyCompleta();
+        }
+
+        public static bool TieneConexionRed() => IsExtraEnabled("ACCESO_RED");
+        public static bool TieneAfip() => IsExtraEnabled("ACCESO_AFIP");
+        public static bool TieneVisorCliente() => IsExtraEnabled("ACCESO_VISOR_CLIENTE");
+        public static bool TieneMercadoPagoQr() => IsExtraEnabled("ACCESO_MERCADOPAGO_QR");
+        public static bool TieneSoporte() => IsExtraEnabled("ACCESO_SOPORTE");
 
         public static string ObtenerFechaVencimiento()
         {

@@ -59,8 +59,8 @@
                 Padding="10">
             <Calendar x:Name="calInterno"
                       SelectedDatesChanged="calInterno_SelectedDatesChanged"
-                      MinWidth="400"
-                      MinHeight="380"
+                      MinWidth="300"
+                      MinHeight="300"
                       FontSize="17"
                       Background="White"
                       Foreground="#1A1A1A"

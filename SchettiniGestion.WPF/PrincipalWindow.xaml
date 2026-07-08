@@ -5,14 +5,15 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="SCHPOS · Versión Lite"
-        MinWidth="880"
-        MinHeight="560"
+        MinWidth="960"
+        MinHeight="600"
         Height="768"
         Width="1280"
         WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource ModuleBackgroundBrush}"
         Loaded="Window_Loaded"
+        SizeChanged="Window_SizeChanged"
         Closing="Window_Closing">
 
     <Window.Resources>
@@ -84,7 +85,7 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition x:Name="colMenuLateral" Width="280" MinWidth="72" MaxWidth="340"/>
+            <ColumnDefinition x:Name="colMenuLateral" Width="260" MinWidth="72" MaxWidth="300"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -195,7 +196,7 @@
                             Style="{StaticResource LiteDangerOutlineButton}"
                             Margin="0,4,0,0"
                             Click="btnSalirSistema_Click"/>
-                    <TextBlock x:Name="txtVersionFooter" Text="v2.0.6"
+                    <TextBlock x:Name="txtVersionFooter" Text="v2.0.8"
                                HorizontalAlignment="Center"
                                Margin="0,12,0,0"
                                Foreground="{DynamicResource TextSecondary}"
@@ -315,12 +316,20 @@
                 </Grid>
             </Border>
 
-            <Border Grid.Row="1"
+            <Border x:Name="bdrContenidoPrincipal"
+                    Grid.Row="1"
                     Background="{DynamicResource ModuleBackgroundBrush}"
-                    Padding="12,12,16,16">
-                <ContentControl x:Name="mainContentArea"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Stretch"/>
+                    Padding="8,8,10,10"
+                    ClipToBounds="True">
+                <Viewbox x:Name="viewboxContenido"
+                         Stretch="Uniform"
+                         StretchDirection="DownOnly">
+                    <Grid Width="1280" Height="700">
+                        <ContentControl x:Name="mainContentArea"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"/>
+                    </Grid>
+                </Viewbox>
             </Border>
         </Grid>
     </Grid>

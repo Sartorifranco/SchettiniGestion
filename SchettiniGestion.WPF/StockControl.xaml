@@ -362,7 +362,7 @@
                                 <TextBlock Text="PRODUCTO (Cód/Nombre)" Style="{StaticResource LabelStyle}"/>
                                 <TextBox x:Name="txtBuscarProducto" Style="{StaticResource ModernTextBox}" TextChanged="txtBuscarProducto_TextChanged" PreviewKeyDown="txtBuscar_PreviewKeyDown" LostFocus="txtBuscar_LostFocus"/>
                                 <Popup x:Name="popupProducto" PlacementTarget="{Binding ElementName=txtBuscarProducto}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True">
-                                    <Border Background="{DynamicResource ComboBoxDropDownBackground}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="6" MaxHeight="200" MinWidth="300" Padding="2">
+                                    <Border Background="{DynamicResource ComboBoxDropDownBackground}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="6" MaxHeight="200" MinWidth="240" Padding="2">
                                         <ListBox x:Name="lstSugerenciasProducto" ItemsSource="{Binding}" DisplayMemberPath="Descripcion"
                                                  Style="{StaticResource TouchSuggestionListBoxStyle}"
                                                  MouseUp="lstSugerenciasProducto_MouseUp" PreviewKeyDown="lstSugerencias_PreviewKeyDown"/>

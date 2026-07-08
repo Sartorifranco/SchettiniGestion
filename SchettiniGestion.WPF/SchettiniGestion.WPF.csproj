@@ -232,6 +232,9 @@
     <Compile Include="AppIconHelper.cs" />
     <Compile Include="SvgLogoHelper.cs" />
     <Compile Include="ThemeManager.cs" />
+    <Compile Include="UiScaleHelper.cs" />
+    <Compile Include="ResponsiveWindowService.cs" />
+    <Compile Include="ResponsiveModuleService.cs" />
     <Compile Include="TouchDatePickerHelper.cs" />
     <Compile Include="TouchDateField.xaml.cs">
       <DependentUpon>TouchDateField.xaml</DependentUpon>
@@ -682,6 +685,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <Content Include="..\SchettiniGestion\ModulosCatalog.json" Link="ModulosCatalog.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LicenseGenerator\LicenseGenerator.csproj">

@@ -9,7 +9,7 @@
 
     <Grid Margin="20">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="3.5*" MinWidth="300" MaxWidth="450"/>
+            <ColumnDefinition Width="3.5*" MinWidth="220" MaxWidth="420"/>
             <ColumnDefinition Width="20"/>
             <ColumnDefinition Width="6.5*"/>
         </Grid.ColumnDefinitions>

@@ -31,6 +31,8 @@ namespace SchettiniGestion.WPF
             AppCulture.Initialize();
             AppIconHelper.ApplyToAllWindows();
             ThemeManager.LoadSavedTheme();
+            ResponsiveWindowService.Initialize();
+            ResponsiveModuleService.Initialize();
 
             // Registrar teclado virtual inteligente (responde a cualquier TextBox/PasswordBox).
             KeyboardService.Initialize();
@@ -87,9 +89,32 @@ namespace SchettiniGestion.WPF
                 }
             }
 
+            AdvertirConexionRedSinLicencia();
+
             var login = new LoginWindow();
             MainWindow = login;
             login.Show();
+        }
+
+        private static void AdvertirConexionRedSinLicencia()
+        {
+            try
+            {
+                string cs = DatabaseService.ConnectionString ?? "";
+                if (!EsConexionPersonalizada(cs))
+                    return;
+                if (LicenseManager.TieneConexionRed())
+                    return;
+
+                MessageBox.Show(
+                    "Este equipo está configurado para usar una base de datos en red, " +
+                    "pero la licencia activa no incluye el extra «Conexión en RED».\n\n" +
+                    "Solicite la habilitación al proveedor o use LocalDB (una sola PC) desde Configuración.",
+                    "Conexión en red no habilitada",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+            catch { }
         }
 
         private static bool EsModoBootstrap(string[] args)

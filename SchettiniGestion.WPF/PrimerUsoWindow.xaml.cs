@@ -43,6 +43,15 @@ namespace SchettiniGestion.WPF
             });
         }
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            bool redOk = LicenseManager.ValidarLicencia() && LicenseManager.TieneConexionRed();
+            if (rbServidor != null) rbServidor.Visibility = redOk ? Visibility.Visible : Visibility.Collapsed;
+            if (rbCliente != null) rbCliente.Visibility = redOk ? Visibility.Visible : Visibility.Collapsed;
+            if (txtNotaConexionRed != null)
+                txtNotaConexionRed.Visibility = redOk ? Visibility.Collapsed : Visibility.Visible;
+        }
+
         private void Header_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed) DragMove();

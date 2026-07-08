@@ -36,33 +36,7 @@ namespace AdminLicencias.Models
 
         public int DiasRestantes => (int)(FechaVencimiento - DateTime.Today).TotalDays;
 
-        public string ModulosResumen
-        {
-            get
-            {
-                var nombres = new System.Collections.Generic.Dictionary<string, string>
-                {
-                    ["ACCESO_FACTURACION"]       = "Facturación",
-                    ["ACCESO_VENTAS"]            = "Ventas",
-                    ["ACCESO_PRODUCTOS"]         = "Productos",
-                    ["ACCESO_STOCK"]             = "Stock",
-                    ["ACCESO_CLIENTES"]          = "Clientes",
-                    ["ACCESO_PROVEEDORES"]       = "Proveedores",
-                    ["ACCESO_COMPRAS"]           = "Compras",
-                    ["ACCESO_CAJA"]              = "Caja",
-                    ["ACCESO_PRESUPUESTOS"]      = "Presupuestos",
-                    ["ACCESO_PRECIOS"]           = "Precios",
-                    ["ACCESO_LISTASPRECIOS"]     = "Listas",
-                    ["ACCESO_CUENTASCORRIENTES"] = "Cta.Cte.",
-                    ["ACCESO_USUARIOS"]          = "Usuarios",
-                    ["ACCESO_PERMISOS"]          = "Permisos",
-                    ["ACCESO_CONFIGURACION"]     = "Configuración",
-                };
-                var lista = new List<string>();
-                foreach (var m in Modulos)
-                    lista.Add(nombres.TryGetValue(m, out var n) ? n : m);
-                return string.Join(", ", lista);
-            }
-        }
+        public string ModulosResumen =>
+            SchettiniGestion.ModulosCatalog.ObtenerResumenModulos(Modulos);
     }
 }

@@ -65,9 +65,11 @@ namespace SchettiniGestion.WPF
                 DatabaseService.CargarSesionUsuario(SesionUsuario.NombreUsuario);
 
             AplicarPermisosLite();
+            AplicarExtrasLicencia();
             SincronizarModoPantallaDesdeBase();
             ActualizarBtnTeclado();
             InicializarMenuLateral();
+            AplicarLayoutResponsivoVentana();
 
             // Pantalla de bienvenida por defecto al abrir
             try { mainContentArea.Content = new InicioControl(); }
@@ -133,6 +135,26 @@ namespace SchettiniGestion.WPF
                 return;
 
             bool modoDosPantallas = cmbModoPantalla.SelectedIndex == 1;
+            if (modoDosPantallas && !LicenseManager.TieneVisorCliente())
+            {
+                _sincronizandoModoPantalla = true;
+                try
+                {
+                    cmbModoPantalla.SelectedIndex = 0;
+                }
+                finally
+                {
+                    _sincronizandoModoPantalla = false;
+                }
+                MessageBox.Show(
+                    "La pantalla cliente (segundo monitor) no está incluida en su licencia.\n\n" +
+                    "Solicite el extra «Pantalla cliente» para habilitar el visor.",
+                    "Extra no habilitado",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
             if (!DatabaseService.ActualizarUsaVisorCliente(modoDosPantallas))
                 return;
 
@@ -146,6 +168,30 @@ namespace SchettiniGestion.WPF
                     "Pantalla cliente",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
+            }
+        }
+
+        private void AplicarExtrasLicencia()
+        {
+            if (cmbModoPantalla == null) return;
+
+            bool visorOk = LicenseManager.TieneVisorCliente();
+            if (cmbModoPantalla.Items.Count > 1 && cmbModoPantalla.Items[1] is ComboBoxItem itemDosPantallas)
+                itemDosPantallas.Visibility = visorOk ? Visibility.Visible : Visibility.Collapsed;
+
+            if (!visorOk && cmbModoPantalla.SelectedIndex == 1)
+            {
+                _sincronizandoModoPantalla = true;
+                try
+                {
+                    cmbModoPantalla.SelectedIndex = 0;
+                    DatabaseService.ActualizarUsaVisorCliente(false);
+                    CustomerScreenService.Cerrar();
+                }
+                finally
+                {
+                    _sincronizandoModoPantalla = false;
+                }
             }
         }
 
@@ -428,11 +474,27 @@ namespace SchettiniGestion.WPF
             AplicarMenuColapsado(!_menuColapsado, persistir: true);
         }
 
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            AplicarLayoutResponsivoVentana();
+        }
+
+        private void AplicarLayoutResponsivoVentana()
+        {
+            if (UiScaleHelper.IsCompactWidth(ActualWidth) && !_menuColapsado)
+                AplicarMenuColapsado(true, persistir: false);
+            else if (UiScaleHelper.IsSmallScreen() && !_menuColapsado)
+                AplicarMenuColapsado(true, persistir: false);
+
+            if (bdrContenidoPrincipal != null)
+                bdrContenidoPrincipal.Padding = UiScaleHelper.ModulePadding(UiScaleHelper.IsCompactWidth(ActualWidth));
+        }
+
         private void AplicarMenuColapsado(bool colapsado, bool persistir)
         {
             _menuColapsado = colapsado;
             if (colMenuLateral != null)
-                colMenuLateral.Width = colapsado ? new GridLength(72) : new GridLength(280);
+                colMenuLateral.Width = colapsado ? new GridLength(72) : new GridLength(260);
 
             if (btnToggleMenuLateral != null)
                 btnToggleMenuLateral.Content = colapsado ? "▶" : "◀";

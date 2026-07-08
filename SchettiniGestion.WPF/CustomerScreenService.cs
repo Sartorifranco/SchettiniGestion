@@ -16,6 +16,9 @@ namespace SchettiniGestion.WPF
 
         private static bool VisorEstaHabilitado()
         {
+            if (!LicenseManager.TieneVisorCliente())
+                return false;
+
             try
             {
                 DataRow config = DatabaseService.GetConfiguracion();

@@ -201,6 +201,11 @@ namespace SchettiniGestion
         public const string PERMISO_CUENTASCORRIENTES = "ACCESO_CUENTASCORRIENTES";
         public const string PERMISO_LISTASPRECIOS     = "ACCESO_LISTASPRECIOS";
         public const string PERMISO_CONFIGURACION     = "ACCESO_CONFIGURACION";
+        public const string PERMISO_RED               = "ACCESO_RED";
+        public const string PERMISO_AFIP              = "ACCESO_AFIP";
+        public const string PERMISO_VISOR_CLIENTE     = "ACCESO_VISOR_CLIENTE";
+        public const string PERMISO_MERCADOPAGO_QR    = "ACCESO_MERCADOPAGO_QR";
+        public const string PERMISO_SOPORTE           = "ACCESO_SOPORTE";
 
         private static void NotificarError(string mensaje)
         {
@@ -1776,13 +1781,7 @@ WHERE ProductoID=@pid", c))
         /// <summary>Nombres canónicos de permisos definidos en constantes PERMISO_*.</summary>
         public static List<string> ObtenerNombresPermisosCatalogo()
         {
-            return typeof(DatabaseService)
-                .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-                .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string) && f.Name.StartsWith("PERMISO_", StringComparison.Ordinal))
-                .Select(f => f.GetRawConstantValue() as string)
-                .Where(v => !string.IsNullOrWhiteSpace(v))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            return ModulosCatalog.ObtenerTodosCodigos();
         }
 
         public static HashSet<string> GetPermisosNombresPorRol(int rolId)

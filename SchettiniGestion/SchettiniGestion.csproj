@@ -208,6 +208,7 @@
     <Compile Include="DatabaseService.Dashboard.cs" />
     <Compile Include="LicenseFileHelper.cs" />
     <Compile Include="LicenseManager.cs" />
+    <Compile Include="ModulosCatalog.cs" />
     <Compile Include="PasswordHasher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SesionUsuario.cs" />
@@ -215,6 +216,9 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+    <Content Include="ModulosCatalog.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

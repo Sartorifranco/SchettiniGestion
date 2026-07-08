@@ -7,7 +7,8 @@
         ResizeMode="NoResize"
         Background="Transparent"
         WindowStyle="None"
-        AllowsTransparency="True">
+        AllowsTransparency="True"
+        Loaded="Window_Loaded">
 
     <Window.Resources>
         <!-- Tarjeta de modo con efecto seleccionado -->
@@ -90,7 +91,7 @@
                     </RadioButton>
 
                     <!-- Tarjeta: Esta PC es el Servidor -->
-                    <RadioButton x:Name="rbServidor" Style="{StaticResource ModeCard}" Checked="rbModo_Checked">
+                    <RadioButton x:Name="rbServidor" Style="{StaticResource ModeCard}" Checked="rbModo_Checked" Visibility="Collapsed">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="44"/>
@@ -106,7 +107,7 @@
                     </RadioButton>
 
                     <!-- Tarjeta: Conectarme a servidor -->
-                    <RadioButton x:Name="rbCliente" Style="{StaticResource ModeCard}" Checked="rbModo_Checked">
+                    <RadioButton x:Name="rbCliente" Style="{StaticResource ModeCard}" Checked="rbModo_Checked" Visibility="Collapsed">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="44"/>
@@ -119,6 +120,10 @@
                             </StackPanel>
                         </Grid>
                     </RadioButton>
+
+                    <TextBlock x:Name="txtNotaConexionRed" TextWrapping="Wrap" FontSize="11"
+                               Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,12"
+                               Text="La conexión en red (servidor + varias PCs) requiere activar la licencia con el extra «Conexión en RED». Luego podés configurarla en Configuración › Red y Servidor."/>
 
                     <!-- Panel: Solo PC / Servidor (Express local) -->
                     <StackPanel x:Name="panelExpress" Visibility="Collapsed" Margin="0,4,0,0">

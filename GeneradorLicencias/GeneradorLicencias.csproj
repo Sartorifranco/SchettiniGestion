@@ -11,4 +11,11 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\SchettiniGestion\ModulosCatalog.cs" Link="ModulosCatalog.cs" />
+    <Content Include="..\SchettiniGestion\ModulosCatalog.json" Link="ModulosCatalog.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

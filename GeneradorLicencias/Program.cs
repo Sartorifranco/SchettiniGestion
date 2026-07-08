@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json;
+using SchettiniGestion;
 
 namespace GeneradorLicencias
 {
@@ -48,40 +49,27 @@ namespace GeneradorLicencias
             int dias = int.TryParse(diasStr, out int d) ? d : 30;
             licencia.FechaExpiracion = DateTime.Now.AddDays(dias);
 
-            // 3. Selección de Módulos
-            licencia.ModulosPermitidos = new List<string>();
-            Console.WriteLine("\n--- SELECCIÓN DE MÓDULOS (Responda 's' para Sí) ---");
+            // 4. Módulos (desde ModulosCatalog.json)
+            var seleccionados = new List<string>();
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("¿Aplicar paquete SCHPOS Lite (base) como punto de partida? [S/n]: ");
+            Console.ResetColor();
+            if (Ask("", defaultSi: true))
+            {
+                foreach (var codigo in ModulosCatalog.ObtenerPresetLite())
+                {
+                    if (!seleccionados.Contains(codigo, StringComparer.OrdinalIgnoreCase))
+                        seleccionados.Add(codigo);
+                }
+            }
 
-            if (Ask("1. ¿Facturación (POS)?")) licencia.ModulosPermitidos.Add("ACCESO_FACTURACION");
-            if (Ask("2. ¿Control de Stock y Productos?"))
-            {
-                licencia.ModulosPermitidos.Add("ACCESO_STOCK");
-                licencia.ModulosPermitidos.Add("ACCESO_PRODUCTOS");
-            }
-            if (Ask("3. ¿Caja Diaria?")) licencia.ModulosPermitidos.Add("ACCESO_CAJA");
-            if (Ask("4. ¿Clientes?")) licencia.ModulosPermitidos.Add("ACCESO_CLIENTES");
-            if (Ask("5. ¿Proveedores y Compras?"))
-            {
-                licencia.ModulosPermitidos.Add("ACCESO_PROVEEDORES");
-                licencia.ModulosPermitidos.Add("ACCESO_COMPRAS");
-            }
-            if (Ask("6. ¿Cuentas Corrientes?")) licencia.ModulosPermitidos.Add("ACCESO_CUENTASCORRIENTES");
-            if (Ask("7. ¿Precios y Listas?"))
-            {
-                licencia.ModulosPermitidos.Add("ACCESO_PRECIOS");
-                licencia.ModulosPermitidos.Add("ACCESO_LISTASPRECIOS");
-            }
-            if (Ask("8. ¿Reportes y Ventas?")) licencia.ModulosPermitidos.Add("ACCESO_VENTAS");
-            if (Ask("9. ¿Presupuestos?")) licencia.ModulosPermitidos.Add("ACCESO_PRESUPUESTOS");
+            PreguntarGrupo("PAQUETE LITE (BASE)", ModulosCatalog.GrupoLiteBase, seleccionados);
+            PreguntarGrupo("MÓDULOS ADICIONALES", ModulosCatalog.GrupoModuloAdicional, seleccionados);
+            PreguntarGrupo("EXTRAS — PAGO ÚNICO", ModulosCatalog.GrupoExtraUnico, seleccionados);
+            PreguntarGrupo("ABONOS MENSUALES", ModulosCatalog.GrupoAbonoMensual, seleccionados);
 
-            licencia.ModulosPermitidos.Add("ACCESO_USUARIOS");
-            licencia.ModulosPermitidos.Add("ACCESO_PERMISOS");
-            licencia.ModulosPermitidos.Add("ACCESO_CONFIGURACION");
-
-            if (licencia.ModulosPermitidos.Contains("ACCESO_FACTURACION") && !licencia.ModulosPermitidos.Contains("ACCESO_PRODUCTOS"))
-            {
-                licencia.ModulosPermitidos.Add("ACCESO_PRODUCTOS");
-            }
+            licencia.ModulosPermitidos = ModulosCatalog.ResolverLicencia(seleccionados);
 
             // 4. Generar y Encriptar
             try
@@ -108,11 +96,40 @@ namespace GeneradorLicencias
             Console.ReadLine();
         }
 
-        static bool Ask(string preg)
+        static bool Ask(string preg, bool defaultSi = false)
         {
-            Console.Write(preg + " [s/n]: ");
+            if (!string.IsNullOrWhiteSpace(preg))
+                Console.Write(preg + " [s/n]: ");
+            else
+                Console.Write("[s/n]: ");
+
             string resp = Console.ReadLine();
-            return resp != null && resp.ToLower().StartsWith("s");
+            if (string.IsNullOrWhiteSpace(resp))
+                return defaultSi;
+            return resp.Trim().ToLowerInvariant().StartsWith("s");
+        }
+
+        static void PreguntarGrupo(string titulo, string grupo, List<string> seleccionados)
+        {
+            var mods = ModulosCatalog.ObtenerPorGrupo(grupo);
+            if (mods.Count == 0) return;
+
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("--- " + titulo + " ---");
+            Console.ResetColor();
+
+            int i = 1;
+            foreach (var mod in mods)
+            {
+                string etiqueta = mod.EsAbonoMensual ? mod.Nombre + " (abono)" : mod.Nombre;
+                if (Ask($"{i}. ¿{etiqueta}?"))
+                {
+                    if (!seleccionados.Contains(mod.Codigo, StringComparer.OrdinalIgnoreCase))
+                        seleccionados.Add(mod.Codigo);
+                }
+                i++;
+            }
         }
 
         public static string Encriptar(string plainText)

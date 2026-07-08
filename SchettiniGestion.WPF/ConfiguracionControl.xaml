@@ -128,6 +128,7 @@
 
                         <Separator Background="{DynamicResource BorderColor}" Margin="0,20"/>
 
+                        <StackPanel x:Name="panelSeccionAfip">
                         <TextBlock Text="Facturación Electrónica (AFIP)" FontSize="18" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10" FontWeight="Bold"/>
 
                         <Grid>
@@ -162,9 +163,11 @@
                                           Foreground="{DynamicResource TextPrimary}" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Grid>
+                        </StackPanel>
 
                         <Separator Background="{DynamicResource BorderColor}" Margin="0,20"/>
 
+                        <StackPanel x:Name="panelSeccionMercadoPago">
                         <TextBlock Text="Integración Mercado Pago (QR)" FontSize="18" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10" FontWeight="Bold"/>
 
                         <TextBlock Text="Access Token:" Style="{StaticResource ModuleLabelStyle}"/>
@@ -222,8 +225,10 @@
                                            Text="Use 'Crear' para generar una caja compatible (SCH01)."/>
                             </StackPanel>
                         </Grid>
+                        </StackPanel>
 
                         <Separator Background="{DynamicResource BorderColor}" Margin="0,24,0,16"/>
+                        <StackPanel x:Name="panelSeccionVisorCliente">
                         <TextBlock Text="Pantalla cliente (segundo monitor)" FontSize="18" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6" FontWeight="Bold"/>
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" LineHeight="18"
                                    Margin="0,0,0,16" MaxWidth="900" HorizontalAlignment="Left"
@@ -254,8 +259,9 @@
 
                         <Button x:Name="btnGuardarPromoVisor" Content="💾 Guardar promociones del visor" Click="btnGuardarPromoVisor_Click"
                                 Style="{StaticResource SecondaryButtonStyle}" Padding="16,10" HorizontalAlignment="Left" Margin="0,0,0,8"/>
+                        </StackPanel>
 
-                        <Button x:Name="btnGuardar" Content="💾 GUARDAR DATOS DEL NEGOCIO" 
+                        <Button x:Name="btnGuardar" Content="💾 GUARDAR DATOS DEL NEGOCIO"
                                 Click="btnGuardar_Click"
                                 Background="#00A86B" Foreground="White" FontWeight="Bold" Height="50" Margin="0,30,0,0">
                             <Button.Resources>
@@ -268,7 +274,7 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="📡 Red y Servidor">
+            <TabItem x:Name="tabItemRedServidor" Header="📡 Red y Servidor">
                 <Grid Margin="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

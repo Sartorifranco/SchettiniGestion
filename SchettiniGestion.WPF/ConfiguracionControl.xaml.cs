@@ -32,7 +32,25 @@ namespace SchettiniGestion.WPF
             CargarDatosLicencia();
             CargarMediosPago();
             AplicarVisibilidadCredencialesSQL();
+            AplicarVisibilidadSegunLicencia();
             CargarImpresoras();
+        }
+
+        private void AplicarVisibilidadSegunLicencia()
+        {
+            bool afip = LicenseManager.TieneAfip();
+            bool mp = LicenseManager.TieneMercadoPagoQr();
+            bool visor = LicenseManager.TieneVisorCliente();
+            bool red = LicenseManager.TieneConexionRed();
+
+            if (panelSeccionAfip != null)
+                panelSeccionAfip.Visibility = afip ? Visibility.Visible : Visibility.Collapsed;
+            if (panelSeccionMercadoPago != null)
+                panelSeccionMercadoPago.Visibility = mp ? Visibility.Visible : Visibility.Collapsed;
+            if (panelSeccionVisorCliente != null)
+                panelSeccionVisorCliente.Visibility = visor ? Visibility.Visible : Visibility.Collapsed;
+            if (tabItemRedServidor != null)
+                tabItemRedServidor.Visibility = red ? Visibility.Visible : Visibility.Collapsed;
         }
 
         // --- LOGO ---
@@ -463,6 +481,15 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardarConexion_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenseManager.TieneConexionRed())
+            {
+                ModernMessageBox.Show(
+                    "La conexión en red no está incluida en su licencia.\n\n" +
+                    "Solicite el extra «Conexión en RED» para usar SQL Server en red o varias PCs.",
+                    "Extra no habilitado", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
             if (SesionUsuario.RolID != 1)
             {
                 ModernMessageBox.Show("Solo un administrador puede cambiar la conexión a la base de datos.", "Acceso denegado",

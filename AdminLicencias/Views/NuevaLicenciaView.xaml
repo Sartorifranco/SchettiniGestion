@@ -62,24 +62,18 @@
                 <!-- Módulos -->
                 <TextBlock Text="Módulos habilitados" Style="{StaticResource FieldLabel}" FontWeight="SemiBold"
                            Margin="0,4,0,10"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <Button Content="📦 Aplicar paquete Lite" Style="{StaticResource BtnSecondary}"
+                            Click="PresetLite_Click" Margin="0,0,10,0" Padding="12,6"/>
+                    <Button Content="Limpiar selección" Style="{StaticResource BtnSecondary}"
+                            Click="LimpiarModulos_Click" Padding="12,6"/>
+                </StackPanel>
                 <Border Background="{StaticResource SurfaceMidBrush}" CornerRadius="10" Padding="16">
-                    <UniformGrid Columns="2" x:Name="gridModulos">
-                        <CheckBox x:Name="chkFacturacion"   Content="Facturación / POS"   Tag="ACCESO_FACTURACION"    Margin="0,5"/>
-                        <CheckBox x:Name="chkProductos"     Content="Productos"             Tag="ACCESO_PRODUCTOS"      Margin="0,5"/>
-                        <CheckBox x:Name="chkStock"         Content="Stock"                 Tag="ACCESO_STOCK"          Margin="0,5"/>
-                        <CheckBox x:Name="chkVentas"        Content="Ventas (historial)"    Tag="ACCESO_VENTAS"         Margin="0,5"/>
-                        <CheckBox x:Name="chkClientes"      Content="Clientes"              Tag="ACCESO_CLIENTES"       Margin="0,5"/>
-                        <CheckBox x:Name="chkProveedores"   Content="Proveedores"           Tag="ACCESO_PROVEEDORES"    Margin="0,5"/>
-                        <CheckBox x:Name="chkCompras"       Content="Compras"               Tag="ACCESO_COMPRAS"        Margin="0,5"/>
-                        <CheckBox x:Name="chkCaja"          Content="Caja / Tesorería"      Tag="ACCESO_CAJA"           Margin="0,5"/>
-                        <CheckBox x:Name="chkPresupuestos"  Content="Presupuestos"          Tag="ACCESO_PRESUPUESTOS"   Margin="0,5"/>
-                        <CheckBox x:Name="chkPrecios"       Content="Precios"               Tag="ACCESO_PRECIOS"        Margin="0,5"/>
-                        <CheckBox x:Name="chkListas"        Content="Listas de precios"     Tag="ACCESO_LISTASPRECIOS"  Margin="0,5"/>
-                        <CheckBox x:Name="chkCuentas"       Content="Cuentas corrientes"    Tag="ACCESO_CUENTASCORRIENTES" Margin="0,5"/>
-                    </UniformGrid>
+                    <StackPanel x:Name="panelModulosLicencia"/>
                 </Border>
-                <TextBlock Text="Siempre incluidos: Usuarios, Permisos y Configuración del sistema."
-                           FontSize="10" Foreground="{StaticResource TextSecondary}" Margin="0,6,0,14"/>
+                <TextBlock x:Name="txtModulosImplicitos"
+                           FontSize="10" Foreground="{StaticResource TextSecondary}" Margin="0,6,0,14"
+                           TextWrapping="Wrap"/>
 
                 <!-- Venta -->
                 <Separator/>

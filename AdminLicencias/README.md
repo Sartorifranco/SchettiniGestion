@@ -26,6 +26,23 @@ Requisito en la PC destino: **.NET Framework 4.7.2+** (incluido en Windows 10/11
 Los datos (clientes e historial) se guardan en `%AppData%\SCHPOSAdmin\datos.json`.  
 Desde **Configuración** podés apuntar a una carpeta compartida (OneDrive, red).
 
+## Catálogo de módulos (automático)
+
+El listado de módulos para tildar al generar licencias sale de un solo archivo:
+
+`SchettiniGestion/ModulosCatalog.json`
+
+Al compilar **AdminLicencias** o **SCHPOS**, ese JSON se copia junto al `.exe`.  
+**No hace falta editar checkboxes a mano** en el licenciador.
+
+### Agregar un módulo nuevo
+
+1. Editá `SchettiniGestion/ModulosCatalog.json` (entrada con `codigo`, `nombre`, `licenciable`, `orden`, etc.).
+2. En SCHPOS: agregá `PERMISO_XXX` en `DatabaseService.cs` y el botón/menú con `PuedeModulo(...)`.
+3. Compilá AdminLicencias y/o el instalador SCHPOS.
+
+El licenciador mostrará el nuevo checkbox automáticamente.
+
 ## Alternativa consola
 
 Proyecto `LicenseGenerator/` — generador por consola, misma clave AES.

@@ -91,6 +91,35 @@ namespace SchettiniGestion.WPF
 
             ActualizarUiSegunTipoComprobante();
             btnVistaCatalogoLista_Click(null, null);
+            AplicarLayoutResponsivo();
+        }
+
+        private void FacturacionControl_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            AplicarLayoutResponsivo();
+        }
+
+        private void AplicarLayoutResponsivo()
+        {
+            if (!IsLoaded || bdrResumenVenta == null)
+                return;
+
+            double ancho = ActualWidth;
+            double altoPanel = bdrResumenVenta.ActualHeight;
+            bool compacto = UiScaleHelper.IsCompactWidth(ancho) || UiScaleHelper.IsCompactHeight(altoPanel);
+            bool muyCompacto = UiScaleHelper.IsVeryCompactWidth(ancho) || altoPanel < 520;
+
+            if (gridRoot != null)
+                gridRoot.Margin = UiScaleHelper.ContentMargin(compacto);
+
+            if (txtAyudaResumen != null)
+                txtAyudaResumen.Visibility = muyCompacto ? Visibility.Collapsed : Visibility.Visible;
+
+            if (viewboxTotal != null)
+                viewboxTotal.MaxHeight = muyCompacto ? 30 : (compacto ? 36 : 44);
+
+            if (btnAyudaAtajos != null)
+                btnAyudaAtajos.Visibility = muyCompacto ? Visibility.Collapsed : Visibility.Visible;
         }
 
         private void CargarCatalogo()
@@ -312,6 +341,25 @@ namespace SchettiniGestion.WPF
 
         private void cmbTipoComprobante_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (cmbTipoComprobante == null) return;
+
+            string tipo = ObtenerTipoComprobanteSeleccionado();
+            if (tipo == "Factura" && !LicenseManager.TieneAfip())
+            {
+                for (int i = 0; i < cmbTipoComprobante.Items.Count; i++)
+                {
+                    if ((cmbTipoComprobante.Items[i] as ComboBoxItem)?.Content?.ToString() == "Ticket")
+                    {
+                        cmbTipoComprobante.SelectedIndex = i;
+                        CustomMessageBox.Show(
+                            "La factura electrónica AFIP no está incluida en su licencia.\n\n" +
+                            "Solicite el extra «AFIP / Factura electrónica» o use «Ticket» para comprobante interno.",
+                            "Extra no habilitado", MessageBoxButton.OK, MessageBoxImage.Information);
+                        break;
+                    }
+                }
+            }
+
             ActualizarUiSegunTipoComprobante();
         }
 
@@ -352,7 +400,10 @@ namespace SchettiniGestion.WPF
                 pnlCondicionPago.Visibility = sinCobro ? Visibility.Collapsed : Visibility.Visible;
 
             if (btnPagoQR != null)
-                btnPagoQR.Visibility = sinCobro ? Visibility.Collapsed : Visibility.Visible;
+            {
+                bool mpOk = LicenseManager.TieneMercadoPagoQr();
+                btnPagoQR.Visibility = (sinCobro || !mpOk) ? Visibility.Collapsed : Visibility.Visible;
+            }
 
             if (sinCobro)
             {
@@ -480,6 +531,15 @@ namespace SchettiniGestion.WPF
         // --- MERCADO PAGO QR ---
         private async void btnPagoQR_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenseManager.TieneMercadoPagoQr())
+            {
+                CustomMessageBox.Show(
+                    "Mercado Pago QR no está incluido en su licencia.\n\n" +
+                    "Solicite el abono «Mercado Pago QR» para cobrar con código QR.",
+                    "Abono no habilitado", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
             if (_esperandoPagoMP)
             {
                 if (CustomMessageBox.Show("¿Cancelar el cobro con QR?", "Cancelar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
@@ -718,7 +778,17 @@ namespace SchettiniGestion.WPF
             bool cobroConfirmado = false;
             try
             {
-                bool afipConfigurado = AfipEstaConfigurado(config);
+                bool afipLicenciado = LicenseManager.TieneAfip();
+                bool afipConfigurado = AfipEstaConfigurado(config) && afipLicenciado;
+                if (tipoCompTexto == "Factura" && !afipLicenciado)
+                {
+                    CustomMessageBox.Show(
+                        "La factura electrónica AFIP no está incluida en su licencia.\n\n" +
+                        "Use «Ticket» para comprobante interno o solicite el extra AFIP.",
+                        "Extra no habilitado", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    btnGuardarFactura.IsEnabled = true;
+                    return;
+                }
                 if (tipoCompTexto == "Factura" && !afipConfigurado)
                 {
                     if (CustomMessageBox.Show(

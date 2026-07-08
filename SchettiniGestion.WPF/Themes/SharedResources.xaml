@@ -508,8 +508,8 @@
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="8"/>
-        <Setter Property="MinWidth" Value="380"/>
-        <Setter Property="MinHeight" Value="360"/>
+        <Setter Property="MinWidth" Value="300"/>
+        <Setter Property="MinHeight" Value="300"/>
         <Setter Property="FontSize" Value="16"/>
         <Setter Property="CalendarDayButtonStyle" Value="{StaticResource TouchCalendarDayButtonStyle}"/>
         <Setter Property="CalendarButtonStyle" Value="{StaticResource TouchCalendarButtonStyle}"/>
@@ -622,8 +622,8 @@
                                     SnapsToDevicePixels="True">
                                 <Calendar x:Name="PART_Calendar"
                                           Style="{StaticResource TouchCalendarStyle}"
-                                          MinWidth="400"
-                                          MinHeight="380"/>
+                                          MinWidth="300"
+                                          MinHeight="300"/>
                             </Border>
                         </Popup>
                     </Grid>

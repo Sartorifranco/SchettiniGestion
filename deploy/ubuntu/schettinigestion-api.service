@@ -1,0 +1,39 @@
+[Unit]
+Description=SCHPOS License API (AdminLicencias.Api)
+Documentation=https://github.com/Sartorifranco/SchettiniGestion
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+
+WorkingDirectory=/var/www/SchettiniGestion/publish
+ExecStart=/usr/bin/dotnet /var/www/SchettiniGestion/publish/AdminLicencias.Api.dll
+
+# Variables sensibles (API keys, rutas) — ver /etc/schpos/license-api.env
+EnvironmentFile=-/etc/schpos/license-api.env
+
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5080
+
+# Directorio de datos de licencias (historial JSON)
+Environment=SCHPOS_LICENSE_DATA_PATH=/var/lib/schpos-licenses/datos.json
+
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=schettinigestion-api
+
+# Endurecimiento básico
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/schpos-licenses
+ReadOnlyPaths=/var/www/SchettiniGestion/publish
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,150 @@
+using AdminLicencias.Api.Contracts;
+using AdminLicencias.Api.Middleware;
+using AdminLicencias.Api.Security;
+using AdminLicencias.Core;
+using AdminLicencias.Core.Catalog;
+using AdminLicencias.Core.Models;
+using AdminLicencias.Core.Options;
+using AdminLicencias.Core.Services;
+using Microsoft.AspNetCore.HttpOverrides;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+builder.Services.Configure<LicensingOptions>(builder.Configuration.GetSection(LicensingOptions.SectionName));
+builder.Services.Configure<ApiSecurityOptions>(builder.Configuration.GetSection(ApiSecurityOptions.SectionName));
+builder.Services.AddAdminLicenciasCore();
+
+var app = builder.Build();
+
+app.UseForwardedHeaders();
+app.UseMiddleware<ApiKeyMiddleware>();
+
+app.MapGet("/", () => Results.Ok(new
+{
+    servicio = "SCHPOS License API",
+    version = "1.0",
+    endpoints = new[] { "POST /api/licenses/generate", "POST /api/licenses/validate", "GET /api/licenses/history" }
+}));
+
+var licenses = app.MapGroup("/api/licenses");
+
+licenses.MapPost("/generate", (
+    GenerateLicenseRequest req,
+    LicenseService licenseService,
+    DataStore dataStore) =>
+{
+    if (string.IsNullOrWhiteSpace(req.HardwareId))
+        return Results.BadRequest(new { error = "HardwareId es obligatorio." });
+
+    if (req.FechaVencimiento.Date <= DateTime.Today)
+        return Results.BadRequest(new { error = "FechaVencimiento debe ser futura." });
+
+    Cliente? cliente = null;
+    if (req.ClienteId.HasValue)
+        cliente = dataStore.ObtenerCliente(req.ClienteId.Value);
+
+    if (cliente == null && !string.IsNullOrWhiteSpace(req.Cuit))
+        cliente = dataStore.BuscarClientePorCuit(req.Cuit);
+
+    if (cliente == null)
+    {
+        if (string.IsNullOrWhiteSpace(req.Cuit) || string.IsNullOrWhiteSpace(req.RazonSocial))
+            return Results.BadRequest(new { error = "Indique ClienteId o bien CUIT + RazonSocial." });
+
+        cliente = new Cliente
+        {
+            RazonSocial = req.RazonSocial.Trim(),
+            CUIT = req.Cuit.Trim()
+        };
+        dataStore.GuardarCliente(cliente);
+    }
+
+    string hwid = req.HardwareId.Trim().ToUpperInvariant();
+    var modulos = licenseService.ResolverModulosPorPlan(req.Plan, req.Modulos);
+    string plan = (req.Plan ?? "lite").Trim().ToLowerInvariant();
+
+    string clave;
+    try
+    {
+        clave = licenseService.GenerarClave(cliente.CUIT, hwid, req.FechaVencimiento, modulos);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem("Error al generar la clave: " + ex.Message, statusCode: 500);
+    }
+
+    var licencia = new Licencia
+    {
+        ClienteId = cliente.Id,
+        HWID = hwid,
+        LicenseKey = clave,
+        FechaEmision = DateTime.Today,
+        FechaVencimiento = req.FechaVencimiento.Date,
+        Modulos = modulos,
+        MontoVenta = req.MontoVenta,
+        MetodoPago = req.MetodoPago ?? "Transferencia",
+        VersionSchpos = req.VersionSchpos ?? "2.0.8",
+        EsRenovacion = req.EsRenovacion,
+        Observaciones = req.Observaciones ?? "",
+        Plan = plan
+    };
+
+    if (licencia.EsRenovacion)
+    {
+        var anterior = dataStore.UltimaLicencia(cliente.Id);
+        if (anterior != null)
+            licencia.LicenciaAnteriorId = anterior.Id;
+    }
+
+    dataStore.GuardarLicencia(licencia);
+
+    return Results.Ok(new GenerateLicenseResponse
+    {
+        LicenseKey = clave,
+        LicenciaId = licencia.Id,
+        ClienteId = cliente.Id,
+        Plan = plan,
+        FechaVencimiento = licencia.FechaVencimiento,
+        Modulos = modulos,
+        ModulosResumen = licencia.ModulosResumen
+    });
+});
+
+licenses.MapPost("/validate", (
+    ValidateLicenseRequest req,
+    LicenseService licenseService) =>
+{
+    if (string.IsNullOrWhiteSpace(req.LicenseKey))
+        return Results.BadRequest(new { error = "LicenseKey es obligatorio." });
+
+    if (string.IsNullOrWhiteSpace(req.HardwareId))
+        return Results.BadRequest(new { error = "HardwareId es obligatorio." });
+
+    var result = licenseService.Validar(req.LicenseKey, req.HardwareId);
+
+    return Results.Ok(new ValidateLicenseResponse
+    {
+        Valida = result.Valida,
+        Mensaje = result.Mensaje,
+        Estado = result.Estado,
+        DiasRestantes = result.DiasRestantes,
+        FechaExpiracion = result.Payload?.FechaExpiracion,
+        CuitCliente = result.Payload?.CuitCliente,
+        ModulosPermitidos = result.Payload?.ModulosPermitidos ?? new List<string>()
+    });
+});
+
+licenses.MapGet("/history", (DataStore dataStore) =>
+{
+    ModulosCatalog.EnsureLoaded();
+    return Results.Ok(dataStore.ObtenerHistorial());
+});
+
+app.Run();

@@ -106,6 +106,10 @@
       <HintPath>..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="PdfSharp, Version=1.50.5147.0, Culture=neutral, PublicKeyToken=f94615aa0424f9eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\PDFsharp.1.50.5147\lib\net20\PdfSharp.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="QRCoder, Version=1.7.0.0, Culture=neutral, PublicKeyToken=c4ed5b9ae8358a28, processorArchitecture=MSIL">
       <HintPath>..\packages\QRCoder.1.7.0\lib\net40\QRCoder.dll</HintPath>
       <Private>True</Private>
@@ -240,6 +244,7 @@
       <DependentUpon>TouchDateField.xaml</DependentUpon>
     </Compile>
     <Compile Include="InputWindow.xaml.cs" />
+    <Compile Include="WindowEscapeService.cs" />
     <Compile Include="KeyboardService.cs" />
     <Compile Include="ModernInputWindow.xaml.cs">
       <DependentUpon>ModernInputWindow.xaml</DependentUpon>
@@ -371,6 +376,7 @@
     <Compile Include="PresupuestosControl.xaml.cs">
       <DependentUpon>PresupuestosControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="PdfComprobanteGenerator.cs" />
     <Compile Include="PrintService.cs" />
     <Compile Include="ProductoVarioWindow.xaml.cs">
       <DependentUpon>ProductoVarioWindow.xaml</DependentUpon>

@@ -361,6 +361,8 @@
         <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BorderColor}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="RowHeight" Value="45"/>
+        <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
         <Setter Property="ColumnHeaderStyle">
             <Setter.Value>
                 <Style TargetType="DataGridColumnHeader">
@@ -382,7 +384,7 @@
                         <Setter.Value>
                             <ControlTemplate TargetType="DataGridCell">
                                 <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
-                                    <ContentPresenter VerticalAlignment="Center"/>
+                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Stretch"/>
                                 </Border>
                             </ControlTemplate>
                         </Setter.Value>
@@ -414,7 +416,21 @@
         </Style.Triggers>
     </Style>
 
-    <Style TargetType="DataGrid" x:Key="ModuleDataGridStyle" BasedOn="{StaticResource {x:Type DataGrid}}"/>
+    <Style TargetType="DataGrid" x:Key="ModuleDataGridStyle" BasedOn="{StaticResource {x:Type DataGrid}}">
+        <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+    </Style>
+
+    <Style x:Key="StockCodeCellStyle" TargetType="TextBlock">
+        <Setter Property="Padding" Value="6,0"/>
+        <Setter Property="TextTrimming" Value="None"/>
+        <Setter Property="TextWrapping" Value="NoWrap"/>
+    </Style>
+
+    <Style x:Key="StockNumericCellStyle" TargetType="TextBlock" BasedOn="{StaticResource StockCodeCellStyle}">
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="FontFamily" Value="Consolas"/>
+    </Style>
 
     <Style TargetType="xctk:DecimalUpDown" x:Key="ModuleNumericUpDownStyle">
         <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>

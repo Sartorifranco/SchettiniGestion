@@ -16,9 +16,9 @@ namespace SchettiniGestion.WPF
             string p1 = txtPass.Password;
             string p2 = txtPassConfirm.Password;
 
-            if (string.IsNullOrEmpty(u) || string.IsNullOrEmpty(p1))
+            if (string.IsNullOrEmpty(u) || string.IsNullOrEmpty(p1) || string.IsNullOrWhiteSpace(txtNombrePersonal.Text))
             {
-                MessageBox.Show("Complete todos los campos.");
+                MessageBox.Show("Complete usuario, nombre del personal y contraseña.");
                 return;
             }
 
@@ -29,7 +29,7 @@ namespace SchettiniGestion.WPF
             }
 
             // 1. Guardar Usuario Admin (Rol 1 = Admin)
-            if (DatabaseService.GuardarUsuario(0, u, p1, 1, "Administrador"))
+            if (DatabaseService.GuardarUsuario(0, u, p1, 1, "Administrador", txtNombrePersonal.Text.Trim()))
             {
                 // 2. Darle TODOS los permisos automáticamente
                 var todosLosPermisos = DatabaseService.GetPermisos(); // Necesitas un método que traiga todos los IDs

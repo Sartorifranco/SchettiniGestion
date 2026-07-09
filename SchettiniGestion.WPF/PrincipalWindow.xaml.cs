@@ -17,7 +17,11 @@ namespace SchettiniGestion.WPF
 
         public PrincipalWindow()
         {
-            _themeChangedHandler = (s, e) => Dispatcher.BeginInvoke(new Action(ActualizarBotonTema));
+            _themeChangedHandler = (s, e) => Dispatcher.BeginInvoke(new Action(() =>
+            {
+                ActualizarBotonTema();
+                RefrescarContenidoPorTema();
+            }));
             ThemeManager.ThemeChanged += _themeChangedHandler;
 
             InitializeComponent();
@@ -90,7 +94,7 @@ namespace SchettiniGestion.WPF
         private void ActualizarHeaderUsuario()
         {
             if (txtUsuarioLogueado != null)
-                txtUsuarioLogueado.Text = SesionUsuario.NombreUsuario ?? "Usuario";
+                txtUsuarioLogueado.Text = SesionUsuario.NombreParaRegistro() ?? "Usuario";
             if (txtRolLogueado != null)
                 txtRolLogueado.Text = SesionUsuario.NombreRol != null ? $"{SesionUsuario.NombreRol} · En línea" : "En línea";
         }
@@ -448,6 +452,18 @@ namespace SchettiniGestion.WPF
             catch { }
         }
 
+        private void RefrescarContenidoPorTema()
+        {
+            if (mainContentArea?.Content == null) return;
+            var tipo = mainContentArea.Content.GetType();
+            try
+            {
+                if (Activator.CreateInstance(tipo) is UIElement nuevo)
+                    mainContentArea.Content = nuevo;
+            }
+            catch { /* si no se puede recrear, DynamicResource actualiza solo */ }
+        }
+
         private void InicializarMenuLateral()
         {
             RegistrarTextoNav(btnVentasFacturacion);
@@ -486,15 +502,35 @@ namespace SchettiniGestion.WPF
             else if (UiScaleHelper.IsSmallScreen() && !_menuColapsado)
                 AplicarMenuColapsado(true, persistir: false);
 
+            bool compactoAncho = UiScaleHelper.IsCompactWidth(ActualWidth);
+            bool compactoAlto = UiScaleHelper.IsCompactHeight(ActualHeight);
+
             if (bdrContenidoPrincipal != null)
-                bdrContenidoPrincipal.Padding = UiScaleHelper.ModulePadding(UiScaleHelper.IsCompactWidth(ActualWidth));
+                bdrContenidoPrincipal.Padding = UiScaleHelper.ModulePadding(compactoAncho);
+
+            if (bdrHeaderPrincipal != null)
+                bdrHeaderPrincipal.Padding = UiScaleHelper.HeaderPadding(compactoAlto);
+
+            if (txtBreadcrumbHeader != null)
+                txtBreadcrumbHeader.Visibility = compactoAlto ? Visibility.Collapsed : Visibility.Visible;
+
+            if (rowBreadcrumb != null)
+                rowBreadcrumb.Height = compactoAlto ? new GridLength(0) : GridLength.Auto;
+
+            if (txtRolLogueado != null)
+                txtRolLogueado.Visibility = compactoAlto ? Visibility.Collapsed : Visibility.Visible;
+
+            double alturaBoton = compactoAlto ? 36 : 44;
+            if (btnTema != null) btnTema.MinHeight = alturaBoton;
+            if (btnTeclado != null) btnTeclado.MinHeight = alturaBoton;
+            if (cmbModoPantalla != null) cmbModoPantalla.MinHeight = alturaBoton;
         }
 
         private void AplicarMenuColapsado(bool colapsado, bool persistir)
         {
             _menuColapsado = colapsado;
             if (colMenuLateral != null)
-                colMenuLateral.Width = colapsado ? new GridLength(72) : new GridLength(260);
+                colMenuLateral.Width = colapsado ? new GridLength(72) : new GridLength(290);
 
             if (btnToggleMenuLateral != null)
                 btnToggleMenuLateral.Content = colapsado ? "▶" : "◀";

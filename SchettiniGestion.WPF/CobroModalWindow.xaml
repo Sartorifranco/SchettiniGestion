@@ -185,7 +185,19 @@
                 </Grid>
             </Border>
 
-            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
+            <StackPanel Grid.Row="5">
+                <Button x:Name="btnMercadoPagoQR"
+                        Content="📱 Cobrar con Mercado Pago QR"
+                        Background="#009EE3"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        FontSize="13"
+                        MinHeight="44"
+                        Margin="0,0,0,10"
+                        HorizontalAlignment="Stretch"
+                        Visibility="Collapsed"
+                        Click="btnMercadoPagoQR_Click"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="Cancelar"
                         Style="{StaticResource SecondaryButtonStyle}"
                         Margin="0,0,8,0"
@@ -194,6 +206,7 @@
                         Content="✔ Confirmar Cobro"
                         Style="{StaticResource ButtonStyle}"
                         Click="btnConfirmar_Click"/>
+                </StackPanel>
             </StackPanel>
         </Grid>
     </Border>

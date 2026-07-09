@@ -20,6 +20,17 @@ namespace SchettiniGestion
 
         public static string NombreRol { get; private set; }
 
+        /// <summary>Nombre real del personal (vendedor/cajero) para reportes.</summary>
+        public static string NombrePersonal { get; private set; }
+
+        public static int UsuarioID { get; private set; }
+
+        /// <summary>Nombre a persistir en ventas y movimientos: personal real o login si no hay.</summary>
+        public static string NombreParaRegistro()
+        {
+            return !string.IsNullOrWhiteSpace(NombrePersonal) ? NombrePersonal.Trim() : (NombreUsuario ?? "");
+        }
+
         /// <summary>
         /// La lista de permisos (ej: "ACCESO_USUARIOS", "ACCESO_FACTURACION").
         /// </summary>
@@ -28,12 +39,15 @@ namespace SchettiniGestion
         /// <summary>
         /// Inicia la sesión. Este método es llamado por DatabaseService.
         /// </summary>
-        public static void Iniciar(string nombreUsuario, int rolId, List<string> permisos)
+        public static void Iniciar(string nombreUsuario, int rolId, string nombreRol, int usuarioId, string nombrePersonal, List<string> permisos)
         {
             NombreUsuario = nombreUsuario;
             RolID = rolId;
-            NombreRol = rolId == 1 ? "Administrador" : $"Rol {rolId}";
-            // Usamos un HashSet para búsquedas de permisos ultra-rápidas
+            NombreRol = string.IsNullOrWhiteSpace(nombreRol)
+                ? (rolId == 1 ? "Administrador" : $"Rol {rolId}")
+                : nombreRol;
+            UsuarioID = usuarioId;
+            NombrePersonal = nombrePersonal;
             Permisos = new HashSet<string>(permisos);
         }
 
@@ -62,6 +76,9 @@ namespace SchettiniGestion
         {
             NombreUsuario = null;
             RolID = 0;
+            NombreRol = null;
+            NombrePersonal = null;
+            UsuarioID = 0;
             Permisos?.Clear();
             Permisos = null;
         }

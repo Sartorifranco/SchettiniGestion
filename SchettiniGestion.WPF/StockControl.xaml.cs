@@ -102,9 +102,55 @@ namespace SchettiniGestion.WPF
             cmbTipoMovimiento.SelectedIndex = 0;
 
             LimpiarCampos();
+            AplicarLayoutResponsivo();
 
             // Cargar stock automáticamente al abrir (sin esperar que el usuario busque)
             try { CargarStockGeneral(); } catch { }
+        }
+
+        private void StockControl_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            AplicarLayoutResponsivo();
+        }
+
+        private void AplicarLayoutResponsivo()
+        {
+            if (!IsLoaded) return;
+
+            double ancho = UiScaleHelper.GetViewportWidthForModule(this);
+            double alto = UiScaleHelper.GetViewportHeightForModule(this);
+            bool compacto = UiScaleHelper.IsCompactWidth(ancho) || UiScaleHelper.IsCompactHeight(alto);
+            bool muyCompacto = UiScaleHelper.IsVeryCompactWidth(ancho);
+
+            if (gridRoot != null)
+                gridRoot.Margin = UiScaleHelper.ContentMargin(compacto);
+
+            if (txtTituloStock != null)
+            {
+                txtTituloStock.FontSize = compacto ? 18 : 20;
+                txtTituloStock.Margin = compacto ? new Thickness(0, 0, 0, 4) : new Thickness(0, 0, 0, 8);
+            }
+
+            if (tabMain != null)
+                tabMain.Margin = compacto ? new Thickness(0) : new Thickness(0);
+
+            var visSecundarias = muyCompacto ? Visibility.Collapsed : Visibility.Visible;
+            if (colStockRubro != null) colStockRubro.Visibility = visSecundarias;
+            if (colStockSubRubro != null) colStockSubRubro.Visibility = visSecundarias;
+            if (colStockMarca != null) colStockMarca.Visibility = visSecundarias;
+            if (colStockTalle != null) colStockTalle.Visibility = visSecundarias;
+            if (colStockColor != null) colStockColor.Visibility = visSecundarias;
+
+            if (colDepRubro != null) colDepRubro.Visibility = visSecundarias;
+            if (colDepSubRubro != null) colDepSubRubro.Visibility = visSecundarias;
+            if (colDepProveedor != null) colDepProveedor.Visibility = muyCompacto ? Visibility.Collapsed : Visibility.Visible;
+            if (colDepTalle != null) colDepTalle.Visibility = visSecundarias;
+            if (colDepColor != null) colDepColor.Visibility = visSecundarias;
+
+            if (colResCanal != null) colResCanal.Visibility = muyCompacto ? Visibility.Collapsed : Visibility.Visible;
+            if (colResOrden != null) colResOrden.Visibility = muyCompacto ? Visibility.Collapsed : Visibility.Visible;
+            if (colResTalle != null) colResTalle.Visibility = visSecundarias;
+            if (colResColor != null) colResColor.Visibility = visSecundarias;
         }
 
         private void LimpiarCampos()
@@ -287,11 +333,31 @@ namespace SchettiniGestion.WPF
             try
             {
                 var dt = DatabaseService.GetStockGeneral(txtFiltroGeneral?.Text?.Trim() ?? "");
+                EnriquecerCostoCompraFinal(dt);
                 dgvStockGeneral.ItemsSource = dt.DefaultView;
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Error al cargar stock: " + ex.Message);
+            }
+        }
+
+        private static void EnriquecerCostoCompraFinal(DataTable dt)
+        {
+            if (dt == null) return;
+            if (!dt.Columns.Contains("CostoCompraFinal"))
+                dt.Columns.Add("CostoCompraFinal", typeof(decimal));
+            foreach (DataRow row in dt.Rows)
+            {
+                decimal costo = dt.Columns.Contains("PrecioCosto") && row["PrecioCosto"] != DBNull.Value
+                    ? Convert.ToDecimal(row["PrecioCosto"]) : 0m;
+                decimal imp = dt.Columns.Contains("ImpuestoInterno") && row["ImpuestoInterno"] != DBNull.Value
+                    ? Convert.ToDecimal(row["ImpuestoInterno"]) : 0m;
+                bool conIva = dt.Columns.Contains("CostoIncluyeIva") && row["CostoIncluyeIva"] != DBNull.Value
+                    && Convert.ToBoolean(row["CostoIncluyeIva"]);
+                string iva = dt.Columns.Contains("TipoIVA") ? row["TipoIVA"]?.ToString() ?? "21" : "21";
+                row["CostoCompraFinal"] = DatabaseService.CalcularCostoCompraFinal(
+                    costo, conIva, DatabaseService.ParseIvaPct(iva), imp);
             }
         }
 

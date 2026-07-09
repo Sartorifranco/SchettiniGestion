@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 
 namespace SchettiniGestion.WPF
 {
@@ -7,6 +8,16 @@ namespace SchettiniGestion.WPF
         public AyudaAtajosWindow()
         {
             InitializeComponent();
+            PreviewKeyDown += AyudaAtajosWindow_PreviewKeyDown;
+        }
+
+        private void AyudaAtajosWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                Close();
+                e.Handled = true;
+            }
         }
 
         public AyudaAtajosWindow(object param) : this() { }

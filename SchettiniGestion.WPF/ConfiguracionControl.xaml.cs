@@ -3,6 +3,7 @@ using System;
 using System.Data;
 using System.Drawing.Printing;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -118,6 +119,7 @@ namespace SchettiniGestion.WPF
                 txtNombreFantasia.Text = dr["NombreFantasia"].ToString();
                 txtRazonSocial.Text = dr["RazonSocial"].ToString();
                 txtCuit.Text = DatabaseService.ObtenerCuitEmpresaTextoBruto(dr);
+                EstablecerCondicionIVAEmpresa(dr.Table.Columns.Contains("CondicionIVAEmpresa") ? dr["CondicionIVAEmpresa"]?.ToString() : "");
                 txtDireccion.Text = dr["Direccion"].ToString();
                 txtTelefono.Text = dr["Telefono"].ToString();
                 txtEmail.Text = dr["Email"].ToString();
@@ -158,6 +160,14 @@ namespace SchettiniGestion.WPF
                     chkAfipProduccion.IsChecked = Convert.ToBoolean(dr["AfipProduccion"]);
                 else if (chkAfipProduccion != null)
                     chkAfipProduccion.IsChecked = false;
+
+                if (chkUsaAperturaCaja != null)
+                {
+                    if (dr.Table.Columns.Contains("UsaAperturaCaja") && dr["UsaAperturaCaja"] != DBNull.Value)
+                        chkUsaAperturaCaja.IsChecked = Convert.ToBoolean(dr["UsaAperturaCaja"]);
+                    else
+                        chkUsaAperturaCaja.IsChecked = false;
+                }
 
                 if (dr.Table.Columns.Contains("VisorPromoCarpeta") && dr["VisorPromoCarpeta"] != DBNull.Value)
                     txtVisorPromoCarpeta.Text = dr["VisorPromoCarpeta"].ToString();
@@ -394,7 +404,9 @@ namespace SchettiniGestion.WPF
                     chkAfipProduccion?.IsChecked == true,
                     conservarPasswordAfipSiContraseniaVacia: conservarPwdVacío,
                     logoEnTicket: chkLogoEnTicket?.IsChecked == true,
-                    logoEnA4: chkLogoEnA4?.IsChecked == true);
+                    logoEnA4: chkLogoEnA4?.IsChecked == true,
+                    usaAperturaCaja: chkUsaAperturaCaja?.IsChecked == true,
+                    condicionIVAEmpresa: ObtenerCondicionIVAEmpresaSeleccionada());
 
                 if (exito)
                 {
@@ -734,6 +746,32 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        private void EstablecerCondicionIVAEmpresa(string valor)
+        {
+            if (cmbCondicionIVAEmpresa == null) return;
+            if (string.IsNullOrWhiteSpace(valor))
+            {
+                cmbCondicionIVAEmpresa.SelectedIndex = 0;
+                return;
+            }
+            string valorTrim = valor.Trim();
+            for (int i = 0; i < cmbCondicionIVAEmpresa.Items.Count; i++)
+            {
+                if ((cmbCondicionIVAEmpresa.Items[i] as ComboBoxItem)?.Content?.ToString() == valorTrim)
+                {
+                    cmbCondicionIVAEmpresa.SelectedIndex = i;
+                    return;
+                }
+            }
+            cmbCondicionIVAEmpresa.Items.Add(new ComboBoxItem { Content = valorTrim });
+            cmbCondicionIVAEmpresa.SelectedIndex = cmbCondicionIVAEmpresa.Items.Count - 1;
+        }
+
+        private string ObtenerCondicionIVAEmpresaSeleccionada()
+        {
+            return (cmbCondicionIVAEmpresa?.SelectedItem as ComboBoxItem)?.Content?.ToString()?.Trim() ?? "";
+        }
+
         // --- PESTAÑA IMPRESORAS ---
         private void CargarImpresoras()
         {
@@ -753,10 +791,90 @@ namespace SchettiniGestion.WPF
                 var (ticket, a4) = DatabaseService.GetImpresoras();
                 cmbImpresoraTicket.SelectedItem = string.IsNullOrWhiteSpace(ticket) ? "(Preguntar cada vez)" : ticket;
                 cmbImpresoraA4.SelectedItem     = string.IsNullOrWhiteSpace(a4)     ? "(Preguntar cada vez)" : a4;
+
+                if (chkPreguntarAntesImprimir != null)
+                    chkPreguntarAntesImprimir.IsChecked = DatabaseService.GetPreguntarAntesImprimir();
+
+                if (cmbDestinoImpresionVenta != null)
+                {
+                    cmbDestinoImpresionVenta.ItemsSource = new[]
+                    {
+                        new { Valor = "Ticket", Texto = "Impresora térmica (formato ticket)" },
+                        new { Valor = "A4", Texto = "Impresora A4 (formato documento)" },
+                        new { Valor = "Archivo", Texto = "Guardar como PDF (para WhatsApp / email)" },
+                        new { Valor = "Preguntar", Texto = "Preguntar al cobrar" }
+                    };
+                    cmbDestinoImpresionVenta.DisplayMemberPath = "Texto";
+                    cmbDestinoImpresionVenta.SelectedValuePath = "Valor";
+                    string destino = DatabaseService.GetDestinoImpresionVenta();
+                    foreach (dynamic item in cmbDestinoImpresionVenta.Items)
+                        if (item.Valor == destino) { cmbDestinoImpresionVenta.SelectedItem = item; break; }
+                    if (cmbDestinoImpresionVenta.SelectedItem == null && cmbDestinoImpresionVenta.Items.Count > 0)
+                        cmbDestinoImpresionVenta.SelectedIndex = 0;
+                }
+
+                if (cmbAnchoTicketMm != null)
+                {
+                    cmbAnchoTicketMm.ItemsSource = new[] { "80 mm", "58 mm" };
+                    var op = DatabaseService.GetOpcionesImpresionTicket();
+                    cmbAnchoTicketMm.SelectedItem = op.AnchoMm == 58 ? "58 mm" : "80 mm";
+                }
+
+                if (txtCarpetaArchivosComprobantes != null)
+                    txtCarpetaArchivosComprobantes.Text = DatabaseService.GetCarpetaArchivosComprobantes() ?? "";
+
+                CargarOpcionesTicketEnUi();
             }
             catch (Exception ex)
             {
                 ModernMessageBox.Show("Error al listar impresoras: " + ex.Message);
+            }
+        }
+
+        private void CargarOpcionesTicketEnUi()
+        {
+            var op = DatabaseService.GetOpcionesImpresionTicket();
+            if (chkTicketLogo != null) chkTicketLogo.IsChecked = op.MostrarLogo;
+            if (chkTicketDireccion != null) chkTicketDireccion.IsChecked = op.MostrarDireccion;
+            if (chkTicketTelefono != null) chkTicketTelefono.IsChecked = op.MostrarTelefono;
+            if (chkTicketCuit != null) chkTicketCuit.IsChecked = op.MostrarCuit;
+            if (chkTicketCliente != null) chkTicketCliente.IsChecked = op.MostrarCliente;
+            if (chkTicketCodigo != null) chkTicketCodigo.IsChecked = op.MostrarCodigo;
+            if (chkTicketFormaPago != null) chkTicketFormaPago.IsChecked = op.MostrarFormaPago;
+            if (chkTicketPieFiscal != null) chkTicketPieFiscal.IsChecked = op.MostrarPieFiscal;
+            if (chkTicketGracias != null) chkTicketGracias.IsChecked = op.MostrarGracias;
+            if (chkTicketPuntoVenta != null) chkTicketPuntoVenta.IsChecked = op.MostrarPuntoVenta;
+            if (chkTicketVendedor != null) chkTicketVendedor.IsChecked = op.MostrarVendedor;
+        }
+
+        private OpcionesImpresionTicket LeerOpcionesTicketDesdeUi()
+        {
+            return new OpcionesImpresionTicket
+            {
+                AnchoMm = cmbAnchoTicketMm?.SelectedItem?.ToString()?.StartsWith("58") == true ? 58 : 80,
+                MostrarLogo = chkTicketLogo?.IsChecked != false,
+                MostrarDireccion = chkTicketDireccion?.IsChecked != false,
+                MostrarTelefono = chkTicketTelefono?.IsChecked != false,
+                MostrarCuit = chkTicketCuit?.IsChecked != false,
+                MostrarCliente = chkTicketCliente?.IsChecked != false,
+                MostrarCodigo = chkTicketCodigo?.IsChecked == true,
+                MostrarFormaPago = chkTicketFormaPago?.IsChecked != false,
+                MostrarPieFiscal = chkTicketPieFiscal?.IsChecked != false,
+                MostrarGracias = chkTicketGracias?.IsChecked != false,
+                MostrarPuntoVenta = chkTicketPuntoVenta?.IsChecked != false,
+                MostrarVendedor = chkTicketVendedor?.IsChecked == true
+            };
+        }
+
+        private void btnElegirCarpetaComprobantes_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dlg = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dlg.Description = "Carpeta para guardar comprobantes digitales";
+                if (!string.IsNullOrWhiteSpace(txtCarpetaArchivosComprobantes?.Text) && Directory.Exists(txtCarpetaArchivosComprobantes.Text))
+                    dlg.SelectedPath = txtCarpetaArchivosComprobantes.Text;
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    txtCarpetaArchivosComprobantes.Text = dlg.SelectedPath;
             }
         }
 
@@ -768,7 +886,15 @@ namespace SchettiniGestion.WPF
             if (ticket == "(Preguntar cada vez)") ticket = null;
             if (a4     == "(Preguntar cada vez)") a4     = null;
 
-            if (DatabaseService.GuardarImpresoras(ticket, a4))
+            string destino = cmbDestinoImpresionVenta?.SelectedValue?.ToString() ?? "Ticket";
+            var opciones = LeerOpcionesTicketDesdeUi();
+
+            if (DatabaseService.GuardarConfiguracionImpresoras(
+                ticket, a4, chkPreguntarAntesImprimir?.IsChecked != false, opciones,
+                destinoImpresionVenta: destino,
+                carpetaArchivos: txtCarpetaArchivosComprobantes?.Text?.Trim(),
+                anchoTicketMm: opciones.AnchoMm,
+                logoEnTicket: opciones.MostrarLogo))
                 ModernMessageBox.Show("Configuración de impresoras guardada correctamente.", "Guardado", MessageBoxButton.OK, MessageBoxImage.Information);
             else
                 ModernMessageBox.Show("No se pudo guardar la configuración.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);

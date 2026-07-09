@@ -39,12 +39,33 @@ namespace SchettiniGestion.WPF
             try
             {
                 _dtProductos = DatabaseService.GetProductos("");
+                EnriquecerColumnasProductos(_dtProductos);
                 dgvProductos.ItemsSource = _dtProductos.DefaultView;
                 AplicarFiltro();
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Error al cargar lista: " + ex.Message);
+            }
+        }
+
+        private static void EnriquecerColumnasProductos(DataTable dt)
+        {
+            if (dt == null) return;
+
+            if (!dt.Columns.Contains("CostoCompraFinal"))
+                dt.Columns.Add("CostoCompraFinal", typeof(decimal));
+
+            foreach (DataRow row in dt.Rows)
+            {
+                decimal costo = row["PrecioCosto"] != DBNull.Value ? Convert.ToDecimal(row["PrecioCosto"]) : 0m;
+                decimal imp = row.Table.Columns.Contains("ImpuestoInterno") && row["ImpuestoInterno"] != DBNull.Value
+                    ? Convert.ToDecimal(row["ImpuestoInterno"]) : 0m;
+                bool conIva = row.Table.Columns.Contains("CostoIncluyeIva") && row["CostoIncluyeIva"] != DBNull.Value
+                    && Convert.ToBoolean(row["CostoIncluyeIva"]);
+                string iva = row["TipoIVA"]?.ToString() ?? "21";
+                row["CostoCompraFinal"] = DatabaseService.CalcularCostoCompraFinal(
+                    costo, conIva, DatabaseService.ParseIvaPct(iva), imp);
             }
         }
 

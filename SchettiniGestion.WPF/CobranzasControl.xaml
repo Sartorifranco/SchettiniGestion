@@ -26,9 +26,9 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="Desde" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}" Margin="0,0,8,0"/>
-                <DatePicker x:Name="dpDesde" Grid.Column="1" Width="130" Margin="0,0,14,0"/>
+                <DatePicker x:Name="dpDesde" Grid.Column="1" MinWidth="170" MinHeight="48" Margin="0,0,14,0"/>
                 <TextBlock Grid.Column="2" Text="Hasta" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}" Margin="0,0,8,0"/>
-                <DatePicker x:Name="dpHasta" Grid.Column="3" Width="130" HorizontalAlignment="Left" Margin="0,0,14,0"/>
+                <DatePicker x:Name="dpHasta" Grid.Column="3" MinWidth="170" MinHeight="48" HorizontalAlignment="Left" Margin="0,0,14,0"/>
                 <StackPanel Grid.Column="4" Orientation="Horizontal">
                     <ComboBox x:Name="cmbEstado" Width="140" Style="{StaticResource ModuleComboBoxStyle}" Margin="0,0,10,0">
                         <ComboBoxItem Content="Todos" IsSelected="True"/>

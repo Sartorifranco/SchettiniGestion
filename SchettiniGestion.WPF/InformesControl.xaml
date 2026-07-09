@@ -39,11 +39,11 @@
                 </StackPanel>
                 <StackPanel Grid.Column="2">
                     <TextBlock Text="Desde" Style="{StaticResource LabelStyle}"/>
-                    <DatePicker x:Name="dpDesde" Width="130" Height="35"/>
+                    <DatePicker x:Name="dpDesde" MinWidth="170" MinHeight="48"/>
                 </StackPanel>
                 <StackPanel Grid.Column="4">
                     <TextBlock Text="Hasta" Style="{StaticResource LabelStyle}"/>
-                    <DatePicker x:Name="dpHasta" Width="130" Height="35"/>
+                    <DatePicker x:Name="dpHasta" MinWidth="170" MinHeight="48"/>
                 </StackPanel>
                 <StackPanel Grid.Column="8" VerticalAlignment="Bottom">
                     <Button Content="📊 Generar" Style="{StaticResource ButtonStyle}" Padding="12,8" Click="btnGenerar_Click"/>

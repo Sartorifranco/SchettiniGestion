@@ -97,7 +97,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar usuarios: " + ex.Message);
+                CustomMessageBox.Show("Error al cargar usuarios: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -121,7 +121,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error cargando roles: " + ex.Message);
+                CustomMessageBox.Show("Error cargando roles: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -129,6 +129,7 @@ namespace SchettiniGestion.WPF
         {
             _usuarioIdSeleccionado = 0;
             txtNombreUsuario.Text = "";
+            txtNombrePersonal.Text = "";
             txtPassword.Password = "";
             cmbRolesUsuario.SelectedIndex = -1;
             foreach (var p in PermisosRolActual) p.Habilitado = false;
@@ -145,14 +146,14 @@ namespace SchettiniGestion.WPF
         {
             bool esNuevo = _usuarioIdSeleccionado == 0;
 
-            if (string.IsNullOrWhiteSpace(txtNombreUsuario.Text) || cmbRolesUsuario.SelectedItem == null)
+            if (string.IsNullOrWhiteSpace(txtNombreUsuario.Text) || string.IsNullOrWhiteSpace(txtNombrePersonal.Text) || cmbRolesUsuario.SelectedItem == null)
             {
-                MessageBox.Show("Complete Nombre de Usuario y Rol.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Complete Nombre de Usuario, Nombre del Personal y Rol.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (esNuevo && string.IsNullOrWhiteSpace(txtPassword.Password))
             {
-                MessageBox.Show("Ingrese una contraseña para el nuevo usuario.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Ingrese una contraseña para el nuevo usuario.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -167,22 +168,23 @@ namespace SchettiniGestion.WPF
                     txtNombreUsuario.Text.Trim(),
                     hash,
                     rolSeleccionado.RolId,
-                    rolSeleccionado.Nombre);
+                    rolSeleccionado.Nombre,
+                    txtNombrePersonal.Text.Trim());
 
                 if (exito)
                 {
-                    MessageBox.Show("Usuario guardado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CustomMessageBox.Show("Usuario guardado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                     CargarUsuarios();
                     Limpiar();
                 }
                 else
                 {
-                    MessageBox.Show("Error al guardar en base de datos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show("Error al guardar en base de datos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error crítico: " + ex.Message);
+                CustomMessageBox.Show("Error crítico: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -193,11 +195,11 @@ namespace SchettiniGestion.WPF
             // Evitar que se borre a sí mismo o al admin principal si se llama 'admin'
             if (txtNombreUsuario.Text.ToLower() == "admin")
             {
-                MessageBox.Show("No se puede eliminar al super-administrador.", "Prohibido", MessageBoxButton.OK, MessageBoxImage.Stop);
+                CustomMessageBox.Show("No se puede eliminar al super-administrador.", "Prohibido", MessageBoxButton.OK, MessageBoxImage.Stop);
                 return;
             }
 
-            if (MessageBox.Show($"¿Eliminar el usuario '{txtNombreUsuario.Text}'?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            if (CustomMessageBox.Show($"¿Eliminar el usuario '{txtNombreUsuario.Text}'?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
                 if (DatabaseService.EliminarUsuario(_usuarioIdSeleccionado))
                 {
@@ -206,9 +208,46 @@ namespace SchettiniGestion.WPF
                 }
                 else
                 {
-                    MessageBox.Show("No se pudo eliminar el usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show("No se pudo eliminar el usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
+        }
+
+        private void btnNuevoRol_Click(object sender, RoutedEventArgs e)
+        {
+            var input = new ModernInputWindow("Crear nuevo rol", "Nombre del rol:")
+            {
+                Owner = Window.GetWindow(this)
+            };
+            if (input.ShowDialog() != true) return;
+
+            string nombre = input.ResponseText?.Trim();
+            if (string.IsNullOrWhiteSpace(nombre))
+            {
+                CustomMessageBox.Show("El nombre no puede estar vacío.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var (ok, error) = DatabaseService.GuardarRol(nombre);
+            if (!ok)
+            {
+                CustomMessageBox.Show(error ?? "No se pudo crear el rol.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            CargarRoles();
+            foreach (Rol r in cmbRolesPermisos.Items)
+            {
+                if (string.Equals(r.Nombre, nombre, StringComparison.OrdinalIgnoreCase))
+                {
+                    cmbRolesPermisos.SelectedItem = r;
+                    cmbRolesUsuario.SelectedItem = r;
+                    break;
+                }
+            }
+            CustomMessageBox.Show(
+                $"Rol '{nombre}' creado correctamente.\nAsigne los permisos y guarde los cambios.",
+                "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void dgvUsuarios_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -217,6 +256,10 @@ namespace SchettiniGestion.WPF
             {
                 _usuarioIdSeleccionado = Convert.ToInt32(row["UsuarioID"]);
                 txtNombreUsuario.Text = row["NombreUsuario"].ToString();
+                if (row.Row.Table.Columns.Contains("NombrePersonal") && row["NombrePersonal"] != DBNull.Value)
+                    txtNombrePersonal.Text = row["NombrePersonal"].ToString();
+                else
+                    txtNombrePersonal.Text = "";
                 txtPassword.Password = ""; // Por seguridad, no traemos el Hash
 
                 // Seleccionar el rol correspondiente en el ComboBox
@@ -249,7 +292,7 @@ namespace SchettiniGestion.WPF
         {
             if (!(cmbRolesPermisos.SelectedItem is Rol rolSel))
             {
-                MessageBox.Show("Seleccione un rol para guardar sus permisos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Seleccione un rol para guardar sus permisos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -263,13 +306,13 @@ namespace SchettiniGestion.WPF
 
                 bool ok = DatabaseService.ActualizarPermisosParaRolPorNombre(rolSel.RolId, permisosActivos);
                 if (ok)
-                    MessageBox.Show("Permisos actualizados correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CustomMessageBox.Show("Permisos actualizados correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 else
-                    MessageBox.Show("No se pudieron guardar los permisos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show("No se pudieron guardar los permisos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al guardar permisos: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show("Error al guardar permisos: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

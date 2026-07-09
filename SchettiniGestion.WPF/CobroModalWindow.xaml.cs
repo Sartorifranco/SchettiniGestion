@@ -30,6 +30,9 @@ namespace SchettiniGestion.WPF
     {
         public List<CobranzaItem> Cobranzas { get; private set; } = new List<CobranzaItem>();
 
+        /// <summary>El usuario eligió cobrar con Mercado Pago QR desde el modal.</summary>
+        public bool SolicitoMercadoPagoQR { get; private set; }
+
         private readonly decimal _total;
         private readonly ObservableCollection<CobranzaItem> _cobros = new ObservableCollection<CobranzaItem>();
 
@@ -49,6 +52,7 @@ namespace SchettiniGestion.WPF
 
             CargarMediosPago();
             ActualizarResumen();
+            AplicarVisibilidadMercadoPago();
 
             txtMonto.Text = _total.ToString("N2");
             txtMonto.SelectAll();
@@ -222,6 +226,30 @@ namespace SchettiniGestion.WPF
         private void btnCancelar_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
+            Close();
+        }
+
+        private void AplicarVisibilidadMercadoPago()
+        {
+            if (btnMercadoPagoQR == null) return;
+            btnMercadoPagoQR.Visibility = LicenseManager.TieneMercadoPagoQr()
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+
+        private void btnMercadoPagoQR_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenseManager.TieneMercadoPagoQr())
+            {
+                CustomMessageBox.Show(
+                    "Mercado Pago QR no está incluido en su licencia.\n\n" +
+                    "Solicite el abono «Mercado Pago QR» para cobrar con código QR.",
+                    "Abono no habilitado", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            SolicitoMercadoPagoQR = true;
+            DialogResult = true;
             Close();
         }
 

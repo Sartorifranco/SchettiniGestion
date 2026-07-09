@@ -8,51 +8,81 @@
         WindowStyle="None" ResizeMode="NoResize" WindowState="Maximized"
         Background="{DynamicResource ModuleBackgroundBrush}">
 
-    <Viewbox Stretch="Uniform">
-        <Grid Height="768" Width="1024">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition x:Name="rowPromoInferior" Height="0"/>
+        </Grid.RowDefinitions>
 
-            <Grid x:Name="GridLogo" Visibility="Visible" Background="{DynamicResource ModuleBackgroundBrush}">
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="colPromoLateral" Width="0"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Publicidades verticales (izquierda) -->
+            <Border x:Name="panelPromoLateral" Grid.Column="0" Visibility="Collapsed"
+                    Background="#0A0A0A" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,0,1,0">
                 <Grid>
-                    <Border x:Name="borderPromoFondo" Visibility="Collapsed" Background="{DynamicResource ModuleBackgroundBrush}">
-                        <Grid ClipToBounds="True">
-                            <Image x:Name="imgPromo" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" ClipToBounds="True" Background="#0A0A0A">
+                        <Grid>
+                            <Image x:Name="imgPromo" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
                             <MediaElement x:Name="mediaPromo" LoadedBehavior="Manual" UnloadedBehavior="Close" IsMuted="True"
-                                          Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"
+                                          Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"
                                           MediaEnded="MediaPromo_MediaEnded" MediaFailed="MediaPromo_MediaFailed"/>
                         </Grid>
                     </Border>
-                    <Border x:Name="borderMarca" VerticalAlignment="Center" HorizontalAlignment="Center" Background="Transparent" Padding="24,20" CornerRadius="12">
-                        <StackPanel x:Name="panelMarca" HorizontalAlignment="Center">
-                            <Image x:Name="imgLogo" Height="200" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,0,30"/>
-                            <TextBlock x:Name="txtNombreNegocio" Text="Bienvenido" Foreground="{DynamicResource TextPrimary}" FontSize="36" FontWeight="Bold" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+
+                    <Border x:Name="borderMarcaPromo" Grid.Row="1" Background="#CC141414" Padding="12,10">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image x:Name="imgLogo" Height="56" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,0,6"/>
+                            <TextBlock x:Name="txtMarcaPromo" Text="" Foreground="{DynamicResource TextPrimary}"
+                                       FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
                         </StackPanel>
                     </Border>
                 </Grid>
+            </Border>
+
+            <!-- Detalle de venta (derecha) -->
+            <Grid x:Name="GridContenido" Grid.Column="1" Background="{DynamicResource ModuleBackgroundBrush}">
+
+            <Grid x:Name="GridBienvenida" Visibility="Visible">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="720" Margin="32">
+                    <Image x:Name="imgLogoBienvenida" Height="160" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,0,24"/>
+                    <TextBlock x:Name="txtNombreNegocio" Text="Bienvenido" Foreground="{DynamicResource TextPrimary}"
+                               FontSize="42" FontWeight="Bold" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                    <TextBlock Text="Su compra se mostrará aquí" Foreground="{DynamicResource TextSecondary}"
+                               FontSize="22" HorizontalAlignment="Center" Margin="0,16,0,0" TextAlignment="Center"/>
+                </StackPanel>
             </Grid>
 
-            <Grid x:Name="GridVenta" Visibility="Collapsed" Margin="30">
+            <Grid x:Name="GridVenta" Visibility="Collapsed" Margin="24,20">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="10" Padding="15" Margin="0,0,0,20"
+                <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="10" Padding="14" Margin="0,0,0,16"
                         BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
-                    <TextBlock Text="🛒 SU COMPRA" Foreground="{DynamicResource TextPrimary}" FontSize="40" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <TextBlock Text="🛒 SU COMPRA" Foreground="{DynamicResource TextPrimary}" FontSize="36" FontWeight="Bold" HorizontalAlignment="Center"/>
                 </Border>
 
-                <DataGrid x:Name="dgvDetalleCliente" Grid.Row="1" Margin="0,0,0,20"
-                          AutoGenerateColumns="False" IsReadOnly="True" 
+                <DataGrid x:Name="dgvDetalleCliente" Grid.Row="1" Margin="0,0,0,16"
+                          AutoGenerateColumns="False" IsReadOnly="True"
                           Background="Transparent" RowBackground="Transparent" Foreground="{DynamicResource TextPrimary}"
                           GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource BorderColor}" BorderThickness="0"
-                          RowHeight="60" FontSize="24" HeadersVisibility="Column">
-
+                          RowHeight="52" FontSize="20" HeadersVisibility="Column">
                     <DataGrid.Resources>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="Transparent"/>
                             <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
-                            <Setter Property="FontSize" Value="20"/>
+                            <Setter Property="FontSize" Value="18"/>
                             <Setter Property="FontWeight" Value="Bold"/>
                             <Setter Property="Padding" Value="10"/>
                             <Setter Property="HorizontalContentAlignment" Value="Left"/>
@@ -63,73 +93,53 @@
                             <Setter Property="VerticalContentAlignment" Value="Center"/>
                         </Style>
                     </DataGrid.Resources>
-
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" Width="100"/>
+                        <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" Width="80"/>
                         <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" Width="*"/>
-                        <DataGridTextColumn Header="Precio" Binding="{Binding PrecioUnitario, StringFormat=C2}" Width="150"/>
-                        <DataGridTextColumn Header="Subtotal" Binding="{Binding Subtotal, StringFormat=C2}" Width="180" FontWeight="Bold"/>
+                        <DataGridTextColumn Header="Precio" Binding="{Binding PrecioUnitario, StringFormat=C2}" Width="130"/>
+                        <DataGridTextColumn Header="Subtotal" Binding="{Binding Subtotal, StringFormat=C2}" Width="150" FontWeight="Bold"/>
                     </DataGrid.Columns>
                 </DataGrid>
 
-                <Border Grid.Row="2" Background="{StaticResource PrimaryColor}" CornerRadius="15" Padding="30,20">
+                <Border Grid.Row="2" Background="{StaticResource PrimaryColor}" CornerRadius="12" Padding="24,16">
                     <Grid>
-                        <TextBlock Text="TOTAL A PAGAR:" Foreground="White" FontSize="32" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                        <TextBlock x:Name="lblTotal" Text="$ 0,00" Foreground="White" FontSize="65" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                        <TextBlock Text="TOTAL A PAGAR:" Foreground="White" FontSize="28" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                        <TextBlock x:Name="lblTotal" Text="$ 0,00" Foreground="White" FontSize="52" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                     </Grid>
                 </Border>
             </Grid>
 
             <Grid x:Name="GridPago" Visibility="Collapsed" Background="{DynamicResource ModuleBackgroundBrush}">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock Text="¿CÓMO DESEA PAGAR?" Foreground="{DynamicResource TextPrimary}" FontSize="48" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,50"/>
-
-                    <UniformGrid Columns="2" Rows="2" Width="800" Height="400">
-                        <Button Click="BtnPago_Click" Tag="EFECTIVO" Margin="15" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="15"/>
-                                </Style>
-                            </Button.Resources>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="900" Margin="24">
+                    <TextBlock Text="¿CÓMO DESEA PAGAR?" Foreground="{DynamicResource TextPrimary}" FontSize="40" FontWeight="Bold"
+                               HorizontalAlignment="Center" Margin="0,0,0,36" TextWrapping="Wrap" TextAlignment="Center"/>
+                    <UniformGrid Columns="2" Rows="2" MinWidth="520" MinHeight="320">
+                        <Button Click="BtnPago_Click" Tag="EFECTIVO" Margin="10" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="12"/></Style></Button.Resources>
                             <StackPanel>
-                                <TextBlock Text="💵" FontSize="60" HorizontalAlignment="Center"/>
-                                <TextBlock Text="EFECTIVO" Foreground="{DynamicResource TextPrimary}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                                <TextBlock Text="💵" FontSize="48" HorizontalAlignment="Center"/>
+                                <TextBlock Text="EFECTIVO" Foreground="{DynamicResource TextPrimary}" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Button>
-
-                        <Button Click="BtnPago_Click" Tag="TARJETA" Margin="15" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="15"/>
-                                </Style>
-                            </Button.Resources>
+                        <Button Click="BtnPago_Click" Tag="TARJETA" Margin="10" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="12"/></Style></Button.Resources>
                             <StackPanel>
-                                <TextBlock Text="💳" FontSize="60" HorizontalAlignment="Center"/>
-                                <TextBlock Text="TARJETA" Foreground="{DynamicResource TextPrimary}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                                <TextBlock Text="💳" FontSize="48" HorizontalAlignment="Center"/>
+                                <TextBlock Text="TARJETA" Foreground="{DynamicResource TextPrimary}" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Button>
-
-                        <Button Click="BtnPago_Click" Tag="MERCADOPAGO" Margin="15" Background="#009EE3" BorderBrush="Transparent">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="15"/>
-                                </Style>
-                            </Button.Resources>
+                        <Button Click="BtnPago_Click" Tag="MERCADOPAGO" Margin="10" Background="#009EE3" BorderBrush="Transparent">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="12"/></Style></Button.Resources>
                             <StackPanel>
-                                <TextBlock Text="📱" FontSize="60" HorizontalAlignment="Center"/>
-                                <TextBlock Text="MERCADO PAGO" Foreground="White" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                                <TextBlock Text="📱" FontSize="48" HorizontalAlignment="Center"/>
+                                <TextBlock Text="MERCADO PAGO" Foreground="White" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Button>
-
-                        <Button Click="BtnPago_Click" Tag="CTACTE" Margin="15" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="15"/>
-                                </Style>
-                            </Button.Resources>
+                        <Button Click="BtnPago_Click" Tag="CTACTE" Margin="10" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+                            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="12"/></Style></Button.Resources>
                             <StackPanel>
-                                <TextBlock Text="📝" FontSize="60" HorizontalAlignment="Center"/>
-                                <TextBlock Text="CUENTA CTE." Foreground="{DynamicResource TextPrimary}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                                <TextBlock Text="📝" FontSize="48" HorizontalAlignment="Center"/>
+                                <TextBlock Text="CUENTA CTE." Foreground="{DynamicResource TextPrimary}" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Button>
                     </UniformGrid>
@@ -137,43 +147,46 @@
             </Grid>
 
             <Grid x:Name="GridQR" Visibility="Collapsed" Background="#009EE3">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <Image Grid.Row="1" Source="/logo_mercadopago.png" Height="90" HorizontalAlignment="Center" Margin="0,0,0,20" RenderOptions.BitmapScalingMode="HighQuality"/>
-
-                <TextBlock Grid.Row="2" Text="Escaneá el QR para pagar" Foreground="White" FontSize="45" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,30" TextWrapping="Wrap" TextAlignment="Center"/>
-
-                <Border Grid.Row="3" Background="White" Padding="20" CornerRadius="20" HorizontalAlignment="Center" VerticalAlignment="Center" Width="380" Height="380">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="30" ShadowDepth="5" Opacity="0.3"/>
-                    </Border.Effect>
-                    <Image x:Name="imgQR" Stretch="Uniform"/>
-                </Border>
-
-                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,30,0,10">
-                    <TextBlock Text="Total:" Foreground="White" FontSize="36" VerticalAlignment="Center" Margin="0,0,15,0" Opacity="0.9"/>
-                    <TextBlock x:Name="lblTotalQR" Text="$ 0,00" Foreground="White" FontSize="60" FontWeight="Bold" VerticalAlignment="Center"/>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24">
+                    <Image Source="/logo_mercadopago.png" Height="72" HorizontalAlignment="Center" Margin="0,0,0,16" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <TextBlock Text="Escaneá el QR para pagar" Foreground="White" FontSize="36" FontWeight="Bold"
+                               HorizontalAlignment="Center" Margin="0,0,0,20" TextWrapping="Wrap" TextAlignment="Center"/>
+                    <Border Background="White" Padding="16" CornerRadius="16" HorizontalAlignment="Center" Width="300" Height="300">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.3"/>
+                        </Border.Effect>
+                        <Image x:Name="imgQR" Stretch="Uniform"/>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,8">
+                        <TextBlock Text="Total:" Foreground="White" FontSize="28" VerticalAlignment="Center" Margin="0,0,12,0" Opacity="0.9"/>
+                        <TextBlock x:Name="lblTotalQR" Text="$ 0,00" Foreground="White" FontSize="48" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock x:Name="lblEstadoQR" Text="Esperando lectura..." Foreground="White" FontSize="22"
+                               HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Opacity="0.9"/>
                 </StackPanel>
-
-                <TextBlock x:Name="lblEstadoQR" Grid.Row="5" Text="Esperando lectura..." Foreground="White" FontSize="28" HorizontalAlignment="Center" Margin="0,10,0,0" TextWrapping="Wrap" TextAlignment="Center" Opacity="0.9"/>
             </Grid>
 
             <Grid x:Name="GridGracias" Visibility="Collapsed" Background="{StaticResource SuccessColor}">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock Text="✅" FontSize="140" HorizontalAlignment="Center" Margin="0,0,0,30"/>
-                    <TextBlock Text="¡PAGO APROBADO!" Foreground="White" FontSize="70" FontWeight="Bold" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
-                    <TextBlock Text="Muchas gracias por su compra." Foreground="White" FontSize="35" HorizontalAlignment="Center" Margin="0,20,0,0" TextWrapping="Wrap" TextAlignment="Center" Opacity="0.9"/>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24">
+                    <TextBlock Text="✅" FontSize="100" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                    <TextBlock Text="¡PAGO APROBADO!" Foreground="White" FontSize="52" FontWeight="Bold"
+                               HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                    <TextBlock Text="Muchas gracias por su compra." Foreground="White" FontSize="28"
+                               HorizontalAlignment="Center" Margin="0,16,0,0" TextWrapping="Wrap" TextAlignment="Center" Opacity="0.9"/>
                 </StackPanel>
             </Grid>
-
+            </Grid>
         </Grid>
-    </Viewbox>
+
+        <!-- Carrusel inferior de banners horizontales (imágenes landscape) -->
+        <Border x:Name="panelPromoInferior" Grid.Row="1" Visibility="Collapsed" Background="#0A0A0A"
+                BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,1,0,0">
+            <Grid ClipToBounds="True">
+                <Image x:Name="imgPromoHorizontal" Stretch="UniformToFill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Collapsed"/>
+                <MediaElement x:Name="mediaPromoHorizontal" LoadedBehavior="Manual" UnloadedBehavior="Close" IsMuted="True"
+                              Stretch="UniformToFill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Collapsed"
+                              MediaEnded="MediaPromoHorizontal_MediaEnded" MediaFailed="MediaPromoHorizontal_MediaFailed"/>
+            </Grid>
+        </Border>
+    </Grid>
 </Window>

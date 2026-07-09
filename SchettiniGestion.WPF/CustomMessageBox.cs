@@ -8,8 +8,9 @@ namespace SchettiniGestion.WPF
         {
             // Creamos nuestra ventana personalizada
             var msgWindow = new CustomMessageBoxWindow(message, title, buttons, icon);
+            if (Application.Current?.MainWindow != null && Application.Current.MainWindow.IsLoaded)
+                msgWindow.Owner = Application.Current.MainWindow;
 
-            // La mostramos como diálogo modal (bloquea la ventana de atrás)
             msgWindow.ShowDialog();
 
             // Devolvemos qué botón apretó el usuario

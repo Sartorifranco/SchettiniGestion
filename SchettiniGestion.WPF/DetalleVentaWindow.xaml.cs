@@ -97,6 +97,11 @@ namespace SchettiniGestion.WPF
                         lblNumero.Text = nro.HasValue ? nro.Value.ToString() : "—";
                         lblTotal.Text = Convert.ToDecimal(_encabezado["Total"]).ToString("C2");
                         lblEstado.Text = "Emitida";
+                        if (_encabezado.Table.Columns.Contains("NombrePersonal"))
+                            lblPersonal.Text = string.IsNullOrWhiteSpace(_encabezado["NombrePersonal"]?.ToString())
+                                ? "—" : _encabezado["NombrePersonal"].ToString();
+                        else
+                            lblPersonal.Text = "—";
                         if (string.IsNullOrWhiteSpace(lblCliente.Text) || lblCliente.Text == "—")
                             lblCliente.Text = _encabezado["ClienteNombre"]?.ToString() ?? "—";
 

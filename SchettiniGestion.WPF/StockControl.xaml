@@ -7,15 +7,16 @@
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1000"
              Background="{DynamicResource BackgroundDark}"
-             Loaded="StockControl_Loaded">
+             Loaded="StockControl_Loaded"
+             SizeChanged="StockControl_SizeChanged">
 
-    <Grid Margin="20">
+    <Grid x:Name="gridRoot" Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Stock" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,15"/>
+        <TextBlock x:Name="txtTituloStock" Text="Stock" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,8"/>
 
         <TabControl x:Name="tabMain" Grid.Row="1" Background="Transparent" BorderThickness="0">
             <TabControl.Resources>
@@ -58,19 +59,52 @@
                                 </StackPanel>
                             </Border>
                             <DataGrid x:Name="dgvStockGeneral" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" 
-                                Style="{StaticResource {x:Type DataGrid}}" HeadersVisibility="Column"
-                                CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single">
+                                Style="{StaticResource ModuleDataGridStyle}" HeadersVisibility="Column"
+                                CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single"
+                                HorizontalScrollBarVisibility="Auto">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80"/>
-                                    <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" Width="*"/>
-                                    <DataGridTextColumn Header="Rubro" Binding="{Binding Rubro}" Width="80"/>
-                                    <DataGridTextColumn Header="SubRubro" Binding="{Binding SubRubro}" Width="80"/>
-                                    <DataGridTextColumn Header="Marca" Binding="{Binding Marca}" Width="70"/>
-                                    <DataGridTextColumn Header="Talle" Binding="{Binding Talle}" Width="60"/>
-                                    <DataGridTextColumn Header="Color" Binding="{Binding Color}" Width="60"/>
-                                    <DataGridTextColumn Header="Stock Real" Binding="{Binding StockReal}" Width="80"/>
-                                    <DataGridTextColumn Header="Reservado" Binding="{Binding StockReservado}" Width="80"/>
-                                    <DataGridTextColumn Header="Disponible" Binding="{Binding StockDisponible}" Width="90"/>
+                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" MinWidth="110" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockCodeCellStyle}">
+                                                <Setter Property="ToolTip" Value="{Binding Codigo}"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" MinWidth="140" Width="*"/>
+                                    <DataGridTextColumn x:Name="colStockRubro" Header="Rubro" Binding="{Binding Rubro}" MinWidth="80" Width="Auto"/>
+                                    <DataGridTextColumn x:Name="colStockSubRubro" Header="SubRubro" Binding="{Binding SubRubro}" MinWidth="80" Width="Auto"/>
+                                    <DataGridTextColumn x:Name="colStockMarca" Header="Marca" Binding="{Binding Marca}" MinWidth="72" Width="Auto"/>
+                                    <DataGridTextColumn x:Name="colStockTalle" Header="Talle" Binding="{Binding Talle}" MinWidth="56" Width="Auto"/>
+                                    <DataGridTextColumn x:Name="colStockColor" Header="Color" Binding="{Binding Color}" MinWidth="56" Width="Auto"/>
+                                    <DataGridTextColumn Header="Stock Real" Binding="{Binding StockReal}" MinWidth="100" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockNumericCellStyle}">
+                                                <Setter Property="ToolTip" Value="{Binding StockReal}"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Reservado" Binding="{Binding StockReservado}" MinWidth="96" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockNumericCellStyle}">
+                                                <Setter Property="ToolTip" Value="{Binding StockReservado}"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Disponible" Binding="{Binding StockDisponible}" MinWidth="100" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockNumericCellStyle}">
+                                                <Setter Property="ToolTip" Value="{Binding StockDisponible}"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Costo Compra" Binding="{Binding CostoCompraFinal, StringFormat=C2}" MinWidth="110" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockNumericCellStyle}">
+                                                <Setter Property="ToolTip" Value="{Binding CostoCompraFinal}"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Modificado" Binding="{Binding FechaModificacion, StringFormat=dd/MM/yyyy HH:mm}" MinWidth="130" Width="Auto"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
@@ -91,11 +125,11 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
                                             <TextBlock Text="Fecha desde" Style="{StaticResource LabelStyle}"/>
-                                            <DatePicker x:Name="dpMovDesde" Height="35" Width="140" FontSize="14" VerticalContentAlignment="Center"/>
+                                            <DatePicker x:Name="dpMovDesde" MinWidth="170" MinHeight="48"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="Fecha hasta" Style="{StaticResource LabelStyle}"/>
-                                            <DatePicker x:Name="dpMovHasta" Height="35" Width="140" FontSize="14" VerticalContentAlignment="Center"/>
+                                            <DatePicker x:Name="dpMovHasta" MinWidth="170" MinHeight="48"/>
                                         </StackPanel>
                                     </Grid>
                                     <TextBlock Text="Filtro (código, producto, talle, color, etc.)" Style="{StaticResource LabelStyle}" Margin="0,10,0,0"/>
@@ -115,14 +149,25 @@
                                 </StackPanel>
                             </Border>
                             <DataGrid x:Name="dgvMovimientos" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True"
-                                Style="{StaticResource {x:Type DataGrid}}" HeadersVisibility="Column"
-                                CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single">
+                                Style="{StaticResource ModuleDataGridStyle}" HeadersVisibility="Column"
+                                CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single"
+                                HorizontalScrollBarVisibility="Auto">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy HH:mm}" Width="120"/>
-                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80"/>
-                                    <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" Width="*"/>
-                                    <DataGridTextColumn Header="Tipo" Binding="{Binding TipoMovimiento}" Width="120"/>
-                                    <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad}" Width="80"/>
+                                    <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy HH:mm}" MinWidth="130" Width="Auto"/>
+                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" MinWidth="110" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockCodeCellStyle}"/>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" MinWidth="140" Width="*"/>
+                                    <DataGridTextColumn Header="Tipo" Binding="{Binding TipoMovimiento}" MinWidth="120" Width="Auto"/>
+                                    <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad}" MinWidth="96" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockNumericCellStyle}">
+                                                <Setter Property="ToolTip" Value="{Binding Cantidad}"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
@@ -143,11 +188,11 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
                                             <TextBlock Text="Fecha desde" Style="{StaticResource LabelStyle}"/>
-                                            <DatePicker x:Name="dpResDesde" Height="35" Width="140" FontSize="14" VerticalContentAlignment="Center"/>
+                                            <DatePicker x:Name="dpResDesde" MinWidth="170" MinHeight="48"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="Fecha hasta" Style="{StaticResource LabelStyle}"/>
-                                            <DatePicker x:Name="dpResHasta" Height="35" Width="140" FontSize="14" VerticalContentAlignment="Center"/>
+                                            <DatePicker x:Name="dpResHasta" MinWidth="170" MinHeight="48"/>
                                         </StackPanel>
                                     </Grid>
                                     <Grid Margin="0,10,0,0">
@@ -198,18 +243,27 @@
                                 </StackPanel>
                             </Border>
                             <DataGrid x:Name="dgvReservas" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True"
-                                Style="{StaticResource {x:Type DataGrid}}" HeadersVisibility="Column"
-                                CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single">
+                                Style="{StaticResource ModuleDataGridStyle}" HeadersVisibility="Column"
+                                CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single"
+                                HorizontalScrollBarVisibility="Auto">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Fecha" Binding="{Binding FechaReserva, StringFormat=dd/MM/yyyy HH:mm}" Width="120"/>
-                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80"/>
-                                    <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" Width="*"/>
-                                    <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" Width="60"/>
-                                    <DataGridTextColumn Header="Canal" Binding="{Binding CanalReserva}" Width="90"/>
-                                    <DataGridTextColumn Header="Orden" Binding="{Binding OrdenID}" Width="80"/>
-                                    <DataGridTextColumn Header="Estado" Binding="{Binding Estado}" Width="70"/>
-                                    <DataGridTextColumn Header="Talle" Binding="{Binding Talle}" Width="60"/>
-                                    <DataGridTextColumn Header="Color" Binding="{Binding Color}" Width="60"/>
+                                    <DataGridTextColumn Header="Fecha" Binding="{Binding FechaReserva, StringFormat=dd/MM/yyyy HH:mm}" MinWidth="130" Width="Auto"/>
+                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" MinWidth="110" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockCodeCellStyle}"/>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" MinWidth="140" Width="*"/>
+                                    <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" MinWidth="72" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockNumericCellStyle}"/>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn x:Name="colResCanal" Header="Canal" Binding="{Binding CanalReserva}" MinWidth="80" Width="Auto"/>
+                                    <DataGridTextColumn x:Name="colResOrden" Header="Orden" Binding="{Binding OrdenID}" MinWidth="72" Width="Auto"/>
+                                    <DataGridTextColumn Header="Estado" Binding="{Binding Estado}" MinWidth="72" Width="Auto"/>
+                                    <DataGridTextColumn x:Name="colResTalle" Header="Talle" Binding="{Binding Talle}" MinWidth="56" Width="Auto"/>
+                                    <DataGridTextColumn x:Name="colResColor" Header="Color" Binding="{Binding Color}" MinWidth="56" Width="Auto"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
@@ -233,11 +287,11 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
                                             <TextBlock Text="Fecha desde" Style="{StaticResource LabelStyle}"/>
-                                            <DatePicker x:Name="dpAjusteDesde" Height="35" Width="140" FontSize="14" VerticalContentAlignment="Center"/>
+                                            <DatePicker x:Name="dpAjusteDesde" MinWidth="170" MinHeight="48"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="Fecha hasta" Style="{StaticResource LabelStyle}"/>
-                                            <DatePicker x:Name="dpAjusteHasta" Height="35" Width="140" FontSize="14" VerticalContentAlignment="Center"/>
+                                            <DatePicker x:Name="dpAjusteHasta" MinWidth="170" MinHeight="48"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="4">
                                             <TextBlock Text="Cód/Producto" Style="{StaticResource LabelStyle}"/>
@@ -289,15 +343,24 @@
                                 </Grid>
                             </Border>
                             <DataGrid x:Name="dgvAjustes" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True"
-                                Style="{StaticResource {x:Type DataGrid}}" HeadersVisibility="Column"
-                                CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single">
+                                Style="{StaticResource ModuleDataGridStyle}" HeadersVisibility="Column"
+                                CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single"
+                                HorizontalScrollBarVisibility="Auto">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy HH:mm}" Width="120"/>
-                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80"/>
-                                    <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" Width="*"/>
-                                    <DataGridTextColumn Header="Tipo" Binding="{Binding TipoMovimiento}" Width="140"/>
-                                    <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad}" Width="80"/>
-                                    <DataGridTextColumn Header="Personal" Binding="{Binding Usuario}" Width="100"/>
+                                    <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy HH:mm}" MinWidth="130" Width="Auto"/>
+                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" MinWidth="110" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockCodeCellStyle}"/>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" MinWidth="140" Width="*"/>
+                                    <DataGridTextColumn Header="Tipo" Binding="{Binding TipoMovimiento}" MinWidth="120" Width="Auto"/>
+                                    <DataGridTextColumn Header="Cantidad" Binding="{Binding Cantidad}" MinWidth="96" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockNumericCellStyle}"/>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Personal" Binding="{Binding Usuario}" MinWidth="90" Width="Auto"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
@@ -323,18 +386,35 @@
                                 </StackPanel>
                             </Border>
                             <DataGrid x:Name="dgvDepositos" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True"
-                                Style="{StaticResource {x:Type DataGrid}}" HeadersVisibility="Column"
-                                CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single">
+                                Style="{StaticResource ModuleDataGridStyle}" HeadersVisibility="Column"
+                                CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single"
+                                HorizontalScrollBarVisibility="Auto">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80"/>
-                                    <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" Width="*"/>
-                                    <DataGridTextColumn Header="Rubro" Binding="{Binding Rubro}" Width="80"/>
-                                    <DataGridTextColumn Header="SubRubro" Binding="{Binding SubRubro}" Width="80"/>
-                                    <DataGridTextColumn Header="Proveedor" Binding="{Binding Proveedor}" Width="100"/>
-                                    <DataGridTextColumn Header="Talle" Binding="{Binding Talle}" Width="60"/>
-                                    <DataGridTextColumn Header="Color" Binding="{Binding Color}" Width="60"/>
-                                    <DataGridTextColumn Header="Stock" Binding="{Binding Stock}" Width="70"/>
-                                    <DataGridTextColumn Header="Mínimo" Binding="{Binding StockMinimo}" Width="70"/>
+                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" MinWidth="110" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockCodeCellStyle}"/>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" MinWidth="140" Width="*"/>
+                                    <DataGridTextColumn x:Name="colDepRubro" Header="Rubro" Binding="{Binding Rubro}" MinWidth="80" Width="Auto"/>
+                                    <DataGridTextColumn x:Name="colDepSubRubro" Header="SubRubro" Binding="{Binding SubRubro}" MinWidth="80" Width="Auto"/>
+                                    <DataGridTextColumn x:Name="colDepProveedor" Header="Proveedor" Binding="{Binding Proveedor}" MinWidth="90" Width="Auto"/>
+                                    <DataGridTextColumn x:Name="colDepTalle" Header="Talle" Binding="{Binding Talle}" MinWidth="56" Width="Auto"/>
+                                    <DataGridTextColumn x:Name="colDepColor" Header="Color" Binding="{Binding Color}" MinWidth="56" Width="Auto"/>
+                                    <DataGridTextColumn Header="Stock" Binding="{Binding Stock}" MinWidth="96" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockNumericCellStyle}">
+                                                <Setter Property="ToolTip" Value="{Binding Stock}"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Mínimo" Binding="{Binding StockMinimo}" MinWidth="88" Width="Auto">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockNumericCellStyle}">
+                                                <Setter Property="ToolTip" Value="{Binding StockMinimo}"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>

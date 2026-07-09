@@ -65,6 +65,7 @@
                     <DataGridTextColumn Header="NRO" Binding="{Binding FacturaID, StringFormat=D8}" Width="100"/>
                     <DataGridTextColumn Header="FECHA" Binding="{Binding Fecha, StringFormat='dd/MM/yyyy HH:mm'}" Width="160"/>
                     <DataGridTextColumn Header="CLIENTE" Binding="{Binding RazonSocial}" Width="*"/>
+                    <DataGridTextColumn Header="PERSONAL" Binding="{Binding NombrePersonal}" Width="140"/>
                     <DataGridTextColumn Header="TIPO" Binding="{Binding TipoComprobante}" Width="120"/>
                     <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, StringFormat=C2}" Width="120" FontWeight="Bold" Foreground="{StaticResource SuccessColor}"/>
 

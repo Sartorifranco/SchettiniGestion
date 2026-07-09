@@ -23,7 +23,7 @@
             <Setter Property="Margin" Value="0,0,0,8"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -54,7 +54,7 @@
             <Setter Property="Margin" Value="0,0,0,8"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -85,7 +85,7 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition x:Name="colMenuLateral" Width="260" MinWidth="72" MaxWidth="300"/>
+            <ColumnDefinition x:Name="colMenuLateral" Width="290" MinWidth="72" MaxWidth="320"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -196,7 +196,7 @@
                             Style="{StaticResource LiteDangerOutlineButton}"
                             Margin="0,4,0,0"
                             Click="btnSalirSistema_Click"/>
-                    <TextBlock x:Name="txtVersionFooter" Text="v2.0.8"
+                    <TextBlock x:Name="txtVersionFooter" Text="v2.0.9"
                                HorizontalAlignment="Center"
                                Margin="0,12,0,0"
                                Foreground="{DynamicResource TextSecondary}"
@@ -212,18 +212,18 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0"
+            <Border x:Name="bdrHeaderPrincipal" Grid.Row="0"
                     Background="{DynamicResource SurfaceDark}"
                     BorderBrush="{DynamicResource BorderColor}"
                     BorderThickness="0,0,0,1"
                     Padding="12,10">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition x:Name="rowBreadcrumb" Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0"
+                    <TextBlock x:Name="txtBreadcrumbHeader" Grid.Row="0"
                                Foreground="{DynamicResource TextSecondary}"
                                FontSize="13"
                                TextWrapping="Wrap"
@@ -319,17 +319,11 @@
             <Border x:Name="bdrContenidoPrincipal"
                     Grid.Row="1"
                     Background="{DynamicResource ModuleBackgroundBrush}"
-                    Padding="8,8,10,10"
+                    Padding="8,4,10,8"
                     ClipToBounds="True">
-                <Viewbox x:Name="viewboxContenido"
-                         Stretch="Uniform"
-                         StretchDirection="DownOnly">
-                    <Grid Width="1280" Height="700">
-                        <ContentControl x:Name="mainContentArea"
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch"/>
-                    </Grid>
-                </Viewbox>
+                <ContentControl x:Name="mainContentArea"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"/>
             </Border>
         </Grid>
     </Grid>

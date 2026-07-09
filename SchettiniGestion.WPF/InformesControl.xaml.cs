@@ -50,7 +50,7 @@ namespace SchettiniGestion.WPF
                 {
                     case "Ventas por Período":
                         sql = @"SELECT f.Fecha, f.TipoComprobante, ISNULL(c.RazonSocial,'Consumidor Final') AS Cliente,
-                                       f.Total, f.CAE, f.NumeroComprobanteAFIP AS NroComprobante
+                                       ISNULL(f.NombrePersonal,'') AS Personal, f.Total, f.CAE, f.NumeroComprobanteAFIP AS NroComprobante
                                 FROM Facturas f LEFT JOIN Clientes c ON f.ClienteID=c.ClienteID
                                 WHERE f.Fecha >= @d AND f.Fecha <= @h ORDER BY f.Fecha DESC";
                         break;

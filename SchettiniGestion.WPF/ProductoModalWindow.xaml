@@ -153,6 +153,7 @@
 
                 <!-- Pestaña 1: Datos principales -->
                 <TabItem Header="Datos principales">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <Grid Margin="0,12,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -277,6 +278,59 @@
                         </Border>
 
                         <Border Style="{StaticResource ProductoSectionBorder}" Grid.Row="1">
+                            <StackPanel>
+                                <TextBlock Text="Costo de compra"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           Margin="0,0,0,12"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                        <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Costo de Compra ($)"/>
+                                        <xctk:DecimalUpDown x:Name="numCosto"
+                                                            Style="{StaticResource ProductoTouchDecimal}"
+                                                            Minimum="0"
+                                                            FormatString="N2"
+                                                            ValueChanged="CalcularPrecio_ValueChanged"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                                        <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Impuesto Interno ($)"/>
+                                        <xctk:DecimalUpDown x:Name="numImpuestoInterno"
+                                                            Style="{StaticResource ProductoTouchDecimal}"
+                                                            Minimum="0"
+                                                            FormatString="N2"
+                                                            ValueChanged="CalcularPrecio_ValueChanged"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                                        <TextBlock x:Name="lblCostoCompraFinal"
+                                                   Text="Costo final: $ 0,00"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource SuccessColor}"
+                                                   Margin="0,0,0,8"/>
+                                    </StackPanel>
+                                </Grid>
+                                <CheckBox x:Name="chkCostoIncluyeIva"
+                                          Content="El costo de compra ingresado incluye IVA"
+                                          Style="{StaticResource ProductoTouchCheckBox}"
+                                          Margin="0,4,0,0"
+                                          Checked="chkCostoIncluyeIva_Changed"
+                                          Unchecked="chkCostoIncluyeIva_Changed"/>
+                                <TextBlock x:Name="txtAyudaCostoIva"
+                                           Text="Si no marca la opción, el costo se interpreta como SIN IVA."
+                                           FontSize="11"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Margin="0,4,0,0"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource ProductoSectionBorder}" Grid.Row="2">
                             <StackPanel Orientation="Horizontal">
                                 <Border Width="110" Height="110" CornerRadius="8"
                                         BorderBrush="{DynamicResource BorderColor}"
@@ -297,15 +351,16 @@
                             </StackPanel>
                         </Border>
                     </Grid>
+                    </ScrollViewer>
                 </TabItem>
 
                 <!-- Pestaña 2: Precios -->
                 <TabItem Header="Precios">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <Border Style="{StaticResource ProductoSectionBorder}" Margin="0,12,0,0">
                         <StackPanel>
                             <Grid Margin="0,0,0,16">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
@@ -328,28 +383,19 @@
                                         <ComboBoxItem Content="USD"/>
                                     </ComboBox>
                                 </StackPanel>
-                                <StackPanel Grid.Column="2" Margin="0,0,12,0">
-                                    <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Costo"/>
-                                    <xctk:DecimalUpDown x:Name="numCosto"
-                                                        Style="{StaticResource ProductoTouchDecimal}"
-                                                        Minimum="0"
-                                                        FormatString="N2"
-                                                        ValueChanged="CalcularPrecio_ValueChanged"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="3" Margin="0,0,12,0">
-                                    <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Ganancia %"/>
-                                    <xctk:DecimalUpDown x:Name="numGanancia"
-                                                        Style="{StaticResource ProductoTouchDecimal}"
-                                                        Minimum="0"
-                                                        FormatString="N2"
-                                                        ValueChanged="CalcularPrecio_ValueChanged"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Precio Venta"/>
-                                    <xctk:DecimalUpDown x:Name="numPrecioFinal"
-                                                        Style="{StaticResource ProductoTouchDecimal}"
-                                                        Minimum="0"
-                                                        FormatString="N2"/>
+                                <StackPanel Grid.Column="2" Grid.ColumnSpan="2" VerticalAlignment="Bottom">
+                                    <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Precio venta de referencia"/>
+                                    <TextBlock x:Name="lblPrecioReferencia"
+                                               Text="$ 0,00"
+                                               FontSize="22"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource SuccessColor}"
+                                               Margin="0,4,0,0"/>
+                                    <TextBlock Text="Se calcula desde el costo de compra y las listas asignadas. No se aplica ganancia % adicional."
+                                               FontSize="11"
+                                               Foreground="{DynamicResource TextSecondary}"
+                                               Margin="0,6,0,0"
+                                               TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Grid>
                             <CheckBox x:Name="chkCobraIvaAlCliente"
@@ -374,10 +420,12 @@
                             <ItemsControl x:Name="pnlListasPrecio"/>
                         </StackPanel>
                     </Border>
+                    </ScrollViewer>
                 </TabItem>
 
                 <!-- Pestaña 3: Stock y configuración -->
                 <TabItem Header="Stock y configuración">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="0,12,0,0">
                         <Border Style="{StaticResource ProductoSectionBorder}">
                             <StackPanel>
@@ -499,6 +547,7 @@
                             </StackPanel>
                         </Border>
                     </StackPanel>
+                    </ScrollViewer>
                 </TabItem>
             </TabControl>
 

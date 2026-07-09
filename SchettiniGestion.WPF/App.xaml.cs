@@ -36,6 +36,7 @@ namespace SchettiniGestion.WPF
 
             // Registrar teclado virtual inteligente (responde a cualquier TextBox/PasswordBox).
             KeyboardService.Initialize();
+            WindowEscapeService.Initialize();
 
             this.DispatcherUnhandledException += App_DispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -706,7 +707,7 @@ namespace SchettiniGestion.WPF
 
                     // Datos iniciales: Roles (si la tabla está vacía)
                     @"IF NOT EXISTS (SELECT 1 FROM Roles)
-                      INSERT INTO Roles (NombreRol) VALUES ('Administrador'),('Vendedor'),('Cajero');",
+                      INSERT INTO Roles (NombreRol) VALUES ('Administrador'),('Vendedor'),('Encargado / Supervisor'),('Cajero');",
 
                     @"IF NOT EXISTS (SELECT 1 FROM Permisos)
                       INSERT INTO Permisos (NombrePermiso) VALUES

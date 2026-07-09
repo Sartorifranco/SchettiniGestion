@@ -44,14 +44,17 @@ namespace SchettiniGestion.WPF
             if (!control.IsLoaded || control.ActualWidth <= 0)
                 return;
 
-            bool compacto = UiScaleHelper.IsCompactWidth(control.ActualWidth);
-            bool muyCompacto = UiScaleHelper.IsVeryCompactWidth(control.ActualWidth)
-                               || UiScaleHelper.IsCompactHeight(control.ActualHeight);
+            double anchoViewport = UiScaleHelper.GetViewportWidthForModule(control);
+            double altoViewport = UiScaleHelper.GetViewportHeightForModule(control);
+
+            bool compacto = UiScaleHelper.IsCompactWidth(anchoViewport);
+            bool muyCompacto = UiScaleHelper.IsVeryCompactWidth(anchoViewport)
+                               || UiScaleHelper.IsCompactHeight(altoViewport);
 
             if (control.Content is Panel rootPanel)
                 rootPanel.Margin = UiScaleHelper.ContentMargin(compacto);
 
-            AdjustVisualTree(control, compacto, muyCompacto, control.ActualWidth);
+            AdjustVisualTree(control, compacto, muyCompacto, anchoViewport);
         }
 
         private static void AdjustVisualTree(DependencyObject node, bool compacto, bool muyCompacto, double anchoModulo)
@@ -72,6 +75,9 @@ namespace SchettiniGestion.WPF
 
             if (node is FrameworkElement fe)
             {
+                if (fe is DataGrid dg)
+                    dg.HorizontalScrollBarVisibility = ScrollBarVisibility.Auto;
+
                 if (muyCompacto && fe is TextBlock tb && tb.TextWrapping == TextWrapping.Wrap && tb.FontSize <= 11)
                 {
                     string name = tb.Name ?? string.Empty;

@@ -46,7 +46,7 @@ namespace SchettiniGestion.WPF
         {
             var owner = Window.GetWindow(this);
 
-            if (!DatabaseService.TieneAperturaCajaHoy())
+            if (DatabaseService.GetUsaAperturaCajaObligatoria() && !DatabaseService.TieneAperturaCajaHoy())
             {
                 CustomMessageBox.Show(
                     "No hay apertura de caja registrada para hoy.\n\n" +

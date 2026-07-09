@@ -35,8 +35,9 @@
         </Border>
 
         <Border Grid.Row="1" Background="{StaticResource SurfaceDark}" CornerRadius="8" Padding="1">
-            <DataGrid x:Name="dgvProductos" Style="{StaticResource {x:Type DataGrid}}" 
+            <DataGrid x:Name="dgvProductos" Style="{StaticResource ModuleDataGridStyle}" 
                       AutoGenerateColumns="False" IsReadOnly="True"
+                      HorizontalScrollBarVisibility="Auto"
                       SelectionChanged="dgvProductos_SelectionChanged"
                       MouseDoubleClick="dgvProductos_MouseDoubleClick">
                 <DataGrid.ContextMenu>
@@ -52,8 +53,14 @@
                     <DataGridTextColumn Header="SUB-RUBRO" Binding="{Binding SubRubro}" Width="Auto" MinWidth="80"/>
                     <DataGridTextColumn Header="MARCA" Binding="{Binding Marca}" Width="Auto" MinWidth="70"/>
                     <DataGridTextColumn Header="PROVEEDOR" Binding="{Binding Proveedor}" Width="Auto" MinWidth="100"/>
-                    <DataGridTextColumn Header="VENTA" Binding="{Binding PrecioVenta, StringFormat=C2}" Width="Auto" FontWeight="Bold" Foreground="{StaticResource SuccessColor}"/>
-                    <DataGridTextColumn Header="STK" Binding="{Binding StockActual}" Width="Auto"/>
+                    <DataGridTextColumn Header="COSTO COMPRA FINAL" Binding="{Binding CostoCompraFinal, StringFormat=C2}" Width="Auto" MinWidth="130">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource StockNumericCellStyle}">
+                                <Setter Property="ToolTip" Value="{Binding CostoCompraFinal}"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="ÚLT. MODIFICACIÓN" Binding="{Binding FechaModificacion, StringFormat=dd/MM/yyyy HH:mm}" Width="Auto" MinWidth="140"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

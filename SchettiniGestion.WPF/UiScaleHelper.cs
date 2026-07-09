@@ -56,7 +56,40 @@ namespace SchettiniGestion.WPF
 
         public static Thickness ModulePadding(bool compact)
         {
-            return compact ? new Thickness(8, 6, 8, 8) : new Thickness(12, 10, 12, 12);
+            return compact ? new Thickness(6, 4, 8, 6) : new Thickness(10, 8, 12, 10);
+        }
+
+        public static Thickness HeaderPadding(bool compactHeight)
+        {
+            return compactHeight ? new Thickness(10, 6, 10, 6) : new Thickness(12, 10, 12, 10);
+        }
+
+        /// <summary>Ancho útil del área de módulo (ventana menos sidebar y padding).</summary>
+        public static double GetViewportWidthForModule(FrameworkElement element)
+        {
+            var window = Window.GetWindow(element);
+            if (window != null && window.ActualWidth > 0)
+            {
+                double sidebar = IsCompactWidth(window.ActualWidth) ? 72 : 260;
+                double padding = IsCompactWidth(window.ActualWidth) ? 14 : 22;
+                return Math.Max(640, window.ActualWidth - sidebar - padding);
+            }
+
+            return Math.Max(640, WorkArea.Width - 72);
+        }
+
+        /// <summary>Alto útil del área de módulo (ventana menos header global y padding).</summary>
+        public static double GetViewportHeightForModule(FrameworkElement element)
+        {
+            var window = Window.GetWindow(element);
+            if (window != null && window.ActualHeight > 0)
+            {
+                double header = IsCompactHeight(window.ActualHeight) ? 50 : 88;
+                double padding = IsCompactHeight(window.ActualHeight) ? 10 : 18;
+                return Math.Max(400, window.ActualHeight - header - padding);
+            }
+
+            return Math.Max(400, WorkArea.Height - 88);
         }
     }
 }

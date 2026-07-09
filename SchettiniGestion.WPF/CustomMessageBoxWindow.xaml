@@ -10,31 +10,51 @@
         WindowStyle="None"
         ResizeMode="NoResize"
         AllowsTransparency="True"
-        Background="Transparent">
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Loaded="Window_Loaded"
+        PreviewKeyDown="Window_PreviewKeyDown">
 
 
 
     <Window.Resources>
 
         <Style x:Key="MsgYesStyle" TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
-
             <Setter Property="Background" Value="{StaticResource SuccessColor}"/>
-
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
             <Style.Triggers>
-
                 <Trigger Property="IsMouseOver" Value="True">
-
                     <Setter Property="Background" Value="#059669"/>
-
                 </Trigger>
-
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="#FFFFFF"/>
+                    <Setter Property="BorderThickness" Value="3"/>
+                </Trigger>
             </Style.Triggers>
-
         </Style>
 
-        <Style x:Key="MsgNoStyle" TargetType="Button" BasedOn="{StaticResource DeleteButtonStyle}"/>
+        <Style x:Key="MsgNoStyle" TargetType="Button" BasedOn="{StaticResource DeleteButtonStyle}">
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="#FFFFFF"/>
+                    <Setter Property="BorderThickness" Value="3"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
 
-        <Style x:Key="MsgOkStyle" TargetType="Button" BasedOn="{StaticResource ButtonStyle}"/>
+        <Style x:Key="MsgOkStyle" TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="#FFFFFF"/>
+                    <Setter Property="BorderThickness" Value="3"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
 
     </Window.Resources>
 
@@ -88,7 +108,9 @@
 
 
 
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0"
+                        KeyboardNavigation.DirectionalNavigation="Contained"
+                        KeyboardNavigation.TabNavigation="Cycle">
 
 
 

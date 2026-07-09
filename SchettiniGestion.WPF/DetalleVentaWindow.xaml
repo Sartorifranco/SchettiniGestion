@@ -96,6 +96,10 @@
 
                     <TextBlock x:Name="lblFecha" Style="{StaticResource LabelValue}"/>
 
+                    <TextBlock Text="PERSONAL" Style="{StaticResource LabelKey}" Margin="0,8,0,0"/>
+
+                    <TextBlock x:Name="lblPersonal" Style="{StaticResource LabelValue}"/>
+
                     <TextBlock Text="N° COMPROBANTE" Style="{StaticResource LabelKey}" Margin="0,8,0,0"/>
 
                     <TextBlock x:Name="lblNumero" Style="{StaticResource LabelValue}"/>

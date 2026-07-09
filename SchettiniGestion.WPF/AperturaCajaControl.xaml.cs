@@ -21,6 +21,7 @@ namespace SchettiniGestion.WPF
             {
                 bool abierta = DatabaseService.TieneAperturaCajaHoy();
                 bool cerrada = DatabaseService.TieneCierreCajaHoy();
+                bool aperturaObligatoria = DatabaseService.GetUsaAperturaCajaObligatoria();
                 DataRow ap = DatabaseService.GetAperturaCajaHoy();
 
                 if (abierta && ap != null)
@@ -40,7 +41,9 @@ namespace SchettiniGestion.WPF
                     lblEstadoTitulo.Foreground = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81));
                     lblEstadoDetalle.Text = cerrada
                         ? "Hay apertura y cierre registrados hoy. Mañana deberá abrir caja nuevamente con un nuevo fondo fijo."
-                        : "Turno en curso. Podés operar ventas y movimientos. Al finalizar, realizá el cierre de caja.";
+                        : aperturaObligatoria
+                            ? "Turno en curso. Podés operar ventas y movimientos. Al finalizar, realizá el cierre de caja."
+                            : "Turno en curso. La apertura de caja es opcional en la configuración del sistema.";
                 }
                 else
                 {
@@ -55,7 +58,9 @@ namespace SchettiniGestion.WPF
                     lblEstadoTitulo.Foreground = new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B));
                     lblEstadoDetalle.Text = cerrada
                         ? "El cierre de hoy ya fue registrado. Para seguir operando mañana, abrí caja con el fondo fijo."
-                        : "Antes de operar, registrá la apertura indicando el monto del fondo fijo en efectivo.";
+                        : aperturaObligatoria
+                            ? "Antes de operar, registrá la apertura indicando el monto del fondo fijo en efectivo."
+                            : "La apertura de caja está desactivada en Configuración. Podés vender sin abrir turno; registrá la apertura solo si querés controlar el fondo fijo.";
                 }
             }
             catch (Exception ex)

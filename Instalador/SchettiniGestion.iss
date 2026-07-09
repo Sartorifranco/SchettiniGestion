@@ -2,7 +2,7 @@
 ; Requiere Inno Setup 6: https://jrsoftware.org/isdl.php
 
 #define MyAppName "SCHPOS"
-#define MyAppVersion "2.0.8"
+#define MyAppVersion "2.0.9"
 #define MyAppPublisher "Schettini Tec"
 #define MyAppExeName "SCHPOS.exe"
 #define MyAppUrl "https://github.com/Sartorifranco/SchettiniGestion"
@@ -40,7 +40,7 @@ Name: "desktopicon"; Description: "Crear acceso directo en el escritorio"; Group
 ; Generado por build-release.ps1 en la carpeta staging\
 Source: "staging\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; SQL LocalDB — SqlLocalDB.msi debe estar en la misma carpeta que este script
-Source: "SqlLocalDB.msi"; DestDir: "{tmp}"; Flags: deleteafterinstall
+Source: "prerequisites\SqlLocalDB.msi"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

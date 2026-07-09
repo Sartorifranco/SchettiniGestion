@@ -16,9 +16,9 @@
         <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="14,10" Margin="0,0,0,14">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Desde:" Style="{StaticResource LabelStyle}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <DatePicker x:Name="dpDesde" Width="130" Height="35" Margin="0,0,10,0"/>
+                <DatePicker x:Name="dpDesde" MinWidth="170" MinHeight="48" Margin="0,0,10,0"/>
                 <TextBlock Text="Hasta:" Style="{StaticResource LabelStyle}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <DatePicker x:Name="dpHasta" Width="130" Height="35" Margin="0,0,10,0"/>
+                <DatePicker x:Name="dpHasta" MinWidth="170" MinHeight="48" Margin="0,0,10,0"/>
                 <TextBox x:Name="txtFiltro" Style="{StaticResource ModernTextBox}" Width="200" Margin="0,0,10,0"/>
                 <Button Content="🔍 Buscar" Style="{StaticResource ButtonStyle}" Padding="12,6" Click="btnBuscar_Click"/>
             </StackPanel>

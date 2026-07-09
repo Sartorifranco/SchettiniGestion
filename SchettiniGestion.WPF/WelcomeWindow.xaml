@@ -25,8 +25,11 @@
                 <TextBlock Text="👋 ¡Hola!" FontSize="32" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
                 <TextBlock Text="Parece que es la primera vez que inicia el sistema." Foreground="#AAA" FontSize="16" Margin="0,0,0,30"/>
 
-                <TextBlock Text="Nombre de Usuario (Admin):" Foreground="White" Margin="0,0,0,5"/>
+                <TextBlock Text="Nombre de Usuario (login):" Foreground="White" Margin="0,0,0,5"/>
                 <TextBox x:Name="txtUser" Height="40" FontSize="16" Padding="5" Background="#333" Foreground="White" BorderBrush="#555" Text="admin"/>
+
+                <TextBlock Text="Nombre del Personal:" Foreground="White" Margin="0,15,0,5"/>
+                <TextBox x:Name="txtNombrePersonal" Height="40" FontSize="16" Padding="5" Background="#333" Foreground="White" BorderBrush="#555"/>
 
                 <TextBlock Text="Contraseña:" Foreground="White" Margin="0,15,0,5"/>
                 <PasswordBox x:Name="txtPass" Height="40" FontSize="16" Padding="5" Background="#333" Foreground="White" BorderBrush="#555"/>

@@ -23,9 +23,10 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                bannerSinApertura.Visibility = DatabaseService.TieneAperturaCajaHoy()
-                    ? Visibility.Collapsed
-                    : Visibility.Visible;
+                bool usaApertura = DatabaseService.GetUsaAperturaCajaObligatoria();
+                bannerSinApertura.Visibility = usaApertura && !DatabaseService.TieneAperturaCajaHoy()
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
 
                 decimal saldo = DatabaseService.GetSaldoCaja();
                 lblSaldo.Text = AppCulture.FormatCurrency(saldo);

@@ -35,17 +35,13 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 app.UseCors("LicensePanel");
 app.UseMiddleware<ApiKeyMiddleware>();
-app.UseDefaultFiles(new DefaultFilesOptions
-{
-    RequestPath = "/panel",
-    DefaultFileNames = { "index.html" }
-});
-app.UseStaticFiles(new StaticFileOptions
-{
-    RequestPath = "/panel"
-});
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
-app.MapGet("/", () => Results.Ok(new
+app.MapGet("/panel", () => Results.Redirect("/", permanent: true));
+app.MapGet("/panel/{*path}", (string path) => Results.Redirect("/" + path, permanent: true));
+
+app.MapGet("/api", () => Results.Ok(new
 {
     servicio = "SCHPOS License API",
     version = "1.0",

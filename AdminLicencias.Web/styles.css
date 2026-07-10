@@ -1,0 +1,51 @@
+:root {
+  --panel-bg: #161b22;
+  --panel-border: #30363d;
+}
+
+body {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #1f2937 0%, #0d1117 55%);
+}
+
+.card-panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+}
+
+.form-control,
+.form-select,
+.input-group-text {
+  background-color: #0d1117;
+  border-color: var(--panel-border);
+  color: #e6edf3;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: #0d1117;
+  color: #e6edf3;
+  border-color: #388bfd;
+  box-shadow: 0 0 0 0.2rem rgba(56, 139, 253, 0.15);
+}
+
+.nav-pills .nav-link {
+  color: #8b949e;
+}
+
+.nav-pills .nav-link.active {
+  background: #238636;
+}
+
+.table-dark {
+  --bs-table-bg: transparent;
+  --bs-table-hover-bg: rgba(56, 139, 253, 0.08);
+}
+
+.badge-estado-activa { background: #238636; }
+.badge-estado-porvencer { background: #9e6a03; }
+.badge-estado-vencida { background: #da3633; }
+
+.font-monospace {
+  font-size: 0.85rem;
+}

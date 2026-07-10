@@ -21,10 +21,28 @@ builder.Services.Configure<LicensingOptions>(builder.Configuration.GetSection(Li
 builder.Services.Configure<ApiSecurityOptions>(builder.Configuration.GetSection(ApiSecurityOptions.SectionName));
 builder.Services.AddAdminLicenciasCore();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("LicensePanel", policy =>
+        policy.SetIsOriginAllowed(_ => true)
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
+
 var app = builder.Build();
 
 app.UseForwardedHeaders();
+app.UseCors("LicensePanel");
 app.UseMiddleware<ApiKeyMiddleware>();
+app.UseDefaultFiles(new DefaultFilesOptions
+{
+    RequestPath = "/panel",
+    DefaultFileNames = { "index.html" }
+});
+app.UseStaticFiles(new StaticFileOptions
+{
+    RequestPath = "/panel"
+});
 
 app.MapGet("/", () => Results.Ok(new
 {

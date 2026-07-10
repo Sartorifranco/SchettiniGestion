@@ -35,3 +35,8 @@ Instalador/Output/
 Instalador/prerequisites/*.msi
 Instalador/prerequisites/ndp48-*.exe
 Instalador/prerequisites/licencia.key
+
+# Licencias locales generadas para pruebas
+/licencia.key
+/licencia-*.txt
+/licencia-prueba-*.txt

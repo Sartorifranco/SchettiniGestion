@@ -19,10 +19,20 @@
   </nav>
 
   <main class="container py-4">
-    <ul class="nav nav-pills mb-4" id="mainTabs" role="tablist">
+    <ul class="nav nav-pills mb-4 flex-wrap" id="mainTabs" role="tablist">
       <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="tab-generar" data-bs-toggle="pill" data-bs-target="#pane-generar" type="button">
+        <button class="nav-link active" id="tab-dashboard" data-bs-toggle="pill" data-bs-target="#pane-dashboard" type="button">
+          <i class="bi bi-speedometer2 me-1"></i>Dashboard
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-generar" data-bs-toggle="pill" data-bs-target="#pane-generar" type="button">
           <i class="bi bi-key me-1"></i>Nueva licencia
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-clientes" data-bs-toggle="pill" data-bs-target="#pane-clientes" type="button">
+          <i class="bi bi-people me-1"></i>Clientes
         </button>
       </li>
       <li class="nav-item" role="presentation">
@@ -33,37 +43,72 @@
     </ul>
 
     <div class="tab-content">
+      <!-- Dashboard -->
+      <div class="tab-pane fade show active" id="pane-dashboard" role="tabpanel">
+        <div class="row g-3 mb-4" id="dashboardKpis">
+          <div class="col-6 col-md-3"><div class="card card-panel kpi-card"><div class="card-body"><div class="kpi-label">Activos</div><div class="kpi-value text-success" id="kpiActivos">—</div></div></div></div>
+          <div class="col-6 col-md-3"><div class="card card-panel kpi-card"><div class="card-body"><div class="kpi-label">Por vencer</div><div class="kpi-value text-warning" id="kpiPorVencer">—</div></div></div></div>
+          <div class="col-6 col-md-3"><div class="card card-panel kpi-card"><div class="card-body"><div class="kpi-label">Vencidos</div><div class="kpi-value text-danger" id="kpiVencidos">—</div></div></div></div>
+          <div class="col-6 col-md-3"><div class="card card-panel kpi-card"><div class="card-body"><div class="kpi-label">Total clientes</div><div class="kpi-value" id="kpiTotal">—</div></div></div></div>
+        </div>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4"><div class="card card-panel"><div class="card-body"><div class="kpi-label">Ingresos mes</div><div class="kpi-value-sm" id="kpiMes">—</div></div></div></div>
+          <div class="col-md-4"><div class="card card-panel"><div class="card-body"><div class="kpi-label">Ingresos año</div><div class="kpi-value-sm" id="kpiAnio">—</div></div></div></div>
+          <div class="col-md-4"><div class="card card-panel"><div class="card-body"><div class="kpi-label">Ingresos total</div><div class="kpi-value-sm" id="kpiIngresosTotal">—</div></div></div></div>
+        </div>
+        <div class="card card-panel">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="h6 mb-0">Próximos a vencer (≤ 30 días)</h2>
+              <button type="button" class="btn btn-outline-secondary btn-sm" id="btnRefrescarDashboard"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-dark table-sm align-middle mb-0">
+                <thead><tr><th>Cliente</th><th>CUIT</th><th>Ciudad</th><th>Vence</th><th>Días</th><th>Estado</th></tr></thead>
+                <tbody id="dashboardProximosBody"><tr><td colspan="6" class="text-secondary text-center py-3">Cargando…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Generar -->
-      <div class="tab-pane fade show active" id="pane-generar" role="tabpanel">
+      <div class="tab-pane fade" id="pane-generar" role="tabpanel">
         <div class="row g-4">
           <div class="col-lg-7">
             <div class="card card-panel">
               <div class="card-body">
                 <h2 class="h5 mb-1">Generar licencia</h2>
-                <p class="text-secondary small mb-4">
-                  Los datos se envían a la API de producción. La criptografía se ejecuta en el servidor.
-                </p>
-
+                <p class="text-secondary small mb-4">La criptografía se ejecuta en el servidor vía API.</p>
                 <form id="formGenerar" novalidate>
                   <div class="row g-3">
+                    <div class="col-12">
+                      <label class="form-label" for="clienteSelect">Cliente existente</label>
+                      <div class="input-group">
+                        <select class="form-select" id="clienteSelect">
+                          <option value="">— Cliente nuevo / manual —</option>
+                        </select>
+                        <button class="btn btn-outline-secondary" type="button" id="btnRecargarClientes" title="Recargar clientes"><i class="bi bi-arrow-clockwise"></i></button>
+                      </div>
+                    </div>
                     <div class="col-md-6">
                       <label class="form-label" for="razonSocial">Razón social *</label>
-                      <input type="text" class="form-control" id="razonSocial" required maxlength="200" autocomplete="organization">
+                      <input type="text" class="form-control" id="razonSocial" required maxlength="200">
                     </div>
                     <div class="col-md-6">
                       <label class="form-label" for="cuit">CUIT *</label>
-                      <input type="text" class="form-control" id="cuit" required maxlength="20" placeholder="20123456789">
+                      <input type="text" class="form-control" id="cuit" required maxlength="13" inputmode="numeric" placeholder="20123456789">
                     </div>
                     <div class="col-12">
                       <label class="form-label" for="hardwareId">Hardware ID *</label>
-                      <input type="text" class="form-control font-monospace text-uppercase" id="hardwareId" required maxlength="64"
-                             placeholder="Copiar desde la pantalla de activación de SCHPOS">
+                      <input type="text" class="form-control font-monospace text-uppercase" id="hardwareId" required maxlength="64">
                     </div>
                     <div class="col-md-4">
-                      <label class="form-label" for="plan">Plan *</label>
-                      <select class="form-select" id="plan" required>
+                      <label class="form-label" for="plan">Plan base</label>
+                      <select class="form-select" id="plan">
                         <option value="lite" selected>Lite</option>
                         <option value="pro">Pro (todos los módulos)</option>
+                        <option value="custom">Personalizado (módulos abajo)</option>
                       </select>
                     </div>
                     <div class="col-md-4">
@@ -74,21 +119,25 @@
                       <label class="form-label" for="fechaVencimiento">Fecha vencimiento *</label>
                       <input type="date" class="form-control" id="fechaVencimiento" required>
                     </div>
+                    <div class="col-12">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label mb-0">Módulos habilitados</label>
+                        <div class="btn-group btn-group-sm">
+                          <button type="button" class="btn btn-outline-secondary" id="btnPresetLite">Preset Lite</button>
+                          <button type="button" class="btn btn-outline-secondary" id="btnLimpiarModulos">Limpiar</button>
+                        </div>
+                      </div>
+                      <div id="panelModulos" class="modulos-panel p-3 rounded border border-secondary-subtle small"></div>
+                      <div class="form-text text-secondary" id="modulosImplicitos"></div>
+                    </div>
                     <div class="col-md-4">
                       <label class="form-label" for="monto">Monto venta</label>
-                      <div class="input-group">
-                        <span class="input-group-text">$</span>
-                        <input type="number" class="form-control" id="monto" min="0" step="0.01" value="0">
-                      </div>
+                      <div class="input-group"><span class="input-group-text">$</span><input type="number" class="form-control" id="monto" min="0" step="0.01" value="0"></div>
                     </div>
                     <div class="col-md-4">
                       <label class="form-label" for="metodoPago">Método de pago</label>
                       <select class="form-select" id="metodoPago">
-                        <option>Transferencia</option>
-                        <option>Efectivo</option>
-                        <option>Mercado Pago</option>
-                        <option>Tarjeta</option>
-                        <option>Sin cargo</option>
+                        <option>Transferencia</option><option>Efectivo</option><option>Mercado Pago</option><option>Tarjeta</option><option>Sin cargo</option>
                       </select>
                     </div>
                     <div class="col-md-4">
@@ -98,7 +147,7 @@
                     <div class="col-12">
                       <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="esRenovacion">
-                        <label class="form-check-label" for="esRenovacion">Es renovación</label>
+                        <label class="form-check-label" for="esRenovacion">Es renovación (reemplaza licencia anterior)</label>
                       </div>
                     </div>
                     <div class="col-12">
@@ -106,45 +155,61 @@
                       <textarea class="form-control" id="observaciones" rows="2" maxlength="500"></textarea>
                     </div>
                   </div>
-
                   <div class="d-flex gap-2 mt-4">
                     <button type="submit" class="btn btn-primary" id="btnGenerar">
-                      <span class="spinner-border spinner-border-sm d-none me-1" id="spinnerGenerar"></span>
-                      Generar licencia
+                      <span class="spinner-border spinner-border-sm d-none me-1" id="spinnerGenerar"></span>Generar licencia
                     </button>
-                    <button type="reset" class="btn btn-outline-secondary">Limpiar</button>
+                    <button type="reset" class="btn btn-outline-secondary" id="btnLimpiarForm">Limpiar</button>
                   </div>
                 </form>
               </div>
             </div>
           </div>
-
           <div class="col-lg-5">
             <div class="card card-panel h-100">
               <div class="card-body d-flex flex-column">
                 <h2 class="h5 mb-3">Resultado</h2>
-                <div id="resultadoVacio" class="text-secondary small flex-grow-1">
-                  La clave generada aparecerá aquí.
-                </div>
+                <div id="resultadoVacio" class="text-secondary small flex-grow-1">La clave generada aparecerá aquí.</div>
                 <div id="resultadoOk" class="d-none">
                   <div class="alert alert-success py-2 small" id="resultadoMensaje"></div>
                   <label class="form-label small text-secondary">Clave Base64</label>
                   <textarea class="form-control font-monospace small mb-3" id="licenseKey" rows="6" readonly></textarea>
                   <dl class="row small mb-3">
-                    <dt class="col-5 text-secondary">Plan</dt>
-                    <dd class="col-7" id="resPlan"></dd>
-                    <dt class="col-5 text-secondary">Vencimiento</dt>
-                    <dd class="col-7" id="resVence"></dd>
-                    <dt class="col-5 text-secondary">Módulos</dt>
-                    <dd class="col-7" id="resModulos"></dd>
+                    <dt class="col-5 text-secondary">Cliente</dt><dd class="col-7" id="resCliente"></dd>
+                    <dt class="col-5 text-secondary">HWID</dt><dd class="col-7 font-monospace" id="resHwid"></dd>
+                    <dt class="col-5 text-secondary">Plan</dt><dd class="col-7" id="resPlan"></dd>
+                    <dt class="col-5 text-secondary">Vencimiento</dt><dd class="col-7" id="resVence"></dd>
+                    <dt class="col-5 text-secondary">Módulos</dt><dd class="col-7" id="resModulos"></dd>
+                    <dt class="col-5 text-secondary">Monto</dt><dd class="col-7" id="resMonto"></dd>
                   </dl>
-                  <button type="button" class="btn btn-outline-light btn-sm" id="btnCopiar">
-                    <i class="bi bi-clipboard me-1"></i>Copiar clave
-                  </button>
+                  <button type="button" class="btn btn-outline-light btn-sm" id="btnCopiar"><i class="bi bi-clipboard me-1"></i>Copiar clave</button>
                 </div>
                 <div id="resultadoError" class="alert alert-danger d-none mt-auto"></div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Clientes -->
+      <div class="tab-pane fade" id="pane-clientes" role="tabpanel">
+        <div class="card card-panel">
+          <div class="card-body">
+            <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+              <div class="flex-grow-1">
+                <label class="form-label small" for="filtroClientes">Buscar cliente</label>
+                <input type="search" class="form-control form-control-sm" id="filtroClientes" placeholder="Nombre, CUIT o ciudad">
+              </div>
+              <button type="button" class="btn btn-success btn-sm" id="btnNuevoCliente"><i class="bi bi-plus-lg me-1"></i>Nuevo cliente</button>
+              <button type="button" class="btn btn-primary btn-sm" id="btnRefrescarClientes"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-dark table-hover table-sm align-middle mb-0">
+                <thead><tr><th>Cliente</th><th>CUIT</th><th>Ciudad</th><th>Contacto</th><th>IP servidor</th><th>Último HWID</th><th>Estado lic.</th><th class="text-end">Acciones</th></tr></thead>
+                <tbody id="clientesBody"><tr><td colspan="8" class="text-secondary text-center py-4">Cargá la lista con «Actualizar».</td></tr></tbody>
+              </table>
+            </div>
+            <p class="small text-secondary mt-3 mb-0" id="clientesResumen"></p>
           </div>
         </div>
       </div>
@@ -156,40 +221,34 @@
             <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
               <div class="flex-grow-1">
                 <label class="form-label small" for="filtroTexto">Buscar</label>
-                <input type="search" class="form-control form-control-sm" id="filtroTexto"
-                       placeholder="Cliente, CUIT o HWID">
+                <input type="search" class="form-control form-control-sm" id="filtroTexto" placeholder="Cliente, CUIT o HWID">
               </div>
               <div>
                 <label class="form-label small" for="filtroEstado">Estado</label>
                 <select class="form-select form-select-sm" id="filtroEstado">
-                  <option value="">Todos</option>
-                  <option>Activa</option>
-                  <option>PorVencer</option>
-                  <option>Vencida</option>
+                  <option value="">Todos</option><option>Activa</option><option>PorVencer</option><option>Vencida</option>
                 </select>
               </div>
-              <button type="button" class="btn btn-primary btn-sm" id="btnRefrescarHistorial">
-                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
-              </button>
+              <div>
+                <label class="form-label small" for="filtroDesde">Desde</label>
+                <input type="date" class="form-control form-control-sm" id="filtroDesde">
+              </div>
+              <div>
+                <label class="form-label small" for="filtroHasta">Hasta</label>
+                <input type="date" class="form-control form-control-sm" id="filtroHasta">
+              </div>
+              <button type="button" class="btn btn-outline-secondary btn-sm" id="btnLimpiarFiltros">Limpiar</button>
+              <button type="button" class="btn btn-primary btn-sm" id="btnRefrescarHistorial"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
+              <button type="button" class="btn btn-outline-light btn-sm" id="btnExportCsv"><i class="bi bi-download me-1"></i>Exportar CSV</button>
             </div>
-
             <div class="table-responsive">
               <table class="table table-dark table-hover table-sm align-middle mb-0">
                 <thead>
                   <tr>
-                    <th>Cliente</th>
-                    <th>CUIT</th>
-                    <th>Plan</th>
-                    <th>Emitida</th>
-                    <th>Vence</th>
-                    <th>Estado</th>
-                    <th>Monto</th>
-                    <th>HWID</th>
+                    <th>Cliente</th><th>CUIT</th><th>Versión</th><th>Emitida</th><th>Vence</th><th>Días</th><th>Estado</th><th>Monto</th><th>HWID</th><th>Método</th><th>Renov.</th><th>Módulos</th><th class="text-end">Acciones</th>
                   </tr>
                 </thead>
-                <tbody id="historialBody">
-                  <tr><td colspan="8" class="text-secondary text-center py-4">Cargá el historial con «Actualizar».</td></tr>
-                </tbody>
+                <tbody id="historialBody"><tr><td colspan="13" class="text-secondary text-center py-4">Cargá el historial con «Actualizar».</td></tr></tbody>
               </table>
             </div>
             <p class="small text-secondary mt-3 mb-0" id="historialResumen"></p>
@@ -199,7 +258,85 @@
     </div>
   </main>
 
-  <!-- Config modal -->
+  <div class="modal fade" id="clienteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content bg-dark text-light border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title" id="clienteModalTitle">Nuevo cliente</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="formCliente">
+          <div class="modal-body">
+            <input type="hidden" id="clienteEditId">
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label class="form-label" for="cliRazonSocial">Razón social *</label>
+                <input type="text" class="form-control" id="cliRazonSocial" required maxlength="200">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="cliCuit">CUIT / CUIL</label>
+                <input type="text" class="form-control" id="cliCuit" maxlength="13" inputmode="numeric" placeholder="20123456789">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="cliContacto">Nombre de contacto</label>
+                <input type="text" class="form-control" id="cliContacto" maxlength="120">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="cliTelefono">Teléfono / WhatsApp</label>
+                <input type="text" class="form-control" id="cliTelefono" maxlength="40">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="cliEmail">Email</label>
+                <input type="email" class="form-control" id="cliEmail" maxlength="120">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="cliCanal">Canal preferido</label>
+                <select class="form-select" id="cliCanal">
+                  <option>WhatsApp</option><option>Email</option><option>Teléfono</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="cliCiudad">Ciudad</label>
+                <input type="text" class="form-control" id="cliCiudad" maxlength="80">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="cliProvincia">Provincia</label>
+                <input type="text" class="form-control" id="cliProvincia" maxlength="80">
+              </div>
+              <div class="col-md-8">
+                <label class="form-label" for="cliIpServidor">IP del servidor SQL</label>
+                <input type="text" class="form-control font-monospace" id="cliIpServidor" maxlength="64" placeholder="192.168.1.100">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label" for="cliPuerto">Puerto</label>
+                <input type="number" class="form-control" id="cliPuerto" min="1" max="65535" value="1433">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label" for="cliPuestos">Puestos</label>
+                <input type="number" class="form-control" id="cliPuestos" min="1" max="999" value="1">
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="cliNotas">Notas internas</label>
+                <textarea class="form-control" id="cliNotas" rows="3" maxlength="1000"></textarea>
+              </div>
+              <div class="col-12">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="cliActivo" checked>
+                  <label class="form-check-label" for="cliActivo">Cliente activo</label>
+                </div>
+              </div>
+            </div>
+            <div class="alert alert-danger d-none mt-3 mb-0" id="clienteFormError"></div>
+          </div>
+          <div class="modal-footer border-secondary">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary" id="btnGuardarCliente">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <div class="modal fade" id="configModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content bg-dark text-light border-secondary">
@@ -210,16 +347,12 @@
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label" for="apiBaseUrl">URL base de la API</label>
-            <input type="url" class="form-control font-monospace" id="apiBaseUrl"
-                   value="https://licencias.schpos.com.ar">
+            <input type="url" class="form-control font-monospace" id="apiBaseUrl" value="https://licencias.schpos.com.ar">
           </div>
           <div class="mb-3">
             <label class="form-label" for="adminApiKey">API Key de administración</label>
-            <input type="password" class="form-control font-monospace" id="adminApiKey"
-                   autocomplete="off" placeholder="Se envía en header X-Api-Key">
-            <div class="form-text text-secondary">
-              Se guarda solo en <code>localStorage</code> de este navegador.
-            </div>
+            <input type="password" class="form-control font-monospace" id="adminApiKey" autocomplete="off" placeholder="Header X-Api-Key">
+            <div class="form-text text-secondary">Se guarda en <code>localStorage</code> de este navegador.</div>
           </div>
         </div>
         <div class="modal-footer border-secondary">

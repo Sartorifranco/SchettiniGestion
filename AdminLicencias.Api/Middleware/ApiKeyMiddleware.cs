@@ -18,8 +18,7 @@ public sealed class ApiKeyMiddleware
     {
         string path = context.Request.Path.Value ?? "";
 
-        if (path.StartsWith("/api/licenses/generate", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith("/api/licenses/history", StringComparison.OrdinalIgnoreCase))
+        if (RequiereAdminApiKey(path))
         {
             if (!ValidarClave(context, _options.AdminApiKey, ApiKeyConstants.AdminHeaderName))
             {
@@ -41,6 +40,14 @@ public sealed class ApiKeyMiddleware
 
         await _next(context);
     }
+
+    private static bool RequiereAdminApiKey(string path) =>
+        path.StartsWith("/api/licenses/generate", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWith("/api/licenses/history", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWith("/api/licenses/clients", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWith("/api/licenses/dashboard", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWith("/api/licenses/modules", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWith("/api/licenses/revoke", StringComparison.OrdinalIgnoreCase);
 
     private static bool ValidarClave(HttpContext context, string? expected, string headerName)
     {

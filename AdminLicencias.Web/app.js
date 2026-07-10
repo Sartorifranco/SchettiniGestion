@@ -1,17 +1,24 @@
 const STORAGE_KEY = "schpos-license-panel-v1";
 const DEFAULT_API_BASE = "https://licencias.schpos.com.ar";
 
+const GRUPO_TITULOS = {
+  lite_base: "Paquete Lite (base)",
+  modulo_adicional: "Módulos adicionales",
+  extra_unico: "Extras únicos",
+  abono_mensual: "Abonos mensuales"
+};
+
 const $ = (id) => document.getElementById(id);
 
 let historialCache = [];
+let clientesCache = [];
+let modulosCatalog = [];
 let syncingDates = false;
+let selectedClienteId = null;
 
 function loadConfig() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-  } catch {
-    return {};
-  }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+  catch { return {}; }
 }
 
 function saveConfig(partial) {
@@ -21,8 +28,7 @@ function saveConfig(partial) {
 }
 
 function getApiBase() {
-  const cfg = loadConfig();
-  return (cfg.apiBaseUrl || DEFAULT_API_BASE).replace(/\/+$/, "");
+  return (loadConfig().apiBaseUrl || DEFAULT_API_BASE).replace(/\/+$/, "");
 }
 
 function getAdminApiKey() {
@@ -32,6 +38,14 @@ function getAdminApiKey() {
 function showToast(message) {
   $("toastBody").textContent = message;
   bootstrap.Toast.getOrCreateInstance($("toast")).show();
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function formatDate(value) {
@@ -55,7 +69,11 @@ function badgeEstado(estado) {
   if (key === "activa") cls = "badge-estado-activa";
   else if (key === "porvencer" || key === "por_vencer") cls = "badge-estado-porvencer";
   else if (key === "vencida") cls = "badge-estado-vencida";
-  return `<span class="badge ${cls}">${estado || "—"}</span>`;
+  return `<span class="badge ${cls}">${escapeHtml(estado || "—")}</span>`;
+}
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 function tomorrowIso() {
@@ -77,6 +95,46 @@ function diffDaysFromToday(isoDate) {
   return Math.round((target - today) / 86400000);
 }
 
+function normalizeCuit(value) {
+  return (value || "").replace(/\D/g, "");
+}
+
+function isValidCuit(value) {
+  const cuit = normalizeCuit(value);
+  return cuit.length === 11;
+}
+
+async function apiFetch(path, options = {}) {
+  const apiKey = getAdminApiKey();
+  if (!apiKey) {
+    throw new Error("Configurá tu API Key de administración en el engranaje superior.");
+  }
+
+  const response = await fetch(`${getApiBase()}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Api-Key": apiKey,
+      ...(options.headers || {})
+    }
+  });
+
+  let payload = null;
+  const text = await response.text();
+  if (text) {
+    try { payload = JSON.parse(text); }
+    catch { payload = { raw: text }; }
+  }
+
+  if (!response.ok) {
+    const msg = payload?.error || payload?.title || payload?.raw || `HTTP ${response.status}`;
+    throw new Error(msg);
+  }
+
+  if (response.status === 204) return null;
+  return payload;
+}
+
 function initDateFields() {
   $("fechaVencimiento").min = tomorrowIso();
   $("fechaVencimiento").value = addDaysIso(365);
@@ -92,59 +150,28 @@ function syncFromDias() {
 function syncFromFecha() {
   if (syncingDates) return;
   syncingDates = true;
-  const dias = diffDaysFromToday($("fechaVencimiento").value);
-  $("dias").value = Math.max(1, dias);
+  $("dias").value = Math.max(1, diffDaysFromToday($("fechaVencimiento").value));
   syncingDates = false;
 }
 
-async function apiFetch(path, options = {}) {
-  const apiKey = getAdminApiKey();
-  if (!apiKey) {
-    throw new Error("Configurá tu API Key de administración en el engranaje superior.");
-  }
-
-  const headers = {
-    "Content-Type": "application/json",
-    "X-Api-Key": apiKey,
-    ...(options.headers || {})
-  };
-
-  const response = await fetch(`${getApiBase()}${path}`, {
-    ...options,
-    headers
-  });
-
-  let payload = null;
-  const text = await response.text();
-  if (text) {
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      payload = { raw: text };
-    }
-  }
-
-  if (!response.ok) {
-    const msg = payload?.error || payload?.title || payload?.raw || `HTTP ${response.status}`;
-    throw new Error(msg);
-  }
-
-  return payload;
-}
-
 function validateGenerateForm() {
-  const hwid = $("hardwareId").value.trim();
-  const cuit = $("cuit").value.trim();
   const razon = $("razonSocial").value.trim();
+  const cuit = $("cuit").value.trim();
+  const hwid = $("hardwareId").value.trim();
   const fecha = $("fechaVencimiento").value;
 
   if (!razon) return "La Razón Social es obligatoria.";
   if (!cuit) return "El CUIT es obligatorio.";
+  if (!isValidCuit(cuit)) return "El CUIT debe tener 11 dígitos.";
   if (!hwid) return "El Hardware ID es obligatorio.";
   if (!fecha) return "La fecha de vencimiento es obligatoria.";
-  if (fecha <= new Date().toISOString().slice(0, 10)) {
-    return "La fecha de vencimiento debe ser futura.";
+  if (fecha <= todayIso()) return "La fecha de vencimiento debe ser futura.";
+
+  const plan = $("plan").value;
+  if (plan === "custom" && getSelectedModulos().length === 0) {
+    return "Seleccioná al menos un módulo o cambiá el plan base.";
   }
+
   return null;
 }
 
@@ -155,20 +182,358 @@ function showGenerateError(message) {
   $("resultadoError").classList.remove("d-none");
 }
 
-function showGenerateSuccess(data) {
+function showGenerateSuccess(data, formSnapshot) {
   $("resultadoVacio").classList.add("d-none");
   $("resultadoError").classList.add("d-none");
   $("resultadoOk").classList.remove("d-none");
-  $("resultadoMensaje").textContent = "Licencia generada correctamente.";
+  $("resultadoMensaje").textContent = "Licencia generada y guardada en el servidor.";
   $("licenseKey").value = data.licenseKey || "";
-  $("resPlan").textContent = (data.plan || "").toUpperCase();
-  $("resVence").textContent = formatDate(data.fechaVencimiento);
+  $("resCliente").textContent = formSnapshot.razonSocial;
+  $("resHwid").textContent = formSnapshot.hardwareId;
+  $("resPlan").textContent = (data.plan || formSnapshot.plan || "").toUpperCase();
+  $("resVence").textContent = `${formatDate(data.fechaVencimiento)} (${diffDaysFromToday(String(data.fechaVencimiento).slice(0, 10))} días)`;
   $("resModulos").textContent = data.modulosResumen || (data.modulos || []).join(", ");
+  $("resMonto").textContent = formatMoney(formSnapshot.montoVenta);
+}
+
+function getSelectedModulos() {
+  return [...document.querySelectorAll(".modulo-check:checked")].map((el) => el.value);
+}
+
+function renderModulosPanel() {
+  const panel = $("panelModulos");
+  panel.innerHTML = "";
+  const grupos = [...new Set(modulosCatalog.map((m) => m.grupo))];
+
+  for (const grupo of grupos) {
+    const mods = modulosCatalog.filter((m) => m.grupo === grupo);
+    if (!mods.length) continue;
+
+    const title = document.createElement("div");
+    title.className = "fw-semibold mt-2 mb-1";
+    title.textContent = GRUPO_TITULOS[grupo] || grupo;
+    panel.appendChild(title);
+
+    const row = document.createElement("div");
+    row.className = "row g-2";
+    for (const mod of mods) {
+      const col = document.createElement("div");
+      col.className = "col-md-6";
+      col.innerHTML = `
+        <div class="form-check">
+          <input class="form-check-input modulo-check" type="checkbox" value="${escapeHtml(mod.codigo)}" id="mod_${escapeHtml(mod.codigo)}">
+          <label class="form-check-label" for="mod_${escapeHtml(mod.codigo)}">
+            ${escapeHtml(mod.esAbonoMensual ? `${mod.nombre} (abono)` : mod.nombre)}
+          </label>
+        </div>`;
+      row.appendChild(col);
+    }
+    panel.appendChild(row);
+  }
+
+  applyPresetLite();
+}
+
+function setModulosChecked(codigos) {
+  const set = new Set((codigos || []).map((c) => c.toUpperCase()));
+  document.querySelectorAll(".modulo-check").forEach((el) => {
+    el.checked = set.has(el.value.toUpperCase());
+  });
+}
+
+function applyPresetLite() {
+  const lite = modulosCatalog.filter((m) => m.incluidoEnLite).map((m) => m.codigo);
+  setModulosChecked(lite);
+}
+
+function clearModulos() {
+  document.querySelectorAll(".modulo-check").forEach((el) => { el.checked = false; });
+}
+
+async function loadModulosCatalog() {
+  try {
+    modulosCatalog = await apiFetch("/api/licenses/modules");
+    renderModulosPanel();
+    $("modulosImplicitos").textContent =
+      "Los módulos implícitos del sistema se agregan automáticamente en el servidor.";
+  } catch (err) {
+    $("panelModulos").innerHTML = `<div class="text-danger">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function fillClienteSelect(selectedId = null) {
+  const select = $("clienteSelect");
+  const current = selectedId || select.value;
+  select.innerHTML = '<option value="">— Cliente nuevo / manual —</option>';
+  for (const c of clientesCache) {
+    const opt = document.createElement("option");
+    opt.value = c.id;
+    opt.textContent = `${c.razonSocial} (${c.cuit || "sin CUIT"})`;
+    select.appendChild(opt);
+  }
+  if (current) select.value = current;
+}
+
+function onClienteSelectChange() {
+  const id = $("clienteSelect").value;
+  selectedClienteId = id || null;
+  if (!id) return;
+
+  const cliente = clientesCache.find((c) => c.id === id);
+  if (!cliente) return;
+
+  $("razonSocial").value = cliente.razonSocial || "";
+  $("cuit").value = cliente.cuit || "";
+  if (cliente.ultimoHwid) {
+    $("hardwareId").value = cliente.ultimoHwid.trim().toUpperCase();
+  }
+}
+
+async function loadClientes() {
+  clientesCache = await apiFetch("/api/licenses/clients");
+  fillClienteSelect(selectedClienteId);
+  renderClientesTable(clientesCache);
+  $("clientesResumen").textContent = `${clientesCache.length} cliente(s) activo(s)`;
+}
+
+function renderClientesTable(rows) {
+  const q = ($("filtroClientes")?.value || "").trim().toLowerCase();
+  const filtered = rows.filter((c) => !q || [
+    c.razonSocial, c.cuit, c.ciudad, c.contacto, c.ipServidor
+  ].some((v) => (v || "").toLowerCase().includes(q)));
+
+  const tbody = $("clientesBody");
+  tbody.innerHTML = "";
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-secondary text-center py-4">Sin clientes.</td></tr>';
+    return;
+  }
+
+  for (const c of filtered) {
+    const ipLabel = c.ipServidor
+      ? `${c.ipServidor}${c.puertoServidor ? `:${c.puertoServidor}` : ""}`
+      : "—";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(c.razonSocial)}</td>
+      <td class="font-monospace">${escapeHtml(c.cuit || "—")}</td>
+      <td>${escapeHtml(c.ciudad || "—")}</td>
+      <td>${escapeHtml(c.contacto || "—")}</td>
+      <td class="font-monospace small">${escapeHtml(ipLabel)}</td>
+      <td class="font-monospace small">${escapeHtml(c.ultimoHwid || "—")}</td>
+      <td>${badgeEstado(c.ultimoEstado)}</td>
+      <td class="text-end">
+        <div class="btn-group btn-group-sm">
+          <button type="button" class="btn btn-outline-primary btn-usar-cliente" data-id="${c.id}">Usar</button>
+          <button type="button" class="btn btn-outline-secondary btn-editar-cliente" data-id="${c.id}">Editar</button>
+          <button type="button" class="btn btn-outline-danger btn-eliminar-cliente" data-id="${c.id}">Eliminar</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  }
+
+  tbody.querySelectorAll(".btn-usar-cliente").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      $("clienteSelect").value = btn.dataset.id;
+      onClienteSelectChange();
+      bootstrap.Tab.getOrCreateInstance($("tab-generar")).show();
+      showToast("Cliente cargado en el formulario de licencia.");
+    });
+  });
+
+  tbody.querySelectorAll(".btn-editar-cliente").forEach((btn) => {
+    btn.addEventListener("click", () => openClienteModal(btn.dataset.id));
+  });
+
+  tbody.querySelectorAll(".btn-eliminar-cliente").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const cliente = clientesCache.find((c) => c.id === btn.dataset.id);
+      deleteCliente(btn.dataset.id, cliente?.razonSocial);
+    });
+  });
+}
+
+function clearClienteFormError() {
+  $("clienteFormError").classList.add("d-none");
+  $("clienteFormError").textContent = "";
+}
+
+function showClienteFormError(message) {
+  $("clienteFormError").textContent = message;
+  $("clienteFormError").classList.remove("d-none");
+}
+
+function resetClienteForm() {
+  $("formCliente").reset();
+  $("clienteEditId").value = "";
+  $("cliPuerto").value = "1433";
+  $("cliPuestos").value = "1";
+  $("cliActivo").checked = true;
+  clearClienteFormError();
+}
+
+function fillClienteForm(data) {
+  $("clienteEditId").value = data.id || "";
+  $("cliRazonSocial").value = data.razonSocial || "";
+  $("cliCuit").value = data.cuit || "";
+  $("cliContacto").value = data.contacto || "";
+  $("cliTelefono").value = data.telefono || "";
+  $("cliEmail").value = data.email || "";
+  $("cliCanal").value = data.canalContacto || "WhatsApp";
+  $("cliCiudad").value = data.ciudad || "";
+  $("cliProvincia").value = data.provincia || "";
+  $("cliIpServidor").value = data.ipServidor || "";
+  $("cliPuerto").value = data.puertoServidor || 1433;
+  $("cliPuestos").value = data.cantidadPuestos || 1;
+  $("cliNotas").value = data.notas || "";
+  $("cliActivo").checked = data.activo !== false;
+}
+
+function readClienteForm() {
+  return {
+    razonSocial: $("cliRazonSocial").value.trim(),
+    cuit: normalizeCuit($("cliCuit").value),
+    contacto: $("cliContacto").value.trim(),
+    telefono: $("cliTelefono").value.trim(),
+    email: $("cliEmail").value.trim(),
+    ciudad: $("cliCiudad").value.trim(),
+    provincia: $("cliProvincia").value.trim(),
+    ipServidor: $("cliIpServidor").value.trim(),
+    puertoServidor: Number($("cliPuerto").value) || 1433,
+    cantidadPuestos: Number($("cliPuestos").value) || 1,
+    canalContacto: $("cliCanal").value,
+    notas: $("cliNotas").value.trim(),
+    activo: $("cliActivo").checked
+  };
+}
+
+function validateClienteForm(body) {
+  if (!body.razonSocial) return "La Razón Social es obligatoria.";
+  if (body.cuit && !isValidCuit(body.cuit)) return "El CUIT debe tener 11 dígitos.";
+  if (body.puertoServidor < 1 || body.puertoServidor > 65535) return "Puerto inválido.";
+  if (body.cantidadPuestos < 1) return "Cantidad de puestos inválida.";
+  return null;
+}
+
+async function openClienteModal(clienteId = null) {
+  resetClienteForm();
+  $("clienteModalTitle").textContent = clienteId ? "Editar cliente" : "Nuevo cliente";
+
+  if (clienteId) {
+    const data = await apiFetch(`/api/licenses/clients/${clienteId}`);
+    fillClienteForm(data);
+  }
+
+  bootstrap.Modal.getOrCreateInstance($("clienteModal")).show();
+}
+
+async function saveCliente(event) {
+  event.preventDefault();
+  clearClienteFormError();
+
+  const body = readClienteForm();
+  const error = validateClienteForm(body);
+  if (error) {
+    showClienteFormError(error);
+    return;
+  }
+
+  const id = $("clienteEditId").value;
+  $("btnGuardarCliente").disabled = true;
+
+  try {
+    if (id) {
+      await apiFetch(`/api/licenses/clients/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(body)
+      });
+      showToast("Cliente actualizado.");
+    } else {
+      await apiFetch("/api/licenses/clients", {
+        method: "POST",
+        body: JSON.stringify(body)
+      });
+      showToast("Cliente creado.");
+    }
+
+    bootstrap.Modal.getInstance($("clienteModal")).hide();
+    await loadClientes();
+  } catch (err) {
+    showClienteFormError(err.message || "Error al guardar el cliente.");
+  } finally {
+    $("btnGuardarCliente").disabled = false;
+  }
+}
+
+async function deleteCliente(id, nombre) {
+  const label = nombre || "este cliente";
+  if (!confirm(`¿Eliminar ${label}? También se borrarán sus licencias del historial.`)) return;
+
+  try {
+    await apiFetch(`/api/licenses/clients/${id}`, { method: "DELETE" });
+    showToast("Cliente eliminado.");
+    if ($("clienteSelect").value === id) {
+      $("clienteSelect").value = "";
+      selectedClienteId = null;
+    }
+    await loadClientes();
+    historialCache = [];
+  } catch (err) {
+    showToast(err.message || "Error al eliminar.");
+  }
+}
+
+async function revokeLicencia(licenciaId, clienteNombre) {
+  const label = clienteNombre || "esta licencia";
+  if (!confirm(`¿Revocar la licencia de ${label}? Quedará vencida desde hoy.`)) return;
+
+  try {
+    await apiFetch("/api/licenses/revoke", {
+      method: "POST",
+      body: JSON.stringify({ licenciaId })
+    });
+    showToast("Licencia revocada.");
+    await loadHistorial();
+    await loadClientes();
+    await loadDashboard().catch(() => {});
+  } catch (err) {
+    showToast(err.message || "Error al revocar.");
+  }
+}
+
+async function loadDashboard() {
+  const data = await apiFetch("/api/licenses/dashboard");
+  $("kpiActivos").textContent = data.clientesActivos ?? "0";
+  $("kpiPorVencer").textContent = data.clientesPorVencer ?? "0";
+  $("kpiVencidos").textContent = data.clientesVencidos ?? "0";
+  $("kpiTotal").textContent = data.totalClientes ?? "0";
+  $("kpiMes").textContent = formatMoney(data.ingresosMesActual);
+  $("kpiAnio").textContent = formatMoney(data.ingresosAnioActual);
+  $("kpiIngresosTotal").textContent = formatMoney(data.ingresosTotal);
+
+  const tbody = $("dashboardProximosBody");
+  tbody.innerHTML = "";
+  const rows = data.proximosAVencer || [];
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-secondary text-center py-3">Sin clientes próximos a vencer.</td></tr>';
+    return;
+  }
+
+  for (const row of rows) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(row.razonSocial)}</td>
+      <td class="font-monospace">${escapeHtml(row.cuit || "—")}</td>
+      <td>${escapeHtml(row.ciudad || "—")}</td>
+      <td>${formatDate(row.vencimiento)}</td>
+      <td>${row.diasRestantes ?? "—"}</td>
+      <td>${badgeEstado(row.estado)}</td>`;
+    tbody.appendChild(tr);
+  }
 }
 
 async function onGenerateSubmit(event) {
   event.preventDefault();
-
   const error = validateGenerateForm();
   if (error) {
     showGenerateError(error);
@@ -177,28 +542,40 @@ async function onGenerateSubmit(event) {
 
   $("btnGenerar").disabled = true;
   $("spinnerGenerar").classList.remove("d-none");
-  showGenerateError("");
+
+  const planValue = $("plan").value;
+  const formSnapshot = {
+    razonSocial: $("razonSocial").value.trim(),
+    hardwareId: $("hardwareId").value.trim().toUpperCase(),
+    plan: planValue === "custom" ? "lite" : planValue,
+    montoVenta: Number($("monto").value) || 0
+  };
 
   const body = {
-    hardwareId: $("hardwareId").value.trim().toUpperCase(),
-    cuit: $("cuit").value.trim(),
-    razonSocial: $("razonSocial").value.trim(),
-    plan: $("plan").value,
+    hardwareId: formSnapshot.hardwareId,
+    cuit: normalizeCuit($("cuit").value),
+    razonSocial: formSnapshot.razonSocial,
+    plan: formSnapshot.plan,
     fechaVencimiento: $("fechaVencimiento").value,
-    montoVenta: Number($("monto").value) || 0,
+    montoVenta: formSnapshot.montoVenta,
     metodoPago: $("metodoPago").value,
     versionSchpos: $("versionSchpos").value.trim() || "2.0.8",
     esRenovacion: $("esRenovacion").checked,
     observaciones: $("observaciones").value.trim()
   };
 
+  if (selectedClienteId) body.clienteId = selectedClienteId;
+  if (planValue === "custom") body.modulos = getSelectedModulos();
+
   try {
     const data = await apiFetch("/api/licenses/generate", {
       method: "POST",
       body: JSON.stringify(body)
     });
-    showGenerateSuccess(data);
+    showGenerateSuccess(data, formSnapshot);
     showToast("Licencia generada.");
+    await loadClientes();
+    historialCache = [];
   } catch (err) {
     showGenerateError(err.message || "Error al generar la licencia.");
   } finally {
@@ -207,12 +584,31 @@ async function onGenerateSubmit(event) {
   }
 }
 
+function getFilteredHistorial() {
+  const q = $("filtroTexto").value.trim().toLowerCase();
+  const estado = $("filtroEstado").value;
+  const desde = $("filtroDesde").value;
+  const hasta = $("filtroHasta").value;
+
+  return historialCache.filter((row) => {
+    const matchText = !q || [row.razonSocial, row.cuit, row.hwid]
+      .some((v) => (v || "").toLowerCase().includes(q));
+    const matchEstado = !estado || (row.estado || "") === estado;
+
+    const emision = String(row.fechaEmision || "").slice(0, 10);
+    const matchDesde = !desde || emision >= desde;
+    const matchHasta = !hasta || emision <= hasta;
+
+    return matchText && matchEstado && matchDesde && matchHasta;
+  });
+}
+
 function renderHistorial(rows) {
   const tbody = $("historialBody");
   tbody.innerHTML = "";
 
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-secondary text-center py-4">Sin registros.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" class="text-secondary text-center py-4">Sin registros.</td></tr>';
     $("historialResumen").textContent = "0 registro(s)";
     return;
   }
@@ -220,55 +616,91 @@ function renderHistorial(rows) {
   let total = 0;
   for (const row of rows) {
     total += Number(row.montoVenta) || 0;
+    const puedeRevocar = row.estado === "Activa" || row.estado === "PorVencer";
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${row.razonSocial || "—"}</td>
-      <td class="font-monospace">${row.cuit || "—"}</td>
-      <td>${(row.plan || "").toUpperCase()}</td>
+      <td>${escapeHtml(row.razonSocial || "—")}</td>
+      <td class="font-monospace">${escapeHtml(row.cuit || "—")}</td>
+      <td>${escapeHtml(row.versionSchpos || "—")}</td>
       <td>${formatDate(row.fechaEmision)}</td>
       <td>${formatDate(row.fechaVencimiento)}</td>
+      <td>${row.diasRestantes ?? "—"}</td>
       <td>${badgeEstado(row.estado)}</td>
       <td>${formatMoney(row.montoVenta)}</td>
-      <td class="font-monospace small">${row.hwid || "—"}</td>
-    `;
+      <td class="font-monospace small">${escapeHtml(row.hwid || "—")}</td>
+      <td>${escapeHtml(row.metodoPago || "—")}</td>
+      <td>${row.esRenovacion ? "Sí" : "No"}</td>
+      <td class="small">${escapeHtml(row.modulosResumen || "—")}</td>
+      <td class="text-end">
+        ${puedeRevocar
+          ? `<button type="button" class="btn btn-outline-danger btn-sm btn-revocar-licencia" data-id="${row.licenciaId}" data-cliente="${escapeHtml(row.razonSocial || "")}">Revocar</button>`
+          : `<span class="text-secondary small">—</span>`}
+      </td>`;
     tbody.appendChild(tr);
   }
+
+  tbody.querySelectorAll(".btn-revocar-licencia").forEach((btn) => {
+    btn.addEventListener("click", () => revokeLicencia(btn.dataset.id, btn.dataset.cliente));
+  });
 
   $("historialResumen").textContent =
     `${rows.length} registro(s) | Total facturado en filtro: ${formatMoney(total)}`;
 }
 
 function applyHistorialFilters() {
-  const q = $("filtroTexto").value.trim().toLowerCase();
-  const estado = $("filtroEstado").value;
-
-  const filtered = historialCache.filter((row) => {
-    const matchText = !q || [
-      row.razonSocial,
-      row.cuit,
-      row.hwid
-    ].some((v) => (v || "").toLowerCase().includes(q));
-
-    const matchEstado = !estado || (row.estado || "") === estado;
-    return matchText && matchEstado;
-  });
-
-  renderHistorial(filtered);
+  renderHistorial(getFilteredHistorial());
 }
 
 async function loadHistorial() {
   $("historialBody").innerHTML =
-    '<tr><td colspan="8" class="text-secondary text-center py-4">Cargando…</td></tr>';
+    '<tr><td colspan="13" class="text-secondary text-center py-4">Cargando…</td></tr>';
+  historialCache = await apiFetch("/api/licenses/history");
+  applyHistorialFilters();
+  showToast("Historial actualizado.");
+}
 
-  try {
-    historialCache = await apiFetch("/api/licenses/history");
-    applyHistorialFilters();
-    showToast("Historial actualizado.");
-  } catch (err) {
-    $("historialBody").innerHTML =
-      `<tr><td colspan="8" class="text-danger text-center py-4">${err.message}</td></tr>`;
-    $("historialResumen").textContent = "";
+function csvEscape(value) {
+  return `"${String(value ?? "").replace(/"/g, '""')}"`;
+}
+
+function exportHistorialCsv() {
+  const rows = getFilteredHistorial();
+  if (!rows.length) {
+    showToast("No hay filas para exportar.");
+    return;
   }
+
+  const header = [
+    "Razón Social", "CUIT", "Versión", "Fecha Emisión", "Fecha Vencimiento",
+    "Días Restantes", "Estado", "Módulos", "Monto", "Método Pago", "HWID", "Notas"
+  ];
+
+  const lines = [header.join(";")];
+  for (const row of rows) {
+    lines.push([
+      csvEscape(row.razonSocial),
+      csvEscape(row.cuit),
+      csvEscape(row.versionSchpos),
+      csvEscape(formatDate(row.fechaEmision)),
+      csvEscape(formatDate(row.fechaVencimiento)),
+      csvEscape(row.diasRestantes),
+      csvEscape(row.estado),
+      csvEscape(row.modulosResumen),
+      csvEscape(Number(row.montoVenta || 0).toFixed(2)),
+      csvEscape(row.metodoPago),
+      csvEscape(row.hwid),
+      csvEscape(row.observaciones)
+    ].join(";"));
+  }
+
+  const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `historial_licencias_${todayIso().replace(/-/g, "")}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("CSV exportado.");
 }
 
 function initConfigModal() {
@@ -286,6 +718,17 @@ function onSaveConfig() {
   showToast("Configuración guardada.");
 }
 
+function resetGenerateForm() {
+  $("formGenerar").reset();
+  $("clienteSelect").value = "";
+  selectedClienteId = null;
+  initDateFields();
+  applyPresetLite();
+  $("resultadoOk").classList.add("d-none");
+  $("resultadoError").classList.add("d-none");
+  $("resultadoVacio").classList.remove("d-none");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initDateFields();
   initConfigModal();
@@ -293,23 +736,62 @@ document.addEventListener("DOMContentLoaded", () => {
   $("dias").addEventListener("input", syncFromDias);
   $("fechaVencimiento").addEventListener("change", syncFromFecha);
   $("formGenerar").addEventListener("submit", onGenerateSubmit);
+  $("btnLimpiarForm").addEventListener("click", (e) => {
+    e.preventDefault();
+    resetGenerateForm();
+  });
+  $("clienteSelect").addEventListener("change", onClienteSelectChange);
+  $("btnRecargarClientes").addEventListener("click", () => loadClientes().catch((err) => showToast(err.message)));
+  $("btnPresetLite").addEventListener("click", applyPresetLite);
+  $("btnLimpiarModulos").addEventListener("click", clearModulos);
+  $("plan").addEventListener("change", () => {
+    if ($("plan").value === "pro") clearModulos();
+    if ($("plan").value === "lite") applyPresetLite();
+  });
+
   $("btnCopiar").addEventListener("click", async () => {
     const key = $("licenseKey").value;
     if (!key) return;
     await navigator.clipboard.writeText(key);
     showToast("Clave copiada al portapapeles.");
   });
-  $("btnRefrescarHistorial").addEventListener("click", loadHistorial);
+
+  $("btnRefrescarHistorial").addEventListener("click", () => loadHistorial().catch((err) => showToast(err.message)));
+  $("btnExportCsv").addEventListener("click", exportHistorialCsv);
+  $("btnLimpiarFiltros").addEventListener("click", () => {
+    $("filtroTexto").value = "";
+    $("filtroEstado").value = "";
+    $("filtroDesde").value = "";
+    $("filtroHasta").value = "";
+    applyHistorialFilters();
+  });
   $("filtroTexto").addEventListener("input", applyHistorialFilters);
   $("filtroEstado").addEventListener("change", applyHistorialFilters);
+  $("filtroDesde").addEventListener("change", applyHistorialFilters);
+  $("filtroHasta").addEventListener("change", applyHistorialFilters);
+
+  $("btnRefrescarClientes").addEventListener("click", () => loadClientes().catch((err) => showToast(err.message)));
+  $("btnNuevoCliente").addEventListener("click", () => openClienteModal().catch((err) => showToast(err.message)));
+  $("formCliente").addEventListener("submit", saveCliente);
+  $("filtroClientes").addEventListener("input", () => renderClientesTable(clientesCache));
+
+  $("btnRefrescarDashboard").addEventListener("click", () => loadDashboard().catch((err) => showToast(err.message)));
   $("btnGuardarConfig").addEventListener("click", onSaveConfig);
+
   $("tab-historial").addEventListener("shown.bs.tab", () => {
-    if (!historialCache.length) loadHistorial();
+    if (!historialCache.length) loadHistorial().catch((err) => showToast(err.message));
+  });
+  $("tab-clientes").addEventListener("shown.bs.tab", () => {
+    if (!clientesCache.length) loadClientes().catch((err) => showToast(err.message));
+  });
+  $("tab-dashboard").addEventListener("shown.bs.tab", () => {
+    loadDashboard().catch((err) => showToast(err.message));
   });
 
   if (!getAdminApiKey()) {
-    setTimeout(() => {
-      bootstrap.Modal.getOrCreateInstance($("configModal")).show();
-    }, 400);
+    setTimeout(() => bootstrap.Modal.getOrCreateInstance($("configModal")).show(), 400);
+  } else {
+    loadModulosCatalog().catch(() => {});
+    loadDashboard().catch(() => {});
   }
 });

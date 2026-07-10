@@ -69,6 +69,54 @@ public sealed class DataStore
             string.Equals(c.CUIT?.Trim(), cuit.Trim(), StringComparison.OrdinalIgnoreCase));
     }
 
+    public void EliminarCliente(Guid id)
+    {
+        _data.Clientes.RemoveAll(x => x.Id == id);
+        _data.Licencias.RemoveAll(x => x.ClienteId == id);
+        Guardar();
+    }
+
+    public bool RevocarLicencia(Guid licenciaId)
+    {
+        var lic = _data.Licencias.FirstOrDefault(x => x.Id == licenciaId);
+        if (lic == null) return false;
+
+        lic.FechaVencimiento = DateTime.Today.AddDays(-1);
+        Guardar();
+        return true;
+    }
+
+    public ClienteDetalleDto? ObtenerClienteDetalle(Guid id)
+    {
+        var c = ObtenerCliente(id);
+        return c == null ? null : MapClienteDetalle(c);
+    }
+
+    public ClienteDetalleDto GuardarClienteCompleto(Cliente cliente)
+    {
+        GuardarCliente(cliente);
+        return MapClienteDetalle(cliente);
+    }
+
+    private static ClienteDetalleDto MapClienteDetalle(Cliente c) => new()
+    {
+        Id = c.Id,
+        RazonSocial = c.RazonSocial,
+        CUIT = c.CUIT,
+        Contacto = c.Contacto,
+        Email = c.Email,
+        Telefono = c.Telefono,
+        Ciudad = c.Ciudad,
+        Provincia = c.Provincia,
+        IPServidor = c.IPServidor,
+        PuertoServidor = c.PuertoServidor,
+        CantidadPuestos = c.CantidadPuestos,
+        CanalContacto = c.CanalContacto,
+        Notas = c.Notas,
+        FechaAlta = c.FechaAlta,
+        Activo = c.Activo
+    };
+
     public void GuardarLicencia(Licencia licencia)
     {
         int idx = _data.Licencias.FindIndex(x => x.Id == licencia.Id);
@@ -110,6 +158,78 @@ public sealed class DataStore
                     Observaciones = l.Observaciones
                 };
             });
+    }
+
+    public IEnumerable<ClienteResumenDto> ObtenerClientesResumen()
+    {
+        return _data.Clientes
+            .Where(c => c.Activo)
+            .OrderBy(c => c.RazonSocial)
+            .Select(c =>
+            {
+                var lic = UltimaLicencia(c.Id);
+                return new ClienteResumenDto
+                {
+                    Id = c.Id,
+                    RazonSocial = c.RazonSocial,
+                    CUIT = c.CUIT,
+                    Ciudad = c.Ciudad,
+                    Contacto = c.Contacto,
+                    Telefono = c.Telefono,
+                    Email = c.Email,
+                    IPServidor = c.IPServidor,
+                    PuertoServidor = c.PuertoServidor,
+                    UltimoHwid = lic?.HWID ?? "",
+                    UltimoVencimiento = lic?.FechaVencimiento,
+                    UltimoEstado = lic?.Estado.ToString() ?? "Sin licencia",
+                    DiasRestantes = lic?.DiasRestantes
+                };
+            });
+    }
+
+    public DashboardStatsDto ObtenerDashboardStats()
+    {
+        var proximos = _data.Clientes
+            .Where(c => c.Activo)
+            .Select(c =>
+            {
+                var lic = UltimaLicencia(c.Id);
+                return new ClienteProximoVencerDto
+                {
+                    RazonSocial = c.RazonSocial,
+                    CUIT = c.CUIT,
+                    Ciudad = c.Ciudad,
+                    Vencimiento = lic?.FechaVencimiento,
+                    DiasRestantes = lic?.DiasRestantes,
+                    Estado = lic?.Estado.ToString() ?? "Vencida"
+                };
+            })
+            .Where(x => x.DiasRestantes is null or <= 30)
+            .OrderBy(x => x.DiasRestantes ?? int.MinValue)
+            .ToList();
+
+        return new DashboardStatsDto
+        {
+            ClientesActivos = _data.Clientes.Count(c =>
+                c.Activo && UltimaLicencia(c.Id)?.Estado == EstadoLicencia.Activa),
+            ClientesPorVencer = _data.Clientes.Count(c =>
+                c.Activo && UltimaLicencia(c.Id)?.Estado == EstadoLicencia.PorVencer),
+            ClientesVencidos = _data.Clientes.Count(c =>
+            {
+                var lic = UltimaLicencia(c.Id);
+                return lic == null || lic.Estado == EstadoLicencia.Vencida;
+            }),
+            TotalClientes = _data.Clientes.Count,
+            IngresosMesActual = _data.Licencias
+                .Where(l => l.FechaEmision.Year == DateTime.Today.Year &&
+                            l.FechaEmision.Month == DateTime.Today.Month)
+                .Sum(l => l.MontoVenta),
+            IngresosAnioActual = _data.Licencias
+                .Where(l => l.FechaEmision.Year == DateTime.Today.Year)
+                .Sum(l => l.MontoVenta),
+            IngresosTotal = _data.Licencias.Sum(l => l.MontoVenta),
+            ProximosAVencer = proximos
+        };
     }
 
     private static string ResolverRutaDatos(LicensingOptions options)
@@ -168,4 +288,62 @@ public sealed class HistorialLicenciaDto
     public string VersionSchpos { get; set; } = "";
     public bool EsRenovacion { get; set; }
     public string Observaciones { get; set; } = "";
+}
+
+public sealed class ClienteResumenDto
+{
+    public Guid Id { get; set; }
+    public string RazonSocial { get; set; } = "";
+    public string CUIT { get; set; } = "";
+    public string Ciudad { get; set; } = "";
+    public string Contacto { get; set; } = "";
+    public string Telefono { get; set; } = "";
+    public string Email { get; set; } = "";
+    public string IPServidor { get; set; } = "";
+    public int PuertoServidor { get; set; } = 1433;
+    public string UltimoHwid { get; set; } = "";
+    public DateTime? UltimoVencimiento { get; set; }
+    public string UltimoEstado { get; set; } = "";
+    public int? DiasRestantes { get; set; }
+}
+
+public sealed class DashboardStatsDto
+{
+    public int ClientesActivos { get; set; }
+    public int ClientesPorVencer { get; set; }
+    public int ClientesVencidos { get; set; }
+    public int TotalClientes { get; set; }
+    public decimal IngresosMesActual { get; set; }
+    public decimal IngresosAnioActual { get; set; }
+    public decimal IngresosTotal { get; set; }
+    public List<ClienteProximoVencerDto> ProximosAVencer { get; set; } = new();
+}
+
+public sealed class ClienteProximoVencerDto
+{
+    public string RazonSocial { get; set; } = "";
+    public string CUIT { get; set; } = "";
+    public string Ciudad { get; set; } = "";
+    public DateTime? Vencimiento { get; set; }
+    public int? DiasRestantes { get; set; }
+    public string Estado { get; set; } = "";
+}
+
+public sealed class ClienteDetalleDto
+{
+    public Guid Id { get; set; }
+    public string RazonSocial { get; set; } = "";
+    public string CUIT { get; set; } = "";
+    public string Contacto { get; set; } = "";
+    public string Email { get; set; } = "";
+    public string Telefono { get; set; } = "";
+    public string Ciudad { get; set; } = "";
+    public string Provincia { get; set; } = "";
+    public string IPServidor { get; set; } = "";
+    public int PuertoServidor { get; set; } = 1433;
+    public int CantidadPuestos { get; set; } = 1;
+    public string CanalContacto { get; set; } = "WhatsApp";
+    public string Notas { get; set; } = "";
+    public DateTime FechaAlta { get; set; }
+    public bool Activo { get; set; } = true;
 }

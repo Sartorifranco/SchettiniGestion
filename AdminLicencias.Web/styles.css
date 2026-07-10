@@ -46,6 +46,25 @@ body {
 .badge-estado-porvencer { background: #9e6a03; }
 .badge-estado-vencida { background: #da3633; }
 
-.font-monospace {
-  font-size: 0.85rem;
+.kpi-label {
+  font-size: 0.75rem;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kpi-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.kpi-value-sm {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modulos-panel {
+  background: #0d1117;
+  max-height: 260px;
+  overflow-y: auto;
 }

@@ -1,3 +1,4 @@
+using AdminLicencias.Api;
 using AdminLicencias.Api.Contracts;
 using AdminLicencias.Api.Middleware;
 using AdminLicencias.Api.Security;
@@ -48,7 +49,12 @@ app.MapGet("/", () => Results.Ok(new
 {
     servicio = "SCHPOS License API",
     version = "1.0",
-    endpoints = new[] { "POST /api/licenses/generate", "POST /api/licenses/validate", "GET /api/licenses/history" }
+    endpoints = new[]
+    {
+        "POST /api/licenses/generate", "POST /api/licenses/validate", "GET /api/licenses/history",
+        "GET|POST /api/licenses/clients", "PUT|DELETE /api/licenses/clients/{id}",
+        "GET /api/licenses/dashboard", "GET /api/licenses/modules", "POST /api/licenses/revoke"
+    }
 }));
 
 var licenses = app.MapGroup("/api/licenses");
@@ -163,6 +169,95 @@ licenses.MapGet("/history", (DataStore dataStore) =>
 {
     ModulosCatalog.EnsureLoaded();
     return Results.Ok(dataStore.ObtenerHistorial());
+});
+
+licenses.MapGet("/clients", (DataStore dataStore) =>
+    Results.Ok(dataStore.ObtenerClientesResumen()));
+
+licenses.MapGet("/clients/{id:guid}", (Guid id, DataStore dataStore) =>
+{
+    var cliente = dataStore.ObtenerClienteDetalle(id);
+    return cliente is null
+        ? Results.NotFound(new { error = "Cliente no encontrado." })
+        : Results.Ok(ClienteMapper.ToResponse(cliente));
+});
+
+licenses.MapPost("/clients", (UpsertClienteRequest req, DataStore dataStore) =>
+{
+    var error = ClienteMapper.Validar(req);
+    if (error != null) return Results.BadRequest(new { error });
+
+    if (!string.IsNullOrWhiteSpace(req.CUIT))
+    {
+        var existente = dataStore.BuscarClientePorCuit(req.CUIT);
+        if (existente != null)
+            return Results.Conflict(new { error = "Ya existe un cliente con ese CUIT." });
+    }
+
+    var entity = ClienteMapper.ToEntity(req);
+    var saved = dataStore.GuardarClienteCompleto(entity);
+    return Results.Created($"/api/licenses/clients/{saved.Id}", ClienteMapper.ToResponse(saved));
+});
+
+licenses.MapPut("/clients/{id:guid}", (Guid id, UpsertClienteRequest req, DataStore dataStore) =>
+{
+    var error = ClienteMapper.Validar(req);
+    if (error != null) return Results.BadRequest(new { error });
+
+    var existing = dataStore.ObtenerCliente(id);
+    if (existing is null)
+        return Results.NotFound(new { error = "Cliente no encontrado." });
+
+    if (!string.IsNullOrWhiteSpace(req.CUIT))
+    {
+        var otro = dataStore.BuscarClientePorCuit(req.CUIT);
+        if (otro != null && otro.Id != id)
+            return Results.Conflict(new { error = "Ya existe otro cliente con ese CUIT." });
+    }
+
+    var entity = ClienteMapper.ToEntity(req, existing);
+    var saved = dataStore.GuardarClienteCompleto(entity);
+    return Results.Ok(ClienteMapper.ToResponse(saved));
+});
+
+licenses.MapDelete("/clients/{id:guid}", (Guid id, DataStore dataStore) =>
+{
+    var existing = dataStore.ObtenerCliente(id);
+    if (existing is null)
+        return Results.NotFound(new { error = "Cliente no encontrado." });
+
+    dataStore.EliminarCliente(id);
+    return Results.NoContent();
+});
+
+licenses.MapPost("/revoke", (RevokeLicenseRequest req, DataStore dataStore) =>
+{
+    if (req.LicenciaId == Guid.Empty)
+        return Results.BadRequest(new { error = "LicenciaId es obligatorio." });
+
+    if (!dataStore.RevocarLicencia(req.LicenciaId))
+        return Results.NotFound(new { error = "Licencia no encontrada." });
+
+    return Results.Ok(new { mensaje = "Licencia revocada.", licenciaId = req.LicenciaId });
+});
+
+licenses.MapGet("/dashboard", (DataStore dataStore) =>
+    Results.Ok(dataStore.ObtenerDashboardStats()));
+
+licenses.MapGet("/modules", () =>
+{
+    ModulosCatalog.EnsureLoaded();
+    return Results.Ok(ModulosCatalog.ObtenerLicenciables()
+        .Select(m => new
+        {
+            m.Codigo,
+            m.Nombre,
+            m.NombreCorto,
+            m.Grupo,
+            m.IncluidoEnLite,
+            m.EsAbonoMensual,
+            m.Orden
+        }));
 });
 
 app.Run();

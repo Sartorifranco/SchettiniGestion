@@ -151,8 +151,8 @@ public sealed class DataStore
                     DiasRestantes = l.DiasRestantes,
                     Estado = l.Estado.ToString(),
                     ModulosResumen = l.ModulosResumen,
-                    MontoVenta = l.MontoVenta,
-                    MetodoPago = l.MetodoPago,
+                    MontoLicencia = l.MontoLicencia,
+                    AbonoMensual = l.AbonoMensual,
                     VersionSchpos = l.VersionSchpos,
                     EsRenovacion = l.EsRenovacion,
                     Observaciones = l.Observaciones
@@ -220,14 +220,19 @@ public sealed class DataStore
                 return lic == null || lic.Estado == EstadoLicencia.Vencida;
             }),
             TotalClientes = _data.Clientes.Count,
-            IngresosMesActual = _data.Licencias
+            IngresosInstalacionesTotal = _data.Licencias.Sum(l => l.MontoLicencia),
+            IngresosInstalacionesMes = _data.Licencias
                 .Where(l => l.FechaEmision.Year == DateTime.Today.Year &&
                             l.FechaEmision.Month == DateTime.Today.Month)
-                .Sum(l => l.MontoVenta),
-            IngresosAnioActual = _data.Licencias
+                .Sum(l => l.MontoLicencia),
+            IngresosInstalacionesAnio = _data.Licencias
                 .Where(l => l.FechaEmision.Year == DateTime.Today.Year)
-                .Sum(l => l.MontoVenta),
-            IngresosTotal = _data.Licencias.Sum(l => l.MontoVenta),
+                .Sum(l => l.MontoLicencia),
+            IngresoRecurrenteAbonos = _data.Clientes
+                .Where(c => c.Activo)
+                .Select(c => UltimaLicencia(c.Id))
+                .Where(l => l != null && l.Estado != EstadoLicencia.Vencida)
+                .Sum(l => l!.AbonoMensual),
             ProximosAVencer = proximos
         };
     }
@@ -283,8 +288,8 @@ public sealed class HistorialLicenciaDto
     public int DiasRestantes { get; set; }
     public string Estado { get; set; } = "";
     public string ModulosResumen { get; set; } = "";
-    public decimal MontoVenta { get; set; }
-    public string MetodoPago { get; set; } = "";
+    public decimal MontoLicencia { get; set; }
+    public decimal AbonoMensual { get; set; }
     public string VersionSchpos { get; set; } = "";
     public bool EsRenovacion { get; set; }
     public string Observaciones { get; set; } = "";
@@ -313,9 +318,11 @@ public sealed class DashboardStatsDto
     public int ClientesPorVencer { get; set; }
     public int ClientesVencidos { get; set; }
     public int TotalClientes { get; set; }
-    public decimal IngresosMesActual { get; set; }
-    public decimal IngresosAnioActual { get; set; }
-    public decimal IngresosTotal { get; set; }
+    public decimal IngresosInstalacionesTotal { get; set; }
+    public decimal IngresosInstalacionesMes { get; set; }
+    public decimal IngresosInstalacionesAnio { get; set; }
+    /// <summary>Suma de abonos mensuales de clientes activos con licencia vigente.</summary>
+    public decimal IngresoRecurrenteAbonos { get; set; }
     public List<ClienteProximoVencerDto> ProximosAVencer { get; set; } = new();
 }
 

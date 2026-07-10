@@ -10,8 +10,10 @@ public sealed class GenerateLicenseRequest
     public string Plan { get; set; } = "lite";
     public List<string>? Modulos { get; set; }
     public DateTime FechaVencimiento { get; set; }
-    public decimal MontoVenta { get; set; }
-    public string MetodoPago { get; set; } = "Transferencia";
+    /// <summary>Cobro único por instalación / licencia.</summary>
+    public decimal MontoLicencia { get; set; }
+    /// <summary>Abono mensual según módulos contratados.</summary>
+    public decimal AbonoMensual { get; set; }
     public string VersionSchpos { get; set; } = "2.0.8";
     public bool EsRenovacion { get; set; }
     public string Observaciones { get; set; } = "";

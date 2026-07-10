@@ -1,4 +1,5 @@
 using AdminLicencias.Core.Catalog;
+using Newtonsoft.Json;
 
 namespace AdminLicencias.Core.Models;
 
@@ -13,8 +14,25 @@ public class Licencia
     public DateTime FechaEmision { get; set; } = DateTime.Today;
     public DateTime FechaVencimiento { get; set; }
     public List<string> Modulos { get; set; } = new();
-    public decimal MontoVenta { get; set; }
-    public string MetodoPago { get; set; } = "Transferencia";
+
+    /// <summary>Cobro único por instalación / licencia del sistema.</summary>
+    [JsonProperty("MontoLicencia")]
+    public decimal MontoLicencia { get; set; }
+
+    /// <summary>Compatibilidad con datos.json antiguos (MontoVenta).</summary>
+    [JsonProperty("MontoVenta")]
+    private decimal MontoVentaLegacy
+    {
+        set
+        {
+            if (MontoLicencia == 0)
+                MontoLicencia = value;
+        }
+    }
+
+    /// <summary>Abono mensual según módulos contratados.</summary>
+    public decimal AbonoMensual { get; set; }
+
     public string VersionSchpos { get; set; } = "2.0.0";
     public string Observaciones { get; set; } = "";
     public bool EsRenovacion { get; set; }

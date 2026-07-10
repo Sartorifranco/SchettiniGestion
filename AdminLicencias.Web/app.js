@@ -193,7 +193,8 @@ function showGenerateSuccess(data, formSnapshot) {
   $("resPlan").textContent = (data.plan || formSnapshot.plan || "").toUpperCase();
   $("resVence").textContent = `${formatDate(data.fechaVencimiento)} (${diffDaysFromToday(String(data.fechaVencimiento).slice(0, 10))} días)`;
   $("resModulos").textContent = data.modulosResumen || (data.modulos || []).join(", ");
-  $("resMonto").textContent = formatMoney(formSnapshot.montoVenta);
+  $("resMontoLicencia").textContent = formatMoney(formSnapshot.montoLicencia);
+  $("resAbonoMensual").textContent = formatMoney(formSnapshot.abonoMensual);
 }
 
 function getSelectedModulos() {
@@ -507,9 +508,10 @@ async function loadDashboard() {
   $("kpiPorVencer").textContent = data.clientesPorVencer ?? "0";
   $("kpiVencidos").textContent = data.clientesVencidos ?? "0";
   $("kpiTotal").textContent = data.totalClientes ?? "0";
-  $("kpiMes").textContent = formatMoney(data.ingresosMesActual);
-  $("kpiAnio").textContent = formatMoney(data.ingresosAnioActual);
-  $("kpiIngresosTotal").textContent = formatMoney(data.ingresosTotal);
+  $("kpiInstalacionesTotal").textContent = formatMoney(data.ingresosInstalacionesTotal);
+  $("kpiInstalacionesMes").textContent = formatMoney(data.ingresosInstalacionesMes);
+  $("kpiInstalacionesAnio").textContent = formatMoney(data.ingresosInstalacionesAnio);
+  $("kpiAbonosRecurrentes").textContent = formatMoney(data.ingresoRecurrenteAbonos);
 
   const tbody = $("dashboardProximosBody");
   tbody.innerHTML = "";
@@ -548,7 +550,8 @@ async function onGenerateSubmit(event) {
     razonSocial: $("razonSocial").value.trim(),
     hardwareId: $("hardwareId").value.trim().toUpperCase(),
     plan: planValue === "custom" ? "lite" : planValue,
-    montoVenta: Number($("monto").value) || 0
+    montoLicencia: Number($("montoLicencia").value) || 0,
+    abonoMensual: Number($("abonoMensual").value) || 0
   };
 
   const body = {
@@ -557,8 +560,8 @@ async function onGenerateSubmit(event) {
     razonSocial: formSnapshot.razonSocial,
     plan: formSnapshot.plan,
     fechaVencimiento: $("fechaVencimiento").value,
-    montoVenta: formSnapshot.montoVenta,
-    metodoPago: $("metodoPago").value,
+    montoLicencia: formSnapshot.montoLicencia,
+    abonoMensual: formSnapshot.abonoMensual,
     versionSchpos: $("versionSchpos").value.trim() || "2.0.8",
     esRenovacion: $("esRenovacion").checked,
     observaciones: $("observaciones").value.trim()
@@ -613,9 +616,11 @@ function renderHistorial(rows) {
     return;
   }
 
-  let total = 0;
+  let totalLicencia = 0;
+  let totalAbono = 0;
   for (const row of rows) {
-    total += Number(row.montoVenta) || 0;
+    totalLicencia += Number(row.montoLicencia) || 0;
+    totalAbono += Number(row.abonoMensual) || 0;
     const puedeRevocar = row.estado === "Activa" || row.estado === "PorVencer";
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -626,9 +631,9 @@ function renderHistorial(rows) {
       <td>${formatDate(row.fechaVencimiento)}</td>
       <td>${row.diasRestantes ?? "—"}</td>
       <td>${badgeEstado(row.estado)}</td>
-      <td>${formatMoney(row.montoVenta)}</td>
+      <td>${formatMoney(row.montoLicencia)}</td>
+      <td>${formatMoney(row.abonoMensual)}</td>
       <td class="font-monospace small">${escapeHtml(row.hwid || "—")}</td>
-      <td>${escapeHtml(row.metodoPago || "—")}</td>
       <td>${row.esRenovacion ? "Sí" : "No"}</td>
       <td class="small">${escapeHtml(row.modulosResumen || "—")}</td>
       <td class="text-end">
@@ -644,7 +649,7 @@ function renderHistorial(rows) {
   });
 
   $("historialResumen").textContent =
-    `${rows.length} registro(s) | Total facturado en filtro: ${formatMoney(total)}`;
+    `${rows.length} registro(s) | Instalaciones en filtro: ${formatMoney(totalLicencia)} | Abonos/mes en filtro: ${formatMoney(totalAbono)}`;
 }
 
 function applyHistorialFilters() {
@@ -672,7 +677,7 @@ function exportHistorialCsv() {
 
   const header = [
     "Razón Social", "CUIT", "Versión", "Fecha Emisión", "Fecha Vencimiento",
-    "Días Restantes", "Estado", "Módulos", "Monto", "Método Pago", "HWID", "Notas"
+    "Días Restantes", "Estado", "Módulos", "Monto Licencia", "Abono Mensual", "HWID", "Notas"
   ];
 
   const lines = [header.join(";")];
@@ -686,8 +691,8 @@ function exportHistorialCsv() {
       csvEscape(row.diasRestantes),
       csvEscape(row.estado),
       csvEscape(row.modulosResumen),
-      csvEscape(Number(row.montoVenta || 0).toFixed(2)),
-      csvEscape(row.metodoPago),
+      csvEscape(Number(row.montoLicencia || 0).toFixed(2)),
+      csvEscape(Number(row.abonoMensual || 0).toFixed(2)),
       csvEscape(row.hwid),
       csvEscape(row.observaciones)
     ].join(";"));

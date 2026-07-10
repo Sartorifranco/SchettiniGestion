@@ -221,6 +221,53 @@
                         <StackPanel x:Name="panelSeccionAfip">
                         <TextBlock Text="Facturación Electrónica (AFIP)" Style="{StaticResource ConfigSectionTitle}"/>
 
+                        <!-- Activación Fiscal AFIP/ARCA (CSR + certificado) -->
+                        <Border Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="16" Margin="0,0,0,16"
+                                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="Activación Fiscal AFIP/ARCA" FontWeight="SemiBold" FontSize="15"
+                                           Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"
+                                           Text="Genere el pedido de certificado (CSR) desde el sistema, súbalo en AFIP/ARCA con su Clave Fiscal y luego importe aquí el .crt emitido. Usa los datos de empresa de arriba (CUIT, Razón Social, Nombre de Fantasía)."/>
+                                <TextBlock x:Name="lblEstadoActivacionAfip" Foreground="{DynamicResource SuccessColor}"
+                                           FontSize="12" FontWeight="SemiBold" Margin="0,0,0,12"/>
+
+                                <Button x:Name="btnGenerarCsrAfip" Content="🔐  Generar Pedido de Certificado (CSR)"
+                                        Click="btnGenerarCsrAfip_Click"
+                                        Style="{StaticResource ButtonStyle}" Padding="16,10"
+                                        HorizontalAlignment="Left" Margin="0,0,0,16"/>
+
+                                <TextBlock Text="Subir Certificado AFIP (.crt):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <DockPanel LastChildFill="True" Margin="0,0,0,4">
+                                    <Button x:Name="btnSubirCertificadoAfip" DockPanel.Dock="Right" Content="📂 Subir .crt"
+                                            MinWidth="120" MinHeight="44" Margin="8,0,0,0"
+                                            Click="btnSubirCertificadoAfip_Click"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            ToolTip="Importar certificado emitido por AFIP/ARCA"/>
+                                    <TextBox x:Name="txtCertificadoCrtPath" Style="{StaticResource ModuleTextBoxStyle}"
+                                             IsReadOnly="True" VerticalAlignment="Center"
+                                             ToolTip="Ruta del certificado .crt guardado en el sistema"/>
+                                </DockPanel>
+                                <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,12"
+                                           Text="El certificado debe corresponder al CSR generado en esta misma PC. La clave privada (.key) queda guardada de forma segura en el servidor."/>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <Button x:Name="btnProbarConexionAfip" Content="🔌  Probar conexión AFIP"
+                                            Click="btnProbarConexionAfip_Click"
+                                            Style="{StaticResource SecondaryButtonStyle}" Padding="16,10"
+                                            MinHeight="44" VerticalAlignment="Center"/>
+                                    <ProgressBar x:Name="pbProbarConexionAfip" Width="120" Height="6"
+                                                 IsIndeterminate="True" Visibility="Collapsed"
+                                                 Margin="16,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,0"
+                                           Text="Valida el par .key + .crt (o .pfx) contra WSAA en el ambiente configurado (homologación o producción)."/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="Alternativa: certificado .pfx existente" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondary}" FontSize="13" Margin="0,0,0,10"/>
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="2*"/>
@@ -322,10 +369,16 @@
                         <StackPanel x:Name="panelSeccionVisorCliente">
                         <TextBlock Text="Pantalla cliente (segundo monitor)" Style="{StaticResource ConfigSectionTitle}"/>
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" LineHeight="18"
-                                   Margin="0,0,0,16" MaxWidth="900" HorizontalAlignment="Left"
-                                   Text="Si usa dos monitores y activó el modo en la barra principal, aquí puede indicar una carpeta con archivos para rotar en la pantalla del cliente mientras no hay venta en curso. Deje la carpeta vacía para mostrar solo el logo. Formatos: JPG, PNG, BMP, GIF animado y videos cortos (MP4, WMV, AVI)."/>
+                                   Margin="0,0,0,8" MaxWidth="900" HorizontalAlignment="Left"
+                                   Text="Si usa dos monitores y activó el modo en la barra principal, las publicidades rotan en el panel izquierdo (vertical) o en la franja inferior (horizontal) mientras no hay venta en curso."/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" LineHeight="18"
+                                   Margin="0,0,0,16" MaxWidth="900" HorizontalAlignment="Left" FontStyle="Italic"
+                                   ToolTip="Recomendaciones de diseño para publicidades del visor cliente">
+                            <Run Text="Recomendación: "/>
+                            <Run Text="utilice imágenes o videos en formato vertical u horizontal (ej.: 1080×1080 px o 1080×1920 px). Formatos soportados: JPG, PNG, GIF, MP4 y AVI."/>
+                        </TextBlock>
 
-                        <TextBlock Text="Carpeta de promociones (opcional):" Style="{StaticResource ModuleLabelStyle}"/>
+                        <TextBlock Text="Carpeta de promociones:" Style="{StaticResource ModuleLabelStyle}"/>
                         <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -341,24 +394,33 @@
                                     Style="{StaticResource SecondaryButtonStyle}" ToolTip="Elegir carpeta"/>
                         </Grid>
 
-                        <TextBlock Text="Imagen suelta para promoción (opcional):" Style="{StaticResource ModuleLabelStyle}"/>
+                        <TextBlock Text="Agregar archivo de promoción:" Style="{StaticResource ModuleLabelStyle}"/>
                         <DockPanel LastChildFill="True" Margin="0,0,0,12">
-                            <Button x:Name="btnImportarImagen" DockPanel.Dock="Left" Content="Subir imagen"
+                            <Button x:Name="btnImportarImagen" DockPanel.Dock="Left" Content="Subir archivo"
                                     Click="btnImportarImagen_Click"
                                     Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Padding="14,0"
-                                    MinHeight="44" MinWidth="120"/>
+                                    MinHeight="44" MinWidth="120"
+                                    ToolTip="Copia imágenes (JPG, PNG, GIF) o videos (MP4, AVI) a la carpeta de publicidades"/>
                             <TextBox x:Name="txtRutaImagenPromocionImportada"
                                      Style="{StaticResource ModuleTextBoxStyle}"
                                      VerticalContentAlignment="Center"
                                      IsReadOnly="True"
-                                     ToolTip="Ruta de la imagen elegida (.jpg / .png)"/>
+                                     ToolTip="Archivo seleccionado para copiar al guardar"/>
                         </DockPanel>
 
                         <TextBlock Text="Segundos entre cambios (imágenes estáticas, 3–120):" Style="{StaticResource ModuleLabelStyle}"/>
                         <TextBox x:Name="txtVisorPromoIntervalo" Style="{StaticResource ModuleTextBoxStyle}" Width="100" HorizontalAlignment="Left" Text="8" Margin="0,0,0,12"/>
 
-                        <Button x:Name="btnGuardarPromoVisor" Content="💾 Guardar promociones del visor" Click="btnGuardarPromoVisor_Click"
-                                Style="{StaticResource SecondaryButtonStyle}" Padding="16,10" HorizontalAlignment="Left" Margin="0,0,0,8"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button x:Name="btnGuardarPromoVisor" Content="💾 Guardar promociones del visor"
+                                    Click="btnGuardarPromoVisor_Click"
+                                    Style="{StaticResource SecondaryButtonStyle}" Padding="16,10"
+                                    Margin="0,0,10,0"/>
+                            <Button x:Name="btnVistaPreviaVisor" Content="👁 Vista Previa de Pantalla"
+                                    Click="btnVistaPreviaVisor_Click"
+                                    Style="{StaticResource SecondaryButtonStyle}" Padding="16,10"
+                                    ToolTip="Abre una ventana de prueba con el carrusel configurado (no requiere segundo monitor)"/>
+                        </StackPanel>
                         </StackPanel>
                         </Border>
 

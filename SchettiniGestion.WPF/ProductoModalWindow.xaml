@@ -289,6 +289,7 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Margin="0,0,12,0">
                                         <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Costo de Compra ($)"/>
@@ -296,17 +297,31 @@
                                                             Style="{StaticResource ProductoTouchDecimal}"
                                                             Minimum="0"
                                                             FormatString="N2"
+                                                            TabIndex="50"
                                                             ValueChanged="CalcularPrecio_ValueChanged"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                                        <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="% de IVA"/>
+                                        <ComboBox x:Name="cmbTipoIVA"
+                                                  Style="{StaticResource ProductoTouchCombo}"
+                                                  TabIndex="51"
+                                                  SelectionChanged="cmbTipoIVA_SelectionChanged">
+                                            <ComboBoxItem Content="21.0"/>
+                                            <ComboBoxItem Content="10.5"/>
+                                            <ComboBoxItem Content="0.0"/>
+                                            <ComboBoxItem Content="27.0"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Margin="0,0,12,0">
                                         <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Impuesto Interno ($)"/>
                                         <xctk:DecimalUpDown x:Name="numImpuestoInterno"
                                                             Style="{StaticResource ProductoTouchDecimal}"
                                                             Minimum="0"
                                                             FormatString="N2"
+                                                            TabIndex="52"
                                                             ValueChanged="CalcularPrecio_ValueChanged"/>
                                     </StackPanel>
-                                    <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                                    <StackPanel Grid.Column="3" VerticalAlignment="Bottom">
                                         <TextBlock x:Name="lblCostoCompraFinal"
                                                    Text="Costo final: $ 0,00"
                                                    FontSize="13"
@@ -318,7 +333,8 @@
                                 <CheckBox x:Name="chkCostoIncluyeIva"
                                           Content="El costo de compra ingresado incluye IVA"
                                           Style="{StaticResource ProductoTouchCheckBox}"
-                                          Margin="0,4,0,0"
+                                          Margin="0,8,0,0"
+                                          TabIndex="53"
                                           Checked="chkCostoIncluyeIva_Changed"
                                           Unchecked="chkCostoIncluyeIva_Changed"/>
                                 <TextBlock x:Name="txtAyudaCostoIva"
@@ -359,65 +375,77 @@
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <Border Style="{StaticResource ProductoSectionBorder}" Margin="0,12,0,0">
                         <StackPanel>
-                            <Grid Margin="0,0,0,16">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                                    <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="IVA"/>
-                                    <ComboBox x:Name="cmbTipoIVA" Style="{StaticResource ProductoTouchCombo}"
-                                              SelectionChanged="cmbTipoIVA_SelectionChanged">
-                                        <ComboBoxItem Content="21.0"/>
-                                        <ComboBoxItem Content="10.5"/>
-                                        <ComboBoxItem Content="0.0"/>
-                                        <ComboBoxItem Content="27.0"/>
-                                    </ComboBox>
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="0,0,12,0">
-                                    <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Moneda"/>
-                                    <ComboBox x:Name="cmbTipoMoneda" Style="{StaticResource ProductoTouchCombo}">
-                                        <ComboBoxItem Content="ARS" IsSelected="True"/>
-                                        <ComboBoxItem Content="USD"/>
-                                    </ComboBox>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2" Grid.ColumnSpan="2" VerticalAlignment="Bottom">
-                                    <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Precio venta de referencia"/>
-                                    <TextBlock x:Name="lblPrecioReferencia"
-                                               Text="$ 0,00"
-                                               FontSize="22"
-                                               FontWeight="Bold"
-                                               Foreground="{StaticResource SuccessColor}"
-                                               Margin="0,4,0,0"/>
-                                    <TextBlock Text="Se calcula desde el costo de compra y las listas asignadas. No se aplica ganancia % adicional."
-                                               FontSize="11"
-                                               Foreground="{DynamicResource TextSecondary}"
-                                               Margin="0,6,0,0"
-                                               TextWrapping="Wrap"/>
-                                </StackPanel>
-                            </Grid>
-                            <CheckBox x:Name="chkCobraIvaAlCliente"
-                                      Content="Cobrar IVA al cliente"
-                                      Style="{StaticResource ProductoTouchCheckBox}"
-                                      IsChecked="True"
-                                      Margin="0,0,0,6"
-                                      Checked="chkCobraIvaAlCliente_Changed"
-                                      Unchecked="chkCobraIvaAlCliente_Changed"/>
-                            <TextBlock x:Name="txtAyudaPrecioIva"
-                                       Text="El precio de venta incluye IVA (se discrimina en factura)."
-                                       FontSize="11"
-                                       Foreground="{DynamicResource TextSecondary}"
-                                       Margin="0,0,0,12"
-                                       TextWrapping="Wrap"/>
+                            <StackPanel Margin="0,0,0,16">
+                                <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Moneda"/>
+                                <ComboBox x:Name="cmbTipoMoneda" Style="{StaticResource ProductoTouchCombo}">
+                                    <ComboBoxItem Content="ARS" IsSelected="True"/>
+                                    <ComboBoxItem Content="USD"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <TextBlock Text="Listas asignadas al producto"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       Margin="0,0,0,8"/>
                             <TextBlock x:Name="txtSinListas"
                                        Text="(Sin listas de precio configuradas)"
                                        Style="{DynamicResource ModalCaptionTextStyle}"
                                        Foreground="{DynamicResource TextSecondary}"
                                        Margin="0,0,0,8"
                                        Visibility="Collapsed"/>
-                            <ItemsControl x:Name="pnlListasPrecio"/>
+                            <ItemsControl x:Name="pnlListasPrecio" Margin="0,0,0,16"/>
+
+                            <TextBlock Text="Vista previa de precios por lista"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       Margin="0,0,0,8"/>
+                            <TextBlock Text="Los precios se calculan sobre el costo final del producto (costo de compra + IVA de compra + impuesto interno)."
+                                       FontSize="11"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       Margin="0,0,0,8"
+                                       TextWrapping="Wrap"/>
+                            <DataGrid x:Name="dgvPreciosPreview"
+                                      Style="{StaticResource ModuleDataGridStyle}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      SelectionMode="Single"
+                                      HeadersVisibility="Column"
+                                      MinHeight="140"
+                                      MaxHeight="320"
+                                      Margin="0,0,0,4">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Lista de Precio"
+                                                        Binding="{Binding NombreLista}"
+                                                        Width="*"
+                                                        MinWidth="120"/>
+                                    <DataGridTextColumn Header="Costo Base"
+                                                        Binding="{Binding CostoBase, StringFormat=C2}"
+                                                        Width="110"/>
+                                    <DataGridTextColumn Header="Tipo de Lista"
+                                                        Binding="{Binding TipoLista}"
+                                                        Width="120"/>
+                                    <DataGridTextColumn Header="Porcentaje / Regla"
+                                                        Binding="{Binding Regla}"
+                                                        Width="*"
+                                                        MinWidth="140"/>
+                                    <DataGridTextColumn Header="Precio de Venta Final"
+                                                        Binding="{Binding PrecioVentaFinal, StringFormat=C2}"
+                                                        Width="130">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="Foreground" Value="{StaticResource SuccessColor}"/>
+                                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                <Setter Property="Padding" Value="0,0,8,0"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
                         </StackPanel>
                     </Border>
                     </ScrollViewer>

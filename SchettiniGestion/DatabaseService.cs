@@ -122,6 +122,75 @@ namespace SchettiniGestion
             return dir;
         }
 
+        /// <summary>Carpeta predeterminada de publicidades para la pantalla del cliente.</summary>
+        public static string CarpetaPublicidadesCliente =>
+            Path.Combine(AsegurarCarpetaDatosSchpos(), "publicidades_cliente");
+
+        public static string AsegurarCarpetaPublicidadesCliente()
+        {
+            string dir = CarpetaPublicidadesCliente;
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+            return dir;
+        }
+
+        private static readonly string[] ExtensionesPromoImagenCliente = { ".jpg", ".jpeg", ".png", ".bmp", ".gif" };
+        private static readonly string[] ExtensionesPromoVideoCliente = { ".mp4", ".avi", ".wmv", ".mpeg", ".mpg" };
+
+        public static bool EsExtensionPromoImagenCliente(string extension)
+        {
+            if (string.IsNullOrWhiteSpace(extension)) return false;
+            return ExtensionesPromoImagenCliente.Contains(extension.ToLowerInvariant());
+        }
+
+        public static bool EsExtensionPromoVideoCliente(string extension)
+        {
+            if (string.IsNullOrWhiteSpace(extension)) return false;
+            return ExtensionesPromoVideoCliente.Contains(extension.ToLowerInvariant());
+        }
+
+        /// <summary>Resuelve la carpeta activa de promociones (configurada o predeterminada en ProgramData).</summary>
+        public static string ObtenerCarpetaVisorPromociones()
+        {
+            try
+            {
+                var cfg = GetConfiguracion();
+                if (cfg != null && cfg.Table.Columns.Contains("VisorPromoCarpeta"))
+                {
+                    string dir = cfg["VisorPromoCarpeta"]?.ToString()?.Trim();
+                    if (!string.IsNullOrEmpty(dir))
+                    {
+                        if (!Directory.Exists(dir))
+                            Directory.CreateDirectory(dir);
+                        return dir;
+                    }
+                }
+            }
+            catch { }
+
+            return AsegurarCarpetaPublicidadesCliente();
+        }
+
+        public static List<string> ListarArchivosPromoVisorCliente(string carpeta = null)
+        {
+            var list = new List<string>();
+            try
+            {
+                string dir = string.IsNullOrWhiteSpace(carpeta) ? ObtenerCarpetaVisorPromociones() : carpeta.Trim();
+                if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return list;
+
+                foreach (var f in Directory.GetFiles(dir))
+                {
+                    string ext = Path.GetExtension(f);
+                    if (EsExtensionPromoImagenCliente(ext) || EsExtensionPromoVideoCliente(ext))
+                        list.Add(f);
+                }
+                list.Sort(StringComparer.OrdinalIgnoreCase);
+            }
+            catch { }
+            return list;
+        }
+
         private static string _connectionString = ObtenerConnectionString();
 
         /// <summary>
@@ -350,6 +419,8 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
   ALTER TABLE Configuracion ADD CarpetaArchivosComprobantes NVARCHAR(500) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='CondicionIVAEmpresa')
   ALTER TABLE Configuracion ADD CondicionIVAEmpresa NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='AfipClavePrivadaPath')
+  ALTER TABLE Configuracion ADD AfipClavePrivadaPath NVARCHAR(500) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='ListaID')
   ALTER TABLE Facturas ADD ListaID INT NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='CondicionVenta')
@@ -1810,18 +1881,38 @@ WHERE ProductoID=@pid", c))
             catch (Exception ex) { NotificarError(ex.Message); return 0; }
         }
 
-        /// <summary>Costo neto sin IVA a partir del valor ingresado y el flag CON/SIN IVA.</summary>
+        /// <summary>Costo neto sin IVA a partir del valor ingresado y el flag CON/SIN IVA (para lógica interna / margen).</summary>
         public static decimal ObtenerCostoNetoSinIva(decimal precioCosto, bool costoIncluyeIva, decimal ivaPct)
         {
             if (precioCosto <= 0) return 0;
             if (!costoIncluyeIva || ivaPct <= 0) return precioCosto;
-            return Math.Round(precioCosto / (1 + ivaPct / 100m), 2);
+            return Math.Round(precioCosto / (1 + ivaPct / 100m), 2, MidpointRounding.AwayFromZero);
         }
 
-        /// <summary>Costo de compra final = costo neto + impuesto interno.</summary>
+        /// <summary>
+        /// Costo de compra final mostrado al usuario.
+        /// Sin IVA en el costo: costo + IVA + impuesto interno.
+        /// Con IVA en el costo: costo ingresado + impuesto interno (no se descompone el IVA en pantalla).
+        /// </summary>
         public static decimal CalcularCostoCompraFinal(decimal precioCosto, bool costoIncluyeIva, decimal ivaPct, decimal impuestoInterno)
         {
-            return ObtenerCostoNetoSinIva(precioCosto, costoIncluyeIva, ivaPct) + impuestoInterno;
+            if (precioCosto <= 0)
+                return Math.Round(impuestoInterno, 2, MidpointRounding.AwayFromZero);
+
+            decimal costoConIva;
+            if (costoIncluyeIva)
+            {
+                costoConIva = precioCosto;
+            }
+            else
+            {
+                decimal montoIva = ivaPct > 0
+                    ? Math.Round(precioCosto * ivaPct / 100m, 2, MidpointRounding.AwayFromZero)
+                    : 0m;
+                costoConIva = precioCosto + montoIva;
+            }
+
+            return Math.Round(costoConIva + impuestoInterno, 2, MidpointRounding.AwayFromZero);
         }
 
         public static decimal ParseIvaPct(string tipoIva)
@@ -1988,6 +2079,176 @@ WHERE ProductoID=@pid", c))
             if (lista == null) return 0m;
             decimal? precioFijo = GetPrecioFijoProductoLista(productoId, listaId);
             return CalcularPrecioLista(prodRows[0], lista, precioFijo);
+        }
+
+        private static DataRow ObtenerFilaProducto(SqlConnection conexion, SqlTransaction transaccion, int productoId)
+        {
+            if (conexion == null) return null;
+            var dt = new DataTable();
+            var cmd = new SqlCommand("SELECT * FROM Productos WHERE ProductoID=@id", conexion, transaccion);
+            cmd.Parameters.AddWithValue("@id", productoId);
+            new SqlDataAdapter(cmd).Fill(dt);
+            return dt.Rows.Count > 0 ? dt.Rows[0] : null;
+        }
+
+        private static Dictionary<int, decimal?> ObtenerProductoListasDetalleEnConexion(SqlConnection conexion, SqlTransaction transaccion, int productoId)
+        {
+            var map = new Dictionary<int, decimal?>();
+            if (conexion == null) return map;
+            var dt = new DataTable();
+            var cmd = new SqlCommand("SELECT ListaID, PrecioFijo FROM ProductosListas WHERE ProductoID=@pid", conexion, transaccion);
+            cmd.Parameters.AddWithValue("@pid", productoId);
+            new SqlDataAdapter(cmd).Fill(dt);
+            foreach (DataRow r in dt.Rows)
+            {
+                int lid = Convert.ToInt32(r["ListaID"]);
+                decimal? pf = r["PrecioFijo"] != DBNull.Value ? (decimal?)Convert.ToDecimal(r["PrecioFijo"]) : null;
+                map[lid] = pf;
+            }
+            return map;
+        }
+
+        private static int? ResolverListaPrecioReferencia(Dictionary<int, decimal?> asignaciones, DataTable todasListas, int? posListaPrecioId)
+        {
+            if (asignaciones == null || asignaciones.Count == 0 || todasListas == null) return null;
+
+            if (posListaPrecioId.HasValue && posListaPrecioId.Value > 0 && asignaciones.ContainsKey(posListaPrecioId.Value))
+                return posListaPrecioId.Value;
+
+            foreach (DataRow lista in todasListas.Rows)
+            {
+                int lid = Convert.ToInt32(lista["ListaID"]);
+                if (!asignaciones.ContainsKey(lid)) continue;
+                if (ObtenerTipoLista(lista) != TiposListaPrecio.PrecioFijo)
+                    return lid;
+            }
+
+            foreach (DataRow lista in todasListas.Rows)
+            {
+                int lid = Convert.ToInt32(lista["ListaID"]);
+                if (asignaciones.ContainsKey(lid))
+                    return lid;
+            }
+
+            return null;
+        }
+
+        private static decimal CalcularPrecioVentaReferenciaProducto(
+            DataRow producto,
+            Dictionary<int, decimal?> asignaciones,
+            DataTable todasListas,
+            int? listaReferenciaId,
+            decimal ivaPct)
+        {
+            if (producto == null) return 0m;
+
+            if (listaReferenciaId.HasValue && todasListas != null)
+            {
+                var rows = todasListas.Select($"ListaID={listaReferenciaId.Value}");
+                if (rows.Length > 0)
+                {
+                    decimal? pf = asignaciones != null && asignaciones.TryGetValue(listaReferenciaId.Value, out var v) ? v : null;
+                    return CalcularPrecioLista(producto, rows[0], pf);
+                }
+            }
+
+            decimal costo = producto["PrecioCosto"] != DBNull.Value ? Convert.ToDecimal(producto["PrecioCosto"]) : 0m;
+            bool incluyeIva = producto.Table.Columns.Contains("CostoIncluyeIva") && producto["CostoIncluyeIva"] != DBNull.Value
+                && Convert.ToBoolean(producto["CostoIncluyeIva"]);
+            decimal imp = producto.Table.Columns.Contains("ImpuestoInterno") && producto["ImpuestoInterno"] != DBNull.Value
+                ? Convert.ToDecimal(producto["ImpuestoInterno"]) : 0m;
+            decimal costoFinal = CalcularCostoCompraFinal(costo, incluyeIva, ivaPct, imp);
+
+            bool cobraIva = !producto.Table.Columns.Contains("CobraIvaAlCliente")
+                || producto["CobraIvaAlCliente"] == DBNull.Value
+                || Convert.ToBoolean(producto["CobraIvaAlCliente"]);
+            if (cobraIva && ivaPct > 0)
+                return Math.Round(costoFinal * (1 + ivaPct / 100m), 2, MidpointRounding.AwayFromZero);
+            return costoFinal;
+        }
+
+        /// <summary>
+        /// Recalcula precios de venta según listas asignadas al producto y persiste PrecioCosto + PrecioVenta.
+        /// Omite listas PrecioFijo (manuales). CalcularPrecioLista maneja ciclos en listas relacionadas.
+        /// </summary>
+        public static decimal ActualizarPreciosVentaPorCambioDeCosto(
+            int productoId,
+            decimal nuevoCostoCompra,
+            bool costoIncluyeIva,
+            decimal ivaPct,
+            decimal impuestoInterno,
+            SqlConnection conexion = null,
+            SqlTransaction transaccion = null)
+        {
+            bool propiaConexion = conexion == null;
+            try
+            {
+                if (propiaConexion)
+                {
+                    conexion = new SqlConnection(_connectionString);
+                    conexion.Open();
+                    AsegurarMigracionLite(conexion);
+                }
+
+                var producto = ObtenerFilaProducto(conexion, transaccion, productoId);
+                if (producto == null) return 0m;
+
+                producto["PrecioCosto"] = nuevoCostoCompra;
+                if (producto.Table.Columns.Contains("CostoIncluyeIva"))
+                    producto["CostoIncluyeIva"] = costoIncluyeIva;
+                if (producto.Table.Columns.Contains("ImpuestoInterno"))
+                    producto["ImpuestoInterno"] = impuestoInterno;
+                if (producto.Table.Columns.Contains("TipoIVA"))
+                    producto["TipoIVA"] = ivaPct.ToString(CultureInfo.InvariantCulture);
+
+                var asignaciones = ObtenerProductoListasDetalleEnConexion(conexion, transaccion, productoId);
+                var dtListas = new DataTable();
+                new SqlDataAdapter(new SqlCommand("SELECT * FROM ListasPrecios ORDER BY Nombre", conexion, transaccion)).Fill(dtListas);
+
+                foreach (DataRow lista in dtListas.Rows)
+                {
+                    int listaId = Convert.ToInt32(lista["ListaID"]);
+                    if (!asignaciones.ContainsKey(listaId)) continue;
+                    if (ObtenerTipoLista(lista) == TiposListaPrecio.PrecioFijo) continue;
+
+                    decimal? pf = asignaciones[listaId];
+                    CalcularPrecioLista(producto, lista, pf);
+                }
+
+                int? posListaId = null;
+                var cfgDt = new DataTable();
+                new SqlDataAdapter(new SqlCommand("SELECT TOP 1 PosListaPrecioID FROM Configuracion", conexion, transaccion)).Fill(cfgDt);
+                if (cfgDt.Rows.Count > 0 && cfgDt.Rows[0]["PosListaPrecioID"] != DBNull.Value)
+                    posListaId = Convert.ToInt32(cfgDt.Rows[0]["PosListaPrecioID"]);
+
+                int? listaRef = ResolverListaPrecioReferencia(asignaciones, dtListas, posListaId);
+                decimal precioVenta = CalcularPrecioVentaReferenciaProducto(producto, asignaciones, dtListas, listaRef, ivaPct);
+
+                using (var cmd = new SqlCommand(@"
+UPDATE Productos SET PrecioCosto=@pc, PrecioVenta=@pv, ImpuestoInterno=@ii, TipoIVA=@iva,
+CostoIncluyeIva=@cii, FechaModificacion=GETDATE() WHERE ProductoID=@id", conexion, transaccion))
+                {
+                    cmd.Parameters.AddWithValue("@pc", nuevoCostoCompra);
+                    cmd.Parameters.AddWithValue("@pv", precioVenta);
+                    cmd.Parameters.AddWithValue("@ii", impuestoInterno);
+                    cmd.Parameters.AddWithValue("@iva", ivaPct.ToString(CultureInfo.InvariantCulture));
+                    cmd.Parameters.AddWithValue("@cii", costoIncluyeIva);
+                    cmd.Parameters.AddWithValue("@id", productoId);
+                    cmd.ExecuteNonQuery();
+                }
+
+                return precioVenta;
+            }
+            catch (Exception ex)
+            {
+                NotificarError("ActualizarPreciosVentaPorCambioDeCosto: " + ex.Message);
+                return 0m;
+            }
+            finally
+            {
+                if (propiaConexion && conexion != null)
+                    conexion.Dispose();
+            }
         }
 
         public static string EtiquetaTipoLista(string tipo)
@@ -2285,23 +2546,260 @@ WHERE ProductoID=@pid", c))
         }
 
         public static bool ActualizarPreciosProducto(int id, decimal cost, decimal prec)
+            => ActualizarPreciosProducto(id, cost, prec, out _);
+
+        public static bool ActualizarPreciosProducto(int id, decimal cost, decimal prec, out decimal precioVentaActualizado)
         {
+            precioVentaActualizado = prec;
             try
             {
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    AsegurarMigracionLite(c);
+                    var prod = ObtenerFilaProducto(c, null, id);
+                    if (prod == null) return false;
+
+                    decimal costoAnterior = prod["PrecioCosto"] != DBNull.Value ? Convert.ToDecimal(prod["PrecioCosto"]) : 0m;
+                    bool costoCambio = Math.Abs(costoAnterior - cost) >= 0.005m;
+
+                    bool incluyeIva = prod.Table.Columns.Contains("CostoIncluyeIva") && prod["CostoIncluyeIva"] != DBNull.Value
+                        && Convert.ToBoolean(prod["CostoIncluyeIva"]);
+                    decimal imp = prod.Table.Columns.Contains("ImpuestoInterno") && prod["ImpuestoInterno"] != DBNull.Value
+                        ? Convert.ToDecimal(prod["ImpuestoInterno"]) : 0m;
+                    decimal iva = ParseIvaPct(prod["TipoIVA"]?.ToString());
+
+                    if (costoCambio)
+                    {
+                        precioVentaActualizado = ActualizarPreciosVentaPorCambioDeCosto(id, cost, incluyeIva, iva, imp, c, null);
+                        return true;
+                    }
+
                     using (var cmd = new SqlCommand("UPDATE Productos SET PrecioCosto=@pc,PrecioVenta=@pv WHERE ProductoID=@id", c))
                     {
                         cmd.Parameters.AddWithValue("@pc", cost);
                         cmd.Parameters.AddWithValue("@pv", prec);
                         cmd.Parameters.AddWithValue("@id", id);
                         cmd.ExecuteNonQuery();
+                        precioVentaActualizado = prec;
                         return true;
                     }
                 }
             }
             catch { return false; }
+        }
+
+        // --- Exportación / importación masiva (actualización de costos y estados) ---
+
+        public class ProductoActualizacionMasivaItem
+        {
+            public int NumeroFila { get; set; }
+            public int? ProductoId { get; set; }
+            public string Codigo { get; set; }
+            public decimal? CostoCompra { get; set; }
+            public decimal? IvaPct { get; set; }
+            public decimal? ImpuestoInterno { get; set; }
+            public bool? CostoIncluyeIva { get; set; }
+            public bool? EsStockeable { get; set; }
+            public bool? VendeEnNegativo { get; set; }
+        }
+
+        public class ProductoImportacionMasivaResultado
+        {
+            public int Actualizados { get; set; }
+            public int SinCambios { get; set; }
+            public bool Exitoso { get; set; }
+            public string ErrorGeneral { get; set; }
+            public List<string> Errores { get; set; } = new List<string>();
+        }
+
+        public static DataTable ObtenerProductosParaExportacionMasiva()
+        {
+            var dt = new DataTable();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    const string sql = @"
+SELECT
+    p.ProductoID,
+    ISNULL(p.Codigo, N'') AS Codigo,
+    ISNULL(p.Descripcion, N'') AS Nombre,
+    ISNULL(p.PrecioCosto, 0) AS [Costo de Compra],
+    ISNULL(p.TipoIVA, N'21.0') AS TipoIVA,
+    ISNULL(p.ImpuestoInterno, 0) AS [Impuesto Interno],
+    CASE WHEN ISNULL(p.CostoIncluyeIva, 0) = 1 THEN N'SI' ELSE N'NO' END AS CostoIncluyeIva,
+    CASE WHEN ISNULL(p.EsStockeable, 1) = 1 THEN N'SI' ELSE N'NO' END AS EsStockeable,
+    CASE WHEN ISNULL(p.AceptaStockNegativo, 0) = 1 THEN N'SI' ELSE N'NO' END AS VendeEnNegativo
+FROM Productos p
+ORDER BY p.Descripcion";
+                    new SqlDataAdapter(sql, c).Fill(dt);
+                    if (!dt.Columns.Contains("% IVA"))
+                        dt.Columns.Add("% IVA", typeof(decimal));
+                    foreach (DataRow r in dt.Rows)
+                        r["% IVA"] = ParseIvaPct(r["TipoIVA"]?.ToString());
+                    dt.Columns.Remove("TipoIVA");
+                }
+            }
+            catch (Exception ex) { NotificarError("ObtenerProductosParaExportacionMasiva: " + ex.Message); }
+            return dt;
+        }
+
+        public static bool TryParseSiNo(string valor, out bool resultado)
+        {
+            resultado = false;
+            if (string.IsNullOrWhiteSpace(valor)) return false;
+            string t = valor.Trim().ToUpperInvariant()
+                .Replace("Í", "I")
+                .Replace("í", "I");
+            if (t == "SI" || t == "S" || t == "1" || t == "TRUE" || t == "VERDADERO")
+            {
+                resultado = true;
+                return true;
+            }
+            if (t == "NO" || t == "N" || t == "0" || t == "FALSE" || t == "FALSO")
+            {
+                resultado = false;
+                return true;
+            }
+            return false;
+        }
+
+        public static ProductoImportacionMasivaResultado ImportarActualizacionMasivaProductos(IList<ProductoActualizacionMasivaItem> filas)
+        {
+            var resultado = new ProductoImportacionMasivaResultado { Exitoso = false };
+            if (filas == null || filas.Count == 0)
+            {
+                resultado.ErrorGeneral = "No hay filas para importar.";
+                return resultado;
+            }
+
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    using (var tr = c.BeginTransaction())
+                    {
+                        try
+                        {
+                            foreach (var fila in filas)
+                                AplicarActualizacionMasivaFila(c, tr, fila, resultado);
+                            tr.Commit();
+                            resultado.Exitoso = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            tr.Rollback();
+                            resultado.Actualizados = 0;
+                            resultado.SinCambios = 0;
+                            resultado.ErrorGeneral = ex.Message;
+                            if (!resultado.Errores.Contains(ex.Message))
+                                resultado.Errores.Add(ex.Message);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resultado.ErrorGeneral = ex.Message;
+                resultado.Errores.Add(ex.Message);
+            }
+
+            return resultado;
+        }
+
+        private static DataRow ResolverProductoImportacionMasiva(SqlConnection conexion, SqlTransaction transaccion, ProductoActualizacionMasivaItem item)
+        {
+            if (item.ProductoId.HasValue && item.ProductoId.Value > 0)
+            {
+                var porId = ObtenerFilaProducto(conexion, transaccion, item.ProductoId.Value);
+                if (porId != null) return porId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.Codigo))
+            {
+                var dt = new DataTable();
+                using (var cmd = new SqlCommand("SELECT TOP 1 * FROM Productos WHERE Codigo=@cod", conexion, transaccion))
+                {
+                    cmd.Parameters.AddWithValue("@cod", item.Codigo.Trim());
+                    new SqlDataAdapter(cmd).Fill(dt);
+                }
+                if (dt.Rows.Count > 0) return dt.Rows[0];
+            }
+
+            return null;
+        }
+
+        private static void AplicarActualizacionMasivaFila(
+            SqlConnection conexion,
+            SqlTransaction transaccion,
+            ProductoActualizacionMasivaItem item,
+            ProductoImportacionMasivaResultado resultado)
+        {
+            if (!item.ProductoId.HasValue && string.IsNullOrWhiteSpace(item.Codigo))
+                throw new Exception($"Fila {item.NumeroFila}: ProductoID o Codigo es obligatorio.");
+
+            var prod = ResolverProductoImportacionMasiva(conexion, transaccion, item);
+            if (prod == null)
+            {
+                string idTxt = item.ProductoId.HasValue ? item.ProductoId.Value.ToString() : "(vacío)";
+                throw new Exception($"Fila {item.NumeroFila}: No se encontró el producto (ProductoID={idTxt}, Codigo={item.Codigo ?? ""}).");
+            }
+
+            int productoId = Convert.ToInt32(prod["ProductoID"]);
+            bool huboCambio = false;
+
+            bool esStockeableActual = !prod.Table.Columns.Contains("EsStockeable") || prod["EsStockeable"] == DBNull.Value || Convert.ToBoolean(prod["EsStockeable"]);
+            bool vendeNegActual = prod.Table.Columns.Contains("AceptaStockNegativo") && prod["AceptaStockNegativo"] != DBNull.Value && Convert.ToBoolean(prod["AceptaStockNegativo"]);
+
+            bool esStockeableNuevo = item.EsStockeable ?? esStockeableActual;
+            bool vendeNegNuevo = item.VendeEnNegativo ?? vendeNegActual;
+            bool cambiaEstados = (item.EsStockeable.HasValue && esStockeableNuevo != esStockeableActual)
+                || (item.VendeEnNegativo.HasValue && vendeNegNuevo != vendeNegActual);
+
+            if (cambiaEstados)
+            {
+                using (var cmd = new SqlCommand(@"
+UPDATE Productos SET EsStockeable=@es, AceptaStockNegativo=@vn, FechaModificacion=GETDATE()
+WHERE ProductoID=@id", conexion, transaccion))
+                {
+                    cmd.Parameters.AddWithValue("@es", esStockeableNuevo);
+                    cmd.Parameters.AddWithValue("@vn", vendeNegNuevo);
+                    cmd.Parameters.AddWithValue("@id", productoId);
+                    cmd.ExecuteNonQuery();
+                }
+                huboCambio = true;
+            }
+
+            decimal costoActual = prod["PrecioCosto"] != DBNull.Value ? Convert.ToDecimal(prod["PrecioCosto"]) : 0m;
+            decimal ivaActual = ParseIvaPct(prod["TipoIVA"]?.ToString());
+            decimal impActual = prod.Table.Columns.Contains("ImpuestoInterno") && prod["ImpuestoInterno"] != DBNull.Value
+                ? Convert.ToDecimal(prod["ImpuestoInterno"]) : 0m;
+            bool incluyeIva = prod.Table.Columns.Contains("CostoIncluyeIva") && prod["CostoIncluyeIva"] != DBNull.Value
+                && Convert.ToBoolean(prod["CostoIncluyeIva"]);
+
+            decimal costoNuevo = item.CostoCompra ?? costoActual;
+            decimal ivaNuevo = item.IvaPct ?? ivaActual;
+            decimal impNuevo = item.ImpuestoInterno ?? impActual;
+            bool incluyeIvaNuevo = item.CostoIncluyeIva ?? incluyeIva;
+
+            bool cambiaPrecios = (item.CostoCompra.HasValue && Math.Abs(costoNuevo - costoActual) >= 0.005m)
+                || (item.IvaPct.HasValue && Math.Abs(ivaNuevo - ivaActual) >= 0.005m)
+                || (item.ImpuestoInterno.HasValue && Math.Abs(impNuevo - impActual) >= 0.005m)
+                || (item.CostoIncluyeIva.HasValue && incluyeIvaNuevo != incluyeIva);
+
+            if (cambiaPrecios)
+            {
+                ActualizarPreciosVentaPorCambioDeCosto(productoId, costoNuevo, incluyeIvaNuevo, ivaNuevo, impNuevo, conexion, transaccion);
+                huboCambio = true;
+            }
+
+            if (huboCambio) resultado.Actualizados++;
+            else resultado.SinCambios++;
         }
 
         public static int ObtenerIDProductoVarios()
@@ -2992,7 +3490,19 @@ WHERE ProductoID=@pid", c))
                         foreach (var i in its)
                         {
                             new SqlCommand($"INSERT INTO CompraDetalle (CompraID,ProductoID,Cantidad,PrecioCosto) VALUES ({cid},{i.ProductoID},{i.Cantidad},{(double)i.PrecioUnitario})", c, tr).ExecuteNonQuery();
-                            new SqlCommand($"UPDATE Productos SET StockActual=StockActual+{i.Cantidad}, PrecioCosto={(double)i.PrecioUnitario} WHERE ProductoID={i.ProductoID}", c, tr).ExecuteNonQuery();
+                            new SqlCommand($"UPDATE Productos SET StockActual=StockActual+{i.Cantidad} WHERE ProductoID={i.ProductoID}", c, tr).ExecuteNonQuery();
+
+                            var prodCompra = ObtenerFilaProducto(c, tr, i.ProductoID);
+                            if (prodCompra != null)
+                            {
+                                decimal nuevoCosto = i.PrecioUnitario;
+                                bool incluyeIva = prodCompra.Table.Columns.Contains("CostoIncluyeIva") && prodCompra["CostoIncluyeIva"] != DBNull.Value
+                                    && Convert.ToBoolean(prodCompra["CostoIncluyeIva"]);
+                                decimal imp = prodCompra.Table.Columns.Contains("ImpuestoInterno") && prodCompra["ImpuestoInterno"] != DBNull.Value
+                                    ? Convert.ToDecimal(prodCompra["ImpuestoInterno"]) : 0m;
+                                decimal iva = ParseIvaPct(prodCompra["TipoIVA"]?.ToString());
+                                ActualizarPreciosVentaPorCambioDeCosto(i.ProductoID, nuevoCosto, incluyeIva, iva, imp, c, tr);
+                            }
 
                             SqlCommand cmdStk = new SqlCommand("INSERT INTO MovimientosStock (ProductoID,CompraID,Fecha,TipoMovimiento,Cantidad) VALUES (@prod,@cid,@f,'Compra',@cant)", c, tr);
                             cmdStk.Parameters.AddWithValue("@prod", i.ProductoID);
@@ -4393,6 +4903,50 @@ INSERT INTO Configuracion (
                 }
             }
             catch { return false; }
+        }
+
+        /// <summary>Persiste rutas del par .key / .crt generado por el asistente de activación AFIP.</summary>
+        public static bool GuardarRutasActivacionAfip(string clavePrivadaPath, string certificadoPath)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    ForzarContextoBD(c);
+                    AsegurarMigracionLite(c);
+
+                    using (var cmd = new SqlCommand(@"
+UPDATE Configuracion SET
+  AfipClavePrivadaPath = COALESCE(@key, AfipClavePrivadaPath),
+  CertificadoPath = COALESCE(@cert, CertificadoPath)
+WHERE ID = 1", c))
+                    {
+                        cmd.Parameters.AddWithValue("@key",
+                            string.IsNullOrWhiteSpace(clavePrivadaPath) ? (object)DBNull.Value : clavePrivadaPath.Trim());
+                        cmd.Parameters.AddWithValue("@cert",
+                            string.IsNullOrWhiteSpace(certificadoPath) ? (object)DBNull.Value : certificadoPath.Trim());
+                        return cmd.ExecuteNonQuery() > 0;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificarError(ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>Ruta de la clave privada (.key) del asistente AFIP, o vacío.</summary>
+        public static string ObtenerAfipClavePrivadaPath()
+        {
+            try
+            {
+                var dr = GetConfiguracion();
+                if (dr == null || !dr.Table.Columns.Contains("AfipClavePrivadaPath")) return "";
+                return dr["AfipClavePrivadaPath"]?.ToString() ?? "";
+            }
+            catch { return ""; }
         }
 
         /// <summary>True = ambiente WSFE producción AFIP.</summary>

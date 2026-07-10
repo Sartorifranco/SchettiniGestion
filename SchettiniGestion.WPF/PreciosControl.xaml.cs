@@ -63,8 +63,15 @@ namespace SchettiniGestion.WPF
                     decimal.TryParse(txtCosto.Text, out decimal costo);
                     decimal.TryParse(txtPrecioVenta.Text, out decimal venta);
 
-                    if (DatabaseService.ActualizarPreciosProducto(id, costo, venta))
+                    decimal costoAnterior = row.Row.Table.Columns.Contains("PrecioCosto") && row["PrecioCosto"] != DBNull.Value
+                        ? Convert.ToDecimal(row["PrecioCosto"]) : 0m;
+                    bool costoModificado = Math.Abs(costoAnterior - costo) >= 0.005m;
+
+                    if (DatabaseService.ActualizarPreciosProducto(id, costo, venta, out decimal precioVentaActualizado))
                     {
+                        if (costoModificado)
+                            txtPrecioVenta.Text = precioVentaActualizado.ToString("F2");
+
                         CargarProductos(txtBuscar.Text);
                         LimpiarInputsMenosBuscador();
                         MessageBox.Show("Precio actualizado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);

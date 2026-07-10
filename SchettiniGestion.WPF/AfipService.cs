@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
@@ -168,6 +169,81 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        /// <summary>
+        /// Prueba autenticación contra WSAA usando el certificado configurado (sin usar token en caché).
+        /// </summary>
+        public static async Task<ResultadoPruebaWsaa> ProbarConexionWsaaAsync()
+        {
+            var resultado = new ResultadoPruebaWsaa();
+            bool produccion = DatabaseService.GetAfipAmbienteProduccion();
+            string ambiente = produccion ? "producción" : "homologación";
+
+            try
+            {
+                DataRow config = DatabaseService.GetConfiguracion();
+                if (config == null)
+                {
+                    resultado.Mensaje = "No hay configuración de negocio cargada. Complete los datos del negocio y guarde.";
+                    return resultado;
+                }
+
+                string rutaCert = config["CertificadoPath"]?.ToString() ?? "";
+                if (string.IsNullOrWhiteSpace(rutaCert) || !File.Exists(rutaCert))
+                {
+                    resultado.Mensaje = "No hay certificado AFIP configurado. Genere el CSR, obtenga el .crt en AFIP/ARCA e impórtelo en esta pantalla.";
+                    return resultado;
+                }
+
+                string ext = Path.GetExtension(rutaCert).ToLowerInvariant();
+                if (ext == ".crt" || ext == ".cer")
+                {
+                    string keyPath = DatabaseService.ObtenerAfipClavePrivadaPath();
+                    if (string.IsNullOrWhiteSpace(keyPath) || !File.Exists(keyPath))
+                    {
+                        resultado.Mensaje = "Falta la clave privada (.key). Debe generar el CSR desde esta pantalla antes de subir el certificado .crt.";
+                        return resultado;
+                    }
+                }
+                else if ((ext == ".pfx" || ext == ".p12") && !DatabaseService.TienePasswordAfipPersistida(config))
+                {
+                    resultado.Mensaje = "Ingrese la contraseña del certificado .pfx y guarde la configuración antes de probar la conexión.";
+                    return resultado;
+                }
+
+                string passCert = DatabaseService.DecodeAfipCertificatePasswordStored(config["PasswordAfip"]);
+
+                using (X509Certificate2 cert = CargarCertificadoAfip(rutaCert, passCert))
+                {
+                    if (DateTime.Now > cert.NotAfter)
+                    {
+                        resultado.Mensaje = $"El certificado AFIP está vencido (venció el {cert.NotAfter:dd/MM/yyyy}). Solicite uno nuevo en AFIP/ARCA.";
+                        return resultado;
+                    }
+                    if (DateTime.Now < cert.NotBefore)
+                    {
+                        resultado.Mensaje = $"El certificado AFIP aún no es válido (válido desde {cert.NotBefore:dd/MM/yyyy}).";
+                        return resultado;
+                    }
+                }
+
+                LoginTicket ticket = await AutenticarWSAA_Remoto(rutaCert, passCert, produccion, "wsfe");
+                if (ticket == null || string.IsNullOrWhiteSpace(ticket.Token) || string.IsNullOrWhiteSpace(ticket.Sign))
+                {
+                    resultado.Mensaje = $"AFIP ({ambiente}) respondió pero no devolvió un ticket válido. Verifique la delegación del servicio wsfe en AFIP/ARCA.";
+                    return resultado;
+                }
+
+                resultado.Exito = true;
+                resultado.Mensaje = $"Conexión exitosa con WSAA en {ambiente}. El sistema está listo para emitir facturas electrónicas.";
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                resultado.Mensaje = FormatearErrorWsaaParaUsuario(ex, produccion);
+                return resultado;
+            }
+        }
+
         // --- M├ëTODOS AUXILIARES ---
         private static async Task<LoginTicket> ObtenerTicketAcceso(string rutaCert, string pass, bool produccion)
         {
@@ -181,7 +257,7 @@ namespace SchettiniGestion.WPF
         {
             uint uniqueId = (uint)(DateTime.Now.Ticks % 4294967295);
             string xmlTra = $"<?xml version=\"1.0\" encoding=\"UTF-8\"?><loginTicketRequest version=\"1.0\"><header><uniqueId>{uniqueId}</uniqueId><generationTime>{DateTime.Now.AddMinutes(-10):s}</generationTime><expirationTime>{DateTime.Now.AddMinutes(10):s}</expirationTime></header><service>{servicio}</service></loginTicketRequest>";
-            X509Certificate2 cert = new X509Certificate2(rutaCert, pass, X509KeyStorageFlags.PersistKeySet);
+            X509Certificate2 cert = CargarCertificadoAfip(rutaCert, pass);
             ContentInfo contentInfo = new ContentInfo(Encoding.UTF8.GetBytes(xmlTra));
             SignedCms signedCms = new SignedCms(contentInfo);
             CmsSigner signer = new CmsSigner(cert);
@@ -196,6 +272,24 @@ namespace SchettiniGestion.WPF
             if (string.IsNullOrEmpty(loginReturnString)) { var fault = docSoap.Descendants().FirstOrDefault(n => n.Name.LocalName == "faultstring")?.Value; throw new Exception("Error Login AFIP: " + (fault ?? resp)); }
             var docTicket = XDocument.Parse(loginReturnString);
             return new LoginTicket { Token = docTicket.Descendants("token").First().Value, Sign = docTicket.Descendants("sign").First().Value, XmlRespuestaOriginal = loginReturnString };
+        }
+
+        private static X509Certificate2 CargarCertificadoAfip(string rutaCert, string pass)
+        {
+            if (string.IsNullOrWhiteSpace(rutaCert) || !File.Exists(rutaCert))
+                throw new FileNotFoundException("Certificado AFIP no encontrado.", rutaCert ?? "");
+
+            string ext = Path.GetExtension(rutaCert).ToLowerInvariant();
+            if (ext == ".pfx" || ext == ".p12")
+                return new X509Certificate2(rutaCert, pass ?? "", X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
+
+            if (ext == ".crt" || ext == ".cer")
+            {
+                string keyPath = DatabaseService.ObtenerAfipClavePrivadaPath();
+                return AfipActivacionFiscalService.CargarCertificadoConClave(rutaCert, keyPath);
+            }
+
+            throw new NotSupportedException("Formato de certificado AFIP no soportado: " + ext);
         }
 
         private static async Task<int> ObtenerUltimoComprobante(LoginTicket ticket, long cuit, int ptoVta, int tipoCbte, bool produccion)
@@ -337,9 +431,71 @@ namespace SchettiniGestion.WPF
             return nuevoTicket;
         }
 
+        private static string FormatearErrorWsaaParaUsuario(Exception ex, bool produccion)
+        {
+            string ambiente = produccion ? "producción" : "homologación";
+            string texto = ObtenerMensajeExcepcionCompleto(ex).ToLowerInvariant();
+
+            if (ex is FileNotFoundException || texto.Contains("no se encuentra") || texto.Contains("not found"))
+                return "No se encontró el certificado o la clave privada en disco. Vuelva a importar el .crt o verifique la ruta del .pfx.";
+
+            if (texto.Contains("venc") || texto.Contains("expir") || texto.Contains("caduc") || texto.Contains("not yet valid"))
+                return "El certificado AFIP está vencido o aún no es válido. Solicite uno nuevo en AFIP/ARCA.";
+
+            if (texto.Contains("contraseña") || texto.Contains("password") || texto.Contains("bad password") || texto.Contains("incorrect password"))
+                return "La contraseña del certificado .pfx es incorrecta. Verifíquela en Configuración y vuelva a probar.";
+
+            if (texto.Contains("computador") || texto.Contains("no autorizado") || texto.Contains("not authorized")
+                || texto.Contains("no está autorizado") || texto.Contains("coe.notauthorized")
+                || texto.Contains("no registered") || texto.Contains("servicio no") || texto.Contains("deleg"))
+            {
+                return "AFIP rechazó la autorización del certificado.\n\n" +
+                       "Verifique en AFIP/ARCA (Clave Fiscal) que:\n" +
+                       "• El certificado esté asociado al CUIT del negocio.\n" +
+                       "• El servicio wsfe esté delegado al «Computador Fiscal» correcto.\n" +
+                       "• Esté usando el ambiente correcto (" + ambiente + ").";
+            }
+
+            if (texto.Contains("cms") || texto.Contains("firma") || texto.Contains("signature")
+                || texto.Contains("certificado no") || texto.Contains("ac de confianza"))
+            {
+                return "AFIP no pudo validar la firma del certificado. Asegúrese de usar el .crt emitido por AFIP/ARCA para el CSR generado en este sistema.";
+            }
+
+            if (texto.Contains("clave privada") || texto.Contains("private key") || texto.Contains("does not match"))
+                return "El certificado .crt no corresponde a la clave privada (.key) guardada en este equipo. Importe el .crt correcto o genere un nuevo CSR.";
+
+            if (ex is HttpRequestException || ex is WebException || ex is TaskCanceledException
+                || texto.Contains("timeout") || texto.Contains("timed out") || texto.Contains("conexión")
+                || texto.Contains("connection") || texto.Contains("host") || texto.Contains("ssl"))
+            {
+                return "No se pudo conectar con los servidores de AFIP (" + ambiente + ").\n\n" +
+                       "Verifique su conexión a Internet, firewall o proxy, e intente nuevamente en unos segundos.";
+            }
+
+            if (texto.Contains("error login afip"))
+                return "AFIP respondió con error: " + ex.Message.Replace("Error Login AFIP: ", "").Trim();
+
+            return "No se pudo autenticar con AFIP (" + ambiente + "): " + ex.Message;
+        }
+
+        private static string ObtenerMensajeExcepcionCompleto(Exception ex)
+        {
+            if (ex == null) return "";
+            var sb = new StringBuilder(ex.Message);
+            var inner = ex.InnerException;
+            while (inner != null)
+            {
+                sb.Append(' ').Append(inner.Message);
+                inner = inner.InnerException;
+            }
+            return sb.ToString();
+        }
+
         public class LoginTicket { public string Token; public string Sign; public string XmlRespuestaOriginal; }
     }
 
+    public class ResultadoPruebaWsaa { public bool Exito; public string Mensaje; }
     public class ResultadoAfip { public bool Exito; public string CAE; public string Vencimiento; public int NumeroComprobante; public string Error; }
     public class PersonaAfip { public bool Exito; public string Error; public string RazonSocial; public string CondicionIVA; }
 }

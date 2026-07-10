@@ -203,7 +203,7 @@ namespace SchettiniGestion.WPF
                     };
                     chk.Checked += (s, e) => ActualizarPrecioLista(chk);
                     chk.Unchecked += (s, e) => ActualizarPrecioLista(chk);
-                    var sp = new StackPanel { Orientation = Orientation.Horizontal };
+                    var sp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 4) };
                     sp.Children.Add(chk);
 
                     DecimalUpDown precioFijoInput = null;
@@ -222,14 +222,6 @@ namespace SchettiniGestion.WPF
                         sp.Children.Add(precioFijoInput);
                     }
 
-                    var lbl = new TextBlock
-                    {
-                        Foreground = (Brush)FindResource("TextSecondary"),
-                        FontSize = 13,
-                        Margin = new Thickness(10, 0, 0, 0),
-                        VerticalAlignment = VerticalAlignment.Center
-                    };
-                    sp.Children.Add(lbl);
                     chk.Tag = new ListaPrecioItem
                     {
                         ListaID = listaId,
@@ -237,7 +229,6 @@ namespace SchettiniGestion.WPF
                         TipoLista = tipo,
                         ListaRow = r,
                         CheckBox = chk,
-                        LabelPrecio = lbl,
                         PrecioFijoInput = precioFijoInput
                     };
                     pnlListasPrecio.Items.Add(sp);
@@ -256,8 +247,16 @@ namespace SchettiniGestion.WPF
             public string TipoLista { get; set; }
             public DataRow ListaRow { get; set; }
             public CheckBox CheckBox { get; set; }
-            public TextBlock LabelPrecio { get; set; }
             public DecimalUpDown PrecioFijoInput { get; set; }
+        }
+
+        private class PrecioListaPreviewItem
+        {
+            public string NombreLista { get; set; }
+            public decimal CostoBase { get; set; }
+            public string TipoLista { get; set; }
+            public string Regla { get; set; }
+            public decimal PrecioVentaFinal { get; set; }
         }
 
         private DataRow ConstruirProductoPreview()
@@ -276,39 +275,80 @@ namespace SchettiniGestion.WPF
 
         private void ActualizarPrecioLista(CheckBox chk)
         {
-            if (chk?.Tag is ListaPrecioItem item && item.LabelPrecio != null)
+            if (chk?.Tag is ListaPrecioItem item)
             {
                 if (item.PrecioFijoInput != null)
                     item.PrecioFijoInput.Visibility = chk.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-
-                if (chk.IsChecked != true)
-                {
-                    item.LabelPrecio.Text = "";
-                    return;
-                }
-
-                var prod = ConstruirProductoPreview();
-                if (prod == null || item.ListaRow == null) return;
-
-                decimal? precioFijo = null;
-                if (item.TipoLista == DatabaseService.TiposListaPrecio.PrecioFijo && item.PrecioFijoInput != null)
-                    precioFijo = item.PrecioFijoInput.Value;
-
-                decimal precioLista = DatabaseService.CalcularPrecioLista(prod, item.ListaRow, precioFijo);
-                string tipoTxt = DatabaseService.EtiquetaTipoLista(item.TipoLista);
-                item.LabelPrecio.Text = $"→ {precioLista:C2} ({tipoTxt})";
             }
-            ActualizarPrecioReferencia();
+            ActualizarGrillaPreciosPreview();
+        }
+
+        private void ActualizarGrillaPreciosPreview()
+        {
+            if (dgvPreciosPreview == null) return;
+
+            var items = new List<PrecioListaPreviewItem>();
+            decimal costoBase = ObtenerCostoCompraFinal();
+            var prod = ConstruirProductoPreview();
+
+            if (pnlListasPrecio?.Items != null && prod != null)
+            {
+                foreach (var item in pnlListasPrecio.Items)
+                {
+                    if (item is StackPanel sp && sp.Children.Count > 0 && sp.Children[0] is CheckBox chk
+                        && chk.IsChecked == true && chk.Tag is ListaPrecioItem lp && lp.ListaRow != null)
+                    {
+                        decimal? precioFijo = null;
+                        if (lp.TipoLista == DatabaseService.TiposListaPrecio.PrecioFijo && lp.PrecioFijoInput != null)
+                            precioFijo = lp.PrecioFijoInput.Value;
+
+                        items.Add(new PrecioListaPreviewItem
+                        {
+                            NombreLista = chk.Content?.ToString() ?? "",
+                            CostoBase = costoBase,
+                            TipoLista = DatabaseService.EtiquetaTipoLista(lp.TipoLista),
+                            Regla = ObtenerReglaLista(lp),
+                            PrecioVentaFinal = DatabaseService.CalcularPrecioLista(prod, lp.ListaRow, precioFijo)
+                        });
+                    }
+                }
+            }
+
+            dgvPreciosPreview.ItemsSource = items;
+        }
+
+        private static string ObtenerReglaLista(ListaPrecioItem lp)
+        {
+            if (lp == null) return "";
+
+            switch (lp.TipoLista)
+            {
+                case DatabaseService.TiposListaPrecio.PrecioFijo:
+                    if (lp.PrecioFijoInput?.Value > 0)
+                        return $"Manual: {lp.PrecioFijoInput.Value:C2}";
+                    return "Precio manual";
+
+                case DatabaseService.TiposListaPrecio.ListaRelacionada:
+                    int? parentId = lp.ListaRow?.Table.Columns.Contains("ListaRelacionadaID") == true
+                        && lp.ListaRow["ListaRelacionadaID"] != DBNull.Value
+                        ? (int?)Convert.ToInt32(lp.ListaRow["ListaRelacionadaID"])
+                        : null;
+                    if (parentId.HasValue && parentId.Value > 0)
+                    {
+                        var parent = DatabaseService.GetListaPrecioRow(parentId.Value);
+                        string parentName = parent?["Nombre"]?.ToString() ?? $"Lista #{parentId.Value}";
+                        return $"{parentName} + {lp.Porcentaje:N1}%";
+                    }
+                    return $"{lp.Porcentaje:N1}% sobre costo";
+
+                default:
+                    return $"{lp.Porcentaje:N1}%";
+            }
         }
 
         private void CalcularPreciosListas(object sender, RoutedEventArgs e)
         {
-            if (pnlListasPrecio?.Items == null) return;
-            foreach (var item in pnlListasPrecio.Items)
-            {
-                if (item is StackPanel sp && sp.Children.Count > 0 && sp.Children[0] is CheckBox chk)
-                    ActualizarPrecioLista(chk);
-            }
+            ActualizarGrillaPreciosPreview();
         }
 
         private decimal ObtenerIvaDecimal()
@@ -361,12 +401,6 @@ namespace SchettiniGestion.WPF
             else
                 chkCostoIncluyeIva.IsChecked = false;
             _stockActual = r["StockActual"] != DBNull.Value ? Convert.ToInt32(r["StockActual"]) : 0;
-
-            if (r.Table.Columns.Contains("CobraIvaAlCliente") && r["CobraIvaAlCliente"] != DBNull.Value)
-                chkCobraIvaAlCliente.IsChecked = Convert.ToBoolean(r["CobraIvaAlCliente"]);
-            else
-                chkCobraIvaAlCliente.IsChecked = true;
-            ActualizarAyudaPrecioIva();
 
             chkPermiteModificarPrecioVenta.IsChecked = r.Table.Columns.Contains("PermiteModificarPrecioVenta") && r["PermiteModificarPrecioVenta"] != DBNull.Value && Convert.ToBoolean(r["PermiteModificarPrecioVenta"]);
             chkEsStockeable.IsChecked = !r.Table.Columns.Contains("EsStockeable") || r["EsStockeable"] == DBNull.Value || Convert.ToBoolean(r["EsStockeable"]);
@@ -423,7 +457,7 @@ namespace SchettiniGestion.WPF
             CalcularPreciosListas(null, null);
             ActualizarCostoCompraFinal();
             ActualizarAyudaCostoIva();
-            ActualizarPrecioReferencia();
+            ActualizarGrillaPreciosPreview();
             }
             finally { _suspendCalculoPrecio = false; }
         }
@@ -441,6 +475,23 @@ namespace SchettiniGestion.WPF
                 if (c.Equals(valor, StringComparison.OrdinalIgnoreCase)) { cb.SelectedIndex = i; return; }
             }
             cb.Text = valor;
+        }
+
+        private void MarcarTodasListasPrecioPorDefecto()
+        {
+            if (pnlListasPrecio?.Items == null) return;
+
+            foreach (var item in pnlListasPrecio.Items)
+            {
+                if (item is StackPanel sp && sp.Children.Count > 0 && sp.Children[0] is CheckBox chk)
+                {
+                    chk.IsChecked = true;
+                    if (chk.Tag is ListaPrecioItem lp && lp.PrecioFijoInput != null)
+                        lp.PrecioFijoInput.Visibility = Visibility.Visible;
+                }
+            }
+
+            ActualizarGrillaPreciosPreview();
         }
 
         private void Limpiar()
@@ -475,22 +526,12 @@ namespace SchettiniGestion.WPF
             numStockIdeal.Value = 0;
             _rutaImagen = "";
             CargarImagen("");
-            if (pnlListasPrecio?.Items != null)
-            {
-                foreach (var item in pnlListasPrecio.Items)
-                {
-                    if (item is StackPanel sp && sp.Children.Count > 0 && sp.Children[0] is CheckBox chk)
-                        chk.IsChecked = false;
-                }
-            }
+            MarcarTodasListasPrecioPorDefecto();
             chkEsStockeable_Changed(null, null);
             chkUsaVariantes_Changed(null, null);
             chkEsCombo_Changed(null, null);
-            chkCobraIvaAlCliente.IsChecked = true;
-            ActualizarAyudaPrecioIva();
             ActualizarCostoCompraFinal();
             ActualizarAyudaCostoIva();
-            ActualizarPrecioReferencia();
             }
             finally { _suspendCalculoPrecio = false; }
         }
@@ -530,8 +571,8 @@ namespace SchettiniGestion.WPF
         {
             if (txtAyudaCostoIva == null) return;
             txtAyudaCostoIva.Text = chkCostoIncluyeIva?.IsChecked == true
-                ? "El costo ingresado se interpreta CON IVA (se descompone para calcular el margen)."
-                : "El costo ingresado se interpreta SIN IVA.";
+                ? "El costo ingresado ya incluye IVA. El costo final es ese valor más el impuesto interno."
+                : "El costo ingresado no incluye IVA. Al costo final se le suma el IVA y el impuesto interno.";
         }
 
         private void chkCostoIncluyeIva_Changed(object sender, RoutedEventArgs e)
@@ -545,8 +586,7 @@ namespace SchettiniGestion.WPF
         {
             if (_suspendCalculoPrecio || numCosto == null) return;
             ActualizarCostoCompraFinal();
-            CalcularPreciosListas(null, null);
-            ActualizarPrecioReferencia();
+            ActualizarGrillaPreciosPreview();
         }
 
         private decimal ObtenerPrecioVentaReferencia()
@@ -577,36 +617,12 @@ namespace SchettiniGestion.WPF
             }
             catch { }
 
-            decimal costoFinal = ObtenerCostoCompraFinal();
-            if (chkCobraIvaAlCliente?.IsChecked == true)
-                return Math.Round(costoFinal * (1 + ObtenerIvaDecimal() / 100m), 2);
-            return costoFinal;
-        }
-
-        private void ActualizarPrecioReferencia()
-        {
-            if (lblPrecioReferencia == null) return;
-            lblPrecioReferencia.Text = ObtenerPrecioVentaReferencia().ToString("C2");
+            return ObtenerCostoCompraFinal();
         }
 
         private void cmbTipoIVA_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             CalcularPrecio_ValueChanged(numCosto, null);
-            ActualizarAyudaPrecioIva();
-        }
-
-        private void chkCobraIvaAlCliente_Changed(object sender, RoutedEventArgs e)
-        {
-            ActualizarAyudaPrecioIva();
-            CalcularPrecio_ValueChanged(numCosto, null);
-        }
-
-        private void ActualizarAyudaPrecioIva()
-        {
-            if (txtAyudaPrecioIva == null) return;
-            txtAyudaPrecioIva.Text = chkCobraIvaAlCliente?.IsChecked == true
-                ? "El precio de venta incluye IVA (se discrimina en factura)."
-                : "El precio de venta no incluye IVA (no se cobra IVA al cliente).";
         }
 
         private void chkGenerarCodigoBarra_Changed(object sender, RoutedEventArgs e)
@@ -698,7 +714,7 @@ namespace SchettiniGestion.WPF
                 chkUsaVariantes?.IsChecked == true ? txtVarianteColor?.Text?.Trim() : null,
                 chkUsaVariantes?.IsChecked == true ? txtVarianteTalle?.Text?.Trim() : null,
                 chkUsaVariantes?.IsChecked == true ? txtVarianteUnidadMedida?.Text?.Trim() : null,
-                chkCobraIvaAlCliente?.IsChecked != false,
+                true,
                 chkCostoIncluyeIva?.IsChecked == true
             );
 

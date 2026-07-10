@@ -18,10 +18,16 @@ namespace SchettiniGestion.WPF
     {
         private DataTable _dtProductos;
 
-        // Columnas en el orden de la plantilla
+        // Columnas en el orden de la plantilla (alta masiva)
         private static readonly string[] COLS_HEADER = {
             "CODIGO", "CODIGO_BARRAS", "DESCRIPCION", "CATEGORIA",
             "SUB_RUBRO", "MARCA", "PROVEEDOR", "COSTO", "PRECIO_VENTA", "STOCK"
+        };
+
+        // Columnas exportación / importación de actualización masiva
+        private static readonly string[] COLS_ACTUALIZACION = {
+            "ProductoID", "Codigo", "Nombre", "Costo de Compra", "% IVA", "Impuesto Interno",
+            "CostoIncluyeIva", "EsStockeable", "VendeEnNegativo"
         };
 
         public ProductosControl()
@@ -129,6 +135,315 @@ namespace SchettiniGestion.WPF
                 modal.Owner = Window.GetWindow(this);
                 modal.ShowDialog();
             }
+        }
+
+        // ── EXPORTAR PRODUCTOS (actualización masiva) ─────────────────────────
+
+        private void btnExportarProductos_Click(object sender, RoutedEventArgs e)
+        {
+            var sfd = new SaveFileDialog
+            {
+                Filter = "Excel (*.xlsx)|*.xlsx|CSV (*.csv)|*.csv",
+                FileName = $"Productos_Actualizacion_{DateTime.Now:yyyyMMdd}.xlsx"
+            };
+            if (sfd.ShowDialog() != true) return;
+
+            try
+            {
+                var dt = DatabaseService.ObtenerProductosParaExportacionMasiva();
+                if (dt == null || dt.Rows.Count == 0)
+                {
+                    MessageBox.Show("No hay productos para exportar.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                string ext = Path.GetExtension(sfd.FileName).ToLowerInvariant();
+                if (ext == ".csv")
+                    ExportarActualizacionCsv(sfd.FileName, dt);
+                else
+                    ExportarActualizacionExcel(sfd.FileName, dt);
+
+                MessageBox.Show($"Se exportaron {dt.Rows.Count} producto(s).\n\nModifique costos y estados en el archivo e importe con \"Importar Actualización\".",
+                    "Exportación completada", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al exportar: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private static void ExportarActualizacionCsv(string ruta, DataTable dt)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine(string.Join(";", COLS_ACTUALIZACION));
+            foreach (DataRow row in dt.Rows)
+            {
+                var vals = new List<string>();
+                foreach (string col in COLS_ACTUALIZACION)
+                {
+                    string v = row.Table.Columns.Contains(col) && row[col] != DBNull.Value ? row[col].ToString() : "";
+                    if (v.Contains(";") || v.Contains("\""))
+                        v = "\"" + v.Replace("\"", "\"\"") + "\"";
+                    vals.Add(v);
+                }
+                sb.AppendLine(string.Join(";", vals));
+            }
+            File.WriteAllText(ruta, sb.ToString(), new UTF8Encoding(true));
+        }
+
+        private static void ExportarActualizacionExcel(string ruta, DataTable dt)
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            using (var pkg = new ExcelPackage())
+            {
+                var ws = pkg.Workbook.Worksheets.Add("Productos");
+                for (int c = 0; c < COLS_ACTUALIZACION.Length; c++)
+                {
+                    var cell = ws.Cells[1, c + 1];
+                    cell.Value = COLS_ACTUALIZACION[c];
+                    cell.Style.Font.Bold = true;
+                    cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(0x1E, 0x88, 0xE5));
+                    cell.Style.Font.Color.SetColor(System.Drawing.Color.White);
+                }
+
+                int rowIdx = 2;
+                foreach (DataRow row in dt.Rows)
+                {
+                    for (int c = 0; c < COLS_ACTUALIZACION.Length; c++)
+                    {
+                        string col = COLS_ACTUALIZACION[c];
+                        object val = row.Table.Columns.Contains(col) && row[col] != DBNull.Value ? row[col] : null;
+                        ws.Cells[rowIdx, c + 1].Value = val;
+                    }
+                    rowIdx++;
+                }
+
+                int[] widths = { 12, 16, 40, 16, 10, 18, 16, 14, 16 };
+                for (int c = 0; c < widths.Length; c++)
+                    ws.Column(c + 1).Width = widths[c];
+
+                ws.View.FreezePanes(2, 1);
+                pkg.SaveAs(new FileInfo(ruta));
+            }
+        }
+
+        // ── IMPORTAR ACTUALIZACIÓN MASIVA ─────────────────────────────────────
+
+        private void btnImportarActualizacion_Click(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog
+            {
+                Filter = "Archivos de actualización|*.xlsx;*.csv|Excel (*.xlsx)|*.xlsx|CSV (*.csv)|*.csv",
+                Title = "Importar actualización masiva de productos"
+            };
+            if (ofd.ShowDialog() != true) return;
+
+            try
+            {
+                List<DatabaseService.ProductoActualizacionMasivaItem> filas;
+                string ext = Path.GetExtension(ofd.FileName).ToLowerInvariant();
+                if (ext == ".xlsx")
+                    filas = LeerFilasActualizacionExcel(ofd.FileName);
+                else
+                    filas = LeerFilasActualizacionCsv(ofd.FileName);
+
+                if (filas.Count == 0)
+                {
+                    MessageBox.Show("El archivo no contiene filas de datos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (MessageBox.Show(
+                    $"Se procesarán {filas.Count} fila(s).\n\nLos cambios se aplican en una única transacción: si alguna fila falla, no se guardará ningún cambio.\n\n¿Continuar?",
+                    "Confirmar importación", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return;
+
+                var resultado = DatabaseService.ImportarActualizacionMasivaProductos(filas);
+                MostrarResultadoActualizacion(resultado);
+                if (resultado.Exitoso)
+                    CargarProductos();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al importar: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private List<DatabaseService.ProductoActualizacionMasivaItem> LeerFilasActualizacionCsv(string ruta)
+        {
+            var filas = new List<DatabaseService.ProductoActualizacionMasivaItem>();
+            var lineas = File.ReadAllLines(ruta, DetectarEncoding(ruta));
+            if (lineas.Length < 2) return filas;
+
+            char sep = DetectarSeparador(lineas[0]);
+            int[] mapa = MapearColumnasActualizacion(SplitCsv(lineas[0], sep));
+
+            for (int i = 1; i < lineas.Length; i++)
+            {
+                string linea = lineas[i].Trim();
+                if (string.IsNullOrWhiteSpace(linea)) continue;
+                var datos = SplitCsv(linea, sep);
+                var item = ConstruirItemActualizacion(datos, mapa, i + 1);
+                if (item != null) filas.Add(item);
+            }
+            return filas;
+        }
+
+        private List<DatabaseService.ProductoActualizacionMasivaItem> LeerFilasActualizacionExcel(string ruta)
+        {
+            var filas = new List<DatabaseService.ProductoActualizacionMasivaItem>();
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            using (var pkg = new ExcelPackage(new FileInfo(ruta)))
+            {
+                var ws = pkg.Workbook.Worksheets.FirstOrDefault();
+                if (ws == null) return filas;
+
+                int totalRows = ws.Dimension?.End.Row ?? 0;
+                int totalCols = ws.Dimension?.End.Column ?? 0;
+                if (totalRows < 2) return filas;
+
+                var headers = new List<string>();
+                for (int c = 1; c <= totalCols; c++)
+                    headers.Add(ws.Cells[1, c].Text?.Trim() ?? "");
+
+                int[] mapa = MapearColumnasActualizacion(headers);
+
+                for (int r = 2; r <= totalRows; r++)
+                {
+                    bool filaVacia = true;
+                    var datos = new List<string>();
+                    for (int c = 1; c <= totalCols; c++)
+                    {
+                        string val = ws.Cells[r, c].Text?.Trim() ?? "";
+                        datos.Add(val);
+                        if (!string.IsNullOrEmpty(val)) filaVacia = false;
+                    }
+                    if (filaVacia) continue;
+
+                    var item = ConstruirItemActualizacion(datos, mapa, r);
+                    if (item != null) filas.Add(item);
+                }
+            }
+            return filas;
+        }
+
+        /// <summary>[0]=ProductoID [1]=Codigo [2]=Nombre [3]=Costo [4]=IVA [5]=Imp [6]=CostoIncluyeIva [7]=Stockeable [8]=VendeNeg</summary>
+        private static int[] MapearColumnasActualizacion(IList<string> headers)
+        {
+            string[][] alias = {
+                new[]{ "PRODUCTOID", "ID", "ID_PRODUCTO" },
+                new[]{ "CODIGO", "COD", "CODE" },
+                new[]{ "NOMBRE", "DESCRIPCION", "DESCRIPCIÓN", "PRODUCTO" },
+                new[]{ "COSTO_DE_COMPRA", "COSTO", "PRECIO_COSTO", "PRECIO COSTO", "COSTO COMPRA" },
+                new[]{ "%_IVA", "IVA", "PORCENTAJE_IVA", "PORC_IVA", "TIPOIVA" },
+                new[]{ "IMPUESTO_INTERNO", "IMPUESTO", "IMP_INTERNO", "IMPUESTO INTERNO" },
+                new[]{ "COSTOINCLUYEIVA", "COSTO_INCLUYE_IVA", "INCLUYE_IVA", "COSTO INCLUYE IVA" },
+                new[]{ "ESSTOCKEABLE", "STOCKEABLE", "ES_STOCKEABLE", "CONTROLA_STOCK" },
+                new[]{ "VENDEENNEGATIVO", "VENDE_EN_NEGATIVO", "STOCK_NEGATIVO", "ACEPTA_STOCK_NEGATIVO", "VENDE EN NEGATIVO" }
+            };
+
+            var norm = headers.Select(h => h.ToUpperInvariant().Replace(" ", "_").Replace("%", "%")).ToList();
+            var resultado = new int[alias.Length];
+            for (int i = 0; i < alias.Length; i++)
+            {
+                resultado[i] = -1;
+                foreach (string a in alias[i])
+                {
+                    int idx = norm.FindIndex(h => h == a || h.Replace("_", "") == a.Replace("_", ""));
+                    if (idx >= 0) { resultado[i] = idx; break; }
+                }
+            }
+            return resultado;
+        }
+
+        private static DatabaseService.ProductoActualizacionMasivaItem ConstruirItemActualizacion(IList<string> datos, int[] mapa, int numeroFila)
+        {
+            string idTxt = GetCol(datos, mapa, 0);
+            string codigo = GetCol(datos, mapa, 1);
+
+            if (string.IsNullOrWhiteSpace(idTxt) && string.IsNullOrWhiteSpace(codigo))
+                return null;
+
+            int? productoId = null;
+            if (!string.IsNullOrWhiteSpace(idTxt))
+            {
+                if (!int.TryParse(idTxt.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int pid) || pid <= 0)
+                    throw new Exception($"Fila {numeroFila}: ProductoID inválido '{idTxt}'.");
+                productoId = pid;
+            }
+
+            var item = new DatabaseService.ProductoActualizacionMasivaItem
+            {
+                NumeroFila = numeroFila,
+                ProductoId = productoId,
+                Codigo = codigo
+            };
+
+            string costoTxt = GetCol(datos, mapa, 3);
+            if (!string.IsNullOrWhiteSpace(costoTxt))
+                item.CostoCompra = ParseDecimal(costoTxt);
+
+            string ivaTxt = GetCol(datos, mapa, 4);
+            if (!string.IsNullOrWhiteSpace(ivaTxt))
+                item.IvaPct = ParseDecimal(ivaTxt.Replace("%", ""));
+
+            string impTxt = GetCol(datos, mapa, 5);
+            if (!string.IsNullOrWhiteSpace(impTxt))
+                item.ImpuestoInterno = ParseDecimal(impTxt);
+
+            string costoIncluyeIvaTxt = GetCol(datos, mapa, 6);
+            if (!string.IsNullOrWhiteSpace(costoIncluyeIvaTxt))
+            {
+                if (!DatabaseService.TryParseSiNo(costoIncluyeIvaTxt, out bool incluyeIva))
+                    throw new Exception($"Fila {numeroFila}: CostoIncluyeIva inválido '{costoIncluyeIvaTxt}' (use SI o NO).");
+                item.CostoIncluyeIva = incluyeIva;
+            }
+
+            string stockeableTxt = GetCol(datos, mapa, 7);
+            if (!string.IsNullOrWhiteSpace(stockeableTxt))
+            {
+                if (!DatabaseService.TryParseSiNo(stockeableTxt, out bool esStockeable))
+                    throw new Exception($"Fila {numeroFila}: EsStockeable inválido '{stockeableTxt}' (use SI o NO).");
+                item.EsStockeable = esStockeable;
+            }
+
+            string negativoTxt = GetCol(datos, mapa, 8);
+            if (!string.IsNullOrWhiteSpace(negativoTxt))
+            {
+                if (!DatabaseService.TryParseSiNo(negativoTxt, out bool vendeNeg))
+                    throw new Exception($"Fila {numeroFila}: VendeEnNegativo inválido '{negativoTxt}' (use SI o NO).");
+                item.VendeEnNegativo = vendeNeg;
+            }
+
+            return item;
+        }
+
+        private static string GetCol(IList<string> datos, int[] mapa, int campo)
+        {
+            int idx = mapa[campo];
+            if (idx < 0 || idx >= datos.Count) return "";
+            return datos[idx]?.Trim() ?? "";
+        }
+
+        private void MostrarResultadoActualizacion(DatabaseService.ProductoImportacionMasivaResultado resultado)
+        {
+            ResultadoImportacionWindow modal;
+            if (resultado.Exitoso)
+            {
+                modal = new ResultadoImportacionWindow(0, resultado.Actualizados, 0, resultado.SinCambios, null, false);
+            }
+            else
+            {
+                var detalle = new List<string>();
+                if (!string.IsNullOrWhiteSpace(resultado.ErrorGeneral))
+                    detalle.Add(resultado.ErrorGeneral);
+                detalle.AddRange(resultado.Errores);
+                modal = new ResultadoImportacionWindow(0, 0, detalle.Count, 0, detalle, true);
+            }
+
+            modal.Owner = Window.GetWindow(this);
+            modal.ShowDialog();
         }
 
         // ── PLANTILLA CSV ─────────────────────────────────────────────────────
@@ -426,20 +741,11 @@ namespace SchettiniGestion.WPF
             return idProd == 0;
         }
 
-        private static void MostrarResultado(int importados, int actualizados, int errores, List<string> mensajesError)
+        private void MostrarResultado(int importados, int actualizados, int errores, List<string> mensajesError)
         {
-            var sb = new StringBuilder();
-            sb.AppendLine($"✅ Nuevos productos creados: {importados}");
-            sb.AppendLine($"🔄 Productos actualizados:   {actualizados}");
-            if (errores > 0)
-            {
-                sb.AppendLine($"❌ Filas con error:          {errores}");
-                sb.AppendLine();
-                sb.AppendLine("Primeros errores:");
-                foreach (var m in mensajesError) sb.AppendLine("  • " + m);
-            }
-            var icon = errores > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information;
-            MessageBox.Show(sb.ToString(), "Resultado de importación", MessageBoxButton.OK, icon);
+            var modal = new ResultadoImportacionWindow(importados, actualizados, errores, 0, mensajesError, false);
+            modal.Owner = Window.GetWindow(this);
+            modal.ShowDialog();
         }
 
         // ── HELPERS ───────────────────────────────────────────────────────────

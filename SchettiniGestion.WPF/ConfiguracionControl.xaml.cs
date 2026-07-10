@@ -1,12 +1,15 @@
 using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing.Printing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
@@ -124,6 +127,14 @@ namespace SchettiniGestion.WPF
                 txtTelefono.Text = dr["Telefono"].ToString();
                 txtEmail.Text = dr["Email"].ToString();
                 txtCertificadoPath.Text = dr["CertificadoPath"].ToString();
+                ActualizarEstadoActivacionAfip(dr);
+                if (dr.Table.Columns.Contains("AfipClavePrivadaPath") && dr["AfipClavePrivadaPath"] != DBNull.Value)
+                {
+                    string certPath = dr["CertificadoPath"]?.ToString() ?? "";
+                    if (certPath.EndsWith(".crt", StringComparison.OrdinalIgnoreCase)
+                        || certPath.EndsWith(".cer", StringComparison.OrdinalIgnoreCase))
+                        txtCertificadoCrtPath.Text = certPath;
+                }
                 if (dr.Table.Columns.Contains("LogoPath") && dr["LogoPath"] != DBNull.Value)
                     _logoPathActual = dr["LogoPath"].ToString();
                 MostrarPreviewLogo(_logoPathActual);
@@ -169,10 +180,11 @@ namespace SchettiniGestion.WPF
                         chkUsaAperturaCaja.IsChecked = false;
                 }
 
-                if (dr.Table.Columns.Contains("VisorPromoCarpeta") && dr["VisorPromoCarpeta"] != DBNull.Value)
+                if (dr.Table.Columns.Contains("VisorPromoCarpeta") && dr["VisorPromoCarpeta"] != DBNull.Value
+                    && !string.IsNullOrWhiteSpace(dr["VisorPromoCarpeta"].ToString()))
                     txtVisorPromoCarpeta.Text = dr["VisorPromoCarpeta"].ToString();
                 else if (txtVisorPromoCarpeta != null)
-                    txtVisorPromoCarpeta.Text = "";
+                    txtVisorPromoCarpeta.Text = DatabaseService.CarpetaPublicidadesCliente;
 
                 if (dr.Table.Columns.Contains("VisorPromoIntervaloSeg") && dr["VisorPromoIntervaloSeg"] != DBNull.Value)
                     txtVisorPromoIntervalo.Text = dr["VisorPromoIntervaloSeg"].ToString();
@@ -187,18 +199,55 @@ namespace SchettiniGestion.WPF
             {
                 var dlg = new OpenFileDialog
                 {
-                    Title = "Elegir imagen de promoción",
-                    Filter = "Imágenes|*.jpg;*.jpeg;*.png|JPEG (*.jpg;*.jpeg)|*.jpg;*.jpeg|PNG (*.png)|*.png"
+                    Title = "Elegir publicidad para la pantalla del cliente",
+                    Filter = "Publicidades|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.mp4;*.avi|" +
+                               "Imágenes|*.jpg;*.jpeg;*.png;*.gif;*.bmp|" +
+                               "Videos|*.mp4;*.avi|" +
+                               "Todos|*.*"
                 };
                 if (dlg.ShowDialog() == true)
-                {
                     txtRutaImagenPromocionImportada.Text = dlg.FileName;
-                }
             }
             catch (Exception ex)
             {
                 ModernMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
+        }
+
+        private string ResolverCarpetaPromoVisor()
+        {
+            string carpeta = txtVisorPromoCarpeta?.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(carpeta))
+                carpeta = DatabaseService.AsegurarCarpetaPublicidadesCliente();
+            else if (!Directory.Exists(carpeta))
+                Directory.CreateDirectory(carpeta);
+            return carpeta;
+        }
+
+        private void CopiarArchivoPromoSeleccionado(string carpetaDestino)
+        {
+            string origen = txtRutaImagenPromocionImportada?.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(origen) || !File.Exists(origen))
+                return;
+
+            string ext = Path.GetExtension(origen);
+            if (!DatabaseService.EsExtensionPromoImagenCliente(ext) && !DatabaseService.EsExtensionPromoVideoCliente(ext))
+            {
+                ModernMessageBox.Show("Formato no soportado. Use JPG, PNG, GIF, BMP, MP4 o AVI.", "Archivo no válido",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            string nombre = Path.GetFileName(origen);
+            string destino = Path.Combine(carpetaDestino, nombre);
+            if (File.Exists(destino))
+            {
+                string baseName = Path.GetFileNameWithoutExtension(nombre);
+                destino = Path.Combine(carpetaDestino, $"{baseName}_{DateTime.Now:yyyyMMdd_HHmmss}{ext}");
+            }
+
+            File.Copy(origen, destino, overwrite: false);
+            txtRutaImagenPromocionImportada.Text = destino;
         }
 
         private void btnBuscarCarpetaPromo_Click(object sender, RoutedEventArgs e)
@@ -213,19 +262,55 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        private void btnVistaPreviaVisor_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string carpeta = ResolverCarpetaPromoVisor();
+                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int seg))
+                    seg = 8;
+
+                var rutasExtra = new List<string>();
+                string pendiente = txtRutaImagenPromocionImportada?.Text?.Trim();
+                if (!string.IsNullOrWhiteSpace(pendiente) && File.Exists(pendiente))
+                    rutasExtra.Add(pendiente);
+
+                var preview = new VisorClienteWindow(
+                    modoVistaPrevia: true,
+                    carpetaPromoOverride: carpeta,
+                    intervaloSegundosOverride: seg,
+                    rutasPromoExtra: rutasExtra);
+
+                preview.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show(ex.Message, "Vista previa", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
         private void btnGuardarPromoVisor_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int seg))
                     seg = 8;
-                if (!DatabaseService.ActualizarVisorPromociones(txtVisorPromoCarpeta?.Text ?? "", seg))
+
+                string carpeta = ResolverCarpetaPromoVisor();
+                txtVisorPromoCarpeta.Text = carpeta;
+                CopiarArchivoPromoSeleccionado(carpeta);
+
+                if (!DatabaseService.ActualizarVisorPromociones(carpeta, seg))
                 {
                     ModernMessageBox.Show("No se pudo guardar la configuración del visor.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-                ModernMessageBox.Show("Promociones del visor guardadas. Si la pantalla cliente está abierta, se actualizará al volver al inicio de venta.", "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
-                try { CustomerScreenService.RefrescarSegunConfiguracion(); } catch { }
+
+                ModernMessageBox.Show(
+                    "Promociones del visor guardadas. Si la pantalla del cliente está abierta, el carrusel se actualizará al instante.",
+                    "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                try { CustomerScreenService.RecargarPublicidades(); } catch { }
             }
             catch (Exception ex)
             {
@@ -254,6 +339,155 @@ namespace SchettiniGestion.WPF
             if (ofd.ShowDialog() == true)
             {
                 txtCertificadoPath.Text = ofd.FileName;
+            }
+        }
+
+        private void ActualizarEstadoActivacionAfip(DataRow dr = null)
+        {
+            if (lblEstadoActivacionAfip == null) return;
+            dr = dr ?? DatabaseService.GetConfiguracion();
+            lblEstadoActivacionAfip.Text = AfipActivacionFiscalService.ObtenerEstadoActivacion(dr);
+            lblEstadoActivacionAfip.Foreground = (Brush)FindResource("SuccessColor");
+        }
+
+        private void EstablecerEstadoActivacionAfip(string mensaje, bool exito)
+        {
+            if (lblEstadoActivacionAfip == null) return;
+            lblEstadoActivacionAfip.Text = mensaje;
+            lblEstadoActivacionAfip.Foreground = (Brush)FindResource(exito ? "SuccessColor" : "DangerColor");
+        }
+
+        private async void btnProbarConexionAfip_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnProbarConexionAfip == null) return;
+
+            btnProbarConexionAfip.IsEnabled = false;
+            if (btnGenerarCsrAfip != null) btnGenerarCsrAfip.IsEnabled = false;
+            if (btnSubirCertificadoAfip != null) btnSubirCertificadoAfip.IsEnabled = false;
+            if (pbProbarConexionAfip != null) pbProbarConexionAfip.Visibility = Visibility.Visible;
+
+            EstablecerEstadoActivacionAfip("Probando conexión con WSAA de AFIP…", true);
+            if (lblEstadoActivacionAfip != null)
+                lblEstadoActivacionAfip.Foreground = (Brush)FindResource("TextSecondary");
+
+            try
+            {
+                ResultadoPruebaWsaa resultado = await AfipService.ProbarConexionWsaaAsync();
+                EstablecerEstadoActivacionAfip(resultado.Mensaje, resultado.Exito);
+
+                if (resultado.Exito)
+                {
+                    ModernMessageBox.Show(
+                        resultado.Mensaje,
+                        "Conexión AFIP",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+                else
+                {
+                    ModernMessageBox.Show(
+                        resultado.Mensaje,
+                        "Error de conexión AFIP",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                string msg = "Error inesperado al probar la conexión: " + ex.Message;
+                EstablecerEstadoActivacionAfip(msg, false);
+                ModernMessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                btnProbarConexionAfip.IsEnabled = true;
+                if (btnGenerarCsrAfip != null) btnGenerarCsrAfip.IsEnabled = true;
+                if (btnSubirCertificadoAfip != null) btnSubirCertificadoAfip.IsEnabled = true;
+                if (pbProbarConexionAfip != null) pbProbarConexionAfip.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void btnGenerarCsrAfip_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string cuit = txtCuit.Text?.Trim() ?? "";
+                string razonSocial = txtRazonSocial.Text?.Trim() ?? "";
+                string nombreFantasia = txtNombreFantasia.Text?.Trim() ?? "";
+
+                if (ModernMessageBox.Show(
+                    "Se generará una nueva clave privada RSA y un CSR. Si ya tiene un certificado activo, deberá solicitar uno nuevo en AFIP/ARCA.\n\n¿Continuar?",
+                    "Generar CSR AFIP",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return;
+
+                var resultado = AfipActivacionFiscalService.GenerarCsr(cuit, razonSocial, nombreFantasia);
+                if (!resultado.Exito)
+                {
+                    ModernMessageBox.Show(resultado.Error ?? "No se pudo generar el CSR.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var sfd = new SaveFileDialog
+                {
+                    Title = "Guardar pedido de certificado (CSR)",
+                    Filter = "Pedido de certificado (*.csr)|*.csr|Todos (*.*)|*.*",
+                    FileName = resultado.NombreArchivoCsr,
+                    OverwritePrompt = true
+                };
+
+                if (sfd.ShowDialog() == true)
+                    File.WriteAllText(sfd.FileName, resultado.ContenidoCsr, System.Text.Encoding.ASCII);
+
+                ActualizarEstadoActivacionAfip();
+
+                ModernMessageBox.Show(
+                    "CSR generado correctamente.\n\n" +
+                    "1. Suba el archivo .csr en AFIP/ARCA (Administrador de Relaciones de Clave Fiscal).\n" +
+                    "2. Cuando reciba el certificado .crt, impórtelo con el botón «Subir .crt».\n\n" +
+                    "La clave privada quedó guardada en:\n" + resultado.RutaClavePrivada,
+                    "CSR listo",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void btnSubirCertificadoAfip_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var ofd = new OpenFileDialog
+                {
+                    Title = "Seleccionar certificado AFIP",
+                    Filter = "Certificado AFIP (*.crt;*.cer)|*.crt;*.cer"
+                };
+                if (ofd.ShowDialog() != true) return;
+
+                var resultado = AfipActivacionFiscalService.GuardarCertificadoAfip(ofd.FileName);
+                if (!resultado.Exito)
+                {
+                    ModernMessageBox.Show(resultado.Error ?? "No se pudo guardar el certificado.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                txtCertificadoCrtPath.Text = resultado.RutaCertificado;
+                txtCertificadoPath.Text = resultado.RutaCertificado;
+                ActualizarEstadoActivacionAfip();
+
+                ModernMessageBox.Show(
+                    "Certificado AFIP importado correctamente.\n\nEl sistema ya puede conectarse al WebService de Facturación Electrónica usando el par .key + .crt.\n\nRecuerde autorizar el servicio wsfe en AFIP/ARCA y registrar la IP si corresponde.",
+                    "Certificado listo",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

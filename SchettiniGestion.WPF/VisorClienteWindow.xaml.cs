@@ -18,9 +18,6 @@ namespace SchettiniGestion.WPF
 
         private DispatcherTimer _timerVueltaBienvenida;
 
-        private static readonly string[] _extPromoImagen = { ".jpg", ".jpeg", ".png", ".bmp" };
-        private static readonly string[] _extPromoMedia = { ".gif", ".mp4", ".wmv", ".mpeg", ".mpg", ".avi" };
-
         private readonly List<string> _rutasPromoVertical = new List<string>();
         private readonly List<string> _rutasPromoHorizontal = new List<string>();
 
@@ -31,11 +28,75 @@ namespace SchettiniGestion.WPF
         private bool _carruselVerticalEsVideo;
         private bool _carruselHorizontalEsVideo;
 
+        private readonly bool _modoVistaPrevia;
+        private readonly string _carpetaPromoOverride;
+        private readonly int? _intervaloSegundosOverride;
+        private readonly List<string> _rutasPromoExtra = new List<string>();
+
         public VisorClienteWindow()
         {
             InitializeComponent();
+            _modoVistaPrevia = false;
+            _carpetaPromoOverride = null;
+            _intervaloSegundosOverride = null;
+            InicializarVisor(null);
+        }
+
+        /// <summary>Vista previa modal desde Configuración (sin segundo monitor).</summary>
+        public VisorClienteWindow(bool modoVistaPrevia, string carpetaPromoOverride, int? intervaloSegundosOverride, IEnumerable<string> rutasPromoExtra)
+        {
+            InitializeComponent();
+            _modoVistaPrevia = modoVistaPrevia;
+            _carpetaPromoOverride = carpetaPromoOverride;
+            _intervaloSegundosOverride = intervaloSegundosOverride;
+            InicializarVisor(rutasPromoExtra);
+        }
+
+        private void InicializarVisor(IEnumerable<string> rutasPromoExtra)
+        {
+            if (rutasPromoExtra != null)
+            {
+                foreach (string ruta in rutasPromoExtra)
+                {
+                    if (!string.IsNullOrWhiteSpace(ruta) && File.Exists(ruta)
+                        && !_rutasPromoExtra.Contains(ruta, StringComparer.OrdinalIgnoreCase))
+                        _rutasPromoExtra.Add(ruta);
+                }
+            }
+
             Closed += (_, __) => DetenerTodasPromociones();
             SizeChanged += (_, __) => AjustarLayoutPromociones();
+
+            if (_modoVistaPrevia)
+                AplicarModoVistaPrevia();
+
+            CargarLogo();
+            IniciarPromociones();
+        }
+
+        private void AplicarModoVistaPrevia()
+        {
+            Title = "Vista previa — Pantalla del cliente";
+            WindowStyle = WindowStyle.SingleBorderWindow;
+            ResizeMode = ResizeMode.CanResize;
+            WindowState = WindowState.Normal;
+            Width = 800;
+            Height = 600;
+            MinWidth = 640;
+            MinHeight = 480;
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            ShowInTaskbar = true;
+        }
+
+        /// <summary>Recarga carpeta, listas y reinicia el carrusel sin cerrar la ventana.</summary>
+        public void RecargarPublicidades()
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(RecargarPublicidades);
+                return;
+            }
+
             CargarLogo();
             IniciarPromociones();
         }
@@ -78,7 +139,7 @@ namespace SchettiniGestion.WPF
             _rutasPromoVertical.Clear();
             _rutasPromoHorizontal.Clear();
 
-            foreach (string ruta in LeerRutasPromocionesDesdeConfig())
+            foreach (string ruta in ObtenerRutasPromociones())
             {
                 if (EsPromoVertical(ruta))
                     _rutasPromoVertical.Add(ruta);
@@ -93,12 +154,38 @@ namespace SchettiniGestion.WPF
                 _indicePromoVertical = 0;
                 MostrarPromoVerticalActual();
             }
+            else
+            {
+                OcultarControlesPromoVertical();
+            }
 
             if (_rutasPromoHorizontal.Count > 0)
             {
                 _indicePromoHorizontal = 0;
                 MostrarPromoHorizontalActual();
             }
+            else
+            {
+                OcultarControlesPromoHorizontal();
+            }
+        }
+
+        private IEnumerable<string> ObtenerRutasPromociones()
+        {
+            var list = new List<string>();
+            if (!string.IsNullOrWhiteSpace(_carpetaPromoOverride))
+                list.AddRange(DatabaseService.ListarArchivosPromoVisorCliente(_carpetaPromoOverride));
+            else
+                list.AddRange(DatabaseService.ListarArchivosPromoVisorCliente());
+
+            foreach (string extra in _rutasPromoExtra)
+            {
+                if (!list.Contains(extra, StringComparer.OrdinalIgnoreCase))
+                    list.Add(extra);
+            }
+
+            list.Sort(StringComparer.OrdinalIgnoreCase);
+            return list;
         }
 
         private void AjustarLayoutPromociones()
@@ -132,41 +219,23 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        private static List<string> LeerRutasPromocionesDesdeConfig()
-        {
-            var list = new List<string>();
-            try
-            {
-                var cfg = DatabaseService.GetConfiguracion();
-                if (cfg == null || !cfg.Table.Columns.Contains("VisorPromoCarpeta")) return list;
-                string dir = cfg["VisorPromoCarpeta"]?.ToString()?.Trim();
-                if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return list;
-
-                foreach (var f in Directory.GetFiles(dir))
-                {
-                    string ex = Path.GetExtension(f).ToLowerInvariant();
-                    if (_extPromoImagen.Contains(ex) || _extPromoMedia.Contains(ex))
-                        list.Add(f);
-                }
-                list.Sort(StringComparer.OrdinalIgnoreCase);
-            }
-            catch { }
-            return list;
-        }
-
         private static bool EsPromoVertical(string path)
         {
-            string ext = Path.GetExtension(path).ToLowerInvariant();
-            if (_extPromoMedia.Contains(ext))
+            string ext = Path.GetExtension(path);
+            if (DatabaseService.EsExtensionPromoVideoCliente(ext))
+                return true;
+
+            if (!DatabaseService.EsExtensionPromoImagenCliente(ext))
                 return true;
 
             try
             {
                 var bi = new BitmapImage();
                 bi.BeginInit();
-                bi.UriSource = new Uri(path);
+                bi.UriSource = new Uri(path, UriKind.Absolute);
                 bi.CacheOption = BitmapCacheOption.OnLoad;
                 bi.EndInit();
+                bi.Freeze();
                 return bi.PixelHeight >= bi.PixelWidth;
             }
             catch
@@ -177,6 +246,9 @@ namespace SchettiniGestion.WPF
 
         private int LeerIntervaloPromoSeg()
         {
+            if (_intervaloSegundosOverride.HasValue)
+                return Math.Min(Math.Max(_intervaloSegundosOverride.Value, 3), 120);
+
             try
             {
                 var cfg = DatabaseService.GetConfiguracion();
@@ -210,21 +282,18 @@ namespace SchettiniGestion.WPF
                 DetenerTimerPromoHorizontal();
         }
 
-        private bool MostrarArchivoPromo(string path, System.Windows.Controls.Image img, MediaElement media)
+        private bool MostrarArchivoPromo(string path, Image img, MediaElement media)
         {
-            string ext = Path.GetExtension(path).ToLowerInvariant();
+            string ext = Path.GetExtension(path);
 
-            try { media.Stop(); } catch { }
-            media.Source = null;
-            media.Visibility = Visibility.Collapsed;
-            img.Visibility = Visibility.Collapsed;
-            img.Source = null;
+            LiberarMediaPromo(media);
+            LiberarImagenPromo(img);
 
-            if (_extPromoMedia.Contains(ext))
+            if (DatabaseService.EsExtensionPromoVideoCliente(ext))
             {
                 try
                 {
-                    media.Source = new Uri(path);
+                    media.Source = new Uri(path, UriKind.Absolute);
                     media.Visibility = Visibility.Visible;
                     media.Play();
                     return true;
@@ -232,40 +301,71 @@ namespace SchettiniGestion.WPF
                 catch { }
             }
 
-            try
+            if (DatabaseService.EsExtensionPromoImagenCliente(ext))
             {
-                var bi = new BitmapImage();
-                bi.BeginInit();
-                bi.CacheOption = BitmapCacheOption.OnLoad;
-                bi.UriSource = new Uri(path);
-                bi.EndInit();
-                bi.Freeze();
-                img.Source = bi;
-                img.Visibility = Visibility.Visible;
+                try
+                {
+                    var bi = new BitmapImage();
+                    bi.BeginInit();
+                    bi.CacheOption = BitmapCacheOption.OnLoad;
+                    bi.UriSource = new Uri(path, UriKind.Absolute);
+                    bi.EndInit();
+                    bi.Freeze();
+                    img.Source = bi;
+                    img.Visibility = Visibility.Visible;
+                }
+                catch { }
             }
-            catch { }
 
             return false;
+        }
+
+        private static void LiberarImagenPromo(Image img)
+        {
+            if (img == null) return;
+            img.Visibility = Visibility.Collapsed;
+            img.Source = null;
+        }
+
+        private static void LiberarMediaPromo(MediaElement media)
+        {
+            if (media == null) return;
+            try { media.Stop(); } catch { }
+            media.Source = null;
+            media.Visibility = Visibility.Collapsed;
+        }
+
+        private void OcultarControlesPromoVertical()
+        {
+            LiberarImagenPromo(imgPromo);
+            LiberarMediaPromo(mediaPromo);
+        }
+
+        private void OcultarControlesPromoHorizontal()
+        {
+            LiberarImagenPromo(imgPromoHorizontal);
+            LiberarMediaPromo(mediaPromoHorizontal);
         }
 
         private void AvanzarPromoVertical()
         {
             if (_rutasPromoVertical.Count == 0) return;
-            _indicePromoVertical = (_indicePromoVertical + 1) % _rutasPromoVertical.Count;
+            if (_rutasPromoVertical.Count > 1)
+                _indicePromoVertical = (_indicePromoVertical + 1) % _rutasPromoVertical.Count;
             MostrarPromoVerticalActual();
         }
 
         private void AvanzarPromoHorizontal()
         {
             if (_rutasPromoHorizontal.Count == 0) return;
-            _indicePromoHorizontal = (_indicePromoHorizontal + 1) % _rutasPromoHorizontal.Count;
+            if (_rutasPromoHorizontal.Count > 1)
+                _indicePromoHorizontal = (_indicePromoHorizontal + 1) % _rutasPromoHorizontal.Count;
             MostrarPromoHorizontalActual();
         }
 
         private void ReiniciarTimerPromoVertical()
         {
             DetenerTimerPromoVertical();
-            if (_rutasPromoVertical.Count <= 1) return;
             int seg = LeerIntervaloPromoSeg();
             _timerPromoVertical = new DispatcherTimer { Interval = TimeSpan.FromSeconds(seg) };
             _timerPromoVertical.Tick += (_, __) =>
@@ -279,7 +379,6 @@ namespace SchettiniGestion.WPF
         private void ReiniciarTimerPromoHorizontal()
         {
             DetenerTimerPromoHorizontal();
-            if (_rutasPromoHorizontal.Count <= 1) return;
             int seg = LeerIntervaloPromoSeg();
             _timerPromoHorizontal = new DispatcherTimer { Interval = TimeSpan.FromSeconds(seg) };
             _timerPromoHorizontal.Tick += (_, __) =>
@@ -314,16 +413,8 @@ namespace SchettiniGestion.WPF
             DetenerTimerPromoHorizontal();
             _carruselVerticalEsVideo = false;
             _carruselHorizontalEsVideo = false;
-            try
-            {
-                mediaPromo.Stop();
-                mediaPromo.Source = null;
-                mediaPromoHorizontal.Stop();
-                mediaPromoHorizontal.Source = null;
-            }
-            catch { }
-            imgPromo.Source = null;
-            imgPromoHorizontal.Source = null;
+            OcultarControlesPromoVertical();
+            OcultarControlesPromoHorizontal();
         }
 
         private void MediaPromo_MediaEnded(object sender, RoutedEventArgs e)
@@ -368,8 +459,6 @@ namespace SchettiniGestion.WPF
             GridBienvenida.Visibility = Visibility.Visible;
             dgvDetalleCliente.ItemsSource = null;
             lblTotal.Text = "$ 0.00";
-            if (_rutasPromoVertical.Count == 0 && _rutasPromoHorizontal.Count == 0)
-                IniciarPromociones();
         }
 
         public void MostrarSeleccionPago()

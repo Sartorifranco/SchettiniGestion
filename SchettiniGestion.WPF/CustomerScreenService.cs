@@ -93,6 +93,14 @@ namespace SchettiniGestion.WPF
             if (_visor != null && _visor.IsLoaded) _visor.Reiniciar();
         }
 
+        /// <summary>Recarga publicidades del carrusel en la ventana abierta, sin reiniciar el visor.</summary>
+        public static void RecargarPublicidades()
+        {
+            if (!VisorEstaHabilitado()) return;
+            if (_visor != null && _visor.IsLoaded)
+                _visor.RecargarPublicidades();
+        }
+
         public static void Cerrar()
         {
             if (_visor != null) { _visor.Close(); _visor = null; }
@@ -101,7 +109,18 @@ namespace SchettiniGestion.WPF
         /// <summary>Reaplica la configuración de visor (pantalla única vs. cliente en segundo monitor).</summary>
         public static void RefrescarSegunConfiguracion()
         {
-            Cerrar();
+            if (!VisorEstaHabilitado())
+            {
+                Cerrar();
+                return;
+            }
+
+            if (_visor != null && _visor.IsLoaded)
+            {
+                RecargarPublicidades();
+                return;
+            }
+
             Iniciar();
             Resetear();
         }

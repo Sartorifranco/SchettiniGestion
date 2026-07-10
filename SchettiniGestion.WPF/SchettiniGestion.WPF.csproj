@@ -258,6 +258,9 @@
     <Compile Include="RecepcionCompraModalWindow.xaml.cs">
       <DependentUpon>RecepcionCompraModalWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ResultadoImportacionWindow.xaml.cs">
+      <DependentUpon>ResultadoImportacionWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="NotaCreditoDebitoModalWindow.xaml.cs">
       <DependentUpon>NotaCreditoDebitoModalWindow.xaml</DependentUpon>
     </Compile>
@@ -505,6 +508,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="RecepcionCompraModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ResultadoImportacionWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

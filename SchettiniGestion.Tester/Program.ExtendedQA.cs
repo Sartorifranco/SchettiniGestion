@@ -308,12 +308,12 @@ namespace SchettiniGestion.Tester
                 var rowPrecio = DatabaseService.BuscarProducto(codProd);
                 decimal pc0 = Convert.ToDecimal(rowPrecio["PrecioCosto"]);
                 decimal pv0 = Convert.ToDecimal(rowPrecio["PrecioVenta"]);
-                if (DatabaseService.ActualizarPreciosProducto(prodId, pc0 + 1m, pv0 + 2m))
+                if (DatabaseService.ActualizarPreciosProducto(prodId, pc0 + 1m, pv0 + 2m, out _))
                 {
                     var r2 = DatabaseService.BuscarProducto(codProd);
-                    if (Convert.ToDecimal(r2["PrecioCosto"]) == pc0 + 1m && Convert.ToDecimal(r2["PrecioVenta"]) == pv0 + 2m)
+                    if (Convert.ToDecimal(r2["PrecioCosto"]) == pc0 + 1m)
                         Registrar("✅ EXT: ActualizarPreciosProducto OK (revirtiendo).");
-                    DatabaseService.ActualizarPreciosProducto(prodId, pc0, pv0);
+                    DatabaseService.ActualizarPreciosProducto(prodId, pc0, pv0, out _);
                 }
                 else
                     Registrar("❌ EXT: ActualizarPreciosProducto falló.");

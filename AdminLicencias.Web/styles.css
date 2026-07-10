@@ -161,6 +161,16 @@ h2, h5, h6,
   color: #ffb4b4 !important;
 }
 
+.audit-table .audit-action {
+  color: #79c0ff;
+  font-weight: 500;
+}
+
+.badge.bg-secondary-subtle {
+  background-color: rgba(139, 148, 158, 0.25) !important;
+  border: 1px solid rgba(139, 148, 158, 0.35);
+}
+
 code {
   color: #79c0ff;
 }

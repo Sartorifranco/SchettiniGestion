@@ -104,10 +104,32 @@ function isValidCuit(value) {
   return cuit.length === 11;
 }
 
+function getUserIdentifier() {
+  return loadConfig().userIdentifier || "";
+}
+
+function formatDateTime(value) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 async function apiFetch(path, options = {}) {
   const apiKey = getAdminApiKey();
   if (!apiKey) {
     throw new Error("Configurá tu API Key de administración en el engranaje superior.");
+  }
+
+  const userIdentifier = getUserIdentifier();
+  if (!userIdentifier) {
+    throw new Error("Configurá tu nombre/dispositivo en el engranaje superior (requerido para auditoría).");
   }
 
   const response = await fetch(`${getApiBase()}${path}`, {
@@ -115,6 +137,7 @@ async function apiFetch(path, options = {}) {
     headers: {
       "Content-Type": "application/json",
       "X-Api-Key": apiKey,
+      "X-User-Identifier": userIdentifier,
       ...(options.headers || {})
     }
   });
@@ -712,15 +735,66 @@ function initConfigModal() {
   const cfg = loadConfig();
   $("apiBaseUrl").value = cfg.apiBaseUrl || DEFAULT_API_BASE;
   $("adminApiKey").value = cfg.adminApiKey || "";
+  $("userIdentifier").value = cfg.userIdentifier || "";
 }
 
 function onSaveConfig() {
+  const userIdentifier = $("userIdentifier").value.trim();
+  if (!userIdentifier) {
+    showToast("El nombre/dispositivo es obligatorio.");
+    return;
+  }
+  if (!$("adminApiKey").value.trim()) {
+    showToast("La API Key es obligatoria.");
+    return;
+  }
+
   saveConfig({
     apiBaseUrl: $("apiBaseUrl").value.trim() || DEFAULT_API_BASE,
-    adminApiKey: $("adminApiKey").value.trim()
+    adminApiKey: $("adminApiKey").value.trim(),
+    userIdentifier
   });
   bootstrap.Modal.getInstance($("configModal")).hide();
   showToast("Configuración guardada.");
+}
+
+function renderAuditoria(rows) {
+  const tbody = $("auditoriaBody");
+  tbody.innerHTML = "";
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-secondary text-center py-4">Sin registros de auditoría.</td></tr>';
+    $("auditoriaResumen").textContent = "0 registro(s)";
+    return;
+  }
+
+  for (const row of rows) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="text-nowrap small">${formatDateTime(row.fecha)}</td>
+      <td><span class="badge bg-secondary-subtle text-light fw-normal">${escapeHtml(row.usuario || "Desconocido")}</span></td>
+      <td><span class="audit-action">${escapeHtml(row.accion || "—")}</span></td>
+      <td class="font-monospace small">${escapeHtml(row.ip || "—")}</td>
+      <td class="small text-secondary">${escapeHtml(row.navegador || "—")}</td>`;
+    tbody.appendChild(tr);
+  }
+
+  $("auditoriaResumen").textContent = `${rows.length} registro(s) mostrado(s)`;
+}
+
+async function loadAuditoria() {
+  $("auditoriaBody").innerHTML =
+    '<tr><td colspan="5" class="text-secondary text-center py-4">Cargando…</td></tr>';
+
+  try {
+    const rows = await apiFetch("/api/licenses/audit");
+    renderAuditoria(rows);
+    showToast("Auditoría actualizada.");
+  } catch (err) {
+    $("auditoriaBody").innerHTML =
+      `<tr><td colspan="5" class="text-danger text-center py-4">${escapeHtml(err.message)}</td></tr>`;
+    $("auditoriaResumen").textContent = "";
+  }
 }
 
 function resetGenerateForm() {
@@ -792,8 +866,12 @@ document.addEventListener("DOMContentLoaded", () => {
   $("tab-dashboard").addEventListener("shown.bs.tab", () => {
     loadDashboard().catch((err) => showToast(err.message));
   });
+  $("tab-auditoria").addEventListener("shown.bs.tab", () => {
+    loadAuditoria().catch((err) => showToast(err.message));
+  });
+  $("btnRefrescarAuditoria").addEventListener("click", () => loadAuditoria().catch((err) => showToast(err.message)));
 
-  if (!getAdminApiKey()) {
+  if (!getAdminApiKey() || !getUserIdentifier()) {
     setTimeout(() => bootstrap.Modal.getOrCreateInstance($("configModal")).show(), 400);
   } else {
     loadModulosCatalog().catch(() => {});

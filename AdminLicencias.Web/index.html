@@ -40,6 +40,11 @@
           <i class="bi bi-clock-history me-1"></i>Historial
         </button>
       </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-auditoria" data-bs-toggle="pill" data-bs-target="#pane-auditoria" type="button">
+          <i class="bi bi-journal-text me-1"></i>Auditoría
+        </button>
+      </li>
     </ul>
 
     <div class="tab-content">
@@ -253,6 +258,40 @@
           </div>
         </div>
       </div>
+
+      <!-- Auditoría -->
+      <div class="tab-pane fade" id="pane-auditoria" role="tabpanel">
+        <div class="card card-panel">
+          <div class="card-body">
+            <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3">
+              <div>
+                <h2 class="h6 mb-1">Registro de accesos</h2>
+                <p class="small text-secondary mb-0">Últimas 100 acciones registradas en el panel.</p>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" id="btnRefrescarAuditoria">
+                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-dark table-hover table-sm align-middle mb-0 audit-table">
+                <thead>
+                  <tr>
+                    <th style="min-width: 150px">Fecha</th>
+                    <th style="min-width: 160px">Usuario / Dispositivo</th>
+                    <th style="min-width: 140px">Acción</th>
+                    <th style="min-width: 120px">IP</th>
+                    <th>Navegador</th>
+                  </tr>
+                </thead>
+                <tbody id="auditoriaBody">
+                  <tr><td colspan="5" class="text-secondary text-center py-4">Cargá la auditoría con «Actualizar».</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="small text-secondary mt-3 mb-0" id="auditoriaResumen"></p>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -348,7 +387,13 @@
             <input type="url" class="form-control font-monospace" id="apiBaseUrl" value="https://licencias.schpos.com.ar">
           </div>
           <div class="mb-3">
-            <label class="form-label" for="adminApiKey">API Key de administración</label>
+            <label class="form-label" for="userIdentifier">Tu nombre / dispositivo *</label>
+            <input type="text" class="form-control" id="userIdentifier" required maxlength="80"
+                   placeholder="Ej: Franco - Celular" autocomplete="off">
+            <div class="form-text text-secondary">Se envía en el header <code>X-User-Identifier</code> para auditoría.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="adminApiKey">API Key de administración *</label>
             <input type="password" class="form-control font-monospace" id="adminApiKey" autocomplete="off" placeholder="Header X-Api-Key">
             <div class="form-text text-secondary">Se guarda en <code>localStorage</code> de este navegador.</div>
           </div>

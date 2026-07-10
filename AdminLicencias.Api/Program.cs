@@ -2,6 +2,7 @@ using AdminLicencias.Api;
 using AdminLicencias.Api.Contracts;
 using AdminLicencias.Api.Middleware;
 using AdminLicencias.Api.Security;
+using AdminLicencias.Api.Services;
 using AdminLicencias.Core;
 using AdminLicencias.Core.Catalog;
 using AdminLicencias.Core.Models;
@@ -21,6 +22,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 builder.Services.Configure<LicensingOptions>(builder.Configuration.GetSection(LicensingOptions.SectionName));
 builder.Services.Configure<ApiSecurityOptions>(builder.Configuration.GetSection(ApiSecurityOptions.SectionName));
 builder.Services.AddAdminLicenciasCore();
+builder.Services.AddSingleton<AuditLogService>();
 
 builder.Services.AddCors(options =>
 {
@@ -35,6 +37,7 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 app.UseCors("LicensePanel");
 app.UseMiddleware<ApiKeyMiddleware>();
+app.UseMiddleware<AuditMiddleware>();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
@@ -49,7 +52,8 @@ app.MapGet("/api", () => Results.Ok(new
     {
         "POST /api/licenses/generate", "POST /api/licenses/validate", "GET /api/licenses/history",
         "GET|POST /api/licenses/clients", "PUT|DELETE /api/licenses/clients/{id}",
-        "GET /api/licenses/dashboard", "GET /api/licenses/modules", "POST /api/licenses/revoke"
+        "GET /api/licenses/dashboard", "GET /api/licenses/modules", "POST /api/licenses/revoke",
+        "GET /api/licenses/audit"
     }
 }));
 
@@ -255,5 +259,8 @@ licenses.MapGet("/modules", () =>
             m.Orden
         }));
 });
+
+licenses.MapGet("/audit", (AuditLogService auditLog) =>
+    Results.Ok(auditLog.ObtenerUltimos(100)));
 
 app.Run();

@@ -26,6 +26,13 @@ public sealed class ApiKeyMiddleware
                 await context.Response.WriteAsJsonAsync(new { error = "API Key de administración inválida o ausente." });
                 return;
             }
+
+            if (!ValidarIdentificadorUsuario(context))
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                await context.Response.WriteAsJsonAsync(new { error = "Header X-User-Identifier obligatorio (nombre/dispositivo del operador)." });
+                return;
+            }
         }
         else if (path.StartsWith("/api/licenses/validate", StringComparison.OrdinalIgnoreCase))
         {
@@ -47,7 +54,8 @@ public sealed class ApiKeyMiddleware
         path.StartsWith("/api/licenses/clients", StringComparison.OrdinalIgnoreCase) ||
         path.StartsWith("/api/licenses/dashboard", StringComparison.OrdinalIgnoreCase) ||
         path.StartsWith("/api/licenses/modules", StringComparison.OrdinalIgnoreCase) ||
-        path.StartsWith("/api/licenses/revoke", StringComparison.OrdinalIgnoreCase);
+        path.StartsWith("/api/licenses/revoke", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWith("/api/licenses/audit", StringComparison.OrdinalIgnoreCase);
 
     private static bool ValidarClave(HttpContext context, string? expected, string headerName)
     {
@@ -58,5 +66,13 @@ public sealed class ApiKeyMiddleware
             return false;
 
         return string.Equals(provided.ToString().Trim(), expected.Trim(), StringComparison.Ordinal);
+    }
+
+    private static bool ValidarIdentificadorUsuario(HttpContext context)
+    {
+        if (!context.Request.Headers.TryGetValue(ApiKeyConstants.UserIdentifierHeaderName, out var provided))
+            return false;
+
+        return !string.IsNullOrWhiteSpace(provided.ToString());
     }
 }

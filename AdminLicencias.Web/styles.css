@@ -1,16 +1,44 @@
 :root {
   --panel-bg: #161b22;
   --panel-border: #30363d;
+  --text-primary: #f0f6fc;
+  --text-secondary: #c9d1d9;
+  --text-muted: #b1bac4;
+  --text-subtle: #9da7b3;
 }
 
 body {
   min-height: 100vh;
   background: radial-gradient(circle at top, #1f2937 0%, #0d1117 55%);
+  color: var(--text-primary);
 }
 
 .card-panel {
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
+  color: var(--text-primary);
+}
+
+/* Bootstrap overrides — texto legible sobre fondo oscuro */
+.text-secondary,
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+.form-label,
+.form-check-label,
+.modal-title,
+.card-body,
+.table-dark,
+.table-dark td,
+.table-dark th,
+dl dt,
+dl dd {
+  color: var(--text-primary);
+}
+
+.form-text {
+  color: var(--text-muted) !important;
 }
 
 .form-control,
@@ -18,53 +46,121 @@ body {
 .input-group-text {
   background-color: #0d1117;
   border-color: var(--panel-border);
-  color: #e6edf3;
+  color: var(--text-primary);
+}
+
+.form-control::placeholder {
+  color: var(--text-subtle);
+  opacity: 1;
 }
 
 .form-control:focus,
 .form-select:focus {
   background-color: #0d1117;
-  color: #e6edf3;
+  color: var(--text-primary);
   border-color: #388bfd;
   box-shadow: 0 0 0 0.2rem rgba(56, 139, 253, 0.15);
 }
 
+.form-select option {
+  background-color: #161b22;
+  color: var(--text-primary);
+}
+
 .nav-pills .nav-link {
-  color: #8b949e;
+  color: var(--text-secondary);
+}
+
+.nav-pills .nav-link:hover {
+  color: var(--text-primary);
 }
 
 .nav-pills .nav-link.active {
   background: #238636;
+  color: #fff;
 }
 
 .table-dark {
+  --bs-table-color: var(--text-primary);
   --bs-table-bg: transparent;
+  --bs-table-hover-color: var(--text-primary);
   --bs-table-hover-bg: rgba(56, 139, 253, 0.08);
 }
 
-.badge-estado-activa { background: #238636; }
-.badge-estado-porvencer { background: #9e6a03; }
-.badge-estado-vencida { background: #da3633; }
+.table-dark thead th {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.badge-estado-activa { background: #238636; color: #fff; }
+.badge-estado-porvencer { background: #9e6a03; color: #fff; }
+.badge-estado-vencida { background: #da3633; color: #fff; }
 
 .kpi-label {
   font-size: 0.75rem;
-  color: #8b949e;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
-.kpi-value {
-  font-size: 1.75rem;
-  font-weight: 700;
-}
-
+.kpi-value,
 .kpi-value-sm {
-  font-size: 1.25rem;
-  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .modulos-panel {
   background: #0d1117;
   max-height: 260px;
   overflow-y: auto;
+  color: var(--text-primary);
+}
+
+.modulos-panel .form-check-label {
+  color: var(--text-primary);
+}
+
+.font-monospace {
+  font-size: 0.85rem;
+}
+
+.modal-content,
+.modal-content .form-control,
+.modal-content .form-select {
+  color: var(--text-primary);
+}
+
+.navbar-brand {
+  color: var(--text-primary) !important;
+}
+
+.btn-outline-secondary {
+  color: var(--text-secondary);
+  border-color: var(--panel-border);
+}
+
+.btn-outline-secondary:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: var(--text-muted);
+}
+
+h2, h5, h6,
+.h5, .h6 {
+  color: var(--text-primary);
+}
+
+#resultadoVacio {
+  color: var(--text-muted) !important;
+}
+
+.alert-success {
+  color: #afffb8 !important;
+}
+
+.alert-danger {
+  color: #ffb4b4 !important;
+}
+
+code {
+  color: #79c0ff;
 }

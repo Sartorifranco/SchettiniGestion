@@ -272,7 +272,21 @@
                 <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
               </button>
             </div>
-            <div class="table-responsive">
+            <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+              <div class="flex-grow-1">
+                <label class="form-label small" for="filtroAuditoriaUsuario">Buscar Usuario</label>
+                <input type="search" class="form-control form-control-sm" id="filtroAuditoriaUsuario" placeholder="Usuario o dispositivo">
+              </div>
+              <div class="flex-grow-1">
+                <label class="form-label small" for="filtroAuditoriaAccion">Buscar Acción</label>
+                <input type="search" class="form-control form-control-sm" id="filtroAuditoriaAccion" placeholder="Ej: Generar licencia">
+              </div>
+              <div class="flex-grow-1">
+                <label class="form-label small" for="filtroAuditoriaIp">Buscar IP</label>
+                <input type="search" class="form-control form-control-sm" id="filtroAuditoriaIp" placeholder="Dirección IP">
+              </div>
+            </div>
+            <div class="table-responsive audit-table-scroll">
               <table class="table table-dark table-hover table-sm align-middle mb-0 audit-table">
                 <thead>
                   <tr>

@@ -7,7 +7,7 @@ namespace AdminLicencias.Api.Services;
 
 public sealed class AuditLogService
 {
-    private const int MaxStoredEntries = 500;
+    private const int RetentionDays = 180;
     private readonly string _logPath;
     private readonly object _lock = new();
 
@@ -21,11 +21,8 @@ public sealed class AuditLogService
         lock (_lock)
         {
             var entries = CargarInterno();
+            PurgarAntiguos(entries);
             entries.Add(entry);
-
-            if (entries.Count > MaxStoredEntries)
-                entries = entries.OrderByDescending(e => e.Fecha).Take(MaxStoredEntries).ToList();
-
             GuardarInterno(entries);
         }
     }
@@ -34,7 +31,13 @@ public sealed class AuditLogService
     {
         lock (_lock)
         {
-            return CargarInterno()
+            var entries = CargarInterno();
+            int antes = entries.Count;
+            PurgarAntiguos(entries);
+            if (entries.Count < antes)
+                GuardarInterno(entries);
+
+            return entries
                 .OrderByDescending(e => e.Fecha)
                 .Take(cantidad)
                 .Select(e => new AuditLogEntryDto
@@ -48,6 +51,12 @@ public sealed class AuditLogService
                 })
                 .ToList();
         }
+    }
+
+    private static void PurgarAntiguos(List<AuditLogEntry> entries)
+    {
+        var limite = DateTime.Now.AddDays(-RetentionDays);
+        entries.RemoveAll(e => e.Fecha < limite);
     }
 
     private List<AuditLogEntry> CargarInterno()

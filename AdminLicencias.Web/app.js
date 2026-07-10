@@ -11,6 +11,7 @@ const GRUPO_TITULOS = {
 const $ = (id) => document.getElementById(id);
 
 let historialCache = [];
+let auditoriaCache = [];
 let clientesCache = [];
 let modulosCatalog = [];
 let syncingDates = false;
@@ -770,13 +771,31 @@ function onSaveConfig() {
   showToast("Configuración guardada.");
 }
 
+function getFilteredAuditoria() {
+  const usuario = $("filtroAuditoriaUsuario").value.trim().toLowerCase();
+  const accion = $("filtroAuditoriaAccion").value.trim().toLowerCase();
+  const ip = $("filtroAuditoriaIp").value.trim().toLowerCase();
+
+  return auditoriaCache.filter((row) => {
+    const matchUsuario = !usuario || (row.usuario || "").toLowerCase().includes(usuario);
+    const matchAccion = !accion || (row.accion || "").toLowerCase().includes(accion);
+    const matchIp = !ip || (row.ip || "").toLowerCase().includes(ip);
+    return matchUsuario && matchAccion && matchIp;
+  });
+}
+
 function renderAuditoria(rows) {
   const tbody = $("auditoriaBody");
   tbody.innerHTML = "";
 
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-secondary text-center py-4">Sin registros de auditoría.</td></tr>';
-    $("auditoriaResumen").textContent = "0 registro(s)";
+    const msg = auditoriaCache.length
+      ? "Sin registros que coincidan con los filtros."
+      : "Sin registros de auditoría.";
+    tbody.innerHTML = `<tr><td colspan="5" class="text-secondary text-center py-4">${msg}</td></tr>`;
+    $("auditoriaResumen").textContent = auditoriaCache.length
+      ? `0 registro(s) mostrado(s) de ${auditoriaCache.length}`
+      : "0 registro(s)";
     return;
   }
 
@@ -791,7 +810,14 @@ function renderAuditoria(rows) {
     tbody.appendChild(tr);
   }
 
-  $("auditoriaResumen").textContent = `${rows.length} registro(s) mostrado(s)`;
+  const total = auditoriaCache.length;
+  $("auditoriaResumen").textContent = rows.length === total
+    ? `${rows.length} registro(s) mostrado(s)`
+    : `${rows.length} registro(s) mostrado(s) de ${total}`;
+}
+
+function applyAuditoriaFilters() {
+  renderAuditoria(getFilteredAuditoria());
 }
 
 async function loadAuditoria() {
@@ -799,10 +825,11 @@ async function loadAuditoria() {
     '<tr><td colspan="5" class="text-secondary text-center py-4">Cargando…</td></tr>';
 
   try {
-    const rows = await apiFetch("/api/licenses/audit");
-    renderAuditoria(rows);
+    auditoriaCache = await apiFetch("/api/licenses/audit");
+    applyAuditoriaFilters();
     showToast("Auditoría actualizada.");
   } catch (err) {
+    auditoriaCache = [];
     $("auditoriaBody").innerHTML =
       `<tr><td colspan="5" class="text-danger text-center py-4">${escapeHtml(err.message)}</td></tr>`;
     $("auditoriaResumen").textContent = "";
@@ -879,6 +906,9 @@ document.addEventListener("DOMContentLoaded", () => {
     loadAuditoria().catch((err) => showToast(err.message));
   });
   $("btnRefrescarAuditoria").addEventListener("click", () => loadAuditoria().catch((err) => showToast(err.message)));
+  $("filtroAuditoriaUsuario").addEventListener("input", applyAuditoriaFilters);
+  $("filtroAuditoriaAccion").addEventListener("input", applyAuditoriaFilters);
+  $("filtroAuditoriaIp").addEventListener("input", applyAuditoriaFilters);
 
   if (!getAdminApiKey() || !getUserIdentifier()) {
     setTimeout(() => bootstrap.Modal.getOrCreateInstance($("configModal")).show(), 400);

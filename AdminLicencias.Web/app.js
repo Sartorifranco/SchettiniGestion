@@ -255,7 +255,7 @@ function renderModulosPanel() {
     panel.appendChild(row);
   }
 
-  applyPresetLite();
+  onPlanChange();
 }
 
 function setModulosChecked(codigos) {
@@ -270,8 +270,20 @@ function applyPresetLite() {
   setModulosChecked(lite);
 }
 
+function applyPresetPro() {
+  const pro = modulosCatalog.map((m) => m.codigo);
+  setModulosChecked(pro);
+}
+
 function clearModulos() {
   document.querySelectorAll(".modulo-check").forEach((el) => { el.checked = false; });
+}
+
+function onPlanChange() {
+  const plan = $("plan").value;
+  if (plan === "pro") applyPresetPro();
+  else if (plan === "lite") applyPresetLite();
+  // custom: sin cambios, el usuario elige manualmente
 }
 
 async function loadModulosCatalog() {
@@ -823,10 +835,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("btnRecargarClientes").addEventListener("click", () => loadClientes().catch((err) => showToast(err.message)));
   $("btnPresetLite").addEventListener("click", applyPresetLite);
   $("btnLimpiarModulos").addEventListener("click", clearModulos);
-  $("plan").addEventListener("change", () => {
-    if ($("plan").value === "pro") clearModulos();
-    if ($("plan").value === "lite") applyPresetLite();
-  });
+  $("plan").addEventListener("change", onPlanChange);
 
   $("btnCopiar").addEventListener("click", async () => {
     const key = $("licenseKey").value;

@@ -100,7 +100,7 @@ namespace SchettiniGestion.WPF
             }
 
             gfx.DrawString(razonSocial, fEmpresaTitulo, XBrushes.Black, new XRect(infoX, y, cajaDocX - infoX - 8, 18), XStringFormats.TopLeft);
-            y += 18;
+            y += 24;
 
             if (!string.IsNullOrWhiteSpace(nombreFantasia)
                 && !nombreFantasia.Equals(razonSocial, StringComparison.OrdinalIgnoreCase))
@@ -262,7 +262,7 @@ namespace SchettiniGestion.WPF
             {
                 gfx.DrawString($"Forma de pago: {condicionPago}", fEmpresaDet, XBrushes.Black,
                     new XRect(Margen, y, anchoContenido, 24), XStringFormats.TopLeft);
-                y += 16;
+                y += 22;
             }
 
             if (!string.IsNullOrWhiteSpace(pieFiscal))
@@ -270,13 +270,13 @@ namespace SchettiniGestion.WPF
                 foreach (string linea in pieFiscal.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     gfx.DrawString(linea.Trim(), fEmpresaDet, XBrushes.Black, Margen, y);
-                    y += 12;
+                    y += 16;
                 }
             }
 
-            y += 8;
-            DibujarLineaHorizontal(gfx, y, Margen, AnchoPagina - Margen);
             y += 12;
+            DibujarLineaHorizontal(gfx, y, Margen, AnchoPagina - Margen);
+            y += 18;
 
             if (!string.IsNullOrWhiteSpace(pieLegal))
             {

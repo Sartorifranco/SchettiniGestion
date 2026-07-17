@@ -85,10 +85,7 @@ namespace SchettiniGestion.WPF
             if (tipo != null)
             {
                 if (tipo.IndexOf("Factura", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    string cuitCli = cli?.Replace("-", "").Trim() ?? "";
-                    letra = (cuitCli.Length >= 11 && !cuitCli.Contains("00000000")) ? "A" : "B";
-                }
+                    letra = ObtenerLetraFactura(cli);
                 else if (tipo.IndexOf("Ticket", StringComparison.OrdinalIgnoreCase) >= 0)
                     letra = "X";
                 else if (tipo.Contains("A")) letra = "A";
@@ -712,10 +709,7 @@ namespace SchettiniGestion.WPF
         {
             string letra = "X";
             if (tipo != null && tipo.IndexOf("Factura", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                string cuitCli = cli?.Replace("-", "").Trim() ?? "";
-                letra = (cuitCli.Length >= 11 && !cuitCli.Contains("00000000")) ? "A" : "B";
-            }
+                letra = ObtenerLetraFactura(cli);
 
             string tit = tipo?.ToUpper() ?? "TICKET";
             string pieFiscal = "";
@@ -761,6 +755,20 @@ namespace SchettiniGestion.WPF
             MessageBox.Show(
                 $"Comprobante PDF guardado en:\n{ruta}\n\nPodés enviarlo por WhatsApp o correo.",
                 "PDF guardado", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private static string ObtenerLetraFactura(string cuitCliente)
+        {
+            DataRow config = DatabaseService.GetConfiguracion();
+            string condicionEmisor = config != null && config.Table.Columns.Contains("CondicionIVAEmpresa")
+                ? config["CondicionIVAEmpresa"]?.ToString() ?? ""
+                : "";
+
+            if (condicionEmisor.IndexOf("monotrib", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "C";
+
+            string cuitLimpio = cuitCliente?.Replace("-", "").Trim() ?? "";
+            return cuitLimpio.Length >= 11 && !cuitLimpio.Contains("00000000") ? "A" : "B";
         }
 
         private static float ObtenerAnchoTicketPixels(int anchoMm)

@@ -163,7 +163,7 @@ namespace SchettiniGestion
                         "ACCESO_CLIENTES", "ACCESO_CAJA", "ACCESO_LISTASPRECIOS", "ACCESO_PRECIOS",
                         "ACCESO_PRESUPUESTOS", "ACCESO_COMPRAS", "ACCESO_PROVEEDORES",
                         "ACCESO_CUENTASCORRIENTES", "ACCESO_RED", "ACCESO_AFIP", "ACCESO_VISOR_CLIENTE",
-                        "ACCESO_MERCADOPAGO_QR", "ACCESO_SOPORTE"
+                        "ACCESO_MERCADOPAGO_QR", "ACCESO_MERCADOPAGO_POINT", "ACCESO_SOPORTE"
                     })
                 };
                 return true;
@@ -276,6 +276,7 @@ namespace SchettiniGestion
         public static bool TieneAfip() => IsExtraEnabled("ACCESO_AFIP");
         public static bool TieneVisorCliente() => IsExtraEnabled("ACCESO_VISOR_CLIENTE");
         public static bool TieneMercadoPagoQr() => IsExtraEnabled("ACCESO_MERCADOPAGO_QR");
+        public static bool TieneMercadoPagoPoint() => IsExtraEnabled("ACCESO_MERCADOPAGO_POINT");
         public static bool TieneSoporte() => IsExtraEnabled("ACCESO_SOPORTE");
 
         public static string ObtenerFechaVencimiento()

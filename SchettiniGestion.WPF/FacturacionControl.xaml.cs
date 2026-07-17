@@ -45,10 +45,13 @@ namespace SchettiniGestion.WPF
         private bool _cargandoListas = false;
         private DispatcherTimer _timerVerificacionMP;
         private string _referenciaPagoMP = "";
+        private string _ordenIdMP = "";
         private bool _esperandoPagoMP = false;
         // Pago Mercado Pago QR aprobado → cobranza pre-armada para saltear CobroModalWindow
         private bool _pagoMPAprobado = false;
         private List<CobranzaItem> _parcelas_MP = null;
+        private bool _pagoPointAprobado = false;
+        private List<CobranzaItem> _parcelasPoint = null;
         private int _ultimoDocumentoId;
         private string _ultimoTipoDocumento = "Factura";
         private FacturaItem _itemCarritoSeleccionado;
@@ -995,6 +998,7 @@ namespace SchettiniGestion.WPF
 
                 if (respuesta.Exito)
                 {
+                    _ordenIdMP = respuesta.OrdenId;
                     CustomerScreenService.PantallaQR(respuesta.QRData, total);
 
                     if (_timerVerificacionMP == null)
@@ -1022,16 +1026,17 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                var info = await Task.Run(() => MercadoPagoService.VerificarEstadoPago(_referenciaPagoMP));
+                var info = await Task.Run(() => MercadoPagoService.VerificarEstadoPago(_ordenIdMP));
 
                 if (info.Estado == "approved")
                 {
                     _timerVerificacionMP.Stop();
                     _esperandoPagoMP  = false;
                     _referenciaPagoMP = info.IdOperacion;
+                    _ordenIdMP = "";
 
-                    CustomerScreenService.ActualizarMensajeQR("¡PAGO APROBADO!", Brushes.LightGreen);
-                    await Task.Delay(1500);
+                    CustomerScreenService.PantallaGracias();
+                    await Task.Delay(1800);
 
                     // Armar cobranza Mercado Pago pre-confirmada para saltear CobroModalWindow
                     decimal totalMP = CarritoDeVenta.Sum(x => x.Subtotal);
@@ -1066,7 +1071,14 @@ namespace SchettiniGestion.WPF
                     }
                 }
                 else if (info.Estado == "in_process") CustomerScreenService.ActualizarMensajeQR("Procesando...", Brushes.Yellow);
-                else if (info.Estado == "rejected") CustomerScreenService.ActualizarMensajeQR("Pago Rechazado.", Brushes.Red);
+                else if (info.Estado == "rejected")
+                {
+                    // La orden quedó cancelada, vencida o falló: dejamos de consultar
+                    CustomerScreenService.ActualizarMensajeQR("Pago Rechazado.", Brushes.Red);
+                    await Task.Delay(2000);
+                    _ordenIdMP = "";
+                    CancelarModoQR();
+                }
             }
             catch { }
         }
@@ -1095,10 +1107,39 @@ namespace SchettiniGestion.WPF
             return 0;
         }
 
+        private int ObtenerMedioPagoIdTarjeta()
+        {
+            try
+            {
+                var dt = DatabaseService.GetMediosPagoCompleto();
+                foreach (DataRow row in dt.Rows)
+                {
+                    string tipo = row.Table.Columns.Contains("Tipo") ? row["Tipo"]?.ToString() ?? "" : "";
+                    string nombre = row["Nombre"]?.ToString() ?? "";
+                    if (tipo.IndexOf("tarjeta", StringComparison.OrdinalIgnoreCase) >= 0
+                        || nombre.IndexOf("tarjeta", StringComparison.OrdinalIgnoreCase) >= 0
+                        || nombre.IndexOf("crédito", StringComparison.OrdinalIgnoreCase) >= 0
+                        || nombre.IndexOf("credito", StringComparison.OrdinalIgnoreCase) >= 0
+                        || nombre.IndexOf("débito", StringComparison.OrdinalIgnoreCase) >= 0
+                        || nombre.IndexOf("debito", StringComparison.OrdinalIgnoreCase) >= 0)
+                        return Convert.ToInt32(row["MedioID"]);
+                }
+            }
+            catch { }
+            return 0;
+        }
+
         private void CancelarModoQR()
         {
             _esperandoPagoMP = false;
             if (_timerVerificacionMP != null) _timerVerificacionMP.Stop();
+
+            if (!string.IsNullOrEmpty(_ordenIdMP))
+            {
+                string ordenACancelar = _ordenIdMP;
+                _ordenIdMP = "";
+                _ = Task.Run(() => MercadoPagoService.CancelarOrden(ordenACancelar));
+            }
 
             btnPagoQR.Content = "📱 Mercado Pago QR";
             btnGuardarFactura.IsEnabled = true;
@@ -1256,12 +1297,15 @@ namespace SchettiniGestion.WPF
                 var win = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
                 List<CobranzaItem> cobranzasConfirmadas;
 
-                if (_pagoMPAprobado && _parcelas_MP != null)
+                if (_pagoPointAprobado && _parcelasPoint != null)
+                {
+                    cobranzasConfirmadas = _parcelasPoint;
+                    cobroConfirmado = true;
+                }
+                else if (_pagoMPAprobado && _parcelas_MP != null)
                 {
                     // Pago QR ya aprobado → usar cobranza pre-armada, sin modal
                     cobranzasConfirmadas = _parcelas_MP;
-                    _pagoMPAprobado = false;
-                    _parcelas_MP    = null;
                     cobroConfirmado = true;
                 }
                 else if (EsCuentaCorriente((cmbCondicionVenta.SelectedItem as ComboBoxItem)?.Content?.ToString()))
@@ -1281,6 +1325,36 @@ namespace SchettiniGestion.WPF
                     {
                         btnGuardarFactura.IsEnabled = true;
                         btnPagoQR_Click(sender, e);
+                        return;
+                    }
+                    if (cobroModal.SolicitoMercadoPagoPoint)
+                    {
+                        var pointModal = new PointCobroWindow(win, total);
+                        bool? resultadoPoint = pointModal.ShowDialog();
+                        if (resultadoPoint != true || pointModal.PagoAprobado == null)
+                        {
+                            btnGuardarFactura.IsEnabled = true;
+                            CustomerScreenService.Actualizar(CarritoDeVenta.ToList(), total);
+                            return;
+                        }
+
+                        EstadoPagoPoint pago = pointModal.PagoAprobado;
+                        _parcelasPoint = new List<CobranzaItem>
+                        {
+                            new CobranzaItem
+                            {
+                                MedioPagoID = ObtenerMedioPagoIdTarjeta(),
+                                nombreMedio = "Tarjeta — Mercado Pago Point",
+                                monto = total,
+                                NroCuotas = pago.Cuotas,
+                                UltimosDigitosTarjeta = pago.UltimosDigitos,
+                                MarcaTarjeta = pago.MarcaTarjeta,
+                                OperacionExternaID = pago.OperacionId
+                            }
+                        };
+                        _pagoPointAprobado = true;
+                        btnGuardarFactura.IsEnabled = true;
+                        btnGuardarFactura_Click(sender, e);
                         return;
                     }
                     cobranzasConfirmadas = cobroModal.Cobranzas;
@@ -1331,7 +1405,11 @@ namespace SchettiniGestion.WPF
                 {
                     MedioPagoID = ci.MedioPagoID,
                     NombreMedio = ci.nombreMedio ?? "",
-                    Monto = ci.monto
+                    Monto = ci.monto,
+                    NroCuotas = ci.NroCuotas,
+                    UltimosDigitosTarjeta = ci.UltimosDigitosTarjeta,
+                    MarcaTarjeta = ci.MarcaTarjeta,
+                    OperacionExternaID = ci.OperacionExternaID
                 });
 
                 int fid = DatabaseService.GuardarFactura(cliID, tipoCompTexto, total, CarritoDeVenta.ToList(),
@@ -1339,6 +1417,12 @@ namespace SchettiniGestion.WPF
 
                 if (fid > 0)
                 {
+                    // El cobro electrónico se consume recién cuando la venta quedó persistida.
+                    // Si AFIP o SQL fallan, el reintento no debe volver a cobrar al cliente.
+                    _pagoPointAprobado = false;
+                    _parcelasPoint = null;
+                    _pagoMPAprobado = false;
+                    _parcelas_MP = null;
                     RegistrarUltimoComprobante(fid, tipoCompTexto);
                     CustomerScreenService.PantallaGracias();
                     string msgExito = "Venta Guardada.";

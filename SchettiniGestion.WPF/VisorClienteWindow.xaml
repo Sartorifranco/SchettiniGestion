@@ -124,7 +124,9 @@
                         <Button Click="BtnPago_Click" Tag="TARJETA" Margin="10" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
                             <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="12"/></Style></Button.Resources>
                             <StackPanel>
-                                <TextBlock Text="💳" FontSize="48" HorizontalAlignment="Center"/>
+                                <TextBlock Text="VISA  ●●  AMEX  NARANJA X" FontSize="14" FontWeight="Bold"
+                                           Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="💳" FontSize="42" HorizontalAlignment="Center" Margin="0,3,0,0"/>
                                 <TextBlock Text="TARJETA" Foreground="{DynamicResource TextPrimary}" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Button>
@@ -148,7 +150,11 @@
 
             <Grid x:Name="GridQR" Visibility="Collapsed" Background="#009EE3">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24">
-                    <Image Source="/logo_mercadopago.png" Height="72" HorizontalAlignment="Center" Margin="0,0,0,16" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <Border Background="White" CornerRadius="16" Padding="22,10" Margin="0,0,0,18">
+                        <Image Source="/SCHPOS;component/Resources/mercadopago-logo.png"
+                               Width="230" Height="86" Stretch="Uniform"
+                               HorizontalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Border>
                     <TextBlock Text="Escaneá el QR para pagar" Foreground="White" FontSize="36" FontWeight="Bold"
                                HorizontalAlignment="Center" Margin="0,0,0,20" TextWrapping="Wrap" TextAlignment="Center"/>
                     <Border Background="White" Padding="16" CornerRadius="16" HorizontalAlignment="Center" Width="300" Height="300">
@@ -166,13 +172,107 @@
                 </StackPanel>
             </Grid>
 
-            <Grid x:Name="GridGracias" Visibility="Collapsed" Background="{StaticResource SuccessColor}">
+            <Grid x:Name="GridPoint" Visibility="Collapsed" Background="#F5F5F5">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="28" MaxWidth="820">
+                    <Border Background="White" CornerRadius="16" Padding="22,10" Margin="0,0,0,26">
+                        <Image Source="/SCHPOS;component/Resources/mercadopago-logo.png"
+                               Width="240" Height="88" Stretch="Uniform"
+                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Border>
+                    <TextBlock Text="Complete el pago en el Point" Foreground="#222222"
+                               FontSize="40" FontWeight="Bold" HorizontalAlignment="Center"
+                               TextAlignment="Center" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="lblTotalPoint" Text="$ 0,00" Foreground="#009EE3"
+                               FontSize="58" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,18,0,8"/>
+                    <TextBlock x:Name="lblEstadoPoint" Text="Enviando el importe a la terminal..."
+                               Foreground="#555555" FontSize="23" HorizontalAlignment="Center"
+                               TextAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,30"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="10" Padding="18,11" Margin="5">
+                            <TextBlock Text="VISA" Foreground="#1434CB" FontSize="24" FontWeight="ExtraBold" FontStyle="Italic"/>
+                        </Border>
+                        <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="10" Padding="16,11" Margin="5">
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Width="42" Height="24">
+                                    <Ellipse Width="24" Height="24" Fill="#EB001B" HorizontalAlignment="Left"/>
+                                    <Ellipse Width="24" Height="24" Fill="#F79E1B" HorizontalAlignment="Right" Opacity="0.92"/>
+                                </Grid>
+                                <TextBlock Text="mastercard" Foreground="#222222" FontSize="17" FontWeight="SemiBold" Margin="7,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#006FCF" CornerRadius="10" Padding="15,11" Margin="5">
+                            <TextBlock Text="AMERICAN EXPRESS" Foreground="White" FontSize="15" FontWeight="Bold"/>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="Tarjetas admitidas según la habilitación de la cuenta y la terminal"
+                               Foreground="#777777" FontSize="13" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid x:Name="GridGracias" Visibility="Collapsed" Background="#00A650" Opacity="0">
+                <Grid.Resources>
+                    <Storyboard x:Key="AnimacionPagoAprobado">
+                        <DoubleAnimation Storyboard.TargetName="GridGracias" Storyboard.TargetProperty="Opacity"
+                                         From="0" To="1" Duration="0:0:0.22"/>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="circuloAprobado"
+                                                       Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)">
+                            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="0.2"/>
+                            <EasingDoubleKeyFrame KeyTime="0:0:0.42" Value="1.12">
+                                <EasingDoubleKeyFrame.EasingFunction><BackEase Amplitude="0.35" EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
+                            </EasingDoubleKeyFrame>
+                            <EasingDoubleKeyFrame KeyTime="0:0:0.62" Value="1"/>
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="circuloAprobado"
+                                                       Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)">
+                            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="0.2"/>
+                            <EasingDoubleKeyFrame KeyTime="0:0:0.42" Value="1.12">
+                                <EasingDoubleKeyFrame.EasingFunction><BackEase Amplitude="0.35" EasingMode="EaseOut"/></EasingDoubleKeyFrame.EasingFunction>
+                            </EasingDoubleKeyFrame>
+                            <EasingDoubleKeyFrame KeyTime="0:0:0.62" Value="1"/>
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimation Storyboard.TargetName="tildeAprobado" Storyboard.TargetProperty="Opacity"
+                                         BeginTime="0:0:0.28" From="0" To="1" Duration="0:0:0.22"/>
+                        <DoubleAnimation Storyboard.TargetName="textoAprobado" Storyboard.TargetProperty="Opacity"
+                                         BeginTime="0:0:0.48" From="0" To="1" Duration="0:0:0.35"/>
+                        <DoubleAnimation Storyboard.TargetName="textoAprobado"
+                                         Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                         BeginTime="0:0:0.48" From="24" To="0" Duration="0:0:0.35">
+                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimation Storyboard.TargetName="aroAprobado" Storyboard.TargetProperty="Opacity"
+                                         BeginTime="0:0:0.2" From="0.7" To="0" Duration="0:0:0.75"/>
+                        <DoubleAnimation Storyboard.TargetName="aroAprobado"
+                                         Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                         BeginTime="0:0:0.2" From="0.8" To="1.65" Duration="0:0:0.75"/>
+                        <DoubleAnimation Storyboard.TargetName="aroAprobado"
+                                         Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                         BeginTime="0:0:0.2" From="0.8" To="1.65" Duration="0:0:0.75"/>
+                    </Storyboard>
+                </Grid.Resources>
+
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24">
-                    <TextBlock Text="✅" FontSize="100" HorizontalAlignment="Center" Margin="0,0,0,20"/>
-                    <TextBlock Text="¡PAGO APROBADO!" Foreground="White" FontSize="52" FontWeight="Bold"
-                               HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
-                    <TextBlock Text="Muchas gracias por su compra." Foreground="White" FontSize="28"
-                               HorizontalAlignment="Center" Margin="0,16,0,0" TextWrapping="Wrap" TextAlignment="Center" Opacity="0.9"/>
+                    <Grid Width="210" Height="210" Margin="0,0,0,34">
+                        <Ellipse x:Name="aroAprobado" Stroke="White" StrokeThickness="7" Opacity="0"
+                                 RenderTransformOrigin="0.5,0.5">
+                            <Ellipse.RenderTransform><ScaleTransform ScaleX="0.8" ScaleY="0.8"/></Ellipse.RenderTransform>
+                        </Ellipse>
+                        <Border x:Name="circuloAprobado" Background="White" CornerRadius="105"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform><ScaleTransform ScaleX="0.2" ScaleY="0.2"/></Border.RenderTransform>
+                            <Path x:Name="tildeAprobado" Data="M 48,104 L 86,142 L 164,64"
+                                  Stroke="#00A650" StrokeThickness="18" StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round" StrokeLineJoin="Round" Opacity="0"/>
+                        </Border>
+                    </Grid>
+                    <StackPanel x:Name="textoAprobado" Opacity="0" RenderTransformOrigin="0.5,0.5">
+                        <StackPanel.RenderTransform><TranslateTransform Y="24"/></StackPanel.RenderTransform>
+                        <TextBlock Text="¡PAGO APROBADO!" Foreground="White" FontSize="58" FontWeight="Bold"
+                                   HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                        <TextBlock Text="El cobro se acreditó correctamente" Foreground="White" FontSize="28"
+                                   HorizontalAlignment="Center" Margin="0,14,0,0" TextWrapping="Wrap"
+                                   TextAlignment="Center" Opacity="0.92"/>
+                    </StackPanel>
                 </StackPanel>
             </Grid>
             </Grid>

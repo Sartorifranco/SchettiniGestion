@@ -55,6 +55,10 @@ namespace SchettiniGestion
         public int MedioPagoID { get; set; }
         public string NombreMedio { get; set; }
         public decimal Monto { get; set; }
+        public int NroCuotas { get; set; } = 1;
+        public string UltimosDigitosTarjeta { get; set; }
+        public string MarcaTarjeta { get; set; }
+        public string OperacionExternaID { get; set; }
     }
 
     public class PosConfigPredeterminada
@@ -287,6 +291,7 @@ namespace SchettiniGestion
         public const string PERMISO_AFIP              = "ACCESO_AFIP";
         public const string PERMISO_VISOR_CLIENTE     = "ACCESO_VISOR_CLIENTE";
         public const string PERMISO_MERCADOPAGO_QR    = "ACCESO_MERCADOPAGO_QR";
+        public const string PERMISO_MERCADOPAGO_POINT = "ACCESO_MERCADOPAGO_POINT";
         public const string PERMISO_SOPORTE           = "ACCESO_SOPORTE";
 
         private static void NotificarError(string mensaje)
@@ -421,6 +426,14 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
   ALTER TABLE Configuracion ADD CondicionIVAEmpresa NVARCHAR(100) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='AfipClavePrivadaPath')
   ALTER TABLE Configuracion ADD AfipClavePrivadaPath NVARCHAR(500) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='MPPointTerminalId')
+  ALTER TABLE Configuracion ADD MPPointTerminalId NVARCHAR(150) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='MPPointAutomatico')
+  ALTER TABLE Configuracion ADD MPPointAutomatico BIT NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturasCobranza' AND COLUMN_NAME='MarcaTarjeta')
+  ALTER TABLE FacturasCobranza ADD MarcaTarjeta NVARCHAR(50) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturasCobranza' AND COLUMN_NAME='OperacionExternaID')
+  ALTER TABLE FacturasCobranza ADD OperacionExternaID NVARCHAR(100) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='ListaID')
   ALTER TABLE Facturas ADD ListaID INT NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='CondicionVenta')
@@ -3329,13 +3342,19 @@ WHERE ProductoID=@id", conexion, transaccion))
                                     {
                                         if (p == null || p.Monto <= 0m) continue;
                                         using (var insP = new SqlCommand(
-                                            "INSERT INTO FacturasCobranza (FacturaID,MedioPagoID,NombreMedio,Monto,NroCuotas) VALUES (@fid,@mid,@nom,@mont,1)",
+                                            @"INSERT INTO FacturasCobranza
+                                              (FacturaID,MedioPagoID,NombreMedio,Monto,NroCuotas,NroTarjeta,MarcaTarjeta,OperacionExternaID)
+                                              VALUES (@fid,@mid,@nom,@mont,@cuotas,@tarjeta,@marca,@operacion)",
                                             c, tr))
                                         {
                                             insP.Parameters.AddWithValue("@fid", fid);
                                             insP.Parameters.AddWithValue("@mid", p.MedioPagoID > 0 ? p.MedioPagoID : (object)DBNull.Value);
                                             insP.Parameters.AddWithValue("@nom", p.NombreMedio ?? "");
                                             insP.Parameters.AddWithValue("@mont", p.Monto);
+                                            insP.Parameters.AddWithValue("@cuotas", p.NroCuotas > 0 ? p.NroCuotas : 1);
+                                            insP.Parameters.AddWithValue("@tarjeta", string.IsNullOrWhiteSpace(p.UltimosDigitosTarjeta) ? (object)DBNull.Value : p.UltimosDigitosTarjeta);
+                                            insP.Parameters.AddWithValue("@marca", string.IsNullOrWhiteSpace(p.MarcaTarjeta) ? (object)DBNull.Value : p.MarcaTarjeta);
+                                            insP.Parameters.AddWithValue("@operacion", string.IsNullOrWhiteSpace(p.OperacionExternaID) ? (object)DBNull.Value : p.OperacionExternaID);
                                             insP.ExecuteNonQuery();
                                         }
                                     }
@@ -4817,7 +4836,9 @@ ORDER BY Fecha DESC";
             bool conservarPasswordAfipSiContraseniaVacia = false,
             bool logoEnTicket = true, bool logoEnA4 = true,
             bool usaAperturaCaja = false,
-            string condicionIVAEmpresa = "")
+            string condicionIVAEmpresa = "",
+            string mpPointTerminalId = "",
+            bool mpPointAutomatico = false)
         {
             certPassword = certPassword ?? "";
             bool omitirColumnaPwd = conservarPasswordAfipSiContraseniaVacia && string.IsNullOrWhiteSpace(certPassword);
@@ -4834,13 +4855,13 @@ ORDER BY Fecha DESC";
                         ? @"UPDATE Configuracion SET
   NombreFantasia=@nf, RazonSocial=@rs, CUIT=@cuit, Direccion=@dir, Telefono=@tel, Email=@email,
   LogoPath=@logo, CertificadoPath=@cert, PuntoVenta=@pv,
-  MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, TipoCambioUSD=@tc, AfipProduccion=@afip,
+  MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, MPPointTerminalId=@mptid, MPPointAutomatico=@mpauto, TipoCambioUSD=@tc, AfipProduccion=@afip,
   LogoEnTicket=@let, LogoEnA4=@lea, UsaAperturaCaja=@uac, CondicionIVAEmpresa=@civa
 WHERE ID = 1"
                         : @"UPDATE Configuracion SET
   NombreFantasia=@nf, RazonSocial=@rs, CUIT=@cuit, Direccion=@dir, Telefono=@tel, Email=@email,
   LogoPath=@logo, CertificadoPath=@cert, PasswordAfip=@pwd, PuntoVenta=@pv,
-  MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, TipoCambioUSD=@tc, AfipProduccion=@afip,
+  MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, MPPointTerminalId=@mptid, MPPointAutomatico=@mpauto, TipoCambioUSD=@tc, AfipProduccion=@afip,
   LogoEnTicket=@let, LogoEnA4=@lea, UsaAperturaCaja=@uac, CondicionIVAEmpresa=@civa
 WHERE ID = 1";
 
@@ -4860,6 +4881,8 @@ WHERE ID = 1";
                         update.Parameters.AddWithValue("@mpt", mpToken ?? "");
                         update.Parameters.AddWithValue("@mpu", mpUserId ?? "");
                         update.Parameters.AddWithValue("@mpp", mpPosId ?? "");
+                        update.Parameters.AddWithValue("@mptid", mpPointTerminalId ?? "");
+                        update.Parameters.AddWithValue("@mpauto", mpPointAutomatico);
                         update.Parameters.AddWithValue("@tc", (object)tipoCambioUSD ?? DBNull.Value);
                         update.Parameters.AddWithValue("@afip", afipProduccion);
                         update.Parameters.AddWithValue("@let", logoEnTicket);
@@ -4874,9 +4897,9 @@ WHERE ID = 1";
                     using (var insert = new SqlCommand(@"
 INSERT INTO Configuracion (
   NombreFantasia,RazonSocial,CUIT,Direccion,Telefono,Email,LogoPath,CertificadoPath,PasswordAfip,PuntoVenta,
-  MPAccessToken,MPUserId,MPPosId,TipoCambioUSD,AfipProduccion,LogoEnTicket,LogoEnA4,UsaAperturaCaja,CondicionIVAEmpresa
+  MPAccessToken,MPUserId,MPPosId,MPPointTerminalId,MPPointAutomatico,TipoCambioUSD,AfipProduccion,LogoEnTicket,LogoEnA4,UsaAperturaCaja,CondicionIVAEmpresa
 ) VALUES (
-  @nf,@rs,@cuit,@dir,@tel,@email,@logo,@cert,@pwd,@pv,@mpt,@mpu,@mpp,@tc,@afip,@let,@lea,@uac,@civa)", c))
+  @nf,@rs,@cuit,@dir,@tel,@email,@logo,@cert,@pwd,@pv,@mpt,@mpu,@mpp,@mptid,@mpauto,@tc,@afip,@let,@lea,@uac,@civa)", c))
                     {
                         insert.Parameters.AddWithValue("@nf", nombreFantasia ?? "");
                         insert.Parameters.AddWithValue("@rs", razonSocial ?? "");
@@ -4891,6 +4914,8 @@ INSERT INTO Configuracion (
                         insert.Parameters.AddWithValue("@mpt", mpToken ?? "");
                         insert.Parameters.AddWithValue("@mpu", mpUserId ?? "");
                         insert.Parameters.AddWithValue("@mpp", mpPosId ?? "");
+                        insert.Parameters.AddWithValue("@mptid", mpPointTerminalId ?? "");
+                        insert.Parameters.AddWithValue("@mpauto", mpPointAutomatico);
                         insert.Parameters.AddWithValue("@tc", (object)tipoCambioUSD ?? DBNull.Value);
                         insert.Parameters.AddWithValue("@afip", afipProduccion);
                         insert.Parameters.AddWithValue("@let", logoEnTicket);
@@ -5112,6 +5137,8 @@ BEGIN
         MPAccessToken   NVARCHAR(MAX)   NULL,
         MPUserId        NVARCHAR(MAX)   NULL,
         MPPosId         NVARCHAR(MAX)   NULL,
+        MPPointTerminalId NVARCHAR(150) NULL,
+        MPPointAutomatico BIT           NOT NULL DEFAULT 0,
         AfipProduccion  BIT             NOT NULL DEFAULT 0,
         UsaVisorCliente BIT             NOT NULL DEFAULT 0
     );

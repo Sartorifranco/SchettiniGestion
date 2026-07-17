@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Cobro"
         Width="580"
-        Height="600"
+        Height="660"
         WindowStartupLocation="CenterOwner"
         WindowStyle="None"
         ResizeMode="NoResize"
@@ -186,6 +186,17 @@
             </Border>
 
             <StackPanel Grid.Row="5">
+                <Button x:Name="btnMercadoPagoPoint"
+                        Content="💳 Enviar cobro al Point Smart"
+                        Background="#009EE3"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        FontSize="13"
+                        MinHeight="46"
+                        Margin="0,0,0,10"
+                        HorizontalAlignment="Stretch"
+                        Visibility="Collapsed"
+                        Click="btnMercadoPagoPoint_Click"/>
                 <Button x:Name="btnMercadoPagoQR"
                         Content="📱 Cobrar con Mercado Pago QR"
                         Background="#009EE3"

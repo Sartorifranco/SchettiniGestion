@@ -338,6 +338,7 @@ namespace SchettiniGestion.WPF
                             LogoPath        NVARCHAR(MAX) NULL, CertificadoPath NVARCHAR(MAX) NULL, PasswordAfip NVARCHAR(MAX) NULL,
                             PuntoVenta      INT           NULL, MPAccessToken   NVARCHAR(MAX) NULL,
                             MPUserId        NVARCHAR(MAX) NULL, MPPosId         NVARCHAR(MAX) NULL,
+                            MPPointTerminalId NVARCHAR(150) NULL, MPPointAutomatico BIT NOT NULL DEFAULT 0,
                             AfipProduccion  BIT NOT NULL DEFAULT 0, UsaVisorCliente BIT NOT NULL DEFAULT 0
                         )",
                         "INSERT INTO Configuracion (NombreFantasia) VALUES ('Mi Negocio')",
@@ -559,7 +560,9 @@ namespace SchettiniGestion.WPF
                           NombreMedio NVARCHAR(100),
                           Monto DECIMAL(18,2),
                           NroTarjeta NVARCHAR(20),
-                          NroCuotas INT DEFAULT 1
+                          NroCuotas INT DEFAULT 1,
+                          MarcaTarjeta NVARCHAR(50),
+                          OperacionExternaID NVARCHAR(100)
                       );",
 
                     @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Remitos')

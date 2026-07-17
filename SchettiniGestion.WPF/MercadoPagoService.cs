@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -21,8 +22,12 @@ namespace SchettiniGestion.WPF
             public string IdOperacion { get; set; } = "";
         }
 
+        /// <summary>Monto mínimo que acepta Mercado Pago para cobros con QR (Orders API).</summary>
+        public const decimal MontoMinimoQR = 15m;
+
         // -------------------------------------------------------------------------
-        // 1. GENERAR COBRO (QR) - Sin Cambios
+        // 1. GENERAR COBRO (QR) - Orders API v1
+        //    (la API legada instore/orders fue bloqueada por MP con error 403 PolicyAgent)
         // -------------------------------------------------------------------------
         public static async Task<RespuestaOrdenMP> CrearOrdenQR(decimal total, string tituloVenta, string externalReference)
         {
@@ -36,34 +41,23 @@ namespace SchettiniGestion.WPF
                     return new RespuestaOrdenMP { Exito = false, Error = "Base de datos desactualizada." };
 
                 string accessToken = config["MPAccessToken"].ToString();
-                string userId = config["MPUserId"].ToString();
                 string posId = config["MPPosId"].ToString();
 
-                if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(posId))
+                if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(posId))
                     return new RespuestaOrdenMP { Exito = false, Error = "Faltan credenciales de MP." };
 
-                string url = $"https://api.mercadopago.com/instore/orders/qr/seller/collectors/{userId}/pos/{posId}/qrs";
+                if (total < MontoMinimoQR)
+                    return new RespuestaOrdenMP { Exito = false, Error = $"Mercado Pago exige un mínimo de ${MontoMinimoQR:0} para cobros con QR." };
 
+                string monto = total.ToString("0.00", CultureInfo.InvariantCulture);
                 var orden = new
                 {
+                    type = "qr",
+                    total_amount = monto,
                     external_reference = externalReference,
-                    title = tituloVenta,
-                    description = "Venta POS",
-                    notification_url = "https://www.google.com",
-                    total_amount = total,
-                    items = new[] {
-                        new {
-                            sku_number = "GEN",
-                            category = "GENERAL",
-                            title = tituloVenta,
-                            description = "Venta General",
-                            unit_price = total,
-                            quantity = 1,
-                            unit_measure = "unit",
-                            total_amount = total
-                        }
-                    },
-                    cash_out = new { amount = 0 }
+                    description = tituloVenta,
+                    config = new { qr = new { external_pos_id = posId, mode = "dynamic" } },
+                    transactions = new { payments = new[] { new { amount = monto } } }
                 };
 
                 string jsonBody = JsonConvert.SerializeObject(orden);
@@ -71,14 +65,20 @@ namespace SchettiniGestion.WPF
 
                 client.DefaultRequestHeaders.Clear();
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+                client.DefaultRequestHeaders.Add("X-Idempotency-Key", Guid.NewGuid().ToString());
 
-                HttpResponseMessage response = await client.PostAsync(url, content);
+                HttpResponseMessage response = await client.PostAsync("https://api.mercadopago.com/v1/orders", content);
                 string responseBody = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
                 {
                     dynamic json = JsonConvert.DeserializeObject(responseBody);
-                    return new RespuestaOrdenMP { Exito = true, QRData = json.qr_data };
+                    return new RespuestaOrdenMP
+                    {
+                        Exito = true,
+                        QRData = json.type_response.qr_data,
+                        OrdenId = json.id
+                    };
                 }
                 else
                 {
@@ -92,18 +92,18 @@ namespace SchettiniGestion.WPF
         }
 
         // -------------------------------------------------------------------------
-        // 2. VERIFICAR PAGO (MODIFICADO PARA TRAER EL ID)
+        // 2. VERIFICAR PAGO (consulta directa de la orden en Orders API v1)
         // -------------------------------------------------------------------------
-        public static async Task<InfoPagoMP> VerificarEstadoPago(string externalReference)
+        public static async Task<InfoPagoMP> VerificarEstadoPago(string ordenId)
         {
             var resultado = new InfoPagoMP();
             try
             {
                 DataRow config = DatabaseService.GetConfiguracion();
-                if (config == null) return resultado;
+                if (config == null || string.IsNullOrEmpty(ordenId)) return resultado;
                 string accessToken = config["MPAccessToken"].ToString();
 
-                string url = $"https://api.mercadopago.com/merchant_orders/search?external_reference={externalReference}";
+                string url = $"https://api.mercadopago.com/v1/orders/{ordenId}";
 
                 client.DefaultRequestHeaders.Clear();
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
@@ -115,32 +115,45 @@ namespace SchettiniGestion.WPF
                     string json = await response.Content.ReadAsStringAsync();
                     dynamic data = JsonConvert.DeserializeObject(json);
 
-                    if (data.elements != null && data.elements.Count > 0)
+                    string statusOrden = data.status?.ToString() ?? "";
+
+                    if (statusOrden == "processed")
                     {
-                        var orden = data.elements[0];
-
-                        if (orden.payments != null)
-                        {
-                            foreach (var p in orden.payments)
-                            {
-                                string status = p.status.ToString();
-                                string id = p.id.ToString(); // ¡AQUÍ CAPTURAMOS EL ID!
-
-                                if (status == "approved")
-                                {
-                                    resultado.Estado = "approved";
-                                    resultado.IdOperacion = id;
-                                    return resultado;
-                                }
-                                if (status == "in_process" || status == "pending") resultado.Estado = "in_process";
-                                if (status == "rejected") resultado.Estado = "rejected";
-                            }
-                        }
+                        resultado.Estado = "approved";
+                        // reference_id es el nº de pago tradicional de MP; si no viene, usamos el id interno
+                        var pagos = data.transactions?.payments;
+                        if (pagos != null && pagos.Count > 0)
+                            resultado.IdOperacion = (pagos[0].reference_id ?? pagos[0].id).ToString();
+                        return resultado;
                     }
+                    if (statusOrden == "processing" || statusOrden == "action_required")
+                        resultado.Estado = "in_process";
+                    if (statusOrden == "failed" || statusOrden == "canceled" || statusOrden == "expired")
+                        resultado.Estado = "rejected";
                 }
                 return resultado;
             }
             catch { return resultado; }
+        }
+
+        // -------------------------------------------------------------------------
+        // 2b. CANCELAR ORDEN (al abortar el cobro desde la caja)
+        // -------------------------------------------------------------------------
+        public static async Task CancelarOrden(string ordenId)
+        {
+            try
+            {
+                DataRow config = DatabaseService.GetConfiguracion();
+                if (config == null || string.IsNullOrEmpty(ordenId)) return;
+                string accessToken = config["MPAccessToken"].ToString();
+
+                client.DefaultRequestHeaders.Clear();
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+                client.DefaultRequestHeaders.Add("X-Idempotency-Key", Guid.NewGuid().ToString());
+
+                await client.PostAsync($"https://api.mercadopago.com/v1/orders/{ordenId}/cancel", new StringContent("", Encoding.UTF8, "application/json"));
+            }
+            catch { }
         }
 
         // -------------------------------------------------------------------------
@@ -286,6 +299,7 @@ namespace SchettiniGestion.WPF
     {
         public bool Exito { get; set; }
         public string QRData { get; set; }
+        public string OrdenId { get; set; }
         public string Error { get; set; }
     }
 }

@@ -370,6 +370,10 @@
       <DependentUpon>ListasPreciosControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="MercadoPagoService.cs" />
+    <Compile Include="MercadoPagoPointService.cs" />
+    <Compile Include="PointCobroWindow.xaml.cs">
+      <DependentUpon>PointCobroWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="NumericKeyboardControl.xaml.cs">
       <DependentUpon>NumericKeyboardControl.xaml</DependentUpon>
     </Compile>
@@ -480,6 +484,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ProductoModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PointCobroWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -725,6 +733,7 @@
   <ItemGroup>
     <Resource Include="Resources\app.ico" />
     <Resource Include="Resources\logo.svg" />
+    <Resource Include="Resources\mercadopago-logo.png" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />

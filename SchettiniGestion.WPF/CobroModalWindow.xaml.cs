@@ -15,6 +15,10 @@ namespace SchettiniGestion.WPF
         public int MedioPagoID { get; set; }
         public string nombreMedio { get; set; }
         public decimal monto { get; set; }
+        public int NroCuotas { get; set; } = 1;
+        public string UltimosDigitosTarjeta { get; set; }
+        public string MarcaTarjeta { get; set; }
+        public string OperacionExternaID { get; set; }
         public string MontoFormateado => monto.ToString("C2");
     }
 
@@ -32,6 +36,8 @@ namespace SchettiniGestion.WPF
 
         /// <summary>El usuario eligió cobrar con Mercado Pago QR desde el modal.</summary>
         public bool SolicitoMercadoPagoQR { get; private set; }
+        /// <summary>El usuario eligió enviar el cobro al Point Smart.</summary>
+        public bool SolicitoMercadoPagoPoint { get; private set; }
 
         private readonly decimal _total;
         private readonly ObservableCollection<CobranzaItem> _cobros = new ObservableCollection<CobranzaItem>();
@@ -231,10 +237,28 @@ namespace SchettiniGestion.WPF
 
         private void AplicarVisibilidadMercadoPago()
         {
-            if (btnMercadoPagoQR == null) return;
-            btnMercadoPagoQR.Visibility = LicenseManager.TieneMercadoPagoQr()
-                ? Visibility.Visible
-                : Visibility.Collapsed;
+            if (btnMercadoPagoQR != null)
+                btnMercadoPagoQR.Visibility = LicenseManager.TieneMercadoPagoQr()
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            bool pointConfigurado = false;
+            try
+            {
+                DataRow config = DatabaseService.GetConfiguracion();
+                pointConfigurado = config != null
+                    && config.Table.Columns.Contains("MPPointTerminalId")
+                    && !string.IsNullOrWhiteSpace(config["MPPointTerminalId"]?.ToString())
+                    && config.Table.Columns.Contains("MPPointAutomatico")
+                    && config["MPPointAutomatico"] != DBNull.Value
+                    && Convert.ToBoolean(config["MPPointAutomatico"]);
+            }
+            catch { }
+
+            if (btnMercadoPagoPoint != null)
+                btnMercadoPagoPoint.Visibility = LicenseManager.TieneMercadoPagoPoint() && pointConfigurado
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
         }
 
         private void btnMercadoPagoQR_Click(object sender, RoutedEventArgs e)
@@ -249,6 +273,22 @@ namespace SchettiniGestion.WPF
             }
 
             SolicitoMercadoPagoQR = true;
+            DialogResult = true;
+            Close();
+        }
+
+        private void btnMercadoPagoPoint_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenseManager.TieneMercadoPagoPoint())
+            {
+                CustomMessageBox.Show(
+                    "Mercado Pago Point no está incluido en su licencia.\n\n" +
+                    "Puede continuar cobrando manualmente con cualquier posnet.",
+                    "Abono no habilitado", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            SolicitoMercadoPagoPoint = true;
             DialogResult = true;
             Close();
         }

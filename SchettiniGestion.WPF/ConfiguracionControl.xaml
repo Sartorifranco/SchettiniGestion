@@ -365,6 +365,43 @@
                         </StackPanel>
                         </Border>
 
+                        <Border x:Name="cardSeccionMercadoPagoPoint" Style="{StaticResource ConfigSectionCard}">
+                        <StackPanel x:Name="panelSeccionMercadoPagoPoint">
+                            <TextBlock Text="Mercado Pago Point Smart (terminal automática)" Style="{StaticResource ConfigSectionTitle}"/>
+                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12"
+                                       Margin="0,0,0,12"
+                                       Text="Envía el importe al Point Smart/Smart 2 y espera la aprobación. El cobro manual con cualquier posnet seguirá disponible."/>
+
+                            <TextBlock Text="Terminal vinculada:" Style="{StaticResource ModuleLabelStyle}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ComboBox x:Name="cmbMPPointTerminal" Grid.Column="0"
+                                          Style="{StaticResource TouchComboBoxStyle}"
+                                          DisplayMemberPath="DisplayName" SelectedValuePath="Id"
+                                          MinHeight="44"/>
+                                <Button x:Name="btnBuscarTerminalesPoint" Grid.Column="1"
+                                        Content="🔍 Buscar terminales"
+                                        Click="btnBuscarTerminalesPoint_Click"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        MinHeight="44" Margin="8,0,0,0"/>
+                                <Button x:Name="btnActivarModoPdv" Grid.Column="2"
+                                        Content="Activar modo PDV"
+                                        Click="btnActivarModoPdv_Click"
+                                        Background="#009EE3" Foreground="White" BorderThickness="0" FontWeight="Bold"
+                                        MinHeight="44" Padding="16,0" Margin="8,0,0,0"/>
+                            </Grid>
+                            <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,6,0,8"
+                                       Text="La terminal debe estar vinculada a esta cuenta. Modelos admitidos por la API: Point Smart (NEWLAND N950) y Smart 2 (PAX A910)."/>
+                            <CheckBox x:Name="chkMPPointAutomatico"
+                                      Content="Ofrecer cobro automático con Point en la ventana de cobro"
+                                      IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        </Border>
+
                         <Border Style="{StaticResource ConfigSectionCard}">
                         <StackPanel x:Name="panelSeccionVisorCliente">
                         <TextBlock Text="Pantalla cliente (segundo monitor)" Style="{StaticResource ConfigSectionTitle}"/>

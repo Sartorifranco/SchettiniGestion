@@ -74,6 +74,18 @@ namespace SchettiniGestion.WPF
             if (_visor != null && _visor.IsLoaded) _visor.MostrarQR(qrData, monto);
         }
 
+        public static void PantallaPoint(decimal monto, string mensaje)
+        {
+            if (!VisorEstaHabilitado()) return;
+            if (_visor != null && _visor.IsLoaded) _visor.MostrarPoint(monto, mensaje);
+        }
+
+        public static void ActualizarEstadoPoint(string mensaje, Brush color)
+        {
+            if (!VisorEstaHabilitado()) return;
+            if (_visor != null && _visor.IsLoaded) _visor.ActualizarEstadoPoint(mensaje, color);
+        }
+
         // CORRECCION: Aseguramos que Brush sea System.Windows.Media.Brush
         public static void ActualizarMensajeQR(string mensaje, Brush color)
         {

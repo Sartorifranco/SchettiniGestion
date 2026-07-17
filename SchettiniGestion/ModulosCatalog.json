@@ -1,31 +1,32 @@
-{
-  "version": 2,
-  "descripcion": "Catálogo único de módulos SCHPOS. Paquete Lite = grupo lite_base. Extras monetizables = extra_unico y abono_mensual. Módulos pendientes de menú = pendiente (no se muestran en licenciador).",
-  "modulos": [
-    { "codigo": "ACCESO_VENTAS",            "nombre": "Ventas / POS",              "nombreCorto": "POS",          "grupo": "lite_base",       "licenciable": true,  "implicito": false, "incluidoEnLite": true,  "visibleEnLicenciador": true,  "dependeDe": [], "orden": 10 },
-    { "codigo": "ACCESO_FACTURACION",       "nombre": "Facturación",               "nombreCorto": "Facturación",  "grupo": "lite_base",       "licenciable": true,  "implicito": false, "incluidoEnLite": true,  "visibleEnLicenciador": true,  "dependeDe": ["ACCESO_PRODUCTOS"], "orden": 15 },
-    { "codigo": "ACCESO_PRODUCTOS",         "nombre": "Productos",                 "nombreCorto": "Productos",    "grupo": "lite_base",       "licenciable": true,  "implicito": false, "incluidoEnLite": true,  "visibleEnLicenciador": true,  "dependeDe": [], "orden": 20 },
-    { "codigo": "ACCESO_STOCK",             "nombre": "Stock",                     "nombreCorto": "Stock",        "grupo": "lite_base",       "licenciable": true,  "implicito": false, "incluidoEnLite": true,  "visibleEnLicenciador": true,  "dependeDe": [], "orden": 30 },
-    { "codigo": "ACCESO_CLIENTES",          "nombre": "Clientes",                  "nombreCorto": "Clientes",     "grupo": "lite_base",       "licenciable": true,  "implicito": false, "incluidoEnLite": true,  "visibleEnLicenciador": true,  "dependeDe": [], "orden": 40 },
-    { "codigo": "ACCESO_CAJA",              "nombre": "Caja / Tesorería",          "nombreCorto": "Caja",         "grupo": "lite_base",       "licenciable": true,  "implicito": false, "incluidoEnLite": true,  "visibleEnLicenciador": true,  "dependeDe": [], "orden": 50 },
-
-    { "codigo": "ACCESO_LISTASPRECIOS",     "nombre": "Listas de precios",         "nombreCorto": "Listas",       "grupo": "modulo_adicional","licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "dependeDe": [], "orden": 100 },
-    { "codigo": "ACCESO_PRECIOS",           "nombre": "Actualización de precios",    "nombreCorto": "Precios",      "grupo": "modulo_adicional","licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "dependeDe": [], "orden": 110 },
-    { "codigo": "ACCESO_PRESUPUESTOS",      "nombre": "Presupuestos",              "nombreCorto": "Presupuestos", "grupo": "modulo_adicional","licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "dependeDe": [], "orden": 120 },
-
-    { "codigo": "ACCESO_RED",               "nombre": "Conexión en RED",           "nombreCorto": "Red",          "grupo": "extra_unico",     "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "dependeDe": [], "orden": 200 },
-    { "codigo": "ACCESO_AFIP",              "nombre": "AFIP / Factura electrónica","nombreCorto": "AFIP",         "grupo": "extra_unico",     "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "dependeDe": [], "orden": 210 },
-    { "codigo": "ACCESO_VISOR_CLIENTE",     "nombre": "Pantalla cliente (2 monitores)", "nombreCorto": "Visor",   "grupo": "extra_unico",     "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "dependeDe": [], "orden": 220 },
-
-    { "codigo": "ACCESO_MERCADOPAGO_QR",    "nombre": "Mercado Pago QR",            "nombreCorto": "MP QR",        "grupo": "abono_mensual",   "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "esAbonoMensual": true, "dependeDe": [], "orden": 300 },
-    { "codigo": "ACCESO_SOPORTE",           "nombre": "Soporte + actualizaciones", "nombreCorto": "Soporte",      "grupo": "abono_mensual",   "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "esAbonoMensual": true, "dependeDe": [], "orden": 310 },
-
-    { "codigo": "ACCESO_PROVEEDORES",       "nombre": "Proveedores",               "nombreCorto": "Proveedores",  "grupo": "pendiente",       "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": false, "dependeDe": [], "orden": 900 },
-    { "codigo": "ACCESO_COMPRAS",           "nombre": "Compras",                   "nombreCorto": "Compras",      "grupo": "pendiente",       "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": false, "dependeDe": [], "orden": 910 },
-    { "codigo": "ACCESO_CUENTASCORRIENTES", "nombre": "Cuentas corrientes",        "nombreCorto": "Cta.Cte.",     "grupo": "pendiente",       "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": false, "dependeDe": [], "orden": 920 },
-
-    { "codigo": "ACCESO_USUARIOS",          "nombre": "Usuarios",                  "nombreCorto": "Usuarios",     "grupo": "sistema",         "licenciable": false, "implicito": true,  "incluidoEnLite": true,  "visibleEnLicenciador": false, "dependeDe": [], "orden": 990 },
-    { "codigo": "ACCESO_PERMISOS",          "nombre": "Permisos",                  "nombreCorto": "Permisos",     "grupo": "sistema",         "licenciable": false, "implicito": true,  "incluidoEnLite": true,  "visibleEnLicenciador": false, "dependeDe": [], "orden": 991 },
-    { "codigo": "ACCESO_CONFIGURACION",     "nombre": "Configuración",             "nombreCorto": "Configuración","grupo": "sistema",         "licenciable": false, "implicito": true,  "incluidoEnLite": true,  "visibleEnLicenciador": false, "dependeDe": [], "orden": 992 }
-  ]
-}
+{
+  "version": 2,
+  "descripcion": "Catálogo único de módulos SCHPOS. Paquete Lite = grupo lite_base. Extras monetizables = extra_unico y abono_mensual. Módulos pendientes de menú = pendiente (no se muestran en licenciador).",
+  "modulos": [
+    { "codigo": "ACCESO_VENTAS",            "nombre": "Ventas / POS",              "nombreCorto": "POS",          "grupo": "lite_base",       "licenciable": true,  "implicito": false, "incluidoEnLite": true,  "visibleEnLicenciador": true,  "dependeDe": [], "orden": 10 },
+    { "codigo": "ACCESO_FACTURACION",       "nombre": "Facturación",               "nombreCorto": "Facturación",  "grupo": "lite_base",       "licenciable": true,  "implicito": false, "incluidoEnLite": true,  "visibleEnLicenciador": true,  "dependeDe": ["ACCESO_PRODUCTOS"], "orden": 15 },
+    { "codigo": "ACCESO_PRODUCTOS",         "nombre": "Productos",                 "nombreCorto": "Productos",    "grupo": "lite_base",       "licenciable": true,  "implicito": false, "incluidoEnLite": true,  "visibleEnLicenciador": true,  "dependeDe": [], "orden": 20 },
+    { "codigo": "ACCESO_STOCK",             "nombre": "Stock",                     "nombreCorto": "Stock",        "grupo": "lite_base",       "licenciable": true,  "implicito": false, "incluidoEnLite": true,  "visibleEnLicenciador": true,  "dependeDe": [], "orden": 30 },
+    { "codigo": "ACCESO_CLIENTES",          "nombre": "Clientes",                  "nombreCorto": "Clientes",     "grupo": "lite_base",       "licenciable": true,  "implicito": false, "incluidoEnLite": true,  "visibleEnLicenciador": true,  "dependeDe": [], "orden": 40 },
+    { "codigo": "ACCESO_CAJA",              "nombre": "Caja / Tesorería",          "nombreCorto": "Caja",         "grupo": "lite_base",       "licenciable": true,  "implicito": false, "incluidoEnLite": true,  "visibleEnLicenciador": true,  "dependeDe": [], "orden": 50 },
+
+    { "codigo": "ACCESO_LISTASPRECIOS",     "nombre": "Listas de precios",         "nombreCorto": "Listas",       "grupo": "modulo_adicional","licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "dependeDe": [], "orden": 100 },
+    { "codigo": "ACCESO_PRECIOS",           "nombre": "Actualización de precios",    "nombreCorto": "Precios",      "grupo": "modulo_adicional","licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "dependeDe": [], "orden": 110 },
+    { "codigo": "ACCESO_PRESUPUESTOS",      "nombre": "Presupuestos",              "nombreCorto": "Presupuestos", "grupo": "modulo_adicional","licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "dependeDe": [], "orden": 120 },
+
+    { "codigo": "ACCESO_RED",               "nombre": "Conexión en RED",           "nombreCorto": "Red",          "grupo": "extra_unico",     "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "dependeDe": [], "orden": 200 },
+    { "codigo": "ACCESO_AFIP",              "nombre": "AFIP / Factura electrónica","nombreCorto": "AFIP",         "grupo": "extra_unico",     "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "dependeDe": [], "orden": 210 },
+    { "codigo": "ACCESO_VISOR_CLIENTE",     "nombre": "Pantalla cliente (2 monitores)", "nombreCorto": "Visor",   "grupo": "extra_unico",     "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "dependeDe": [], "orden": 220 },
+
+    { "codigo": "ACCESO_MERCADOPAGO_QR",    "nombre": "Mercado Pago QR",            "nombreCorto": "MP QR",        "grupo": "abono_mensual",   "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "esAbonoMensual": true, "dependeDe": [], "orden": 300 },
+    { "codigo": "ACCESO_MERCADOPAGO_POINT", "nombre": "Mercado Pago Point",         "nombreCorto": "MP Point",     "grupo": "abono_mensual",   "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "esAbonoMensual": true, "dependeDe": [], "orden": 305 },
+    { "codigo": "ACCESO_SOPORTE",           "nombre": "Soporte + actualizaciones", "nombreCorto": "Soporte",      "grupo": "abono_mensual",   "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": true,  "esAbonoMensual": true, "dependeDe": [], "orden": 310 },
+
+    { "codigo": "ACCESO_PROVEEDORES",       "nombre": "Proveedores",               "nombreCorto": "Proveedores",  "grupo": "pendiente",       "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": false, "dependeDe": [], "orden": 900 },
+    { "codigo": "ACCESO_COMPRAS",           "nombre": "Compras",                   "nombreCorto": "Compras",      "grupo": "pendiente",       "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": false, "dependeDe": [], "orden": 910 },
+    { "codigo": "ACCESO_CUENTASCORRIENTES", "nombre": "Cuentas corrientes",        "nombreCorto": "Cta.Cte.",     "grupo": "pendiente",       "licenciable": true,  "implicito": false, "incluidoEnLite": false, "visibleEnLicenciador": false, "dependeDe": [], "orden": 920 },
+
+    { "codigo": "ACCESO_USUARIOS",          "nombre": "Usuarios",                  "nombreCorto": "Usuarios",     "grupo": "sistema",         "licenciable": false, "implicito": true,  "incluidoEnLite": true,  "visibleEnLicenciador": false, "dependeDe": [], "orden": 990 },
+    { "codigo": "ACCESO_PERMISOS",          "nombre": "Permisos",                  "nombreCorto": "Permisos",     "grupo": "sistema",         "licenciable": false, "implicito": true,  "incluidoEnLite": true,  "visibleEnLicenciador": false, "dependeDe": [], "orden": 991 },
+    { "codigo": "ACCESO_CONFIGURACION",     "nombre": "Configuración",             "nombreCorto": "Configuración","grupo": "sistema",         "licenciable": false, "implicito": true,  "incluidoEnLite": true,  "visibleEnLicenciador": false, "dependeDe": [], "orden": 992 }
+  ]
+}

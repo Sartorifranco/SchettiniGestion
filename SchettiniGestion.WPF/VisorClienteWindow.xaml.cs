@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using QRCoder;
@@ -483,10 +484,33 @@ namespace SchettiniGestion.WPF
             lblEstadoQR.Foreground = color;
         }
 
+        public void MostrarPoint(decimal monto, string mensaje)
+        {
+            OcultarPanelesContenido();
+            GridPoint.Visibility = Visibility.Visible;
+            lblTotalPoint.Text = $"$ {monto:N2}";
+            lblEstadoPoint.Text = mensaje;
+            lblEstadoPoint.Foreground = new SolidColorBrush(Color.FromRgb(85, 85, 85));
+        }
+
+        public void ActualizarEstadoPoint(string mensaje, Brush color)
+        {
+            lblEstadoPoint.Text = mensaje;
+            lblEstadoPoint.Foreground = color;
+        }
+
         public void MostrarGracias()
         {
             OcultarPanelesContenido();
             GridGracias.Visibility = Visibility.Visible;
+            GridGracias.Opacity = 0;
+
+            if (GridGracias.Resources["AnimacionPagoAprobado"] is Storyboard animacion)
+            {
+                animacion.Remove(GridGracias);
+                animacion.Begin(GridGracias, true);
+            }
+
             ProgramarVueltaABienvenida();
         }
 
@@ -515,6 +539,7 @@ namespace SchettiniGestion.WPF
             GridVenta.Visibility = Visibility.Collapsed;
             GridPago.Visibility = Visibility.Collapsed;
             GridQR.Visibility = Visibility.Collapsed;
+            GridPoint.Visibility = Visibility.Collapsed;
             GridGracias.Visibility = Visibility.Collapsed;
         }
 

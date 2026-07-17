@@ -23,6 +23,7 @@ namespace SchettiniGestion.WPF
         private bool _passwordAfipTocadoPorUsuario;
         private bool _suprimirEventoPasswordAfip;
         private string _logoPathActual = "";
+        private string _mpPointTerminalIdGuardada = "";
 
         public ConfiguracionControl()
         {
@@ -43,14 +44,17 @@ namespace SchettiniGestion.WPF
         private void AplicarVisibilidadSegunLicencia()
         {
             bool afip = LicenseManager.TieneAfip();
-            bool mp = LicenseManager.TieneMercadoPagoQr();
+            bool mpQr = LicenseManager.TieneMercadoPagoQr();
+            bool mpPoint = LicenseManager.TieneMercadoPagoPoint();
             bool visor = LicenseManager.TieneVisorCliente();
             bool red = LicenseManager.TieneConexionRed();
 
             if (panelSeccionAfip != null)
                 panelSeccionAfip.Visibility = afip ? Visibility.Visible : Visibility.Collapsed;
             if (panelSeccionMercadoPago != null)
-                panelSeccionMercadoPago.Visibility = mp ? Visibility.Visible : Visibility.Collapsed;
+                panelSeccionMercadoPago.Visibility = (mpQr || mpPoint) ? Visibility.Visible : Visibility.Collapsed;
+            if (cardSeccionMercadoPagoPoint != null)
+                cardSeccionMercadoPagoPoint.Visibility = mpPoint ? Visibility.Visible : Visibility.Collapsed;
             if (panelSeccionVisorCliente != null)
                 panelSeccionVisorCliente.Visibility = visor ? Visibility.Visible : Visibility.Collapsed;
             if (tabItemRedServidor != null)
@@ -163,6 +167,23 @@ namespace SchettiniGestion.WPF
 
                 if (dr.Table.Columns.Contains("MPPosId"))
                     txtMPPosId.Text = dr["MPPosId"].ToString();
+
+                if (dr.Table.Columns.Contains("MPPointTerminalId"))
+                    _mpPointTerminalIdGuardada = dr["MPPointTerminalId"]?.ToString() ?? "";
+                if (!string.IsNullOrWhiteSpace(_mpPointTerminalIdGuardada))
+                {
+                    cmbMPPointTerminal.ItemsSource = new List<TerminalPointInfo>
+                    {
+                        new TerminalPointInfo
+                        {
+                            Id = _mpPointTerminalIdGuardada,
+                            OperatingMode = "guardada"
+                        }
+                    };
+                    cmbMPPointTerminal.SelectedValue = _mpPointTerminalIdGuardada;
+                }
+                if (dr.Table.Columns.Contains("MPPointAutomatico") && dr["MPPointAutomatico"] != DBNull.Value)
+                    chkMPPointAutomatico.IsChecked = Convert.ToBoolean(dr["MPPointAutomatico"]);
 
                 if (dr.Table.Columns.Contains("TipoCambioUSD") && dr["TipoCambioUSD"] != DBNull.Value && dr["TipoCambioUSD"] != null)
                     txtTipoCambioUSD.Text = dr["TipoCambioUSD"].ToString();
@@ -587,6 +608,77 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        private async void btnBuscarTerminalesPoint_Click(object sender, RoutedEventArgs e)
+        {
+            string token = txtMPToken.Text?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                ModernMessageBox.Show("Ingrese primero el Production Access Token de Mercado Pago.");
+                return;
+            }
+
+            btnBuscarTerminalesPoint.IsEnabled = false;
+            try
+            {
+                var terminales = await MercadoPagoPointService.ListarTerminales(token);
+                cmbMPPointTerminal.ItemsSource = terminales;
+                if (terminales.Count == 0)
+                {
+                    ModernMessageBox.Show(
+                        "La cuenta no tiene terminales Point Smart vinculadas.\n\n" +
+                        "Vincule el Point desde la aplicación de Mercado Pago y vuelva a buscar.",
+                        "Sin terminales", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var guardada = terminales.FirstOrDefault(t =>
+                    string.Equals(t.Id, _mpPointTerminalIdGuardada, StringComparison.OrdinalIgnoreCase));
+                cmbMPPointTerminal.SelectedItem = guardada ?? terminales[0];
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show(ex.Message, "Error Mercado Pago", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                btnBuscarTerminalesPoint.IsEnabled = true;
+            }
+        }
+
+        private async void btnActivarModoPdv_Click(object sender, RoutedEventArgs e)
+        {
+            string token = txtMPToken.Text?.Trim() ?? "";
+            var terminal = cmbMPPointTerminal.SelectedItem as TerminalPointInfo;
+            if (string.IsNullOrWhiteSpace(token) || terminal == null || string.IsNullOrWhiteSpace(terminal.Id))
+            {
+                ModernMessageBox.Show("Busque y seleccione una terminal Point primero.");
+                return;
+            }
+
+            if (ModernMessageBox.Show(
+                    "El modo PDV permite que SCHPOS envíe el importe al Point.\n\n" +
+                    "Mientras esté activo, la terminal quedará asociada a esta caja. ¿Continuar?",
+                    "Activar modo PDV", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            btnActivarModoPdv.IsEnabled = false;
+            try
+            {
+                await MercadoPagoPointService.ConfigurarModoPdv(token, terminal.Id);
+                terminal.OperatingMode = "PDV";
+                cmbMPPointTerminal.Items.Refresh();
+                ModernMessageBox.Show("Terminal configurada en modo PDV. Guarde los cambios.");
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show(ex.Message, "No se pudo configurar", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                btnActivarModoPdv.IsEnabled = true;
+            }
+        }
+
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -644,7 +736,9 @@ namespace SchettiniGestion.WPF
                     logoEnTicket: chkLogoEnTicket?.IsChecked == true,
                     logoEnA4: chkLogoEnA4?.IsChecked == true,
                     usaAperturaCaja: chkUsaAperturaCaja?.IsChecked == true,
-                    condicionIVAEmpresa: ObtenerCondicionIVAEmpresaSeleccionada());
+                    condicionIVAEmpresa: ObtenerCondicionIVAEmpresaSeleccionada(),
+                    mpPointTerminalId: (cmbMPPointTerminal?.SelectedValue?.ToString() ?? _mpPointTerminalIdGuardada).Trim(),
+                    mpPointAutomatico: chkMPPointAutomatico?.IsChecked == true);
 
                 if (exito)
                 {

@@ -212,7 +212,10 @@ namespace SchettiniGestion.WPF
 
                 string passCert = DatabaseService.DecodeAfipCertificatePasswordStored(config["PasswordAfip"]);
 
-                using (X509Certificate2 cert = CargarCertificadoAfip(rutaCert, passCert))
+                // Para validar vigencia alcanza con la parte pública del certificado.
+                using (X509Certificate2 cert = (ext == ".crt" || ext == ".cer")
+                    ? new X509Certificate2(rutaCert)
+                    : new X509Certificate2(rutaCert, passCert ?? ""))
                 {
                     if (DateTime.Now > cert.NotAfter)
                     {
@@ -257,13 +260,7 @@ namespace SchettiniGestion.WPF
         {
             uint uniqueId = (uint)(DateTime.Now.Ticks % 4294967295);
             string xmlTra = $"<?xml version=\"1.0\" encoding=\"UTF-8\"?><loginTicketRequest version=\"1.0\"><header><uniqueId>{uniqueId}</uniqueId><generationTime>{DateTime.Now.AddMinutes(-10):s}</generationTime><expirationTime>{DateTime.Now.AddMinutes(10):s}</expirationTime></header><service>{servicio}</service></loginTicketRequest>";
-            X509Certificate2 cert = CargarCertificadoAfip(rutaCert, pass);
-            ContentInfo contentInfo = new ContentInfo(Encoding.UTF8.GetBytes(xmlTra));
-            SignedCms signedCms = new SignedCms(contentInfo);
-            CmsSigner signer = new CmsSigner(cert);
-            signer.IncludeOption = X509IncludeOption.EndCertOnly;
-            signedCms.ComputeSignature(signer);
-            string cmsBase64 = Convert.ToBase64String(signedCms.Encode());
+            string cmsBase64 = Convert.ToBase64String(FirmarTra(Encoding.UTF8.GetBytes(xmlTra), rutaCert, pass));
             string xmlSoap = $@"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:wsaa=""http://wsaa.view.sua.dnet.afip.gov.ar/xsd""><soapenv:Header/><soapenv:Body><wsaa:loginCms><wsaa:in0>{cmsBase64}</wsaa:in0></wsaa:loginCms></soapenv:Body></soapenv:Envelope>";
             string url = produccion ? URL_WSAA_PROD : URL_WSAA_HOMO;
             string resp = await EnviarSoap(url, xmlSoap, "");
@@ -274,19 +271,27 @@ namespace SchettiniGestion.WPF
             return new LoginTicket { Token = docTicket.Descendants("token").First().Value, Sign = docTicket.Descendants("sign").First().Value, XmlRespuestaOriginal = loginReturnString };
         }
 
-        private static X509Certificate2 CargarCertificadoAfip(string rutaCert, string pass)
+        /// <summary>Firma el TRA para WSAA. Con .crt+.key usa BouncyCastle (evita el error
+        /// "El conjunto de claves no existe" de los contenedores de claves de Windows).</summary>
+        private static byte[] FirmarTra(byte[] tra, string rutaCert, string pass)
         {
             if (string.IsNullOrWhiteSpace(rutaCert) || !File.Exists(rutaCert))
                 throw new FileNotFoundException("Certificado AFIP no encontrado.", rutaCert ?? "");
 
             string ext = Path.GetExtension(rutaCert).ToLowerInvariant();
-            if (ext == ".pfx" || ext == ".p12")
-                return new X509Certificate2(rutaCert, pass ?? "", X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
-
             if (ext == ".crt" || ext == ".cer")
             {
                 string keyPath = DatabaseService.ObtenerAfipClavePrivadaPath();
-                return AfipActivacionFiscalService.CargarCertificadoConClave(rutaCert, keyPath);
+                return AfipActivacionFiscalService.FirmarTraCms(tra, rutaCert, keyPath);
+            }
+
+            if (ext == ".pfx" || ext == ".p12")
+            {
+                var cert = new X509Certificate2(rutaCert, pass ?? "", X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
+                var signedCms = new SignedCms(new ContentInfo(tra));
+                var signer = new CmsSigner(cert) { IncludeOption = X509IncludeOption.EndCertOnly };
+                signedCms.ComputeSignature(signer);
+                return signedCms.Encode();
             }
 
             throw new NotSupportedException("Formato de certificado AFIP no soportado: " + ext);

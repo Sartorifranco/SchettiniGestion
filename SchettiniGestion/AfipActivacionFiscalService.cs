@@ -9,11 +9,13 @@ using System.Security.Principal;
 using System.Text;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Cms;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.OpenSsl;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Utilities.Collections;
 using Org.BouncyCastle.X509;
 
 namespace SchettiniGestion
@@ -171,6 +173,29 @@ namespace SchettiniGestion
                 resultado.Error = ex.Message;
                 return resultado;
             }
+        }
+
+        /// <summary>
+        /// Firma el TRA (CMS/PKCS#7 SHA256) con BouncyCastle, sin pasar por los
+        /// contenedores de claves de Windows que fallan con "El conjunto de claves no existe".
+        /// </summary>
+        public static byte[] FirmarTraCms(byte[] contenidoTra, string rutaCertificado, string rutaClavePrivada)
+        {
+            if (string.IsNullOrWhiteSpace(rutaCertificado) || !File.Exists(rutaCertificado))
+                throw new FileNotFoundException("Certificado AFIP no encontrado.", rutaCertificado ?? "");
+            if (string.IsNullOrWhiteSpace(rutaClavePrivada) || !File.Exists(rutaClavePrivada))
+                throw new FileNotFoundException("Clave privada AFIP no encontrada.", rutaClavePrivada ?? "");
+
+            var certParser = new X509CertificateParser();
+            Org.BouncyCastle.X509.X509Certificate bcCert = certParser.ReadCertificate(File.ReadAllBytes(rutaCertificado));
+            AsymmetricKeyParameter privateKey = LeerClavePrivadaPem(rutaClavePrivada);
+
+            var generador = new CmsSignedDataGenerator();
+            generador.AddSigner(privateKey, bcCert, CmsSignedGenerator.DigestSha256);
+            generador.AddCertificates(CollectionUtilities.CreateStore(new[] { bcCert }));
+
+            CmsSignedData firmado = generador.Generate(new CmsProcessableByteArray(contenidoTra), encapsulate: true);
+            return firmado.GetEncoded();
         }
 
         /// <summary>

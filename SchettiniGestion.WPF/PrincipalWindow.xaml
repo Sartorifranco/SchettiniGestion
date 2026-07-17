@@ -196,7 +196,7 @@
                             Style="{StaticResource LiteDangerOutlineButton}"
                             Margin="0,4,0,0"
                             Click="btnSalirSistema_Click"/>
-                    <TextBlock x:Name="txtVersionFooter" Text="v2.1.0"
+                    <TextBlock x:Name="txtVersionFooter" Text="v2.1.1"
                                HorizontalAlignment="Center"
                                Margin="0,12,0,0"
                                Foreground="{DynamicResource TextSecondary}"

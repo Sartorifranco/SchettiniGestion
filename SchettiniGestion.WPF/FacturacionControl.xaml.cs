@@ -1175,10 +1175,11 @@ namespace SchettiniGestion.WPF
 
             // 1. Obtener Configuración
             DataRow config = DatabaseService.GetConfiguracion();
-            int puntoVentaConfig = 1;
+            int puntoVentaConfig = 0;
             if (config != null && config["PuntoVenta"] != DBNull.Value)
             {
-                puntoVentaConfig = Convert.ToInt32(config["PuntoVenta"]);
+                int pvGuardado = Convert.ToInt32(config["PuntoVenta"]);
+                if (pvGuardado > 0) puntoVentaConfig = pvGuardado;
             }
 
             // 2. Determinar Tipo AFIP
@@ -1230,6 +1231,15 @@ namespace SchettiniGestion.WPF
                         btnGuardarFactura.IsEnabled = true;
                         return;
                     }
+                }
+                if (tipoAfip > 0 && afipConfigurado && puntoVentaConfig <= 0)
+                {
+                    CustomMessageBox.Show(
+                        "No hay un punto de venta AFIP configurado.\n\n" +
+                        "Ingrese el número real asignado por ARCA antes de emitir comprobantes fiscales.",
+                        "Punto de venta requerido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    btnGuardarFactura.IsEnabled = true;
+                    return;
                 }
 
                 // ── PASO 1: cobro PRIMERO para que el cajero confirme antes de ir a AFIP ──

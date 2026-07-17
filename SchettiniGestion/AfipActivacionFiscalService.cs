@@ -105,7 +105,7 @@ namespace SchettiniGestion
         /// <summary>
         /// Copia el certificado .crt emitido por AFIP/ARCA junto a la clave privada del sistema.
         /// </summary>
-        public static ResultadoCertificado GuardarCertificadoAfip(string rutaArchivoOrigen)
+        public static ResultadoCertificado GuardarCertificadoAfip(string rutaArchivoOrigen, string cuitPantalla = null)
         {
             var resultado = new ResultadoCertificado();
             try
@@ -132,8 +132,10 @@ namespace SchettiniGestion
 
                 string cuitDigitos = DatabaseService.ObtenerCuitEmpresaSoloDigitos(config);
                 if (cuitDigitos.Length != 11)
+                    cuitDigitos = LimpiarCuit(cuitPantalla);
+                if (cuitDigitos.Length != 11)
                 {
-                    resultado.Error = "Configure un CUIT válido antes de subir el certificado.";
+                    resultado.Error = "Configure un CUIT válido (11 dígitos) en Datos de la Empresa y presione Guardar antes de subir el certificado.";
                     return resultado;
                 }
 

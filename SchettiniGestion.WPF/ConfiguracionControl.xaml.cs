@@ -468,7 +468,7 @@ namespace SchettiniGestion.WPF
                 };
                 if (ofd.ShowDialog() != true) return;
 
-                var resultado = AfipActivacionFiscalService.GuardarCertificadoAfip(ofd.FileName);
+                var resultado = AfipActivacionFiscalService.GuardarCertificadoAfip(ofd.FileName, txtCuit.Text);
                 if (!resultado.Exito)
                 {
                     ModernMessageBox.Show(resultado.Error ?? "No se pudo guardar el certificado.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -591,9 +591,6 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                int pto = 0;
-                int.TryParse(txtPuntoVenta.Text, out pto);
-
                 string cuit = txtCuit.Text?.Trim() ?? "";
                 if (!string.IsNullOrWhiteSpace(cuit))
                 {
@@ -605,10 +602,17 @@ namespace SchettiniGestion.WPF
                     }
                 }
 
-                if (pto <= 0 || pto > 99999)
+                // El punto de venta solo es obligatorio al emitir comprobantes fiscales;
+                // se permite guardar la configuración sin él (queda en 0 = sin asignar).
+                int pto = 0;
+                string ptoTexto = txtPuntoVenta.Text?.Trim() ?? "";
+                if (!string.IsNullOrWhiteSpace(ptoTexto))
                 {
-                    ModernMessageBox.Show("Punto de venta AFIP inválido. Debe ser un número entre 1 y 99999.");
-                    return;
+                    if (!int.TryParse(ptoTexto, out pto) || pto <= 0 || pto > 99999)
+                    {
+                        ModernMessageBox.Show("Punto de venta AFIP inválido. Debe ser un número entre 1 y 99999, o dejar el campo vacío si todavía no tiene uno asignado en ARCA.");
+                        return;
+                    }
                 }
 
                 decimal? tc = null;

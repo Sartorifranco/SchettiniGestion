@@ -195,8 +195,10 @@ namespace SchettiniGestion
             using (var ms = new MemoryStream())
             {
                 store.Save(ms, Array.Empty<char>(), new SecureRandom());
+                // UserKeySet: el almacén de máquina (MachineKeySet) requiere permisos de
+                // administrador y provoca "El conjunto de claves no existe" al firmar.
                 return new X509Certificate2(ms.ToArray(), string.Empty,
-                    X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.MachineKeySet);
+                    X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.UserKeySet);
             }
         }
 

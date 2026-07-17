@@ -157,8 +157,12 @@ namespace SchettiniGestion.WPF
                 else
                 {
                     resultado.Exito = false;
-                    var errorMsg = doc.Descendants(ns + "Msg").FirstOrDefault()?.Value;
-                    if (errorMsg == null) errorMsg = doc.Descendants(ns + "Obs").Descendants(ns + "Msg").FirstOrDefault()?.Value;
+                    // Motivo real del rechazo: Observaciones del detalle o Errors.
+                    // (Events trae avisos informativos de AFIP que no son el motivo.)
+                    var errorMsg = doc.Descendants(ns + "Observaciones").Descendants(ns + "Msg").FirstOrDefault()?.Value
+                        ?? doc.Descendants(ns + "Obs").Descendants(ns + "Msg").FirstOrDefault()?.Value
+                        ?? doc.Descendants(ns + "Errors").Descendants(ns + "Msg").FirstOrDefault()?.Value
+                        ?? doc.Descendants(ns + "Msg").FirstOrDefault()?.Value;
                     resultado.Error = "Rechazo AFIP: " + (errorMsg ?? respuestaXml);
                 }
                 return resultado;

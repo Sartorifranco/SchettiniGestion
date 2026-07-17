@@ -1185,14 +1185,24 @@ namespace SchettiniGestion.WPF
             // 2. Determinar Tipo AFIP
             decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
 
+            // Un emisor monotributista siempre emite Factura C (tipo 11), nunca A ni B.
+            bool emisorMonotributo = config != null
+                && config.Table.Columns.Contains("CondicionIVAEmpresa")
+                && (config["CondicionIVAEmpresa"]?.ToString() ?? "")
+                    .IndexOf("monotrib", StringComparison.OrdinalIgnoreCase) >= 0;
+
             int tipoAfip = 0;
             if (tipoCompTexto == "Factura")
             {
-                string cuitStr = _clienteSeleccionado["CUIT"].ToString();
-                if (cuitStr.Length >= 11 && !cuitStr.Contains("00-00000000")) tipoAfip = 1;
-                else tipoAfip = 6;
+                if (emisorMonotributo) tipoAfip = 11;
+                else
+                {
+                    string cuitStr = _clienteSeleccionado["CUIT"].ToString();
+                    if (cuitStr.Length >= 11 && !cuitStr.Contains("00-00000000")) tipoAfip = 1;
+                    else tipoAfip = 6;
+                }
             }
-            else if (tipoCompTexto == "Ticket") tipoAfip = 6;
+            else if (tipoCompTexto == "Ticket") tipoAfip = emisorMonotributo ? 11 : 6;
 
             // Validación Factura A
             if (tipoAfip == 1)

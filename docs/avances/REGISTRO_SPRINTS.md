@@ -168,7 +168,42 @@ Ver sección **Sprint 3** en [GUIA_PRUEBAS_AVANCES.md](GUIA_PRUEBAS_AVANCES.md).
 
 ---
 
-## Sprint 4 — (pendiente)
+## Conclusión de la revisión
+
+Los Sprints 1–3 quedaron **aprobados para pruebas manuales** tras correcciones en commit `95b22ab`. Ver detalle en [REVISION_SPRINTS_1_2_3.md](REVISION_SPRINTS_1_2_3.md).
+
+---
+
+## Sprint 4 — Pulido: PDF, NC/ND saldo, hub Informes
+
+| Campo | Valor |
+|-------|-------|
+| **Fecha** | 18 jul 2026 |
+| **Rama** | `cursor/sprint4-pulido-d53a` |
+| **PR** | _(se completará al abrir PR)_ |
+| **Versión objetivo al merge** | 2.2.0 (propuesta) |
+
+### Qué se hizo
+
+1. **NC/ND compras impactan cuenta corriente proveedor**
+   - `GuardarNotaCreditoDebitoCompra`: NC reduce saldo, ND lo aumenta + movimiento CC
+   - `EliminarNotaCreditoDebitoCompra` revierte el impacto
+
+2. **Export PDF en informes tabulares**
+   - `PdfInformeGenerator` + botón PDF en `InformesControl`
+
+3. **Hub Informes unificado**
+   - Pestañas: «Informes tabulares» + «Gráficos y KPIs» (si licencia Estadísticas)
+   - Botón menú **Estadísticas** oculto (evita duplicado)
+
+### Archivos principales
+
+- `SchettiniGestion/DatabaseService.cs`
+- `SchettiniGestion.WPF/InformesControl.xaml(.cs)`
+- `SchettiniGestion.WPF/PdfInformeGenerator.cs`
+- `SchettiniGestion.WPF/PrincipalWindow.xaml.cs`
+
+---
 
 ```markdown
 ## Sprint N — Título

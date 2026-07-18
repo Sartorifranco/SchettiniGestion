@@ -228,9 +228,9 @@ namespace SchettiniGestion.WPF
                 btnCaja.Visibility              = PuedeModulo(DatabaseService.PERMISO_CAJA)   ? Visibility.Visible : Visibility.Collapsed;
                 if (btnInformes != null)
                     btnInformes.Visibility = PuedeInformes() ? Visibility.Visible : Visibility.Collapsed;
+                // Gráficos unificados en pestaña Informes → ocultar entrada duplicada
                 if (btnEstadisticas != null)
-                    btnEstadisticas.Visibility = PuedeModulo(DatabaseService.PERMISO_ESTADISTICAS)
-                        ? Visibility.Visible : Visibility.Collapsed;
+                    btnEstadisticas.Visibility = Visibility.Collapsed;
                 btnUsuariosPermisos.Visibility  = PuedeModulo(DatabaseService.PERMISO_USUARIOS) ? Visibility.Visible : Visibility.Collapsed;
                 btnConfiguracion.Visibility     = PuedeModulo(DatabaseService.PERMISO_CONFIGURACION) ? Visibility.Visible : Visibility.Collapsed;
 

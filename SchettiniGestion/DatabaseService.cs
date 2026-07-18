@@ -4637,7 +4637,25 @@ ORDER BY Fecha DESC";
 
         public static bool EliminarNotaCreditoDebitoCompra(int id)
         {
-            try { using (var c = new SqlConnection(_connectionString)) { c.Open(); new SqlCommand($"DELETE FROM NotasCreditoDebitoCompras WHERE NotaID={id}", c).ExecuteNonQuery(); return true; } } catch { return false; }
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    using (var tr = c.BeginTransaction())
+                    {
+                        try
+                        {
+                            RevertirImpactoNotaCompraEnCc(c, tr, id);
+                            new SqlCommand($"DELETE FROM NotasCreditoDebitoCompras WHERE NotaID={id}", c, tr).ExecuteNonQuery();
+                            tr.Commit();
+                            return true;
+                        }
+                        catch { tr.Rollback(); return false; }
+                    }
+                }
+            }
+            catch { return false; }
         }
 
         public static DataTable GetGastosRapidos(string filtro = "")
@@ -4804,24 +4822,120 @@ ORDER BY Fecha DESC";
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    string sql = notaId == 0
-                        ? "INSERT INTO NotasCreditoDebitoCompras (ProveedorID,Tipo,Fecha,Monto,Descripcion,NumeroComprobante) VALUES (@pid,@t,@f,@m,@d,@nc)"
-                        : "UPDATE NotasCreditoDebitoCompras SET ProveedorID=@pid,Tipo=@t,Monto=@m,Descripcion=@d,NumeroComprobante=@nc WHERE NotaID=@id";
-                    using (var cmd = new SqlCommand(sql, c))
+                    using (var tr = c.BeginTransaction())
                     {
-                        cmd.Parameters.AddWithValue("@pid", proveedorId);
-                        cmd.Parameters.AddWithValue("@t", tipo ?? "NC");
-                        cmd.Parameters.AddWithValue("@f", DateTime.Now);
-                        cmd.Parameters.AddWithValue("@m", monto);
-                        cmd.Parameters.AddWithValue("@d", descripcion ?? "");
-                        cmd.Parameters.AddWithValue("@nc", nroComprobante ?? "");
-                        if (notaId > 0) cmd.Parameters.AddWithValue("@id", notaId);
-                        cmd.ExecuteNonQuery();
-                        return true;
+                        try
+                        {
+                            if (notaId > 0)
+                                RevertirImpactoNotaCompraEnCc(c, tr, notaId);
+
+                            int id = notaId;
+                            if (notaId == 0)
+                            {
+                                string ins = @"INSERT INTO NotasCreditoDebitoCompras (ProveedorID,Tipo,Fecha,Monto,Descripcion,NumeroComprobante)
+                                    OUTPUT INSERTED.NotaID VALUES (@pid,@t,@f,@m,@d,@nc)";
+                                using (var cmd = new SqlCommand(ins, c, tr))
+                                {
+                                    cmd.Parameters.AddWithValue("@pid", proveedorId);
+                                    cmd.Parameters.AddWithValue("@t", tipo ?? "NC");
+                                    cmd.Parameters.AddWithValue("@f", DateTime.Now);
+                                    cmd.Parameters.AddWithValue("@m", monto);
+                                    cmd.Parameters.AddWithValue("@d", descripcion ?? "");
+                                    cmd.Parameters.AddWithValue("@nc", nroComprobante ?? "");
+                                    id = Convert.ToInt32(cmd.ExecuteScalar());
+                                }
+                            }
+                            else
+                            {
+                                string upd = @"UPDATE NotasCreditoDebitoCompras SET ProveedorID=@pid,Tipo=@t,Monto=@m,Descripcion=@d,NumeroComprobante=@nc WHERE NotaID=@id";
+                                using (var cmd = new SqlCommand(upd, c, tr))
+                                {
+                                    cmd.Parameters.AddWithValue("@pid", proveedorId);
+                                    cmd.Parameters.AddWithValue("@t", tipo ?? "NC");
+                                    cmd.Parameters.AddWithValue("@m", monto);
+                                    cmd.Parameters.AddWithValue("@d", descripcion ?? "");
+                                    cmd.Parameters.AddWithValue("@nc", nroComprobante ?? "");
+                                    cmd.Parameters.AddWithValue("@id", notaId);
+                                    cmd.ExecuteNonQuery();
+                                }
+                                id = notaId;
+                            }
+
+                            AplicarImpactoNotaCompraEnCc(c, tr, id, proveedorId, tipo, monto, descripcion, nroComprobante);
+                            tr.Commit();
+                            return true;
+                        }
+                        catch { tr.Rollback(); return false; }
                     }
                 }
             }
             catch { return false; }
+        }
+
+        private static decimal DeltaSaldoNotaCompra(string tipo, decimal monto)
+        {
+            string t = (tipo ?? "NC").Trim().ToUpperInvariant();
+            if (t.StartsWith("ND") || t.Contains("DEBITO") || t.Contains("DÉBITO"))
+                return monto;
+            return -monto;
+        }
+
+        private static string DescripcionMovimientoNotaCompra(int notaId, string tipo, string nroComprobante)
+        {
+            string nro = string.IsNullOrWhiteSpace(nroComprobante) ? "" : " " + nroComprobante.Trim();
+            return $"Nota {tipo ?? "NC"} Compra #{notaId}{nro}";
+        }
+
+        private static void AplicarImpactoNotaCompraEnCc(SqlConnection c, SqlTransaction tr, int notaId, int proveedorId, string tipo, decimal monto, string descripcion, string nroComprobante)
+        {
+            decimal delta = DeltaSaldoNotaCompra(tipo, monto);
+            new SqlCommand($"UPDATE Proveedores SET SaldoDeuda=SaldoDeuda+{(double)delta} WHERE ProveedorID={proveedorId}", c, tr).ExecuteNonQuery();
+            object sal = new SqlCommand($"SELECT SaldoDeuda FROM Proveedores WHERE ProveedorID={proveedorId}", c, tr).ExecuteScalar();
+            string desc = DescripcionMovimientoNotaCompra(notaId, tipo, nroComprobante);
+            if (!string.IsNullOrWhiteSpace(descripcion))
+                desc += " — " + descripcion.Trim();
+
+            using (var cmdCc = new SqlCommand(@"INSERT INTO MovimientosCuentaCorriente (ProveedorID,Fecha,Descripcion,Monto,SaldoHistorico)
+                VALUES (@pid,@f,@desc,@m,@sal)", c, tr))
+            {
+                cmdCc.Parameters.AddWithValue("@pid", proveedorId);
+                cmdCc.Parameters.AddWithValue("@f", DateTime.Now);
+                cmdCc.Parameters.AddWithValue("@desc", desc);
+                cmdCc.Parameters.AddWithValue("@m", delta);
+                cmdCc.Parameters.AddWithValue("@sal", sal ?? 0m);
+                cmdCc.ExecuteNonQuery();
+            }
+        }
+
+        private static void RevertirImpactoNotaCompraEnCc(SqlConnection c, SqlTransaction tr, int notaId)
+        {
+            string tipo = "NC";
+            decimal monto = 0;
+            int proveedorId = 0;
+            string nro = "";
+            using (var cmd = new SqlCommand("SELECT ProveedorID, Tipo, Monto, NumeroComprobante FROM NotasCreditoDebitoCompras WHERE NotaID=@id", c, tr))
+            {
+                cmd.Parameters.AddWithValue("@id", notaId);
+                using (var rd = cmd.ExecuteReader())
+                {
+                    if (!rd.Read()) return;
+                    proveedorId = Convert.ToInt32(rd["ProveedorID"]);
+                    tipo = rd["Tipo"]?.ToString() ?? "NC";
+                    monto = Convert.ToDecimal(rd["Monto"]);
+                    nro = rd["NumeroComprobante"]?.ToString() ?? "";
+                }
+            }
+
+            decimal delta = DeltaSaldoNotaCompra(tipo, monto);
+            new SqlCommand($"UPDATE Proveedores SET SaldoDeuda=SaldoDeuda-{(double)delta} WHERE ProveedorID={proveedorId}", c, tr).ExecuteNonQuery();
+
+            string desc = DescripcionMovimientoNotaCompra(notaId, tipo, nro);
+            using (var del = new SqlCommand("DELETE FROM MovimientosCuentaCorriente WHERE ProveedorID=@pid AND Descripcion LIKE @d", c, tr))
+            {
+                del.Parameters.AddWithValue("@pid", proveedorId);
+                del.Parameters.AddWithValue("@d", desc + "%");
+                del.ExecuteNonQuery();
+            }
         }
 
         public static bool GuardarGastoRapido(int gastoId, string concepto, string categoria, decimal monto, string medioPago)

@@ -215,10 +215,15 @@ namespace SchettiniGestion.Tester
                 else
                     Registrar("❌ EXT: GuardarGastoRapido falló.");
 
+                decimal saldoAntesNc = ObtenerSaldoProveedor(proveedorId);
                 if (DatabaseService.GuardarNotaCreditoDebitoCompra(0, proveedorId, "NC", 15m, tag + " nota", "NC-BOT-1"))
                 {
                     notaCompraId = MaxId("NotasCreditoDebitoCompras", "NotaID");
-                    Registrar("✅ EXT: Nota crédito/débito compra insertada (NotaID=" + notaCompraId + ").");
+                    decimal saldoTrasNc = ObtenerSaldoProveedor(proveedorId);
+                    if (saldoTrasNc == saldoAntesNc - 15m)
+                        Registrar("✅ EXT: Nota crédito compra — Saldo proveedor -$15.");
+                    else
+                        Registrar("❌ EXT: Nota crédito compra — saldo inesperado: " + saldoTrasNc + " (antes " + saldoAntesNc + ").");
                 }
                 else
                     Registrar("❌ EXT: GuardarNotaCreditoDebitoCompra falló.");

@@ -20,6 +20,13 @@ namespace SchettiniGestion.WPF
             dpDesde.SelectedDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
             dpHasta.SelectedDate = DateTime.Today;
             cmbTipoInforme_SelectionChanged(cmbTipoInforme, null);
+
+            bool tieneEstadisticas = LicenseManager.IsModuleEnabled(DatabaseService.PERMISO_ESTADISTICAS)
+                && SesionUsuario.TienePermiso(DatabaseService.PERMISO_ESTADISTICAS);
+            if (tabGraficos != null)
+                tabGraficos.Visibility = tieneEstadisticas ? Visibility.Visible : Visibility.Collapsed;
+            if (tieneEstadisticas && hostEstadisticas != null && hostEstadisticas.Content == null)
+                hostEstadisticas.Content = new EstadisticasControl();
         }
 
         private void cmbTipoInforme_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -264,6 +271,35 @@ ORDER BY cp.Fecha;";
                 MessageBox.Show("Exportado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex) { MessageBox.Show("Error al exportar: " + ex.Message); }
+        }
+
+        private void btnExportarPdf_Click(object sender, RoutedEventArgs e)
+        {
+            if (_dtActual == null || _dtActual.Rows.Count == 0)
+            {
+                MessageBox.Show("Genere un informe primero.", "Información", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            string tipo = (cmbTipoInforme.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Informe";
+            var dlg = new SaveFileDialog
+            {
+                Filter = "PDF (*.pdf)|*.pdf",
+                FileName = $"informe_{tipo.Replace(' ', '_')}_{DateTime.Today:yyyyMMdd}.pdf"
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            try
+            {
+                DateTime? desde = dpDesde.IsEnabled ? dpDesde.SelectedDate : null;
+                DateTime? hasta = dpHasta.IsEnabled ? dpHasta.SelectedDate : null;
+                PdfInformeGenerator.GenerarInformeTabular(dlg.FileName, tipo, _dtActual, desde, hasta);
+                MessageBox.Show("PDF exportado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al exportar PDF: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

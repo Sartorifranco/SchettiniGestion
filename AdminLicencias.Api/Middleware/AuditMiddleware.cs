@@ -24,16 +24,25 @@ public sealed class AuditMiddleware
         if (accion is null)
             return;
 
-        auditLog.Registrar(new AuditLogEntry
+        // Nunca debe romper la respuesta exitosa (p. ej. permisos de logs.json).
+        try
         {
-            Fecha = DateTime.Now,
-            Usuario = ObtenerUsuario(context),
-            Accion = accion,
-            Ip = ObtenerIpCliente(context),
-            Navegador = ResumirUserAgent(context.Request.Headers.UserAgent.ToString()),
-            Metodo = context.Request.Method,
-            Ruta = context.Request.Path.Value ?? ""
-        });
+            auditLog.Registrar(new AuditLogEntry
+            {
+                Fecha = DateTime.Now,
+                Usuario = ObtenerUsuario(context),
+                Accion = accion,
+                Ip = ObtenerIpCliente(context),
+                Navegador = ResumirUserAgent(context.Request.Headers.UserAgent.ToString()),
+                Metodo = context.Request.Method,
+                Ruta = context.Request.Path.Value ?? ""
+            });
+        }
+        catch (Exception ex)
+        {
+            var logger = context.RequestServices.GetService<ILogger<AuditMiddleware>>();
+            logger?.LogWarning(ex, "No se pudo registrar auditoría para {Accion} {Ruta}", accion, context.Request.Path.Value);
+        }
     }
 
     private static bool DebeAuditar(HttpContext context)

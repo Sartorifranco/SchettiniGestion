@@ -151,7 +151,11 @@ async function apiFetch(path, options = {}) {
   }
 
   if (!response.ok) {
-    const msg = payload?.error || payload?.title || payload?.raw || `HTTP ${response.status}`;
+    const msg = payload?.error
+      || payload?.detail
+      || payload?.title
+      || payload?.raw
+      || `HTTP ${response.status}`;
     throw new Error(msg);
   }
 

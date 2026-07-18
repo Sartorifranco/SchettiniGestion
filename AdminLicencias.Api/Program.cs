@@ -64,81 +64,88 @@ licenses.MapPost("/generate", (
     LicenseService licenseService,
     DataStore dataStore) =>
 {
-    if (string.IsNullOrWhiteSpace(req.HardwareId))
-        return Results.BadRequest(new { error = "HardwareId es obligatorio." });
-
-    if (req.FechaVencimiento.Date <= DateTime.Today)
-        return Results.BadRequest(new { error = "FechaVencimiento debe ser futura." });
-
-    Cliente? cliente = null;
-    if (req.ClienteId.HasValue)
-        cliente = dataStore.ObtenerCliente(req.ClienteId.Value);
-
-    if (cliente == null && !string.IsNullOrWhiteSpace(req.Cuit))
-        cliente = dataStore.BuscarClientePorCuit(req.Cuit);
-
-    if (cliente == null)
-    {
-        if (string.IsNullOrWhiteSpace(req.Cuit) || string.IsNullOrWhiteSpace(req.RazonSocial))
-            return Results.BadRequest(new { error = "Indique ClienteId o bien CUIT + RazonSocial." });
-
-        cliente = new Cliente
-        {
-            RazonSocial = req.RazonSocial.Trim(),
-            CUIT = req.Cuit.Trim()
-        };
-        dataStore.GuardarCliente(cliente);
-    }
-
-    string hwid = req.HardwareId.Trim().ToUpperInvariant();
-    var modulos = licenseService.ResolverModulosPorPlan(req.Plan, req.Modulos);
-    string plan = (req.Plan ?? "lite").Trim().ToLowerInvariant();
-
-    string clave;
     try
     {
-        clave = licenseService.GenerarClave(cliente.CUIT, hwid, req.FechaVencimiento, modulos);
+        if (string.IsNullOrWhiteSpace(req.HardwareId))
+            return Results.BadRequest(new { error = "HardwareId es obligatorio." });
+
+        if (req.FechaVencimiento.Date <= DateTime.Today)
+            return Results.BadRequest(new { error = "FechaVencimiento debe ser futura." });
+
+        Cliente? cliente = null;
+        if (req.ClienteId.HasValue)
+            cliente = dataStore.ObtenerCliente(req.ClienteId.Value);
+
+        if (cliente == null && !string.IsNullOrWhiteSpace(req.Cuit))
+            cliente = dataStore.BuscarClientePorCuit(req.Cuit);
+
+        if (cliente == null)
+        {
+            if (string.IsNullOrWhiteSpace(req.Cuit) || string.IsNullOrWhiteSpace(req.RazonSocial))
+                return Results.BadRequest(new { error = "Indique ClienteId o bien CUIT + RazonSocial." });
+
+            cliente = new Cliente
+            {
+                RazonSocial = req.RazonSocial.Trim(),
+                CUIT = req.Cuit.Trim()
+            };
+            dataStore.GuardarCliente(cliente);
+        }
+
+        string hwid = req.HardwareId.Trim().ToUpperInvariant();
+        var modulos = licenseService.ResolverModulosPorPlan(req.Plan, req.Modulos);
+        string plan = (req.Plan ?? "lite").Trim().ToLowerInvariant();
+
+        string clave;
+        try
+        {
+            clave = licenseService.GenerarClave(cliente.CUIT, hwid, req.FechaVencimiento, modulos);
+        }
+        catch (Exception ex)
+        {
+            return Results.Json(new { error = "Error al generar la clave: " + ex.Message }, statusCode: 500);
+        }
+
+        var licencia = new Licencia
+        {
+            ClienteId = cliente.Id,
+            HWID = hwid,
+            LicenseKey = clave,
+            FechaEmision = DateTime.Today,
+            FechaVencimiento = req.FechaVencimiento.Date,
+            Modulos = modulos,
+            MontoLicencia = req.MontoLicencia,
+            AbonoMensual = req.AbonoMensual,
+            VersionSchpos = req.VersionSchpos ?? "2.0.8",
+            EsRenovacion = req.EsRenovacion,
+            Observaciones = req.Observaciones ?? "",
+            Plan = plan
+        };
+
+        if (licencia.EsRenovacion)
+        {
+            var anterior = dataStore.UltimaLicencia(cliente.Id);
+            if (anterior != null)
+                licencia.LicenciaAnteriorId = anterior.Id;
+        }
+
+        dataStore.GuardarLicencia(licencia);
+
+        return Results.Ok(new GenerateLicenseResponse
+        {
+            LicenseKey = clave,
+            LicenciaId = licencia.Id,
+            ClienteId = cliente.Id,
+            Plan = plan,
+            FechaVencimiento = licencia.FechaVencimiento,
+            Modulos = modulos,
+            ModulosResumen = licencia.ModulosResumen
+        });
     }
     catch (Exception ex)
     {
-        return Results.Problem("Error al generar la clave: " + ex.Message, statusCode: 500);
+        return Results.Json(new { error = "Error al guardar la licencia: " + ex.Message }, statusCode: 500);
     }
-
-    var licencia = new Licencia
-    {
-        ClienteId = cliente.Id,
-        HWID = hwid,
-        LicenseKey = clave,
-        FechaEmision = DateTime.Today,
-        FechaVencimiento = req.FechaVencimiento.Date,
-        Modulos = modulos,
-        MontoLicencia = req.MontoLicencia,
-        AbonoMensual = req.AbonoMensual,
-        VersionSchpos = req.VersionSchpos ?? "2.0.8",
-        EsRenovacion = req.EsRenovacion,
-        Observaciones = req.Observaciones ?? "",
-        Plan = plan
-    };
-
-    if (licencia.EsRenovacion)
-    {
-        var anterior = dataStore.UltimaLicencia(cliente.Id);
-        if (anterior != null)
-            licencia.LicenciaAnteriorId = anterior.Id;
-    }
-
-    dataStore.GuardarLicencia(licencia);
-
-    return Results.Ok(new GenerateLicenseResponse
-    {
-        LicenseKey = clave,
-        LicenciaId = licencia.Id,
-        ClienteId = cliente.Id,
-        Plan = plan,
-        FechaVencimiento = licencia.FechaVencimiento,
-        Modulos = modulos,
-        ModulosResumen = licencia.ModulosResumen
-    });
 });
 
 licenses.MapPost("/validate", (

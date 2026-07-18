@@ -35,7 +35,10 @@ public sealed class AuditLogService
             int antes = entries.Count;
             PurgarAntiguos(entries);
             if (entries.Count < antes)
-                GuardarInterno(entries);
+            {
+                try { GuardarInterno(entries); }
+                catch { /* lectura no debe fallar por retención */ }
+            }
 
             return entries
                 .OrderByDescending(e => e.Fecha)
@@ -81,8 +84,11 @@ public sealed class AuditLogService
         if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             Directory.CreateDirectory(dir);
 
+        // Escritura atómica: evita corromper logs.json si el proceso se corta a mitad.
         string json = JsonConvert.SerializeObject(entries, Formatting.Indented);
-        File.WriteAllText(_logPath, json, Encoding.UTF8);
+        string tempPath = _logPath + ".tmp";
+        File.WriteAllText(tempPath, json, Encoding.UTF8);
+        File.Move(tempPath, _logPath, overwrite: true);
     }
 
     private static string ResolverRutaLogs(LicensingOptions options)

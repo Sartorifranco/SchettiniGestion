@@ -14,7 +14,11 @@ public static class ServiceCollectionExtensions
         else
             services.AddOptions<LicensingOptions>();
 
-        services.AddSingleton<LicenseService>();
+        services.AddSingleton<LicenseService>(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<LicensingOptions>>().Value;
+            return new LicenseService(opts);
+        });
         services.AddSingleton<DataStore>(sp =>
         {
             var opts = sp.GetRequiredService<IOptions<LicensingOptions>>().Value;

@@ -29,12 +29,16 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel>
                     <TextBlock Text="Tipo de Informe" Style="{StaticResource LabelStyle}"/>
-                    <ComboBox x:Name="cmbTipoInforme" Style="{StaticResource ModuleComboBoxStyle}" Width="200" SelectionChanged="cmbTipoInforme_SelectionChanged">
+                    <ComboBox x:Name="cmbTipoInforme" Style="{StaticResource ModuleComboBoxStyle}" Width="240" SelectionChanged="cmbTipoInforme_SelectionChanged">
                         <ComboBoxItem Content="Ventas por Período" IsSelected="True"/>
                         <ComboBoxItem Content="Libro IVA Ventas"/>
                         <ComboBoxItem Content="Libro IVA Compras"/>
                         <ComboBoxItem Content="Productos Más Vendidos"/>
                         <ComboBoxItem Content="Ranking Clientes"/>
+                        <ComboBoxItem Content="Valorización de Stock"/>
+                        <ComboBoxItem Content="Ventas por Vendedor"/>
+                        <ComboBoxItem Content="Faltantes en Pedidos"/>
+                        <ComboBoxItem Content="Cuenta Corriente Proveedores"/>
                     </ComboBox>
                 </StackPanel>
                 <StackPanel Grid.Column="2">

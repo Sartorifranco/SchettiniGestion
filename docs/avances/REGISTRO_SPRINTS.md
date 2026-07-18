@@ -62,6 +62,7 @@ Ver sección **Sprint 1** en [GUIA_PRUEBAS_AVANCES.md](GUIA_PRUEBAS_AVANCES.md).
 - Requiere regenerar licencias de clientes que quieran Compras (nuevos módulos en catálogo)
 - No afecta instalaciones Lite sin esos módulos en la clave
 - Compatible con v2.1.9 en el resto del menú
+- Commit adicional `62bbd78`: al eliminar factura con stock, revierte OC y recepciones vinculadas
 
 ---
 
@@ -123,7 +124,51 @@ Ver sección **Sprint 2** en [GUIA_PRUEBAS_AVANCES.md](GUIA_PRUEBAS_AVANCES.md).
 
 ---
 
-## Sprint 3 — (pendiente)
+## Sprint 3 — Informes ampliados
+
+| Campo | Valor |
+|-------|-------|
+| **Fecha** | 18 jul 2026 |
+| **Rama** | `cursor/sprint3-informes-d53a` |
+| **PR** | _(se completará al abrir PR)_ |
+| **Commit** | _(se completará al commitear)_ |
+| **Versión objetivo al merge** | 2.2.0 (propuesta, no publicada) |
+
+### Contexto
+
+Sprint 1 habilitó el menú Informes con 5 reportes básicos. Sprint 3 agrega los informes que el roadmap identificó como faltantes para cerrar el hueco operativo.
+
+### Qué se hizo
+
+1. **Valorización de Stock** — listado de productos con stock > 0, costo unitario, valor a costo y valor con IVA estimado; fila TOTAL al pie
+2. **Ventas por Vendedor** — agrupa facturas por `NombrePersonal` en el período
+3. **Faltantes en Pedidos** — ítems de pedidos Pendiente/Confirmado donde la cantidad pedida supera el stock actual
+4. **Cuenta Corriente Proveedores** — movimientos de CC proveedor en el período (fecha, proveedor, descripción, monto, saldo)
+
+### UX
+
+- Combo de informes ampliado (9 tipos)
+- Valorización de Stock deshabilita selectores de fecha (es instantáneo «a hoy»)
+- Export CSV funciona con los nuevos informes
+
+### Qué NO se hizo (queda para Sprint 4)
+
+- Export PDF
+- Hub unificado Informes + Estadísticas
+- Informe de comisiones con reglas configurables
+- Resumen de saldos proveedores sin movimientos en período
+
+### Archivos principales tocados
+
+- `SchettiniGestion.WPF/InformesControl.xaml(.cs)`
+
+### Cómo probar
+
+Ver sección **Sprint 3** en [GUIA_PRUEBAS_AVANCES.md](GUIA_PRUEBAS_AVANCES.md).
+
+---
+
+## Sprint 4 — (pendiente)
 
 ```markdown
 ## Sprint N — Título

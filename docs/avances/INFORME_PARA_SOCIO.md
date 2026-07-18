@@ -78,6 +78,28 @@ Detalle: `docs/lanzamiento/v2.1.9_ALCANCE.md`
 **PR:** https://github.com/Sartorifranco/SchettiniGestion/pull/9  
 **¿Merge a producción?** Pendiente de pruebas Sprint 2.
 
+### Sprint 3 (18 jul 2026) — «Informes que faltaban»
+
+**Problema:** El menú Informes solo tenía 5 reportes básicos; faltaban valorización de stock, ventas por vendedor, faltantes en pedidos y cuenta corriente de proveedores.
+
+**Solución entregada:**
+- Cuatro informes nuevos en el mismo hub, con export CSV
+- Valorización muestra totales al pie
+- Faltantes en pedidos cruza pedidos abiertos con stock disponible
+
+**Valor para el negocio:**
+- Visibilidad de capital inmovilizado en stock
+- Seguimiento de vendedores y cobranzas a proveedores
+- Alerta operativa de pedidos que no se pueden cumplir
+
+**Riesgo / limitación honesta:**
+- Sin export PDF (Sprint 4)
+- CC proveedores lista movimientos del período, no un resumen de saldos global
+- Faltantes solo considera pedidos Pendiente/Confirmado
+
+**PR:** _(se completará al abrir PR)_  
+**¿Merge a producción?** Pendiente de pruebas Sprint 3.
+
 ---
 
 ## 4. Próximos pasos (plan acordado)
@@ -85,7 +107,7 @@ Detalle: `docs/lanzamiento/v2.1.9_ALCANCE.md`
 | Sprint | Entregable | Impacto comercial |
 |--------|------------|-------------------|
 | **2** | Factura de compra con «recepcionar sí/no» y elegir OC | ✅ Entregado — pruebas pendientes |
-| **3** | Informes: valorización stock, vendedor, faltantes, cta.cte. proveedor | Cierra hueco vs. competencia en reportes |
+| **3** | Informes: valorización stock, vendedor, faltantes, cta.cte. proveedor | ✅ Entregado — pruebas pendientes |
 | **4** | Pulido + un solo menú Informes | Producto más vendible |
 
 Roadmap completo: `docs/avances/ROADMAP.md`
@@ -116,7 +138,7 @@ Recomendación: **no mergear sprints a `main`** hasta:
 
 ## 7. Resumen en una frase (para reunión)
 
-> «Salimos con v2.1.9 como acordamos. En paralelo adelantamos Sprint 1 (menú Compras/Proveedores/Informes) y Sprint 2 (factura con recepción opcional y vínculo a OC). Nada de esto está en el build de lanzamiento hasta que lo aprueben y publiquemos v2.2.»
+> «Salimos con v2.1.9 como acordamos. En paralelo adelantamos Sprints 1–3: menú Compras/Proveedores/Informes, factura con recepción opcional y vínculo OC, y cuatro informes nuevos. Nada de esto está en el build de lanzamiento hasta que lo aprueben y publiquemos v2.2.»
 
 ---
 

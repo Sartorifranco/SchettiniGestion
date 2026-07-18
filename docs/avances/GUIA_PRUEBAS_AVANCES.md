@@ -4,7 +4,7 @@ Probar **solo** con la rama de avances, no con `main` v2.1.9.
 
 ```powershell
 git fetch origin
-git checkout cursor/sprint2-flujo-compras-d53a
+git checkout cursor/sprint3-informes-d53a
 # Compilar Release y ejecutar
 ```
 
@@ -134,9 +134,50 @@ git checkout cursor/sprint2-flujo-compras-d53a
 
 ---
 
-## Sprint 3 — (pendiente)
+## Sprint 3 — Informes ampliados
 
-_Pendiente: informes valorización, vendedor, faltantes pedidos._
+### 3.1 Valorización de Stock
+
+| # | Paso | Esperado |
+|---|------|----------|
+| 1 | Informes → **Valorización de Stock** → Generar | Fechas deshabilitadas |
+| 2 | Revisar grilla | Productos con stock > 0, columnas Costo, ValorCosto, ValorConIVA |
+| 3 | Última fila | Fila **TOTAL** con sumas |
+| 4 | Exportar CSV | Archivo con totales |
+
+### 3.2 Ventas por Vendedor
+
+| # | Paso | Esperado |
+|---|------|----------|
+| 1 | Registrar ventas con distintos usuarios (NombrePersonal en factura) | — |
+| 2 | Informes → **Ventas por Vendedor** + rango fechas → Generar | Grilla por vendedor con comprobantes y total |
+| 3 | Ventas sin vendedor | Aparecen como «(Sin vendedor)» |
+
+### 3.3 Faltantes en Pedidos
+
+| # | Paso | Esperado |
+|---|------|----------|
+| 1 | Crear pedido Pendiente con cantidad > stock del producto | — |
+| 2 | Informes → **Faltantes en Pedidos** → Generar | Lista pedido, producto, cant pedida, stock, faltante |
+| 3 | Pedido con stock suficiente | **No** aparece en el informe |
+| 4 | Pedido Confirmado con faltante | **Sí** aparece |
+
+### 3.4 Cuenta Corriente Proveedores
+
+| # | Paso | Esperado |
+|---|------|----------|
+| 1 | Registrar compra en cuenta corriente o pago a proveedor | Movimiento en CC |
+| 2 | Informes → **Cuenta Corriente Proveedores** + fechas → Generar | Movimientos con proveedor, monto y saldo histórico |
+| 3 | Exportar CSV | Archivo descargable |
+
+### Checklist Sprint 3
+
+- [ ] Valorización con totales
+- [ ] Ventas por vendedor en período
+- [ ] Faltantes en pedidos pendientes/confirmados
+- [ ] Movimientos CC proveedores
+- [ ] Export CSV en los 4 informes nuevos
+- [ ] Sin regresión en los 5 informes originales
 
 ---
 

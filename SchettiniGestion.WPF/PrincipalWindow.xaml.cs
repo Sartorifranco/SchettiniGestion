@@ -211,6 +211,9 @@ namespace SchettiniGestion.WPF
                 btnListasPrecios.Visibility     = PuedeModulo(DatabaseService.PERMISO_LISTASPRECIOS) ? Visibility.Visible : Visibility.Collapsed;
                 btnClientes.Visibility          = PuedeModulo(DatabaseService.PERMISO_CLIENTES) ? Visibility.Visible : Visibility.Collapsed;
                 btnCaja.Visibility              = PuedeModulo(DatabaseService.PERMISO_CAJA)   ? Visibility.Visible : Visibility.Collapsed;
+                if (btnEstadisticas != null)
+                    btnEstadisticas.Visibility = (PuedeModulo(DatabaseService.PERMISO_VENTAS) || PuedeModulo(DatabaseService.PERMISO_FACTURACION))
+                        ? Visibility.Visible : Visibility.Collapsed;
                 btnUsuariosPermisos.Visibility  = PuedeModulo(DatabaseService.PERMISO_USUARIOS) ? Visibility.Visible : Visibility.Collapsed;
                 btnConfiguracion.Visibility     = PuedeModulo(DatabaseService.PERMISO_CONFIGURACION) ? Visibility.Visible : Visibility.Collapsed;
 
@@ -229,6 +232,7 @@ namespace SchettiniGestion.WPF
             if (btnListasPrecios != null) btnListasPrecios.Visibility = Visibility.Collapsed;
             if (btnClientes != null) btnClientes.Visibility = Visibility.Collapsed;
             if (btnCaja != null) btnCaja.Visibility = Visibility.Collapsed;
+            if (btnEstadisticas != null) btnEstadisticas.Visibility = Visibility.Collapsed;
             if (btnUsuariosPermisos != null) btnUsuariosPermisos.Visibility = Visibility.Collapsed;
             if (btnConfiguracion != null) btnConfiguracion.Visibility = Visibility.Collapsed;
         }
@@ -266,7 +270,7 @@ namespace SchettiniGestion.WPF
 
         private void btnInicio_Click(object sender, RoutedEventArgs e)
         {
-            SetModuloActivo(null);
+            SetModuloActivo(btnInicio);
             mainContentArea.Content = new InicioControl();
         }
 
@@ -374,6 +378,17 @@ namespace SchettiniGestion.WPF
             mainContentArea.Content = new ReportesControl();
         }
 
+        private void btnEstadisticas_Click(object sender, RoutedEventArgs e)
+        {
+            if (!PuedeModulo(DatabaseService.PERMISO_VENTAS) && !PuedeModulo(DatabaseService.PERMISO_FACTURACION))
+            {
+                MensajeSinPermiso();
+                return;
+            }
+            SetModuloActivo(btnEstadisticas);
+            mainContentArea.Content = new EstadisticasControl();
+        }
+
         private static void MensajeSinPermiso()
         {
             MessageBox.Show("No tiene permiso para acceder a este módulo.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -466,12 +481,14 @@ namespace SchettiniGestion.WPF
 
         private void InicializarMenuLateral()
         {
+            RegistrarTextoNav(btnInicio);
             RegistrarTextoNav(btnVentasFacturacion);
             RegistrarTextoNav(btnProductos);
             RegistrarTextoNav(btnGestionStock);
             RegistrarTextoNav(btnListasPrecios);
             RegistrarTextoNav(btnClientes);
             RegistrarTextoNav(btnCaja);
+            RegistrarTextoNav(btnEstadisticas);
             RegistrarTextoNav(btnUsuariosPermisos);
             RegistrarTextoNav(btnConfiguracion);
             RegistrarTextoNav(btnCerrarSesion);
@@ -537,7 +554,6 @@ namespace SchettiniGestion.WPF
 
             var visTitulos = colapsado ? Visibility.Collapsed : Visibility.Visible;
             if (txtMenuTitulo != null) txtMenuTitulo.Visibility = visTitulos;
-            if (txtVersionLite != null) txtVersionLite.Visibility = visTitulos;
             if (txtVersionFooter != null) txtVersionFooter.Visibility = visTitulos;
             if (pnlLogoMenu != null) pnlLogoMenu.Visibility = colapsado ? Visibility.Collapsed : Visibility.Visible;
 

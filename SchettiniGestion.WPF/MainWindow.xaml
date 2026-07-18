@@ -207,7 +207,7 @@
                                Foreground="{DynamicResource TextPrimary}"
                                FontSize="15"
                                FontWeight="SemiBold"/>
-                    <TextBlock Text="Versión Lite · Acceso"
+                    <TextBlock Text="Acceso"
                                Foreground="{DynamicResource TextSecondary}"
                                FontSize="11"
                                Margin="0,2,0,0"/>

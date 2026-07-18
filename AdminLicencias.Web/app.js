@@ -151,6 +151,7 @@ async function apiFetch(path, options = {}) {
   }
 
   if (!response.ok) {
+    console.error("[SCHPOS API]", path, response.status, text);
     const msg = payload?.error
       || payload?.detail
       || payload?.title

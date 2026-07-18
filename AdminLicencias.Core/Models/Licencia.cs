@@ -39,6 +39,7 @@ public class Licencia
     public Guid? LicenciaAnteriorId { get; set; }
     public string Plan { get; set; } = "lite";
 
+    [JsonIgnore]
     public EstadoLicencia Estado
     {
         get
@@ -49,7 +50,9 @@ public class Licencia
         }
     }
 
+    [JsonIgnore]
     public int DiasRestantes => (int)(FechaVencimiento - DateTime.Today).TotalDays;
 
+    [JsonIgnore]
     public string ModulosResumen => ModulosCatalog.ObtenerResumenModulos(Modulos);
 }

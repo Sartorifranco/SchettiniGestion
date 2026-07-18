@@ -9,6 +9,7 @@ using AdminLicencias.Core.Models;
 using AdminLicencias.Core.Options;
 using AdminLicencias.Core.Services;
 using Microsoft.AspNetCore.HttpOverrides;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,34 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 app.UseCors("LicensePanel");
+
+// Siempre devolver JSON con el mensaje real (evita "HTTP 500" vacío en el panel).
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        if (context.Response.HasStarted)
+            throw;
+
+        var logger = context.RequestServices.GetService<ILoggerFactory>()
+            ?.CreateLogger("UnhandledException");
+        logger?.LogError(ex, "Error no controlado en {Method} {Path}", context.Request.Method, context.Request.Path);
+
+        context.Response.Clear();
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json; charset=utf-8";
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = ex.Message,
+            type = ex.GetType().Name
+        });
+    }
+});
+
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseMiddleware<AuditMiddleware>();
 app.UseDefaultFiles();
@@ -44,10 +73,16 @@ app.UseStaticFiles();
 app.MapGet("/panel", () => Results.Redirect("/", permanent: true));
 app.MapGet("/panel/{*path}", (string path) => Results.Redirect("/" + path, permanent: true));
 
+string buildId = Assembly.GetExecutingAssembly()
+    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+    ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString()
+    ?? "unknown";
+
 app.MapGet("/api", () => Results.Ok(new
 {
     servicio = "SCHPOS License API",
-    version = "1.0",
+    version = "1.1",
+    build = buildId,
     endpoints = new[]
     {
         "POST /api/licenses/generate", "POST /api/licenses/validate", "GET /api/licenses/history",
@@ -56,6 +91,39 @@ app.MapGet("/api", () => Results.Ok(new
         "GET /api/licenses/audit"
     }
 }));
+
+app.MapGet("/api/version", (DataStore dataStore) =>
+{
+    string dataPath = dataStore.RutaActual;
+    string? dataDir = Path.GetDirectoryName(dataPath);
+    return Results.Ok(new
+    {
+        version = "1.1",
+        build = buildId,
+        environment = app.Environment.EnvironmentName,
+        dataFile = dataPath,
+        dataFileExists = File.Exists(dataPath),
+        dataDirWritable = dataDir != null && IsDirWritable(dataDir),
+        utc = DateTime.UtcNow
+    });
+});
+
+static bool IsDirWritable(string dir)
+{
+    try
+    {
+        if (!Directory.Exists(dir))
+            return false;
+        string probe = Path.Combine(dir, $".write-test-{Guid.NewGuid():N}");
+        File.WriteAllText(probe, "ok");
+        File.Delete(probe);
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
+}
 
 var licenses = app.MapGroup("/api/licenses");
 

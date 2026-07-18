@@ -192,6 +192,10 @@
                                 Content="🏷️  Listas de precios"
                                 Style="{StaticResource LiteNavButton}"
                                 Click="btnListasPrecios_Click"/>
+                        <Button x:Name="btnPromociones"
+                                Content="🎯  Promociones"
+                                Style="{StaticResource LiteNavButton}"
+                                Click="btnPromociones_Click"/>
                         <Button x:Name="btnClientes"
                                 Content="👥  Clientes"
                                 Style="{StaticResource LiteNavButton}"

@@ -708,6 +708,20 @@ namespace SchettiniGestion.WPF
                           Porcentaje DECIMAL(18,2)
                       );",
 
+                    @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Promociones')
+                      CREATE TABLE Promociones (
+                          PromoID INT PRIMARY KEY IDENTITY(1,1),
+                          Nombre NVARCHAR(120) NOT NULL,
+                          Tipo NVARCHAR(30) NOT NULL,
+                          ProductoID INT NULL,
+                          Categoria NVARCHAR(100) NULL,
+                          Porcentaje DECIMAL(9,4) NOT NULL DEFAULT 0,
+                          FechaDesde DATE NULL,
+                          FechaHasta DATE NULL,
+                          Activo BIT NOT NULL DEFAULT 1,
+                          Observaciones NVARCHAR(250) NULL
+                      );",
+
                     // Datos iniciales: Roles (si la tabla está vacía)
                     @"IF NOT EXISTS (SELECT 1 FROM Roles)
                       INSERT INTO Roles (NombreRol) VALUES ('Administrador'),('Vendedor'),('Encargado / Supervisor'),('Cajero');",

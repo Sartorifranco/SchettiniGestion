@@ -388,6 +388,9 @@
     <Compile Include="PreciosControl.xaml.cs">
       <DependentUpon>PreciosControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="PromocionesControl.xaml.cs">
+      <DependentUpon>PromocionesControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="PresupuestosControl.xaml.cs">
       <DependentUpon>PresupuestosControl.xaml</DependentUpon>
     </Compile>
@@ -615,6 +618,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="PreciosControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PromocionesControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

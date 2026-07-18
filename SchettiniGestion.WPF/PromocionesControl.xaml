@@ -1,0 +1,138 @@
+<UserControl x:Class="SchettiniGestion.WPF.PromocionesControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             mc:Ignorable="d"
+             d:DesignHeight="640" d:DesignWidth="1000"
+             Background="{DynamicResource ModuleBackgroundBrush}"
+             Loaded="UserControl_Loaded">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="Promociones" FontSize="24" FontWeight="Bold"
+                       Foreground="{DynamicResource HeaderForegroundBrush}"/>
+            <TextBlock Text="Descuentos que se aplican solos en la caja cuando cargás el producto. Ej: 20% en remeras, 10% en todo el local, etc."
+                       FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"
+                       Foreground="{DynamicResource TextSecondary}"/>
+        </StackPanel>
+
+        <Border Grid.Row="1" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" Margin="0,0,0,16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,12,12">
+                    <TextBlock Text="Nombre (cómo la vas a reconocer):" Style="{StaticResource ModuleLabelStyle}"/>
+                    <TextBox x:Name="txtNombre" Style="{StaticResource ModuleTextBoxStyle}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,12,12">
+                    <TextBlock Text="¿A qué aplica?" Style="{StaticResource ModuleLabelStyle}"/>
+                    <ComboBox x:Name="cmbTipo" Style="{StaticResource ModuleComboBoxStyle}"
+                              SelectionChanged="cmbTipo_SelectionChanged">
+                        <ComboBoxItem Content="Un producto" Tag="PCT_PRODUCTO" IsSelected="True"/>
+                        <ComboBoxItem Content="Una categoría" Tag="PCT_CATEGORIA"/>
+                        <ComboBoxItem Content="Todo el local" Tag="PCT_TODOS"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,12,12">
+                    <TextBlock Text="% de descuento:" Style="{StaticResource ModuleLabelStyle}"/>
+                    <xctk:DecimalUpDown x:Name="numPorcentaje" Style="{StaticResource ModuleNumericUpDownStyle}"
+                                        Value="10" Minimum="1" Maximum="100"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="0" Grid.Column="3" VerticalAlignment="Bottom" Orientation="Horizontal" Margin="0,0,0,12">
+                    <Button x:Name="btnNuevo" Content="Nuevo" Style="{StaticResource ActionButtonStyle}" Width="90" Click="btnNuevo_Click" Margin="0,0,10,0"/>
+                    <Button x:Name="btnGuardar" Content="Guardar" Style="{StaticResource SuccessButtonStyle}" Width="90" Click="btnGuardar_Click"/>
+                </StackPanel>
+
+                <StackPanel x:Name="pnlProducto" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,12,12">
+                    <TextBlock Text="Producto:" Style="{StaticResource ModuleLabelStyle}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="txtBuscarProducto" Style="{StaticResource ModuleTextBoxStyle}"
+                                 Grid.Column="0" Margin="0,0,8,0"
+                                 ToolTip="Código o nombre del producto"/>
+                        <Button Grid.Column="1" Content="Buscar" Width="80"
+                                Style="{StaticResource ActionButtonStyle}" Click="btnBuscarProducto_Click"/>
+                    </Grid>
+                    <ComboBox x:Name="cmbProducto" Style="{StaticResource ModuleComboBoxStyle}" Margin="0,8,0,0"
+                              DisplayMemberPath="Descripcion" SelectedValuePath="ProductoID"/>
+                    <TextBlock x:Name="lblProductoElegido" FontSize="11" Margin="0,4,0,0"
+                               Foreground="{DynamicResource TextSecondary}" Text=""/>
+                </StackPanel>
+
+                <StackPanel x:Name="pnlCategoria" Grid.Row="1" Grid.Column="0" Margin="0,0,12,12" Visibility="Collapsed">
+                    <TextBlock Text="Categoría:" Style="{StaticResource ModuleLabelStyle}"/>
+                    <ComboBox x:Name="cmbCategoria" Style="{StaticResource ModuleComboBoxStyle}"
+                              DisplayMemberPath="Nombre" SelectedValuePath="Nombre"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,12,12">
+                    <TextBlock Text="Vigencia (opcional):" Style="{StaticResource ModuleLabelStyle}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <DatePicker x:Name="dpDesde" Grid.Column="0" Margin="0,0,6,0"/>
+                        <DatePicker x:Name="dpHasta" Grid.Column="1"/>
+                    </Grid>
+                    <TextBlock Text="Si no ponés fechas, vale siempre (mientras esté activa)."
+                               FontSize="11" Foreground="#888" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Grid.Column="3" VerticalAlignment="Top" Margin="0,0,0,12">
+                    <CheckBox x:Name="chkActiva" Content="Promo activa" IsChecked="True" Margin="0,22,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4">
+                    <TextBlock Text="Nota interna (opcional):" Style="{StaticResource ModuleLabelStyle}"/>
+                    <TextBox x:Name="txtObs" Style="{StaticResource ModuleTextBoxStyle}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <DataGrid x:Name="dgvPromos" Grid.Row="2" Style="{StaticResource ModuleDataGridStyle}"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  SelectionChanged="dgvPromos_SelectionChanged">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="*" MinWidth="140"/>
+                <DataGridTextColumn Header="Aplica a" Binding="{Binding TipoEtiqueta}" Width="110"/>
+                <DataGridTextColumn Header="Detalle" Binding="{Binding AlcanceDetalle}" Width="160"/>
+                <DataGridTextColumn Header="%" Binding="{Binding Porcentaje, StringFormat=N0}" Width="50"/>
+                <DataGridTextColumn Header="Desde" Binding="{Binding FechaDesde, StringFormat=dd/MM/yyyy}" Width="90"/>
+                <DataGridTextColumn Header="Hasta" Binding="{Binding FechaHasta, StringFormat=dd/MM/yyyy}" Width="90"/>
+                <DataGridTextColumn Header="Activa" Binding="{Binding ActivoEtiqueta}" Width="60"/>
+                <DataGridTemplateColumn Width="70">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="🗑" Style="{StaticResource DeleteButtonStyle}" Padding="5" Click="btnEliminar_Click"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

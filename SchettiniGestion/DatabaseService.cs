@@ -504,7 +504,20 @@ IF NOT EXISTS (SELECT 1 FROM Roles WHERE NombreRol = N'Cajero') INSERT INTO Role
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturaDetalle' AND COLUMN_NAME='DescuentoPorcentaje')
   ALTER TABLE FacturaDetalle ADD DescuentoPorcentaje DECIMAL(9,4) NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturaDetalle' AND COLUMN_NAME='RecargoPorcentaje')
-  ALTER TABLE FacturaDetalle ADD RecargoPorcentaje DECIMAL(9,4) NOT NULL DEFAULT 0;", c))
+  ALTER TABLE FacturaDetalle ADD RecargoPorcentaje DECIMAL(9,4) NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Promociones')
+  CREATE TABLE dbo.Promociones (
+    PromoID INT IDENTITY(1,1) PRIMARY KEY,
+    Nombre NVARCHAR(120) NOT NULL,
+    Tipo NVARCHAR(30) NOT NULL,
+    ProductoID INT NULL,
+    Categoria NVARCHAR(100) NULL,
+    Porcentaje DECIMAL(9,4) NOT NULL DEFAULT 0,
+    FechaDesde DATE NULL,
+    FechaHasta DATE NULL,
+    Activo BIT NOT NULL DEFAULT 1,
+    Observaciones NVARCHAR(250) NULL
+  );", c))
                         cmd.ExecuteNonQuery();
                     _columnasMigracionLiteOk = true;
                 }

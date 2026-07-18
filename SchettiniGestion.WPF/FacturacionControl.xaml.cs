@@ -904,6 +904,11 @@ namespace SchettiniGestion.WPF
                 : Convert.ToDecimal(_productoSeleccionado["PrecioVenta"]);
             string imgPath = _productoSeleccionado.Table.Columns.Contains("ImagenPath") ? _productoSeleccionado["ImagenPath"].ToString() : null;
 
+            string categoria = _productoSeleccionado.Table.Columns.Contains("Categoria")
+                ? (_productoSeleccionado["Categoria"]?.ToString() ?? "")
+                : "";
+            var promo = DatabaseService.ObtenerPromoVigenteParaProducto(id, categoria);
+
             var item = CarritoDeVenta.FirstOrDefault(x => x.ProductoID == id);
             if (item != null) item.Cantidad += cant;
             else
@@ -916,6 +921,7 @@ namespace SchettiniGestion.WPF
                     Descripcion = _productoSeleccionado["Descripcion"].ToString(),
                     Cantidad = cant,
                     PrecioUnitario = precioFinal,
+                    DescuentoPorcentaje = promo != null && promo.Porcentaje > 0 ? promo.Porcentaje : 0,
                     AlicuotaIvaPct = alicuota,
                     ImagenPath = imgPath,
                     PermiteModificarPrecioVenta = LeerPermiteModificarPrecioVenta(_productoSeleccionado)

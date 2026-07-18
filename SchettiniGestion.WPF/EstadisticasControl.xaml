@@ -49,51 +49,112 @@
                         Click="btnGenerar_Click"/>
             </Grid>
 
-            <UniformGrid Columns="3" Margin="0,0,0,18">
+            <UniformGrid Columns="3" Margin="0,0,0,10">
                 <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,10,0">
+                        BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,10,10">
                     <StackPanel>
-                        <TextBlock Text="Total vendido" Foreground="{DynamicResource TextSecondary}" FontSize="13"/>
+                        <TextBlock Text="Total vendido" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
                         <TextBlock x:Name="lblTotalVendido" Text="$ 0,00"
                                    Foreground="{StaticResource SuccessColor}"
-                                   FontSize="28" FontWeight="Bold" Margin="0,6,0,0"/>
+                                   FontSize="24" FontWeight="Bold" Margin="0,4,0,0"/>
+                        <TextBlock x:Name="lblVsPeriodo" Text="vs período anterior: —" FontSize="11"
+                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
                 <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="8" Padding="18" Margin="0,0,10,0">
+                        BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,10,10">
                     <StackPanel>
-                        <TextBlock Text="Comprobantes" Foreground="{DynamicResource TextSecondary}" FontSize="13"/>
+                        <TextBlock Text="Comprobantes" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
                         <TextBlock x:Name="lblCantidad" Text="0"
                                    Foreground="{DynamicResource TextPrimary}"
-                                   FontSize="28" FontWeight="Bold" Margin="0,6,0,0"/>
+                                   FontSize="24" FontWeight="Bold" Margin="0,4,0,0"/>
+                        <TextBlock Text="Cantidad de tickets/facturas" FontSize="11"
+                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
                 <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="8" Padding="18">
+                        BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,10">
                     <StackPanel>
-                        <TextBlock Text="Ticket promedio" Foreground="{DynamicResource TextSecondary}" FontSize="13"/>
+                        <TextBlock Text="Ticket promedio" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
                         <TextBlock x:Name="lblTicketPromedio" Text="$ 0,00"
                                    Foreground="{DynamicResource TextPrimary}"
-                                   FontSize="28" FontWeight="Bold" Margin="0,6,0,0"/>
+                                   FontSize="24" FontWeight="Bold" Margin="0,4,0,0"/>
+                        <TextBlock Text="Clave para subir el ticket" FontSize="11"
+                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                        BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,10,10">
+                    <StackPanel>
+                        <TextBlock Text="Ganancia estimada" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
+                        <TextBlock x:Name="lblMargen" Text="$ 0,00"
+                                   Foreground="#3B82F6"
+                                   FontSize="24" FontWeight="Bold" Margin="0,4,0,0"/>
+                        <TextBlock x:Name="lblMargenPct" Text="Margen —%" FontSize="11"
+                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                        BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,10,10">
+                    <StackPanel>
+                        <TextBlock Text="Stock en alerta" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
+                        <TextBlock x:Name="lblStockBajo" Text="0"
+                                   Foreground="{StaticResource DangerColor}"
+                                   FontSize="24" FontWeight="Bold" Margin="0,4,0,0"/>
+                        <TextBlock Text="Productos en/bajo mínimo" FontSize="11"
+                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                        BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Período anterior" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
+                        <TextBlock x:Name="lblPeriodoAnterior" Text="$ 0,00"
+                                   Foreground="{DynamicResource TextPrimary}"
+                                   FontSize="24" FontWeight="Bold" Margin="0,4,0,0"/>
+                        <TextBlock Text="Misma duración hacia atrás" FontSize="11"
+                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
             </UniformGrid>
 
-            <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                    BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,14" MinHeight="280">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Text="Ventas por día" FontSize="16" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
-                    <lvc:CartesianChart x:Name="chartVentasDia" Grid.Row="1" LegendLocation="None" Hoverable="True"/>
-                    <TextBlock x:Name="lblSinVentasDia" Grid.Row="1" Text="Sin ventas en el período"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"
-                               Foreground="{DynamicResource TextSecondary}" Visibility="Collapsed"/>
-                </Grid>
-            </Border>
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.4*"/>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                        BorderThickness="1" CornerRadius="8" Padding="16" MinHeight="280">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Ventas por día (tendencia)" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
+                        <lvc:CartesianChart x:Name="chartVentasDia" Grid.Row="1" LegendLocation="None" Hoverable="True"/>
+                        <TextBlock x:Name="lblSinVentasDia" Grid.Row="1" Text="Sin ventas en el período"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextSecondary}" Visibility="Collapsed"/>
+                    </Grid>
+                </Border>
+                <Border Grid.Column="2" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                        BorderThickness="1" CornerRadius="8" Padding="16" MinHeight="280">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Horarios pico" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
+                        <lvc:CartesianChart x:Name="chartVentasHora" Grid.Row="1" LegendLocation="None" Hoverable="True"/>
+                        <TextBlock x:Name="lblSinHoras" Grid.Row="1" Text="Sin datos por hora"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextSecondary}" Visibility="Collapsed"/>
+                    </Grid>
+                </Border>
+            </Grid>
 
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -110,7 +171,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Top 10 productos" FontSize="16" FontWeight="SemiBold"
+                        <TextBlock Text="Top 10 por facturación ($)" FontSize="16" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                         <lvc:CartesianChart x:Name="chartTopProductos" Grid.Row="1" LegendLocation="None" Hoverable="True"/>
                         <TextBlock x:Name="lblSinTop" Grid.Row="1" Text="Sin productos vendidos"
@@ -127,16 +188,108 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Por medio de pago" FontSize="16" FontWeight="SemiBold"
+                        <TextBlock Text="Top 10 por ganancia ($)" FontSize="16" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
-                        <lvc:PieChart x:Name="chartMediosPago" Grid.Row="1"
-                                      LegendLocation="Right" InnerRadius="50" Hoverable="True"/>
-                        <TextBlock x:Name="lblSinMedios" Grid.Row="1" Text="Sin cobros en el período"
+                        <lvc:CartesianChart x:Name="chartTopMargen" Grid.Row="1" LegendLocation="None" Hoverable="True"/>
+                        <TextBlock x:Name="lblSinMargen" Grid.Row="1" Text="Sin datos de margen"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Foreground="{DynamicResource TextSecondary}" Visibility="Collapsed"/>
                     </Grid>
                 </Border>
             </Grid>
+
+            <Grid Margin="0,14,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="280"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Background="{DynamicResource SurfaceDark}"
+                        BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
+                        CornerRadius="8" Padding="16" MinHeight="300">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="¿Qué productos te dejan la plata?" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}"/>
+                        <TextBlock Grid.Row="1" x:Name="lblAbcResumen" Margin="0,6,0,10" FontSize="12"
+                                   TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}"
+                                   Text="Estrella = los que más venden (aprox. 8 de cada 10 pesos). Importante = el medio. Resto = venden poco; revisá si conviene tenerlos."/>
+                        <DataGrid x:Name="dgvAbc" Grid.Row="2"
+                                  Style="{StaticResource ModuleDataGridStyle}"
+                                  AutoGenerateColumns="False" IsReadOnly="True"
+                                  CanUserAddRows="False" HeadersVisibility="Column" BorderThickness="0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Tipo" Binding="{Binding TipoComercial}" Width="90"/>
+                                <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" Width="*"/>
+                                <DataGridTextColumn Header="Vendiste" Binding="{Binding TotalVendido, StringFormat=C0}" Width="90"/>
+                                <DataGridTextColumn Header="Ganancia" Binding="{Binding Margen, StringFormat=C0}" Width="85"/>
+                                <DataGridTextColumn Header="Llevás del total" Binding="{Binding PctAcumulado, StringFormat={}{0:N0}%}" Width="110"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="2" Background="{DynamicResource SurfaceDark}"
+                        BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
+                        CornerRadius="8" Padding="16" MinHeight="300">
+                    <StackPanel>
+                        <TextBlock Text="Por medio de pago" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
+                        <lvc:PieChart x:Name="chartMediosPago" Height="240"
+                                      LegendLocation="Bottom" InnerRadius="45" Hoverable="True"/>
+                        <TextBlock x:Name="lblSinMedios" Text="Sin cobros en el período"
+                                   HorizontalAlignment="Center" Margin="0,20,0,0"
+                                   Foreground="{DynamicResource TextSecondary}" Visibility="Collapsed"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Productos muertos -->
+            <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                    BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,14,0,0" MinHeight="280">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <TextBlock Text="Productos sin movimiento (con stock)" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="30 días" Tag="30" Click="btnMuertos_Click"
+                                    Style="{StaticResource SecondaryButtonStyle}" MinHeight="36" Margin="0,0,6,0" Padding="12,0"/>
+                            <Button Content="60 días" Tag="60" Click="btnMuertos_Click"
+                                    Style="{StaticResource SecondaryButtonStyle}" MinHeight="36" Margin="0,0,6,0" Padding="12,0"/>
+                            <Button Content="90 días" Tag="90" Click="btnMuertos_Click"
+                                    Style="{StaticResource SecondaryButtonStyle}" MinHeight="36" Padding="12,0"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Grid.Row="1" x:Name="lblMuertosResumen" Margin="0,8,0,10" FontSize="12"
+                               Foreground="{DynamicResource TextSecondary}"
+                               Text="Candidatos a liquidar o dejar de reponer. Capital = stock × costo."/>
+                    <DataGrid x:Name="dgvMuertos" Grid.Row="2"
+                              Style="{StaticResource ModuleDataGridStyle}"
+                              AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" HeadersVisibility="Column" BorderThickness="0">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="90"/>
+                            <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" Width="*"/>
+                            <DataGridTextColumn Header="Stock" Binding="{Binding StockActual}" Width="60"/>
+                            <DataGridTextColumn Header="Capital $" Binding="{Binding CapitalInmovilizado, StringFormat=C0}" Width="100"/>
+                            <DataGridTextColumn Header="Última venta" Binding="{Binding UltimaVenta, StringFormat=dd/MM/yyyy}" Width="100"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock x:Name="lblSinMuertos" Grid.Row="2" Text="Ningún producto con stock sin ventas en el período"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextSecondary}" Visibility="Collapsed"/>
+                </Grid>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

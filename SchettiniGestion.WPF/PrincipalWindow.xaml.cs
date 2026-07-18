@@ -209,6 +209,8 @@ namespace SchettiniGestion.WPF
                 btnProductos.Visibility         = PuedeModulo(DatabaseService.PERMISO_PRODUCTOS) ? Visibility.Visible : Visibility.Collapsed;
                 btnGestionStock.Visibility      = PuedeModulo(DatabaseService.PERMISO_STOCK)  ? Visibility.Visible : Visibility.Collapsed;
                 btnListasPrecios.Visibility     = PuedeModulo(DatabaseService.PERMISO_LISTASPRECIOS) ? Visibility.Visible : Visibility.Collapsed;
+                if (btnPromociones != null)
+                    btnPromociones.Visibility = PuedeModulo(DatabaseService.PERMISO_PRODUCTOS) ? Visibility.Visible : Visibility.Collapsed;
                 btnClientes.Visibility          = PuedeModulo(DatabaseService.PERMISO_CLIENTES) ? Visibility.Visible : Visibility.Collapsed;
                 btnCaja.Visibility              = PuedeModulo(DatabaseService.PERMISO_CAJA)   ? Visibility.Visible : Visibility.Collapsed;
                 if (btnEstadisticas != null)
@@ -230,6 +232,7 @@ namespace SchettiniGestion.WPF
             if (btnProductos != null) btnProductos.Visibility = Visibility.Collapsed;
             if (btnGestionStock != null) btnGestionStock.Visibility = Visibility.Collapsed;
             if (btnListasPrecios != null) btnListasPrecios.Visibility = Visibility.Collapsed;
+            if (btnPromociones != null) btnPromociones.Visibility = Visibility.Collapsed;
             if (btnClientes != null) btnClientes.Visibility = Visibility.Collapsed;
             if (btnCaja != null) btnCaja.Visibility = Visibility.Collapsed;
             if (btnEstadisticas != null) btnEstadisticas.Visibility = Visibility.Collapsed;
@@ -350,6 +353,13 @@ namespace SchettiniGestion.WPF
             if (!PuedeModulo(DatabaseService.PERMISO_LISTASPRECIOS)) { MensajeSinPermiso(); return; }
             SetModuloActivo(btnListasPrecios);
             mainContentArea.Content = new ListasPreciosControl();
+        }
+
+        private void btnPromociones_Click(object sender, RoutedEventArgs e)
+        {
+            if (!PuedeModulo(DatabaseService.PERMISO_PRODUCTOS)) { MensajeSinPermiso(); return; }
+            SetModuloActivo(btnPromociones);
+            mainContentArea.Content = new PromocionesControl();
         }
 
         private void btnPreciosActualizar_Click(object sender, RoutedEventArgs e)

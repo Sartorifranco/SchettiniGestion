@@ -2506,7 +2506,9 @@ CostoIncluyeIva=@cii, FechaModificacion=GETDATE() WHERE ProductoID=@id", conexio
                 {
                     c.Open();
                     var dt = new DataTable();
-                    using (var cmd = new SqlCommand("SELECT TOP 1 * FROM Productos WHERE (Codigo = @q OR CodigoBarra = @q) AND StockActual > 0", c))
+                    // Sin filtrar stock: el lector debe encontrar el producto aunque el stock esté en 0
+                    // (la validación de stock ocurre al confirmar la venta).
+                    using (var cmd = new SqlCommand("SELECT TOP 1 * FROM Productos WHERE (Codigo = @q OR CodigoBarra = @q)", c))
                     {
                         cmd.Parameters.AddWithValue("@q", q);
                         new SqlDataAdapter(cmd).Fill(dt);

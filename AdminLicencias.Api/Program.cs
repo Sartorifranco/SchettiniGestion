@@ -331,6 +331,7 @@ licenses.MapGet("/modules", () =>
             m.Grupo,
             m.IncluidoEnLite,
             m.EsAbonoMensual,
+            m.Descripcion,
             m.Orden
         }));
 });

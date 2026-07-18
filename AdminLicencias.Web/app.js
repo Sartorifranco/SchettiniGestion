@@ -249,11 +249,14 @@ function renderModulosPanel() {
     for (const mod of mods) {
       const col = document.createElement("div");
       col.className = "col-md-6";
+      const titulo = mod.esAbonoMensual ? `${mod.nombre} (abono)` : mod.nombre;
+      const desc = (mod.descripcion || "").trim();
       col.innerHTML = `
         <div class="form-check">
           <input class="form-check-input modulo-check" type="checkbox" value="${escapeHtml(mod.codigo)}" id="mod_${escapeHtml(mod.codigo)}">
           <label class="form-check-label" for="mod_${escapeHtml(mod.codigo)}">
-            ${escapeHtml(mod.esAbonoMensual ? `${mod.nombre} (abono)` : mod.nombre)}
+            ${escapeHtml(titulo)}
+            ${desc ? `<div class="small text-secondary mt-1">${escapeHtml(desc)}</div>` : ""}
           </label>
         </div>`;
       row.appendChild(col);

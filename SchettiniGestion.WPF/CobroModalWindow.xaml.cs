@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Data;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using SchettiniGestion;
@@ -56,21 +57,20 @@ namespace SchettiniGestion.WPF
             dgvCobranzas.ItemsSource = _cobros;
             _cobros.CollectionChanged += (s, ev) => ActualizarResumen();
 
-            CargarMediosPago();
+            var medios = CargarMediosPago();
             ActualizarResumen();
             AplicarVisibilidadMercadoPago();
+            ConstruirBotonesCobroRapido(medios);
 
             txtMonto.Text = _total.ToString("N2");
-            txtMonto.SelectAll();
-            txtMonto.Focus();
         }
 
-        private void CargarMediosPago()
+        private List<MedioPagoOpcion> CargarMediosPago()
         {
+            var lista = new List<MedioPagoOpcion>();
             try
             {
                 var dt = DatabaseService.GetMediosPagoCompleto();
-                var lista = new List<MedioPagoOpcion>();
                 foreach (DataRow row in dt.Rows)
                 {
                     if (row["Activo"] != DBNull.Value && Convert.ToBoolean(row["Activo"]))
@@ -84,44 +84,92 @@ namespace SchettiniGestion.WPF
                 }
 
                 if (lista.Count == 0)
-                {
                     lista = CrearMediosFallback();
-                    _usandoFallback = true;
-                }
 
                 cmbMediosPago.ItemsSource = lista;
-                cmbMediosPago.SelectedIndex = 0;
+                PreferirEfectivo(lista);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("[CobroModal] Error cargando medios de pago: " + ex.Message);
-                cmbMediosPago.ItemsSource = CrearMediosFallback();
+                lista = CrearMediosFallback();
+                cmbMediosPago.ItemsSource = lista;
                 cmbMediosPago.SelectedIndex = 0;
-                _usandoFallback = true;
             }
 
-            if (_usandoFallback)
+            return lista;
+        }
+
+        private void PreferirEfectivo(List<MedioPagoOpcion> lista)
+        {
+            int idx = lista.FindIndex(m => (m.Nombre ?? "").IndexOf("efectivo", StringComparison.OrdinalIgnoreCase) >= 0);
+            cmbMediosPago.SelectedIndex = idx >= 0 ? idx : 0;
+        }
+
+        private void ConstruirBotonesCobroRapido(List<MedioPagoOpcion> medios)
+        {
+            panelCobroRapido.Children.Clear();
+            if (medios == null || medios.Count == 0) return;
+
+            // Priorizar Efectivo / Tarjeta / Transferencia al frente
+            var ordenados = medios
+                .OrderBy(m => PrioridadMedio(m.Nombre))
+                .ThenBy(m => m.Nombre)
+                .Take(6)
+                .ToList();
+
+            foreach (var medio in ordenados)
             {
-                // Los IDs del fallback podrían no coincidir con los de la BD.
-                // Avisamos al operador para que configure los medios de pago.
-                var aviso = new System.Windows.Controls.TextBlock
+                var btn = new Button
                 {
-                    Text = "⚠️ Los medios de pago no pudieron cargarse desde la base de datos. Configure los medios en Configuración.",
-                    Foreground = System.Windows.Media.Brushes.OrangeRed,
-                    FontSize = 12,
-                    TextWrapping = System.Windows.TextWrapping.Wrap,
-                    Margin = new System.Windows.Thickness(0, 4, 0, 0)
+                    Content = medio.Nombre,
+                    Tag = medio,
+                    MinWidth = 150,
+                    MinHeight = 56,
+                    Margin = new Thickness(0, 0, 8, 8),
+                    FontSize = 15,
+                    FontWeight = FontWeights.SemiBold,
+                    Cursor = Cursors.Hand,
+                    Style = TryFindResource("ButtonStyle") as Style
                 };
-                // Insertar aviso justo encima del combo si el panel padre lo permite
-                if (cmbMediosPago.Parent is System.Windows.Controls.Panel panel)
+                if (EsEfectivo(medio.Nombre))
+                    btn.Background = TryFindResource("SuccessColor") as Brush ?? btn.Background;
+                btn.Click += (s, e) =>
                 {
-                    int idx = panel.Children.IndexOf(cmbMediosPago);
-                    if (idx >= 0) panel.Children.Insert(idx, aviso);
-                }
+                    if (s is Button b && b.Tag is MedioPagoOpcion m)
+                        CobrarRapidoYCerrar(m);
+                };
+                panelCobroRapido.Children.Add(btn);
             }
         }
 
-        private bool _usandoFallback = false;
+        private static int PrioridadMedio(string nombre)
+        {
+            string n = (nombre ?? "").ToLowerInvariant();
+            if (n.Contains("efectivo")) return 0;
+            if (n.Contains("tarjeta") || n.Contains("débito") || n.Contains("debito") || n.Contains("crédito") || n.Contains("credito")) return 1;
+            if (n.Contains("transfer")) return 2;
+            return 10;
+        }
+
+        private static bool EsEfectivo(string nombre) =>
+            (nombre ?? "").IndexOf("efectivo", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        private void CobrarRapidoYCerrar(MedioPagoOpcion medio)
+        {
+            if (medio == null || _total <= 0) return;
+            Cobranzas = new List<CobranzaItem>
+            {
+                new CobranzaItem
+                {
+                    MedioPagoID = medio.MedioID,
+                    nombreMedio = medio.Nombre,
+                    monto = _total
+                }
+            };
+            DialogResult = true;
+            Close();
+        }
 
         private static List<MedioPagoOpcion> CrearMediosFallback()
         {
@@ -133,7 +181,7 @@ namespace SchettiniGestion.WPF
             };
         }
 
-        private void cmbMediosPago_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void cmbMediosPago_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (txtMonto == null) return;
             decimal pendiente = _total - _cobros.Sum(c => c.monto);
@@ -155,7 +203,7 @@ namespace SchettiniGestion.WPF
                 ? BrushFromTheme("DangerColor")
                 : BrushFromTheme("SuccessColor");
 
-            btnConfirmar.IsEnabled = cobrado >= _total;
+            btnConfirmar.IsEnabled = cobrado >= _total && _cobros.Count > 0;
         }
 
         private static Brush BrushFromTheme(string key) =>
@@ -166,7 +214,6 @@ namespace SchettiniGestion.WPF
             var medio = cmbMediosPago.SelectedItem as MedioPagoOpcion;
             if (medio == null) return;
 
-            // Formato argentino: "9.000,00" → quitar separador de miles (.) → reemplazar decimal (,→.) → "9000.00"
             string montoStr = txtMonto.Text.Trim().Replace(".", "").Replace(",", ".");
             if (!decimal.TryParse(montoStr, System.Globalization.NumberStyles.Number,
                 System.Globalization.CultureInfo.InvariantCulture, out decimal monto) || monto <= 0)
@@ -182,8 +229,7 @@ namespace SchettiniGestion.WPF
                 CustomMessageBox.Show("El total ya fue cubierto.", "Cobro completo", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-            bool esEfectivo = (medio.Nombre ?? "").IndexOf("efectivo", StringComparison.OrdinalIgnoreCase) >= 0;
-            // En efectivo permitir billete mayor (vuelto); en otros medios solo lo imputable
+            bool esEfectivo = EsEfectivo(medio.Nombre);
             if (!esEfectivo && monto > pendienteAntes) monto = pendienteAntes;
 
             var existente = _cobros.FirstOrDefault(c => c.MedioPagoID == medio.MedioID && medio.MedioID > 0)
@@ -221,7 +267,13 @@ namespace SchettiniGestion.WPF
         {
             if (_cobros.Count == 0)
             {
-                CustomMessageBox.Show("Debe ingresar al menos un medio de pago.", "Sin cobros", MessageBoxButton.OK, MessageBoxImage.Warning);
+                // Sin líneas mixtas: confirmar con el medio seleccionado al total (atajo)
+                if (cmbMediosPago.SelectedItem is MedioPagoOpcion medio)
+                {
+                    CobrarRapidoYCerrar(medio);
+                    return;
+                }
+                CustomMessageBox.Show("Elegí un medio de pago rápido o agregá un cobro.", "Sin cobros", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             Cobranzas = _cobros.ToList();
@@ -234,6 +286,36 @@ namespace SchettiniGestion.WPF
             DialogResult = false;
             Close();
         }
+
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                btnCancelar_Click(sender, e);
+                e.Handled = true;
+                return;
+            }
+
+            // Enter / F2: cobro rápido con Efectivo (o medio seleccionado)
+            if (e.Key == Key.F2 || (e.Key == Key.Enter && !EsFocoEnMontoMixto()))
+            {
+                if (_cobros.Count > 0 && btnConfirmar.IsEnabled)
+                {
+                    btnConfirmar_Click(sender, e);
+                    e.Handled = true;
+                    return;
+                }
+
+                if (cmbMediosPago.SelectedItem is MedioPagoOpcion medio)
+                {
+                    CobrarRapidoYCerrar(medio);
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private bool EsFocoEnMontoMixto() =>
+            txtMonto != null && txtMonto.IsKeyboardFocusWithin;
 
         private void AplicarVisibilidadMercadoPago()
         {
@@ -307,7 +389,11 @@ namespace SchettiniGestion.WPF
 
         private void txtMonto_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter) btnAgregarPago_Click(sender, e);
+            if (e.Key == Key.Enter)
+            {
+                btnAgregarPago_Click(sender, e);
+                e.Handled = true;
+            }
         }
     }
 }

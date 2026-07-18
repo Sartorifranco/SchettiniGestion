@@ -57,6 +57,8 @@ namespace SchettiniGestion.WPF
         private FacturaItem _itemCarritoSeleccionado;
         private DateTime _ultimoEnterProductoUtc = DateTime.MinValue;
         private bool _guardandoVenta;
+        private DispatcherTimer _timerLectorBarras;
+        private string _textoPendienteLector;
 
         /// <summary>Si se asigna (ej. "Remito", "Pedido"), preselecciona ese tipo al cargar. Usado cuando se abre desde Nuevo Remito/Pedido.</summary>
         public string TipoComprobanteInicial { get; set; }
@@ -926,9 +928,13 @@ namespace SchettiniGestion.WPF
             MarcarItemCarrito(CarritoDeVenta.LastOrDefault(i => i.EsValido));
         }
 
-        /// <summary>Enter en buscador: código/barras exacto o una sola sugerencia agrega al carrito; varias sugerencias baja al listado; si no hay coincidencias abre Varios.</summary>
+        /// <summary>
+        /// Enter / lector: código o barras exacto → suma al carrito.
+        /// Una sola sugerencia o ítem elegido en el listado → también suma (no pide el "+").
+        /// </summary>
         private void txtBuscarProductoEnterAgregarSiCorresponde()
         {
+            CancelarTimerLectorBarras();
             string texto = (txtBuscarProducto.Text ?? "").Trim();
             if (string.IsNullOrEmpty(texto)) return;
 
@@ -940,28 +946,111 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
-            if (popupProducto.IsOpen)
+            // Coincidencia exacta de código/barras dentro de las sugerencias visibles
+            if (popupProducto.IsOpen && lstSugerenciasProducto.Items.Count > 0)
             {
+                DataRow exactoEnLista = BuscarExactoEnSugerencias(texto);
+                if (exactoEnLista != null)
+                {
+                    _productoSeleccionado = exactoEnLista;
+                    AgregarProductoSeleccionadoAlCarrito();
+                    return;
+                }
+
                 if (lstSugerenciasProducto.Items.Count == 1 && lstSugerenciasProducto.Items[0] is DataRowView drvUnico)
                 {
                     _productoSeleccionado = drvUnico.Row;
                     AgregarProductoSeleccionadoAlCarrito();
                     return;
                 }
+
                 if (lstSugerenciasProducto.SelectedItem is DataRowView sel)
                 {
-                    SeleccionarProductoSugerencia(sel);
+                    _productoSeleccionado = sel.Row;
+                    AgregarProductoSeleccionadoAlCarrito();
                     return;
                 }
-                if (lstSugerenciasProducto.Items.Count > 0 && lstSugerenciasProducto.Items[0] is DataRowView first)
+
+                // Búsqueda por descripción con varios resultados: dejar el primero listo, sin sumar a ciegas
+                if (!PareceCodigoBarras(texto) && lstSugerenciasProducto.Items[0] is DataRowView first)
                 {
                     SeleccionarProductoSugerencia(first);
                     return;
                 }
+
+                if (lstSugerenciasProducto.Items[0] is DataRowView firstBarra)
+                {
+                    _productoSeleccionado = firstBarra.Row;
+                    AgregarProductoSeleccionadoAlCarrito();
+                    return;
+                }
+            }
+
+            if (_productoSeleccionado != null)
+            {
+                AgregarProductoSeleccionadoAlCarrito();
+                return;
             }
 
             if (!popupProducto.IsOpen)
                 AbrirVentanaVarios();
+        }
+
+        private DataRow BuscarExactoEnSugerencias(string texto)
+        {
+            if (lstSugerenciasProducto?.Items == null) return null;
+            string q = texto.Trim();
+            foreach (var item in lstSugerenciasProducto.Items)
+            {
+                if (item is DataRowView drv)
+                {
+                    string cod = drv.Row.Table.Columns.Contains("Codigo") ? drv.Row["Codigo"]?.ToString() ?? "" : "";
+                    string bar = drv.Row.Table.Columns.Contains("CodigoBarra") ? drv.Row["CodigoBarra"]?.ToString() ?? "" : "";
+                    if (string.Equals(cod, q, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(bar, q, StringComparison.OrdinalIgnoreCase))
+                        return drv.Row;
+                }
+            }
+            return null;
+        }
+
+        private static bool PareceCodigoBarras(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto) || texto.Length < 4) return false;
+            foreach (char c in texto)
+                if (!char.IsDigit(c)) return false;
+            return true;
+        }
+
+        private void ProgramarAutoAgregarLector(string texto)
+        {
+            _textoPendienteLector = texto;
+            if (_timerLectorBarras == null)
+            {
+                _timerLectorBarras = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
+                _timerLectorBarras.Tick += (s, e) =>
+                {
+                    CancelarTimerLectorBarras();
+                    string t = (_textoPendienteLector ?? "").Trim();
+                    if (string.IsNullOrEmpty(t)) return;
+                    // Solo auto-suma si es código/barras exacto (flujo típico del lector sin Enter)
+                    DataRow exacto = DatabaseService.BuscarProductoExactoCodigoOCodigoBarra(t);
+                    if (exacto == null) return;
+                    if (!string.Equals((txtBuscarProducto?.Text ?? "").Trim(), t, StringComparison.Ordinal))
+                        return;
+                    _productoSeleccionado = exacto;
+                    AgregarProductoSeleccionadoAlCarrito();
+                };
+            }
+            _timerLectorBarras.Stop();
+            _timerLectorBarras.Start();
+        }
+
+        private void CancelarTimerLectorBarras()
+        {
+            if (_timerLectorBarras != null)
+                _timerLectorBarras.Stop();
+            _textoPendienteLector = null;
         }
 
         // --- MERCADO PAGO QR ---
@@ -1272,17 +1361,6 @@ namespace SchettiniGestion.WPF
                     btnGuardarFactura.IsEnabled = true;
                     return;
                 }
-                if (tipoCompTexto == "Factura" && !afipConfigurado)
-                {
-                    if (CustomMessageBox.Show(
-                            "AFIP no está configurado (CUIT y certificado).\n\n" +
-                            "La venta se guardará sin CAE ni numeración fiscal.\n\n¿Desea continuar?",
-                            "Factura sin AFIP", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
-                    {
-                        btnGuardarFactura.IsEnabled = true;
-                        return;
-                    }
-                }
                 if (tipoAfip > 0 && afipConfigurado && puntoVentaConfig <= 0)
                 {
                     CustomMessageBox.Show(
@@ -1293,7 +1371,7 @@ namespace SchettiniGestion.WPF
                     return;
                 }
 
-                // ── PASO 1: cobro PRIMERO para que el cajero confirme antes de ir a AFIP ──
+                // ── PASO 1: cobro primero (flujo ágil) ──
                 var win = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
                 List<CobranzaItem> cobranzasConfirmadas;
 
@@ -1359,6 +1437,19 @@ namespace SchettiniGestion.WPF
                     }
                     cobranzasConfirmadas = cobroModal.Cobranzas;
                     cobroConfirmado = cobranzasConfirmadas != null && cobranzasConfirmadas.Count > 0;
+                }
+
+                // Aviso AFIP después del cobro (no interrumpe el flujo antes de cobrar)
+                if (tipoCompTexto == "Factura" && !afipConfigurado)
+                {
+                    if (CustomMessageBox.Show(
+                            "AFIP no está configurado (CUIT y certificado).\n\n" +
+                            "La venta se guardará sin CAE ni numeración fiscal.\n\n¿Desea continuar?",
+                            "Factura sin AFIP", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                    {
+                        btnGuardarFactura.IsEnabled = true;
+                        return;
+                    }
                 }
 
                 // ── PASO 2: AFIP (solo si el cobro fue confirmado) ──
@@ -1777,13 +1868,20 @@ namespace SchettiniGestion.WPF
         {
             if (_ignorarPerdidaFoco) return;
             FiltrarCatalogo();
-            if (txtBuscarProducto.Text.Length < 1) { popupProducto.IsOpen = false; _productoSeleccionado = null; return; }
+            if (txtBuscarProducto.Text.Length < 1)
+            {
+                CancelarTimerLectorBarras();
+                popupProducto.IsOpen = false;
+                _productoSeleccionado = null;
+                return;
+            }
             try
             {
-                DataTable dt = DatabaseService.BuscarProductosMultiples_ParaVenta(txtBuscarProducto.Text);
+                string texto = txtBuscarProducto.Text.Trim();
+                DataTable dt = DatabaseService.BuscarProductosMultiples_ParaVenta(texto);
                 if (dt != null && _modoBusqueda != ModoBusquedaPos.Todo)
                 {
-                    string q = txtBuscarProducto.Text.Trim().ToUpperInvariant();
+                    string q = texto.ToUpperInvariant();
                     var filas = dt.AsEnumerable().Where(r =>
                     {
                         if (_modoBusqueda == ModoBusquedaPos.CodigoBarras)
@@ -1800,6 +1898,12 @@ namespace SchettiniGestion.WPF
                 lstSugerenciasProducto.ItemsSource = dt.DefaultView;
                 popupProducto.IsOpen = dt.Rows.Count > 0;
                 AutocompleteListHelper.ReiniciarSeleccion(lstSugerenciasProducto);
+
+                // Lector de barras: al detectar código exacto, sumar solo (sin pedir "+")
+                if (PareceCodigoBarras(texto) || DatabaseService.BuscarProductoExactoCodigoOCodigoBarra(texto) != null)
+                    ProgramarAutoAgregarLector(texto);
+                else
+                    CancelarTimerLectorBarras();
             }
             catch { }
         }
@@ -1833,7 +1937,11 @@ namespace SchettiniGestion.WPF
 
         private void lstSugerenciasProducto_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (lstSugerenciasProducto.SelectedItem is DataRowView r) SeleccionarProductoSugerencia(r);
+            if (lstSugerenciasProducto.SelectedItem is DataRowView r)
+            {
+                _productoSeleccionado = r.Row;
+                AgregarProductoSeleccionadoAlCarrito();
+            }
         }
 
         private async void txtBuscar_LostFocus(object sender, RoutedEventArgs e)
@@ -1893,20 +2001,10 @@ namespace SchettiniGestion.WPF
                 }
                 else if (sender == txtBuscarProducto)
                 {
-                    if (popupProducto.IsOpen && lstSugerenciasProducto.Items.Count > 0)
-                    {
-                        if (lstSugerenciasProducto.SelectedItem is DataRowView pv)
-                            SeleccionarProductoSugerencia(pv);
-                        else if (lstSugerenciasProducto.Items[0] is DataRowView pv0)
-                            SeleccionarProductoSugerencia(pv0);
-                        e.Handled = true;
-                    }
-                    else
-                    {
-                        e.Handled = true;
-                        txtBuscarProductoEnterAgregarSiCorresponde();
-                        RegistrarDobleEnterProducto();
-                    }
+                    // Enter / sufijo del lector: siempre intentar sumar al carrito
+                    e.Handled = true;
+                    txtBuscarProductoEnterAgregarSiCorresponde();
+                    RegistrarDobleEnterProducto();
                 }
             }
         }
@@ -1918,7 +2016,10 @@ namespace SchettiniGestion.WPF
                 if (sender == lstSugerenciasCliente && lstSugerenciasCliente.SelectedItem is DataRowView c)
                     SeleccionarCliente(c);
                 else if (sender == lstSugerenciasProducto && lstSugerenciasProducto.SelectedItem is DataRowView p)
-                    SeleccionarProductoSugerencia(p);
+                {
+                    _productoSeleccionado = p.Row;
+                    AgregarProductoSeleccionadoAlCarrito();
+                }
                 e.Handled = true;
             }
             else if (e.Key == Key.Escape)

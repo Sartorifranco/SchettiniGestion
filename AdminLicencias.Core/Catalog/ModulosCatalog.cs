@@ -17,6 +17,7 @@ public static class ModulosCatalog
         public bool IncluidoEnLite { get; set; }
         public bool VisibleEnLicenciador { get; set; } = true;
         public bool EsAbonoMensual { get; set; }
+        public string Descripcion { get; set; } = "";
         public List<string> DependeDe { get; set; } = new();
         public int Orden { get; set; }
     }

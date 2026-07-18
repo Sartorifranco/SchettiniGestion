@@ -2,13 +2,14 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Cobro"
-        Width="580"
-        Height="660"
+        Width="560"
+        Height="720"
         WindowStartupLocation="CenterOwner"
         WindowStyle="None"
         ResizeMode="NoResize"
         AllowsTransparency="True"
-        Background="Transparent">
+        Background="Transparent"
+        PreviewKeyDown="Window_PreviewKeyDown">
 
     <Border Background="{DynamicResource PanelBackgroundBrush}"
             BorderBrush="{DynamicResource BorderColor}"
@@ -19,12 +20,13 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid Grid.Row="0" Margin="0,0,0,12">
                 <TextBlock Text="Cobro"
                            FontSize="22"
                            FontWeight="Bold"
@@ -36,14 +38,14 @@
                         Height="40"
                         Click="btnCancelar_Click"
                         Style="{StaticResource SecondaryButtonStyle}"
-                        ToolTip="Cerrar"/>
+                        ToolTip="Cerrar (Esc)"/>
             </Grid>
 
             <Border Grid.Row="1"
                     Background="{DynamicResource SurfaceDark}"
                     CornerRadius="8"
                     Padding="16,12"
-                    Margin="0,0,0,16"
+                    Margin="0,0,0,14"
                     BorderBrush="{DynamicResource BorderColor}"
                     BorderThickness="1">
                 <Grid>
@@ -65,23 +67,46 @@
                 </Grid>
             </Border>
 
-            <Border Grid.Row="2"
-                    Background="{DynamicResource SurfaceDark}"
-                    CornerRadius="8"
-                    Padding="14,12"
-                    Margin="0,0,0,12"
-                    BorderBrush="{DynamicResource BorderColor}"
-                    BorderThickness="1">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Text="Agregar medio de pago"
-                               FontSize="12"
-                               Foreground="{DynamicResource TextSecondary}"
-                               Margin="0,0,0,8"/>
-                    <Grid Grid.Row="1">
+            <!-- Cobro rápido: un toque = confirma y cierra -->
+            <StackPanel Grid.Row="2" Margin="0,0,0,12">
+                <TextBlock Text="Cobro rápido — un toque"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextSecondary}"
+                           Margin="0,0,0,8"/>
+                <WrapPanel x:Name="panelCobroRapido" Orientation="Horizontal"/>
+                <Button x:Name="btnMercadoPagoPoint"
+                        Content="💳 Point Smart"
+                        Background="#009EE3"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        FontSize="14"
+                        MinHeight="52"
+                        Margin="0,8,0,0"
+                        HorizontalAlignment="Stretch"
+                        Visibility="Collapsed"
+                        Click="btnMercadoPagoPoint_Click"/>
+                <Button x:Name="btnMercadoPagoQR"
+                        Content="📱 Mercado Pago QR"
+                        Background="#009EE3"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        FontSize="14"
+                        MinHeight="48"
+                        Margin="0,8,0,0"
+                        HorizontalAlignment="Stretch"
+                        Visibility="Collapsed"
+                        Click="btnMercadoPagoQR_Click"/>
+            </StackPanel>
+
+            <!-- Pago mixto / vuelto (opcional) -->
+            <Expander Grid.Row="3"
+                      Header="Pago mixto o con vuelto (opcional)"
+                      IsExpanded="False"
+                      Margin="0,0,0,10"
+                      Foreground="{DynamicResource TextPrimary}">
+                <StackPanel Margin="0,10,0,0">
+                    <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="140"/>
@@ -111,57 +136,58 @@
                                 Style="{StaticResource ButtonStyle}"
                                 Click="btnAgregarPago_Click"/>
                     </Grid>
-                </Grid>
-            </Border>
 
-            <Border Grid.Row="3"
-                    Background="{DynamicResource SurfaceDark}"
-                    CornerRadius="8"
-                    Padding="4"
-                    Margin="0,0,0,12"
-                    BorderBrush="{DynamicResource BorderColor}"
-                    BorderThickness="1">
-                <DataGrid x:Name="dgvCobranzas"
-                          Style="{StaticResource ModuleDataGridStyle}"
-                          AutoGenerateColumns="False"
-                          BorderThickness="0"
-                          CanUserAddRows="False"
-                          CanUserDeleteRows="False"
-                          SelectionMode="Single"
-                          IsReadOnly="True"
-                          FontSize="13">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Medio de Pago" Binding="{Binding nombreMedio}" Width="*"/>
-                        <DataGridTextColumn Header="Monto" Binding="{Binding MontoFormateado}" Width="120">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="HorizontalAlignment" Value="Right"/>
-                                    <Setter Property="Padding" Value="0,0,10,0"/>
-                                    <Setter Property="Foreground" Value="{StaticResource SuccessColor}"/>
-                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
-                        <DataGridTemplateColumn Header="" Width="50">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="✕"
-                                            Style="{StaticResource DeleteButtonStyle}"
-                                            Padding="4,2"
-                                            FontSize="11"
-                                            Click="btnQuitarCobro_Click"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </Border>
+                    <Border Background="{DynamicResource SurfaceDark}"
+                            CornerRadius="8"
+                            Padding="4"
+                            Margin="0,10,0,0"
+                            BorderBrush="{DynamicResource BorderColor}"
+                            BorderThickness="1"
+                            MinHeight="100"
+                            MaxHeight="160">
+                        <DataGrid x:Name="dgvCobranzas"
+                                  Style="{StaticResource ModuleDataGridStyle}"
+                                  AutoGenerateColumns="False"
+                                  BorderThickness="0"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  SelectionMode="Single"
+                                  IsReadOnly="True"
+                                  FontSize="13">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Medio" Binding="{Binding nombreMedio}" Width="*"/>
+                                <DataGridTextColumn Header="Monto" Binding="{Binding MontoFormateado}" Width="100">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter Property="Padding" Value="0,0,10,0"/>
+                                            <Setter Property="Foreground" Value="{StaticResource SuccessColor}"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="" Width="50">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="✕"
+                                                    Style="{StaticResource DeleteButtonStyle}"
+                                                    Padding="4,2"
+                                                    FontSize="11"
+                                                    Click="btnQuitarCobro_Click"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+                </StackPanel>
+            </Expander>
 
-            <Border Grid.Row="4"
+            <Border Grid.Row="5"
                     Background="{DynamicResource BackgroundDark}"
                     CornerRadius="8"
                     Padding="14,10"
-                    Margin="0,0,0,16"
+                    Margin="0,0,0,12"
                     BorderBrush="{DynamicResource BorderColor}"
                     BorderThickness="1">
                 <Grid>
@@ -185,39 +211,16 @@
                 </Grid>
             </Border>
 
-            <StackPanel Grid.Row="5">
-                <Button x:Name="btnMercadoPagoPoint"
-                        Content="💳 Enviar cobro al Point Smart"
-                        Background="#009EE3"
-                        Foreground="White"
-                        FontWeight="Bold"
-                        FontSize="13"
-                        MinHeight="46"
-                        Margin="0,0,0,10"
-                        HorizontalAlignment="Stretch"
-                        Visibility="Collapsed"
-                        Click="btnMercadoPagoPoint_Click"/>
-                <Button x:Name="btnMercadoPagoQR"
-                        Content="📱 Cobrar con Mercado Pago QR"
-                        Background="#009EE3"
-                        Foreground="White"
-                        FontWeight="Bold"
-                        FontSize="13"
-                        MinHeight="44"
-                        Margin="0,0,0,10"
-                        HorizontalAlignment="Stretch"
-                        Visibility="Collapsed"
-                        Click="btnMercadoPagoQR_Click"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="Cancelar"
                         Style="{StaticResource SecondaryButtonStyle}"
                         Margin="0,0,8,0"
                         Click="btnCancelar_Click"/>
                 <Button x:Name="btnConfirmar"
-                        Content="✔ Confirmar Cobro"
+                        Content="✔ Confirmar"
                         Style="{StaticResource ButtonStyle}"
+                        MinWidth="140"
                         Click="btnConfirmar_Click"/>
-                </StackPanel>
             </StackPanel>
         </Grid>
     </Border>

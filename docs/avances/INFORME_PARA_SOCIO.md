@@ -75,7 +75,7 @@ Detalle: `docs/lanzamiento/v2.1.9_ALCANCE.md`
 - No se pueden editar facturas ya guardadas (solo ver)
 - NC/ND y cuenta corriente proveedor siguen pendientes (Sprint 3–4)
 
-**PR:** _(se completará al abrir PR)_  
+**PR:** https://github.com/Sartorifranco/SchettiniGestion/pull/9  
 **¿Merge a producción?** Pendiente de pruebas Sprint 2.
 
 ---

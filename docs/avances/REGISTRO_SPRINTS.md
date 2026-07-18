@@ -71,8 +71,8 @@ Ver sección **Sprint 1** en [GUIA_PRUEBAS_AVANCES.md](GUIA_PRUEBAS_AVANCES.md).
 |-------|-------|
 | **Fecha** | 18 jul 2026 |
 | **Rama** | `cursor/sprint2-flujo-compras-d53a` |
-| **PR** | _(se completará al abrir PR)_ |
-| **Commit** | _(se completará al commitear)_ |
+| **PR** | https://github.com/Sartorifranco/SchettiniGestion/pull/9 |
+| **Commit** | `fe8d4f9` |
 | **Versión objetivo al merge** | 2.2.0 (propuesta, no publicada) |
 
 ### Contexto

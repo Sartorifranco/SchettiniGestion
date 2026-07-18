@@ -4677,10 +4677,11 @@ ORDER BY Fecha DESC";
             catch { return false; }
         }
 
-        public static int GuardarOrdenCompra(int ordenId, int proveedorId, DateTime? fechaEntrega, string observaciones, List<(int ProductoID, int Cantidad, decimal Costo)> items)
+        public static int GuardarOrdenCompra(int ordenId, int proveedorId, DateTime? fechaEntrega, string observaciones, List<(int ProductoID, int Cantidad, decimal Costo)> items, string estado = null)
         {
             try
             {
+                string estadoOrden = string.IsNullOrWhiteSpace(estado) ? "Pendiente" : estado.Trim();
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
@@ -4691,12 +4692,13 @@ ORDER BY Fecha DESC";
                         int id = ordenId;
                         if (ordenId == 0)
                         {
-                            string ins = "INSERT INTO OrdenCompra (ProveedorID,Fecha,FechaEntrega,Estado,Observaciones,Total) OUTPUT INSERTED.OrdenID VALUES (@pid,@f,@fe,'Pendiente',@obs,@t)";
+                            string ins = "INSERT INTO OrdenCompra (ProveedorID,Fecha,FechaEntrega,Estado,Observaciones,Total) OUTPUT INSERTED.OrdenID VALUES (@pid,@f,@fe,@est,@obs,@t)";
                             using (var cmd = new SqlCommand(ins, c, tx))
                             {
                                 cmd.Parameters.AddWithValue("@pid", proveedorId);
                                 cmd.Parameters.AddWithValue("@f", DateTime.Now);
                                 cmd.Parameters.AddWithValue("@fe", (object)fechaEntrega ?? DBNull.Value);
+                                cmd.Parameters.AddWithValue("@est", estadoOrden);
                                 cmd.Parameters.AddWithValue("@obs", observaciones ?? "");
                                 cmd.Parameters.AddWithValue("@t", total);
                                 id = (int)cmd.ExecuteScalar();
@@ -4704,11 +4706,12 @@ ORDER BY Fecha DESC";
                         }
                         else
                         {
-                            string upd = "UPDATE OrdenCompra SET ProveedorID=@pid,FechaEntrega=@fe,Observaciones=@obs,Total=@t WHERE OrdenID=@id";
+                            string upd = "UPDATE OrdenCompra SET ProveedorID=@pid,FechaEntrega=@fe,Estado=@est,Observaciones=@obs,Total=@t WHERE OrdenID=@id";
                             using (var cmd = new SqlCommand(upd, c, tx))
                             {
                                 cmd.Parameters.AddWithValue("@pid", proveedorId);
                                 cmd.Parameters.AddWithValue("@fe", (object)fechaEntrega ?? DBNull.Value);
+                                cmd.Parameters.AddWithValue("@est", estadoOrden);
                                 cmd.Parameters.AddWithValue("@obs", observaciones ?? "");
                                 cmd.Parameters.AddWithValue("@t", total);
                                 cmd.Parameters.AddWithValue("@id", ordenId);

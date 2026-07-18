@@ -210,16 +210,8 @@ namespace SchettiniGestion.WPF
         {
             int? id = ObtenerId(dgvOrdenes, "OrdenCompraID");
             if (!id.HasValue) return;
-            try
-            {
-                var det = DatabaseService.GetOrdenCompraDetalle(id.Value);
-                string msg = "Detalle Orden:\n\n";
-                decimal total = 0;
-                foreach (DataRow r in det.Rows) { decimal st = Convert.ToDecimal(r["Cantidad"]) * Convert.ToDecimal(r["PrecioUnitario"]); total += st; msg += $"{r["Codigo"]} - {r["Descripcion"]}: {r["Cantidad"]} x ${Convert.ToDecimal(r["PrecioUnitario"]):N2} = ${st:N2}\n"; }
-                msg += $"\nTotal: ${total:N2}";
-                MessageBox.Show(msg, "Detalle Orden #" + id, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+            var modal = new OrdenCompraModalWindow(Window.GetWindow(this), id.Value, CargarOrdenes);
+            modal.ShowDialog();
         }
 
         private int? ObtenerId(DataGrid dg, string colName)

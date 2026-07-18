@@ -4938,11 +4938,41 @@ ORDER BY Fecha DESC";
                                 cmd.Parameters.AddWithValue("@id", ordenId);
                                 cmd.ExecuteNonQuery();
                             }
+
+                            var recibidosPorProducto = new Dictionary<int, int>();
+                            using (var cmdRec = new SqlCommand("SELECT ProductoID, CantidadRecibida FROM OrdenCompraDetalle WHERE OrdenID=@id", c, tx))
+                            {
+                                cmdRec.Parameters.AddWithValue("@id", id);
+                                using (var rd = cmdRec.ExecuteReader())
+                                    while (rd.Read())
+                                        recibidosPorProducto[Convert.ToInt32(rd["ProductoID"])] = Convert.ToInt32(rd["CantidadRecibida"]);
+                            }
                             new SqlCommand($"DELETE FROM OrdenCompraDetalle WHERE OrdenID={id}", c, tx).ExecuteNonQuery();
+
+                            foreach (var item in items)
+                            {
+                                int cantRecibida = 0;
+                                if (recibidosPorProducto.TryGetValue(item.ProductoID, out int prev))
+                                    cantRecibida = Math.Min(prev, item.Cantidad);
+
+                                using (var cmd = new SqlCommand(@"INSERT INTO OrdenCompraDetalle (OrdenID,ProductoID,Cantidad,PrecioCosto,CantidadRecibida)
+                                    VALUES (@oid,@pid,@cant,@pc,@cr)", c, tx))
+                                {
+                                    cmd.Parameters.AddWithValue("@oid", id);
+                                    cmd.Parameters.AddWithValue("@pid", item.ProductoID);
+                                    cmd.Parameters.AddWithValue("@cant", item.Cantidad);
+                                    cmd.Parameters.AddWithValue("@pc", item.Costo);
+                                    cmd.Parameters.AddWithValue("@cr", cantRecibida);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+                            tx.Commit();
+                            return id;
                         }
                         foreach (var item in items)
                         {
-                            using (var cmd = new SqlCommand("INSERT INTO OrdenCompraDetalle (OrdenID,ProductoID,Cantidad,PrecioCosto) VALUES (@oid,@pid,@cant,@pc)", c, tx))
+                            using (var cmd = new SqlCommand(@"INSERT INTO OrdenCompraDetalle (OrdenID,ProductoID,Cantidad,PrecioCosto,CantidadRecibida)
+                                VALUES (@oid,@pid,@cant,@pc,0)", c, tx))
                             {
                                 cmd.Parameters.AddWithValue("@oid", id);
                                 cmd.Parameters.AddWithValue("@pid", item.ProductoID);

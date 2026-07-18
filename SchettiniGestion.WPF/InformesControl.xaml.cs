@@ -19,6 +19,7 @@ namespace SchettiniGestion.WPF
         {
             dpDesde.SelectedDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
             dpHasta.SelectedDate = DateTime.Today;
+            cmbTipoInforme_SelectionChanged(cmbTipoInforme, null);
         }
 
         private void cmbTipoInforme_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -40,10 +41,16 @@ namespace SchettiniGestion.WPF
             {
                 _dtActual = GenerarInforme(tipo, desde, hasta);
                 dgvInforme.ItemsSource = _dtActual?.DefaultView;
+                if (_dtActual == null || _dtActual.Rows.Count == 0)
+                    MessageBox.Show("No hay datos para el criterio seleccionado.", "Información", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al generar informe: " + ex.Message);
+                string msg = ex.Message;
+                if (msg.IndexOf("Pedidos", StringComparison.OrdinalIgnoreCase) >= 0
+                    && msg.IndexOf("Invalid object name", StringComparison.OrdinalIgnoreCase) >= 0)
+                    msg = "La tabla de Pedidos no está disponible en esta base de datos.";
+                MessageBox.Show("Error al generar informe: " + msg, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 

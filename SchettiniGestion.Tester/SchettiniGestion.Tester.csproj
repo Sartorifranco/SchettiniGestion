@@ -219,6 +219,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Program.SprintQA.cs" />
     <Compile Include="Program.ExtendedQA.cs" />
     <Compile Include="Program.UITests.cs" />
     <Compile Include="Program.UIFlujosNegocio.cs" />

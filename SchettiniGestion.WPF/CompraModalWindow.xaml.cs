@@ -49,6 +49,11 @@ namespace SchettiniGestion.WPF
                 CargarCompraExistente();
                 chkRecepcionarStock.IsEnabled = false;
                 cmbOrdenCompra.IsEnabled = false;
+                txtBuscarProveedor.IsEnabled = false;
+                txtBuscarProducto.IsEnabled = false;
+                txtCantidad.IsEnabled = false;
+                txtCosto.IsEnabled = false;
+                cmbTipoComprobante.IsEnabled = false;
                 if (FindName("btnGuardar") is Button btn) btn.IsEnabled = false;
             }
             else

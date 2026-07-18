@@ -120,6 +120,9 @@ namespace SchettiniGestion.Tester
             // 8. Resto de módulos (clientes, CC, compras, caja, informes, remitos/pedidos, etc.)
             EjecutarPruebasModulosExtendidos();
 
+            // 8b. Sprints 1–3: flujo compras + informes (regresión)
+            EjecutarPruebasSprintsComprasInformes();
+
             // 9. Usuarios, roles y permisos (misma lógica que GestionPermisos / UsuariosControl)
             EjecutarPruebasUsuariosRolesYPermisos();
 

@@ -395,6 +395,7 @@
       <DependentUpon>PresupuestosControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="PdfComprobanteGenerator.cs" />
+    <Compile Include="PdfInformeGenerator.cs" />
     <Compile Include="PrintService.cs" />
     <Compile Include="ProductoVarioWindow.xaml.cs">
       <DependentUpon>ProductoVarioWindow.xaml</DependentUpon>

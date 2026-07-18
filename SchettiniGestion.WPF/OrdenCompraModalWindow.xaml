@@ -76,9 +76,23 @@
 
                 <StackPanel Grid.Column="4">
 
-                    <TextBlock Text="Total" Style="{StaticResource ModalCaptionTextStyle}"/>
+                    <TextBlock Text="Estado" Style="{StaticResource ModalCaptionTextStyle}"/>
 
-                    <TextBlock x:Name="lblTotal" FontSize="18" FontWeight="Bold" Foreground="{StaticResource SuccessColor}" Margin="0,6,0,0"/>
+                    <ComboBox x:Name="cmbEstado" Style="{StaticResource ModuleComboBoxStyle}" Margin="0,0,0,6" MinHeight="36">
+
+                        <ComboBoxItem Content="Pendiente" IsSelected="True"/>
+
+                        <ComboBoxItem Content="Parcial"/>
+
+                        <ComboBoxItem Content="Recibida"/>
+
+                        <ComboBoxItem Content="Anulada"/>
+
+                    </ComboBox>
+
+                    <TextBlock Text="Total estimado" Style="{StaticResource ModalCaptionTextStyle}" Margin="0,4,0,0"/>
+
+                    <TextBlock x:Name="lblTotal" FontSize="16" FontWeight="Bold" Foreground="{StaticResource SuccessColor}" Margin="0,2,0,0"/>
 
                 </StackPanel>
 

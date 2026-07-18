@@ -212,7 +212,7 @@ namespace SchettiniGestion.WPF
                 btnClientes.Visibility          = PuedeModulo(DatabaseService.PERMISO_CLIENTES) ? Visibility.Visible : Visibility.Collapsed;
                 btnCaja.Visibility              = PuedeModulo(DatabaseService.PERMISO_CAJA)   ? Visibility.Visible : Visibility.Collapsed;
                 if (btnEstadisticas != null)
-                    btnEstadisticas.Visibility = (PuedeModulo(DatabaseService.PERMISO_VENTAS) || PuedeModulo(DatabaseService.PERMISO_FACTURACION))
+                    btnEstadisticas.Visibility = PuedeModulo(DatabaseService.PERMISO_ESTADISTICAS)
                         ? Visibility.Visible : Visibility.Collapsed;
                 btnUsuariosPermisos.Visibility  = PuedeModulo(DatabaseService.PERMISO_USUARIOS) ? Visibility.Visible : Visibility.Collapsed;
                 btnConfiguracion.Visibility     = PuedeModulo(DatabaseService.PERMISO_CONFIGURACION) ? Visibility.Visible : Visibility.Collapsed;

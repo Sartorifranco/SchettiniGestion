@@ -254,7 +254,7 @@ function renderModulosPanel() {
       col.innerHTML = `
         <div class="form-check">
           <input class="form-check-input modulo-check" type="checkbox" value="${escapeHtml(mod.codigo)}" id="mod_${escapeHtml(mod.codigo)}">
-          <label class="form-check-label" for="mod_${escapeHtml(mod.codigo)}">
+          <label class="form-check-label" for="mod_${escapeHtml(mod.codigo)}"${desc ? ` title="${escapeHtml(desc)}"` : ""}>
             ${escapeHtml(titulo)}
             ${desc ? `<div class="small text-secondary mt-1">${escapeHtml(desc)}</div>` : ""}
           </label>

@@ -161,7 +161,7 @@ namespace SchettiniGestion
                     {
                         "ACCESO_VENTAS", "ACCESO_FACTURACION", "ACCESO_PRODUCTOS", "ACCESO_STOCK",
                         "ACCESO_CLIENTES", "ACCESO_CAJA", "ACCESO_LISTASPRECIOS", "ACCESO_PRECIOS",
-                        "ACCESO_PRESUPUESTOS", "ACCESO_COMPRAS", "ACCESO_PROVEEDORES",
+                        "ACCESO_PRESUPUESTOS", "ACCESO_ESTADISTICAS", "ACCESO_COMPRAS", "ACCESO_PROVEEDORES",
                         "ACCESO_CUENTASCORRIENTES", "ACCESO_RED", "ACCESO_AFIP", "ACCESO_VISOR_CLIENTE",
                         "ACCESO_MERCADOPAGO_QR", "ACCESO_MERCADOPAGO_POINT", "ACCESO_SOPORTE"
                     })
@@ -280,6 +280,8 @@ namespace SchettiniGestion
         /// <summary>Abono independiente: terminal Point Smart / Smart 2.</summary>
         public static bool TieneMercadoPagoPoint() => IsExtraEnabled("ACCESO_MERCADOPAGO_POINT");
         public static bool TieneSoporte() => IsExtraEnabled("ACCESO_SOPORTE");
+        /// <summary>Módulo adicional: Gráficos y Estadísticas (no es abono mensual).</summary>
+        public static bool TieneEstadisticas() => IsModuleEnabled("ACCESO_ESTADISTICAS");
 
         public static string ObtenerFechaVencimiento()
         {

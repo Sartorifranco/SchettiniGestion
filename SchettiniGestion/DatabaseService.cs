@@ -293,6 +293,7 @@ namespace SchettiniGestion
         public const string PERMISO_MERCADOPAGO_QR    = "ACCESO_MERCADOPAGO_QR";
         public const string PERMISO_MERCADOPAGO_POINT = "ACCESO_MERCADOPAGO_POINT";
         public const string PERMISO_SOPORTE           = "ACCESO_SOPORTE";
+        public const string PERMISO_ESTADISTICAS      = "ACCESO_ESTADISTICAS";
 
         private static void NotificarError(string mensaje)
         {

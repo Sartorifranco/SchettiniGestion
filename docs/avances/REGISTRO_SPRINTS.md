@@ -180,7 +180,8 @@ Los Sprints 1–3 quedaron **aprobados para pruebas manuales** tras correcciones
 |-------|-------|
 | **Fecha** | 18 jul 2026 |
 | **Rama** | `cursor/sprint4-pulido-d53a` |
-| **PR** | _(se completará al abrir PR)_ |
+| **PR** | https://github.com/Sartorifranco/SchettiniGestion/pull/11 |
+| **Commit** | `d54a95f` |
 | **Versión objetivo al merge** | 2.2.0 (propuesta) |
 
 ### Qué se hizo

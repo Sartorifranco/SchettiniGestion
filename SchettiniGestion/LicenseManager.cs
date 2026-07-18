@@ -259,7 +259,7 @@ namespace SchettiniGestion
             return _licenciaActual.ModulosPermitidos.Contains(mod);
         }
 
-        /// <summary>Extras monetizables (RED, AFIP, visor, MP QR, soporte). Respeta licencias legacy.</summary>
+        /// <summary>Extras monetizables (RED, AFIP, visor, MP QR, MP Point, soporte). Respeta licencias legacy.</summary>
         public static bool IsExtraEnabled(string extraCode)
         {
             if (string.IsNullOrWhiteSpace(extraCode))
@@ -275,7 +275,9 @@ namespace SchettiniGestion
         public static bool TieneConexionRed() => IsExtraEnabled("ACCESO_RED");
         public static bool TieneAfip() => IsExtraEnabled("ACCESO_AFIP");
         public static bool TieneVisorCliente() => IsExtraEnabled("ACCESO_VISOR_CLIENTE");
+        /// <summary>Abono independiente: cobro con código QR de Mercado Pago.</summary>
         public static bool TieneMercadoPagoQr() => IsExtraEnabled("ACCESO_MERCADOPAGO_QR");
+        /// <summary>Abono independiente: terminal Point Smart / Smart 2.</summary>
         public static bool TieneMercadoPagoPoint() => IsExtraEnabled("ACCESO_MERCADOPAGO_POINT");
         public static bool TieneSoporte() => IsExtraEnabled("ACCESO_SOPORTE");
 

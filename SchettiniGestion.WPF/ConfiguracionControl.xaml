@@ -303,14 +303,26 @@
                         </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource ConfigSectionCard}">
-                        <StackPanel x:Name="panelSeccionMercadoPago">
-                        <TextBlock Text="Integración Mercado Pago (QR)" Style="{StaticResource ConfigSectionTitle}"/>
+                        <Border x:Name="cardSeccionMercadoPagoCuenta" Style="{StaticResource ConfigSectionCard}">
+                        <StackPanel x:Name="panelSeccionMercadoPagoCuenta">
+                        <TextBlock Text="Cuenta Mercado Pago" Style="{StaticResource ConfigSectionTitle}"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12"
+                                   Margin="0,0,0,12"
+                                   Text="Access Token compartido. Se usa para el servicio QR y/o Point Smart según lo contratado en la licencia."/>
 
                         <TextBlock Text="Access Token:" Style="{StaticResource ModuleLabelStyle}"/>
                         <TextBox x:Name="txtMPToken" Style="{StaticResource ModuleTextBoxStyle}"/>
                         <TextBlock Style="{StaticResource FieldHintTextStyle}"
                                    Text="Debe ser 'Production Access Token' (empieza con APP_USR-)."/>
+                        </StackPanel>
+                        </Border>
+
+                        <Border x:Name="cardSeccionMercadoPagoQr" Style="{StaticResource ConfigSectionCard}">
+                        <StackPanel x:Name="panelSeccionMercadoPagoQr">
+                        <TextBlock Text="Mercado Pago QR (cobro con código QR)" Style="{StaticResource ConfigSectionTitle}"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12"
+                                   Margin="0,0,0,12"
+                                   Text="Servicio independiente: genera órdenes QR para que el cliente pague con la app de Mercado Pago."/>
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -367,10 +379,10 @@
 
                         <Border x:Name="cardSeccionMercadoPagoPoint" Style="{StaticResource ConfigSectionCard}">
                         <StackPanel x:Name="panelSeccionMercadoPagoPoint">
-                            <TextBlock Text="Mercado Pago Point Smart (terminal automática)" Style="{StaticResource ConfigSectionTitle}"/>
+                            <TextBlock Text="Mercado Pago Point Smart (terminal)" Style="{StaticResource ConfigSectionTitle}"/>
                             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12"
                                        Margin="0,0,0,12"
-                                       Text="Envía el importe al Point Smart/Smart 2 y espera la aprobación. El cobro manual con cualquier posnet seguirá disponible."/>
+                                       Text="Servicio independiente: envía el importe al Point Smart/Smart 2 y espera la aprobación. El cobro manual con cualquier posnet sigue disponible."/>
 
                             <TextBlock Text="Terminal vinculada:" Style="{StaticResource ModuleLabelStyle}"/>
                             <Grid>

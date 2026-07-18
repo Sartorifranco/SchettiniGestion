@@ -51,10 +51,15 @@ namespace SchettiniGestion.WPF
 
             if (panelSeccionAfip != null)
                 panelSeccionAfip.Visibility = afip ? Visibility.Visible : Visibility.Collapsed;
-            if (panelSeccionMercadoPago != null)
-                panelSeccionMercadoPago.Visibility = (mpQr || mpPoint) ? Visibility.Visible : Visibility.Collapsed;
+
+            // QR y Point son servicios independientes (abonos distintos en la licencia).
+            if (cardSeccionMercadoPagoCuenta != null)
+                cardSeccionMercadoPagoCuenta.Visibility = (mpQr || mpPoint) ? Visibility.Visible : Visibility.Collapsed;
+            if (cardSeccionMercadoPagoQr != null)
+                cardSeccionMercadoPagoQr.Visibility = mpQr ? Visibility.Visible : Visibility.Collapsed;
             if (cardSeccionMercadoPagoPoint != null)
                 cardSeccionMercadoPagoPoint.Visibility = mpPoint ? Visibility.Visible : Visibility.Collapsed;
+
             if (panelSeccionVisorCliente != null)
                 panelSeccionVisorCliente.Visibility = visor ? Visibility.Visible : Visibility.Collapsed;
             if (tabItemRedServidor != null)

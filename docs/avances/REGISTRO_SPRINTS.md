@@ -65,15 +65,65 @@ Ver sección **Sprint 1** en [GUIA_PRUEBAS_AVANCES.md](GUIA_PRUEBAS_AVANCES.md).
 
 ---
 
-## Sprint 2 — (pendiente)
+## Sprint 2 — Flujo compras: recepción opcional y vínculo OC
 
-_Placeholder. Se completará al iniciar el sprint._
+| Campo | Valor |
+|-------|-------|
+| **Fecha** | 18 jul 2026 |
+| **Rama** | `cursor/sprint2-flujo-compras-d53a` |
+| **PR** | _(se completará al abrir PR)_ |
+| **Commit** | _(se completará al commitear)_ |
+| **Versión objetivo al merge** | 2.2.0 (propuesta, no publicada) |
 
-**Objetivo previsto:** Flujo compras usable — factura con recepción opcional y selector de OC.
+### Contexto
+
+Sprint 1 dejó visible el módulo Compras, pero cada factura **siempre** sumaba stock. En la práctica a veces se registra la factura del proveedor antes de recibir la mercadería, o se quiere vincular la factura a una orden de compra existente.
+
+### Qué se hizo
+
+1. **Migración de esquema** (`AsegurarMigracionLite`)
+   - `Compras.OrdenCompraID` — vínculo opcional con OC
+   - `Compras.StockRecibido` — indica si la factura movió stock (histórico migrado según movimientos existentes)
+   - `OrdenCompraDetalle.CantidadRecibida` — acumulado por ítem para estados Parcial/Recibida
+
+2. **`GuardarCompra` ampliado**
+   - Parámetros `ordenCompraId` y `recepcionarStock`
+   - Si `recepcionarStock = false`: solo registra factura y detalle (deuda contable), **sin** stock, movimientos ni actualización de costos
+   - Si `recepcionarStock = true` y hay OC: actualiza `CantidadRecibida`, estado OC (Parcial/Recibida) y crea recepción automática
+
+3. **`CompraModalWindow`**
+   - Checkbox «Recepcionar mercadería (sumar al stock)» — marcado por defecto
+   - Selector de OC abierta del proveedor (Pendiente/Parcial)
+   - Al elegir OC: opción de cargar ítems desde el detalle de la orden
+   - Confirmación al guardar sin recepcionar
+   - Edición de facturas existentes: solo lectura
+
+4. **Grilla de facturas** (`ComprasControl`)
+   - Columnas OC y Stock (checkbox)
+   - Refresco de recepciones y órdenes tras guardar/eliminar factura
+   - Mensaje de eliminación según si hubo movimiento de stock
+
+### Qué NO se hizo (queda para Sprint 3+)
+
+- Edición de facturas de compra ya guardadas
+- NC/ND que impacten saldo proveedor
+- Recepción parcial independiente de la factura
+- Informes nuevos
+- Cuenta corriente proveedor integrada con factura sin stock
+
+### Archivos principales tocados
+
+- `SchettiniGestion/DatabaseService.cs`
+- `SchettiniGestion.WPF/CompraModalWindow.xaml(.cs)`
+- `SchettiniGestion.WPF/ComprasControl.xaml(.cs)`
+
+### Cómo probar
+
+Ver sección **Sprint 2** en [GUIA_PRUEBAS_AVANCES.md](GUIA_PRUEBAS_AVANCES.md).
 
 ---
 
-## Plantilla para próximos sprints
+## Sprint 3 — (pendiente)
 
 ```markdown
 ## Sprint N — Título

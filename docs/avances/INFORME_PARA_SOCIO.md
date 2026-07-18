@@ -47,9 +47,9 @@ Detalle: `docs/lanzamiento/v2.1.9_ALCANCE.md`
 - Podemos **cobrar** Compras y Proveedores como módulos adicionales cuando decidamos publicar
 - Base lista para Sprint 2 (flujo real de compra)
 
-**Riesgo / limitación honesta:**
-- La factura de compra **sigue moviendo stock siempre** (igual que antes)
-- No hay aún enlace OC ↔ factura ↔ recepción
+**Riesgo / limitación honesta (Sprint 1):**
+- La factura de compra **sigue moviendo stock siempre** (igual que antes) — **corregido en Sprint 2**
+- No hay aún enlace OC ↔ factura ↔ recepción — **parcialmente resuelto en Sprint 2**
 - Informes sigue siendo la pantalla básica de 5 reportes (no el módulo completo que planificamos)
 
 **Esfuerzo:** 1 sprint corto (visibilidad + fixes), no el módulo Compras terminado.
@@ -57,13 +57,34 @@ Detalle: `docs/lanzamiento/v2.1.9_ALCANCE.md`
 **PR:** https://github.com/Sartorifranco/SchettiniGestion/pull/8  
 **¿Merge a producción?** Pendiente de acuerdo y pruebas (guía en `GUIA_PRUEBAS_AVANCES.md`).
 
+### Sprint 2 (18 jul 2026) — «Factura de compra con recepción opcional»
+
+**Problema:** Al registrar una factura de proveedor siempre entraba mercadería al stock, aunque la factura llegara antes que el envío. Tampoco se podía elegir una orden de compra al facturar.
+
+**Solución entregada:**
+- Checkbox para decidir si la factura suma stock o solo registra deuda
+- Selector de orden de compra abierta del proveedor, con carga automática de ítems
+- Al recepcionar con OC: actualiza estado de la orden (Parcial/Recibida) y genera recepción
+- Grilla de facturas muestra si hubo movimiento de stock y qué OC está vinculada
+
+**Valor para el negocio:**
+- Flujo real de compras: facturar hoy, recibir mañana (o al revés)
+- Trazabilidad OC → factura → recepción
+
+**Riesgo / limitación honesta:**
+- No se pueden editar facturas ya guardadas (solo ver)
+- NC/ND y cuenta corriente proveedor siguen pendientes (Sprint 3–4)
+
+**PR:** _(se completará al abrir PR)_  
+**¿Merge a producción?** Pendiente de pruebas Sprint 2.
+
 ---
 
 ## 4. Próximos pasos (plan acordado)
 
 | Sprint | Entregable | Impacto comercial |
 |--------|------------|-------------------|
-| **2** | Factura de compra con «recepcionar sí/no» y elegir OC | Compras usable en el día a día |
+| **2** | Factura de compra con «recepcionar sí/no» y elegir OC | ✅ Entregado — pruebas pendientes |
 | **3** | Informes: valorización stock, vendedor, faltantes, cta.cte. proveedor | Cierra hueco vs. competencia en reportes |
 | **4** | Pulido + un solo menú Informes | Producto más vendible |
 
@@ -95,7 +116,7 @@ Recomendación: **no mergear sprints a `main`** hasta:
 
 ## 7. Resumen en una frase (para reunión)
 
-> «Salimos con v2.1.9 como acordamos. En paralelo adelantamos Sprint 1: Compras, Proveedores e Informes ya visibles en menú y OC corregidas; el flujo de compras completo viene en Sprint 2. Nada de esto está en el build de lanzamiento hasta que lo aprueben y publiquemos v2.2.»
+> «Salimos con v2.1.9 como acordamos. En paralelo adelantamos Sprint 1 (menú Compras/Proveedores/Informes) y Sprint 2 (factura con recepción opcional y vínculo a OC). Nada de esto está en el build de lanzamiento hasta que lo aprueben y publiquemos v2.2.»
 
 ---
 

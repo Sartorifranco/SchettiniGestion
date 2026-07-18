@@ -22,6 +22,8 @@
 
             <RowDefinition Height="Auto"/>
 
+            <RowDefinition Height="Auto"/>
+
             <RowDefinition Height="*"/>
 
             <RowDefinition Height="Auto"/>
@@ -112,6 +114,48 @@
 
                     <ColumnDefinition Width="14"/>
 
+                    <ColumnDefinition Width="280"/>
+
+                </Grid.ColumnDefinitions>
+
+                <CheckBox x:Name="chkRecepcionarStock" Grid.Column="0"
+
+                          Content="Recepcionar mercadería (sumar al stock)"
+
+                          IsChecked="True" VerticalAlignment="Center"
+
+                          Foreground="{DynamicResource TextPrimary}" FontSize="13"
+
+                          Checked="chkRecepcionarStock_Changed" Unchecked="chkRecepcionarStock_Changed"/>
+
+                <StackPanel Grid.Column="2">
+
+                    <TextBlock Text="Orden de compra (opcional)" Style="{StaticResource ModalCaptionTextStyle}"/>
+
+                    <ComboBox x:Name="cmbOrdenCompra" Style="{StaticResource ModuleComboBoxStyle}" MinHeight="36"
+
+                              SelectionChanged="cmbOrdenCompra_SelectionChanged" DisplayMemberPath="Etiqueta"/>
+
+                </StackPanel>
+
+            </Grid>
+
+        </Border>
+
+
+
+        <Border Grid.Row="3" Background="{DynamicResource SurfaceDark}" CornerRadius="7" Padding="14,10" Margin="0,0,0,10"
+
+                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+
+                    <ColumnDefinition Width="*"/>
+
+                    <ColumnDefinition Width="14"/>
+
                     <ColumnDefinition Width="100"/>
 
                     <ColumnDefinition Width="14"/>
@@ -178,7 +222,7 @@
 
 
 
-        <DataGrid Grid.Row="3" x:Name="dgvItems"
+        <DataGrid Grid.Row="4" x:Name="dgvItems"
 
                   Style="{StaticResource ModuleDataGridStyle}"
 
@@ -222,7 +266,7 @@
 
 
 
-        <Border Grid.Row="4" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="6" Padding="14,8" Margin="0,0,0,14"
+        <Border Grid.Row="5" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="6" Padding="14,8" Margin="0,0,0,14"
 
                 BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
 
@@ -240,11 +284,11 @@
 
 
 
-        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
 
             <Button Content="Cancelar" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="btnCancelar_Click"/>
 
-            <Button Content="✔ Guardar Compra" Style="{StaticResource ButtonStyle}" Click="btnGuardar_Click"/>
+            <Button x:Name="btnGuardar" Content="✔ Guardar Compra" Style="{StaticResource ButtonStyle}" Click="btnGuardar_Click"/>
 
         </StackPanel>
 

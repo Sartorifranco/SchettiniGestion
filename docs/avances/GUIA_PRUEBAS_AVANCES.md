@@ -4,7 +4,7 @@ Probar **solo** con la rama de avances, no con `main` v2.1.9.
 
 ```powershell
 git fetch origin
-git checkout cursor/sprint1-compras-informes-d53a
+git checkout cursor/sprint2-flujo-compras-d53a
 # Compilar Release y ejecutar
 ```
 
@@ -37,7 +37,7 @@ git checkout cursor/sprint1-compras-informes-d53a
 |---|------|----------|
 | 1 | Menú → Compras | Hub con 6 pestañas visibles |
 | 2 | **Facturas de compras** → Nueva factura | Modal abre, permite ítems |
-| 3 | Guardar factura | Aparece en grilla; stock sube (comportamiento actual v2.1.9) |
+| 3 | Guardar factura (checkbox recepcionar **marcado**) | Aparece en grilla; stock sube; columna Stock ✓ |
 | 4 | **Recepciones** → Nueva | CRUD básico |
 | 5 | **Notas NC/ND** → Nueva | CRUD básico |
 | 6 | **Gastos rápidos** → Nuevo | Registra egreso en caja |
@@ -83,9 +83,54 @@ git checkout cursor/sprint1-compras-informes-d53a
 
 ---
 
-## Sprint 2 — (se completará al cerrar el sprint)
+## Sprint 2 — Factura con recepción opcional y OC
 
-_Pendiente: factura con checkbox recepcionar, selector OC, stock condicional._
+### 2.1 Factura sin recepcionar stock
+
+| # | Paso | Esperado |
+|---|------|----------|
+| 1 | Compras → Facturas → Nueva factura | Modal con checkbox «Recepcionar mercadería» marcado |
+| 2 | Elegir proveedor, agregar ítems | Detalle OK |
+| 3 | **Desmarcar** «Recepcionar mercadería» → Guardar | Pide confirmación |
+| 4 | Confirmar | Factura en grilla; columna **Stock** sin tilde |
+| 5 | Verificar stock del producto | **No** cambió |
+| 6 | Doble clic en la factura | Solo lectura; checkbox deshabilitado |
+
+### 2.2 Factura vinculada a orden de compra
+
+| # | Paso | Esperado |
+|---|------|----------|
+| 1 | Crear OC con proveedor X (estado Pendiente) e ítems | OC en grilla |
+| 2 | Nueva factura → proveedor X | Combo OC muestra la orden abierta |
+| 3 | Seleccionar OC → confirmar cargar ítems | Detalle se llena desde la OC |
+| 4 | Con recepcionar **marcado** → Guardar | Factura con OC#; stock sube |
+| 5 | Pestaña Órdenes de Compras | OC pasa a **Parcial** o **Recibida** según cantidades |
+| 6 | Pestaña Recepciones | Aparece recepción vinculada a la factura |
+
+### 2.3 Factura con OC sin recepcionar
+
+| # | Paso | Esperado |
+|---|------|----------|
+| 1 | Nueva factura + OC seleccionada | Ítems cargados |
+| 2 | Desmarcar recepcionar → Guardar | Confirma «sin mover stock» |
+| 3 | Grilla facturas | OC# visible; Stock sin tilde |
+| 4 | Grilla OC | Estado OC **no** cambia |
+
+### 2.4 Eliminar factura
+
+| # | Paso | Esperado |
+|---|------|----------|
+| 1 | Eliminar factura **con** stock recibido | Mensaje advierte reversión de stock; stock baja |
+| 2 | Eliminar factura **sin** stock recibido | Mensaje indica que no hubo movimiento; stock intacto |
+
+### Checklist Sprint 2
+
+- [ ] Checkbox recepcionar funciona (sí/no stock)
+- [ ] Selector OC carga ítems del proveedor correcto
+- [ ] OC actualiza estado Parcial/Recibida al recepcionar
+- [ ] Recepción automática al facturar con OC + stock
+- [ ] Grilla muestra columnas OC y Stock
+- [ ] Sin regresión Sprint 1 (menú, OC manual, Informes)
 
 ---
 

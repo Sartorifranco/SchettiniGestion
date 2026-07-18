@@ -70,6 +70,11 @@ namespace SchettiniGestion.WPF
                     {
                         _proveedorId = Convert.ToInt32(r["ProveedorID"]);
                         lblProveedorSel.Text = r["Proveedor"]?.ToString();
+                        if (r.Table.Columns.Contains("OrdenCompraID") && r["OrdenCompraID"] != DBNull.Value)
+                        {
+                            int ocId = Convert.ToInt32(r["OrdenCompraID"]);
+                            if (ocId > 0) lblProveedorSel.Text += $"  |  OC #{ocId}";
+                        }
                         if (r.Table.Columns.Contains("StockRecibido") && r["StockRecibido"] != DBNull.Value)
                             chkRecepcionarStock.IsChecked = Convert.ToBoolean(r["StockRecibido"]);
                         for (int i = 0; i < cmbTipoComprobante.Items.Count; i++)

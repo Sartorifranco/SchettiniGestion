@@ -3669,6 +3669,60 @@ WHERE ProductoID=@id", conexion, transaccion))
             }
         }
 
+        private static void RevertirEstadoOrdenTrasEliminarCompra(SqlConnection c, SqlTransaction tr, int ordenId, DataTable det)
+        {
+            foreach (DataRow r in det.Rows)
+            {
+                int pid = Convert.ToInt32(r["ProductoID"]);
+                int cant = Convert.ToInt32(r["Cantidad"]);
+                using (var cmd = new SqlCommand(@"UPDATE OrdenCompraDetalle SET CantidadRecibida = CASE
+                    WHEN CantidadRecibida >= @cant THEN CantidadRecibida - @cant ELSE 0 END
+                    WHERE OrdenID=@oid AND ProductoID=@pid", c, tr))
+                {
+                    cmd.Parameters.AddWithValue("@cant", cant);
+                    cmd.Parameters.AddWithValue("@oid", ordenId);
+                    cmd.Parameters.AddWithValue("@pid", pid);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            using (var cmdTot = new SqlCommand(@"SELECT SUM(CantidadRecibida) FROM OrdenCompraDetalle WHERE OrdenID=@oid", c, tr))
+            {
+                cmdTot.Parameters.AddWithValue("@oid", ordenId);
+                int recibido = Convert.ToInt32(cmdTot.ExecuteScalar());
+                string estado = recibido <= 0 ? "Pendiente" : "Parcial";
+                using (var cmdPend = new SqlCommand(@"SELECT COUNT(*) FROM OrdenCompraDetalle
+                    WHERE OrdenID=@oid AND CantidadRecibida < Cantidad", c, tr))
+                {
+                    cmdPend.Parameters.AddWithValue("@oid", ordenId);
+                    int pendientes = Convert.ToInt32(cmdPend.ExecuteScalar());
+                    if (pendientes == 0 && recibido > 0) estado = "Recibida";
+                    using (var cmdEst = new SqlCommand("UPDATE OrdenCompra SET Estado=@est WHERE OrdenID=@oid", c, tr))
+                    {
+                        cmdEst.Parameters.AddWithValue("@est", estado);
+                        cmdEst.Parameters.AddWithValue("@oid", ordenId);
+                        cmdEst.ExecuteNonQuery();
+                    }
+                }
+            }
+        }
+
+        private static void EliminarRecepcionesDeCompra(SqlConnection c, SqlTransaction tr, int compraId)
+        {
+            var ids = new List<int>();
+            using (var cmd = new SqlCommand("SELECT RecepcionID FROM RecepcionesCompra WHERE CompraID=@id", c, tr))
+            {
+                cmd.Parameters.AddWithValue("@id", compraId);
+                using (var rd = cmd.ExecuteReader())
+                    while (rd.Read()) ids.Add(Convert.ToInt32(rd["RecepcionID"]));
+            }
+            foreach (int rid in ids)
+            {
+                new SqlCommand($"DELETE FROM RecepcionCompraDetalle WHERE RecepcionID={rid}", c, tr).ExecuteNonQuery();
+                new SqlCommand($"DELETE FROM RecepcionesCompra WHERE RecepcionID={rid}", c, tr).ExecuteNonQuery();
+            }
+        }
+
         public static DataTable GetFacturasPorFecha(DateTime d, DateTime h)
         {
             var dt = new DataTable();
@@ -4455,23 +4509,28 @@ ORDER BY Fecha DESC";
                     using (var tr = c.BeginTransaction())
                     {
                         bool recibioStock = false;
-                        using (var cmdChk = new SqlCommand("SELECT ISNULL(StockRecibido,0) FROM Compras WHERE CompraID=@id", c, tr))
+                        int? ordenCompraId = null;
+                        using (var cmdChk = new SqlCommand("SELECT ISNULL(StockRecibido,0), OrdenCompraID FROM Compras WHERE CompraID=@id", c, tr))
                         {
                             cmdChk.Parameters.AddWithValue("@id", id);
-                            object o = cmdChk.ExecuteScalar();
-                            if (o == null || o == DBNull.Value) { tr.Rollback(); return false; }
-                            recibioStock = Convert.ToBoolean(o);
+                            using (var rd = cmdChk.ExecuteReader())
+                            {
+                                if (!rd.Read()) { tr.Rollback(); return false; }
+                                recibioStock = Convert.ToBoolean(rd[0]);
+                                if (!rd.IsDBNull(1)) ordenCompraId = Convert.ToInt32(rd[1]);
+                            }
+                        }
+
+                        var det = new DataTable();
+                        using (var da = new SqlDataAdapter("SELECT ProductoID, Cantidad FROM CompraDetalle WHERE CompraID=@id", c))
+                        {
+                            da.SelectCommand.Transaction = tr;
+                            da.SelectCommand.Parameters.AddWithValue("@id", id);
+                            da.Fill(det);
                         }
 
                         if (recibioStock)
                         {
-                            var det = new DataTable();
-                            using (var da = new SqlDataAdapter("SELECT ProductoID, Cantidad FROM CompraDetalle WHERE CompraID=@id", c))
-                            {
-                                da.SelectCommand.Transaction = tr;
-                                da.SelectCommand.Parameters.AddWithValue("@id", id);
-                                da.Fill(det);
-                            }
                             foreach (DataRow r in det.Rows)
                             {
                                 int pid = Convert.ToInt32(r["ProductoID"]);
@@ -4479,6 +4538,11 @@ ORDER BY Fecha DESC";
                                 new SqlCommand($"UPDATE Productos SET StockActual=StockActual-{cant} WHERE ProductoID={pid}", c, tr).ExecuteNonQuery();
                             }
                             new SqlCommand($"DELETE FROM MovimientosStock WHERE CompraID={id}", c, tr).ExecuteNonQuery();
+
+                            if (ordenCompraId.HasValue && ordenCompraId.Value > 0)
+                                RevertirEstadoOrdenTrasEliminarCompra(c, tr, ordenCompraId.Value, det);
+
+                            EliminarRecepcionesDeCompra(c, tr, id);
                         }
 
                         new SqlCommand($"DELETE FROM CompraDetalle WHERE CompraID={id}", c, tr).ExecuteNonQuery();

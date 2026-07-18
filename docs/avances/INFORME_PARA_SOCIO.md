@@ -97,7 +97,7 @@ Detalle: `docs/lanzamiento/v2.1.9_ALCANCE.md`
 - CC proveedores lista movimientos del período, no un resumen de saldos global
 - Faltantes solo considera pedidos Pendiente/Confirmado
 
-**PR:** _(se completará al abrir PR)_  
+**PR:** https://github.com/Sartorifranco/SchettiniGestion/pull/10  
 **¿Merge a producción?** Pendiente de pruebas Sprint 3.
 
 ---

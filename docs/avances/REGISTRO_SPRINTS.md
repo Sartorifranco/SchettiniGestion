@@ -130,8 +130,8 @@ Ver sección **Sprint 2** en [GUIA_PRUEBAS_AVANCES.md](GUIA_PRUEBAS_AVANCES.md).
 |-------|-------|
 | **Fecha** | 18 jul 2026 |
 | **Rama** | `cursor/sprint3-informes-d53a` |
-| **PR** | _(se completará al abrir PR)_ |
-| **Commit** | _(se completará al commitear)_ |
+| **PR** | https://github.com/Sartorifranco/SchettiniGestion/pull/10 |
+| **Commit** | `9f0734a` |
 | **Versión objetivo al merge** | 2.2.0 (propuesta, no publicada) |
 
 ### Contexto

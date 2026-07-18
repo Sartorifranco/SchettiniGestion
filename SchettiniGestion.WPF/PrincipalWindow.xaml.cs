@@ -110,6 +110,15 @@ namespace SchettiniGestion.WPF
             return LicenseManager.IsModuleEnabled(nombrePermiso) && SesionUsuario.TienePermiso(nombrePermiso);
         }
 
+        /// <summary>Informes tabulares: ventas, compras o estadísticas licenciadas.</summary>
+        private static bool PuedeInformes()
+        {
+            return PuedeModulo(DatabaseService.PERMISO_VENTAS)
+                || PuedeModulo(DatabaseService.PERMISO_FACTURACION)
+                || PuedeModulo(DatabaseService.PERMISO_COMPRAS)
+                || PuedeModulo(DatabaseService.PERMISO_ESTADISTICAS);
+        }
+
         private void SincronizarModoPantallaDesdeBase()
         {
             if (cmbModoPantalla == null) return;
@@ -212,7 +221,13 @@ namespace SchettiniGestion.WPF
                 if (btnPromociones != null)
                     btnPromociones.Visibility = PuedeModulo(DatabaseService.PERMISO_PRODUCTOS) ? Visibility.Visible : Visibility.Collapsed;
                 btnClientes.Visibility          = PuedeModulo(DatabaseService.PERMISO_CLIENTES) ? Visibility.Visible : Visibility.Collapsed;
+                if (btnProveedores != null)
+                    btnProveedores.Visibility = PuedeModulo(DatabaseService.PERMISO_PROVEEDORES) ? Visibility.Visible : Visibility.Collapsed;
+                if (btnCompras != null)
+                    btnCompras.Visibility = PuedeModulo(DatabaseService.PERMISO_COMPRAS) ? Visibility.Visible : Visibility.Collapsed;
                 btnCaja.Visibility              = PuedeModulo(DatabaseService.PERMISO_CAJA)   ? Visibility.Visible : Visibility.Collapsed;
+                if (btnInformes != null)
+                    btnInformes.Visibility = PuedeInformes() ? Visibility.Visible : Visibility.Collapsed;
                 if (btnEstadisticas != null)
                     btnEstadisticas.Visibility = PuedeModulo(DatabaseService.PERMISO_ESTADISTICAS)
                         ? Visibility.Visible : Visibility.Collapsed;
@@ -234,7 +249,10 @@ namespace SchettiniGestion.WPF
             if (btnListasPrecios != null) btnListasPrecios.Visibility = Visibility.Collapsed;
             if (btnPromociones != null) btnPromociones.Visibility = Visibility.Collapsed;
             if (btnClientes != null) btnClientes.Visibility = Visibility.Collapsed;
+            if (btnProveedores != null) btnProveedores.Visibility = Visibility.Collapsed;
+            if (btnCompras != null) btnCompras.Visibility = Visibility.Collapsed;
             if (btnCaja != null) btnCaja.Visibility = Visibility.Collapsed;
+            if (btnInformes != null) btnInformes.Visibility = Visibility.Collapsed;
             if (btnEstadisticas != null) btnEstadisticas.Visibility = Visibility.Collapsed;
             if (btnUsuariosPermisos != null) btnUsuariosPermisos.Visibility = Visibility.Collapsed;
             if (btnConfiguracion != null) btnConfiguracion.Visibility = Visibility.Collapsed;
@@ -327,12 +345,14 @@ namespace SchettiniGestion.WPF
         private void btnProveedores_Click(object sender, RoutedEventArgs e)
         {
             if (!PuedeModulo(DatabaseService.PERMISO_PROVEEDORES)) { MensajeSinPermiso(); return; }
+            SetModuloActivo(btnProveedores);
             mainContentArea.Content = new ProveedoresControl();
         }
 
         private void btnCompras_Click(object sender, RoutedEventArgs e)
         {
             if (!PuedeModulo(DatabaseService.PERMISO_COMPRAS)) { MensajeSinPermiso(); return; }
+            SetModuloActivo(btnCompras);
             mainContentArea.Content = new ComprasControl();
         }
 
@@ -370,11 +390,8 @@ namespace SchettiniGestion.WPF
 
         private void btnInformes_Click(object sender, RoutedEventArgs e)
         {
-            if (!PuedeModulo(DatabaseService.PERMISO_FACTURACION) && !PuedeModulo(DatabaseService.PERMISO_VENTAS) && !PuedeModulo(DatabaseService.PERMISO_COMPRAS))
-            {
-                MensajeSinPermiso();
-                return;
-            }
+            if (!PuedeInformes()) { MensajeSinPermiso(); return; }
+            SetModuloActivo(btnInformes);
             mainContentArea.Content = new InformesControl();
         }
 
@@ -496,8 +513,12 @@ namespace SchettiniGestion.WPF
             RegistrarTextoNav(btnProductos);
             RegistrarTextoNav(btnGestionStock);
             RegistrarTextoNav(btnListasPrecios);
+            if (btnPromociones != null) RegistrarTextoNav(btnPromociones);
             RegistrarTextoNav(btnClientes);
+            RegistrarTextoNav(btnProveedores);
+            RegistrarTextoNav(btnCompras);
             RegistrarTextoNav(btnCaja);
+            RegistrarTextoNav(btnInformes);
             RegistrarTextoNav(btnEstadisticas);
             RegistrarTextoNav(btnUsuariosPermisos);
             RegistrarTextoNav(btnConfiguracion);

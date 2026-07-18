@@ -517,7 +517,17 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Promoci
     FechaHasta DATE NULL,
     Activo BIT NOT NULL DEFAULT 1,
     Observaciones NVARCHAR(250) NULL
-  );", c))
+  );
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Compras' AND COLUMN_NAME='OrdenCompraID')
+  ALTER TABLE Compras ADD OrdenCompraID INT NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Compras' AND COLUMN_NAME='StockRecibido')
+BEGIN
+  ALTER TABLE Compras ADD StockRecibido BIT NOT NULL DEFAULT 0;
+  UPDATE Compras SET StockRecibido = 1
+  WHERE EXISTS (SELECT 1 FROM MovimientosStock ms WHERE ms.CompraID = Compras.CompraID AND ms.TipoMovimiento = N'Compra');
+END
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='OrdenCompraDetalle' AND COLUMN_NAME='CantidadRecibida')
+  ALTER TABLE OrdenCompraDetalle ADD CantidadRecibida INT NOT NULL DEFAULT 0;", c))
                         cmd.ExecuteNonQuery();
                     _columnasMigracionLiteOk = true;
                 }
@@ -3499,53 +3509,77 @@ WHERE ProductoID=@id", conexion, transaccion))
 
         public static bool GuardarCompra(int pid, string tc, decimal t, List<(int ProductoID, int Cantidad, decimal Costo)> items, string cond)
         {
+            return GuardarCompra(pid, tc, t, items, cond, null, true);
+        }
+
+        public static bool GuardarCompra(int pid, string tc, decimal t, List<(int ProductoID, int Cantidad, decimal Costo)> items, string cond, int? ordenCompraId, bool recepcionarStock)
+        {
             var its = new List<FacturaItem>();
             foreach (var it in items)
                 its.Add(new FacturaItem { ProductoID = it.ProductoID, Cantidad = it.Cantidad, PrecioUnitario = it.Costo, Descripcion = "" });
-            return GuardarCompra(pid, tc, t, its, cond);
+            return GuardarCompra(pid, tc, t, its, cond, ordenCompraId, recepcionarStock);
         }
 
         public static bool GuardarCompra(int pid, string tc, decimal t, List<FacturaItem> its, string cond)
         {
+            return GuardarCompra(pid, tc, t, its, cond, null, true);
+        }
+
+        public static bool GuardarCompra(int pid, string tc, decimal t, List<FacturaItem> its, string cond, int? ordenCompraId, bool recepcionarStock)
+        {
             using (var c = new SqlConnection(_connectionString))
             {
                 c.Open();
+                AsegurarMigracionLite(c);
                 using (var tr = c.BeginTransaction())
                 {
                     try
                     {
-                        string sqlComp = "INSERT INTO Compras (ProveedorID,Fecha,Total,TipoComprobante) VALUES (@pid,@f,@t,@tc); SELECT SCOPE_IDENTITY();";
+                        string sqlComp = @"INSERT INTO Compras (ProveedorID,Fecha,Total,TipoComprobante,OrdenCompraID,StockRecibido)
+                                           VALUES (@pid,@f,@t,@tc,@oid,@stk); SELECT SCOPE_IDENTITY();";
                         SqlCommand cmdComp = new SqlCommand(sqlComp, c, tr);
                         cmdComp.Parameters.AddWithValue("@pid", pid);
                         cmdComp.Parameters.AddWithValue("@f", DateTime.Now);
                         cmdComp.Parameters.AddWithValue("@t", t);
                         cmdComp.Parameters.AddWithValue("@tc", tc);
+                        cmdComp.Parameters.AddWithValue("@oid", (object)ordenCompraId ?? DBNull.Value);
+                        cmdComp.Parameters.AddWithValue("@stk", recepcionarStock);
                         int cid = Convert.ToInt32(cmdComp.ExecuteScalar());
 
                         foreach (var i in its)
                         {
                             new SqlCommand($"INSERT INTO CompraDetalle (CompraID,ProductoID,Cantidad,PrecioCosto) VALUES ({cid},{i.ProductoID},{i.Cantidad},{(double)i.PrecioUnitario})", c, tr).ExecuteNonQuery();
-                            new SqlCommand($"UPDATE Productos SET StockActual=StockActual+{i.Cantidad} WHERE ProductoID={i.ProductoID}", c, tr).ExecuteNonQuery();
 
-                            var prodCompra = ObtenerFilaProducto(c, tr, i.ProductoID);
-                            if (prodCompra != null)
+                            if (recepcionarStock)
                             {
-                                decimal nuevoCosto = i.PrecioUnitario;
-                                bool incluyeIva = prodCompra.Table.Columns.Contains("CostoIncluyeIva") && prodCompra["CostoIncluyeIva"] != DBNull.Value
-                                    && Convert.ToBoolean(prodCompra["CostoIncluyeIva"]);
-                                decimal imp = prodCompra.Table.Columns.Contains("ImpuestoInterno") && prodCompra["ImpuestoInterno"] != DBNull.Value
-                                    ? Convert.ToDecimal(prodCompra["ImpuestoInterno"]) : 0m;
-                                decimal iva = ParseIvaPct(prodCompra["TipoIVA"]?.ToString());
-                                ActualizarPreciosVentaPorCambioDeCosto(i.ProductoID, nuevoCosto, incluyeIva, iva, imp, c, tr);
-                            }
+                                new SqlCommand($"UPDATE Productos SET StockActual=StockActual+{i.Cantidad} WHERE ProductoID={i.ProductoID}", c, tr).ExecuteNonQuery();
 
-                            SqlCommand cmdStk = new SqlCommand("INSERT INTO MovimientosStock (ProductoID,CompraID,Fecha,TipoMovimiento,Cantidad) VALUES (@prod,@cid,@f,'Compra',@cant)", c, tr);
-                            cmdStk.Parameters.AddWithValue("@prod", i.ProductoID);
-                            cmdStk.Parameters.AddWithValue("@cid", cid);
-                            cmdStk.Parameters.AddWithValue("@f", DateTime.Now);
-                            cmdStk.Parameters.AddWithValue("@cant", i.Cantidad);
-                            cmdStk.ExecuteNonQuery();
+                                var prodCompra = ObtenerFilaProducto(c, tr, i.ProductoID);
+                                if (prodCompra != null)
+                                {
+                                    decimal nuevoCosto = i.PrecioUnitario;
+                                    bool incluyeIva = prodCompra.Table.Columns.Contains("CostoIncluyeIva") && prodCompra["CostoIncluyeIva"] != DBNull.Value
+                                        && Convert.ToBoolean(prodCompra["CostoIncluyeIva"]);
+                                    decimal imp = prodCompra.Table.Columns.Contains("ImpuestoInterno") && prodCompra["ImpuestoInterno"] != DBNull.Value
+                                        ? Convert.ToDecimal(prodCompra["ImpuestoInterno"]) : 0m;
+                                    decimal iva = ParseIvaPct(prodCompra["TipoIVA"]?.ToString());
+                                    ActualizarPreciosVentaPorCambioDeCosto(i.ProductoID, nuevoCosto, incluyeIva, iva, imp, c, tr);
+                                }
+
+                                SqlCommand cmdStk = new SqlCommand("INSERT INTO MovimientosStock (ProductoID,CompraID,Fecha,TipoMovimiento,Cantidad) VALUES (@prod,@cid,@f,'Compra',@cant)", c, tr);
+                                cmdStk.Parameters.AddWithValue("@prod", i.ProductoID);
+                                cmdStk.Parameters.AddWithValue("@cid", cid);
+                                cmdStk.Parameters.AddWithValue("@f", DateTime.Now);
+                                cmdStk.Parameters.AddWithValue("@cant", i.Cantidad);
+                                cmdStk.ExecuteNonQuery();
+                            }
                         }
+
+                        if (recepcionarStock && ordenCompraId.HasValue && ordenCompraId.Value > 0)
+                            ActualizarEstadoOrdenTrasRecepcion(c, tr, ordenCompraId.Value, its);
+
+                        if (recepcionarStock && ordenCompraId.HasValue && ordenCompraId.Value > 0)
+                            CrearRecepcionDesdeCompra(c, tr, pid, cid, ordenCompraId.Value, its);
 
                         if (cond == "Contado")
                         {
@@ -3573,6 +3607,64 @@ WHERE ProductoID=@id", conexion, transaccion))
                         return true;
                     }
                     catch { tr.Rollback(); return false; }
+                }
+            }
+        }
+
+        private static void ActualizarEstadoOrdenTrasRecepcion(SqlConnection c, SqlTransaction tr, int ordenId, List<FacturaItem> items)
+        {
+            foreach (var i in items)
+            {
+                using (var cmd = new SqlCommand(@"UPDATE OrdenCompraDetalle SET CantidadRecibida = CantidadRecibida + @cant
+                    WHERE OrdenID=@oid AND ProductoID=@pid", c, tr))
+                {
+                    cmd.Parameters.AddWithValue("@cant", i.Cantidad);
+                    cmd.Parameters.AddWithValue("@oid", ordenId);
+                    cmd.Parameters.AddWithValue("@pid", i.ProductoID);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+
+            using (var cmdPend = new SqlCommand(@"SELECT COUNT(*) FROM OrdenCompraDetalle
+                WHERE OrdenID=@oid AND CantidadRecibida < Cantidad", c, tr))
+            {
+                cmdPend.Parameters.AddWithValue("@oid", ordenId);
+                int pendientes = Convert.ToInt32(cmdPend.ExecuteScalar());
+                string estado = pendientes == 0 ? "Recibida" : "Parcial";
+                using (var cmdEst = new SqlCommand("UPDATE OrdenCompra SET Estado=@est WHERE OrdenID=@oid", c, tr))
+                {
+                    cmdEst.Parameters.AddWithValue("@est", estado);
+                    cmdEst.Parameters.AddWithValue("@oid", ordenId);
+                    cmdEst.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private static void CrearRecepcionDesdeCompra(SqlConnection c, SqlTransaction tr, int proveedorId, int compraId, int ordenId, List<FacturaItem> items)
+        {
+            string ins = "INSERT INTO RecepcionesCompra (ProveedorID,CompraID,Fecha,Estado,Observaciones) OUTPUT INSERTED.RecepcionID VALUES (@pid,@cid,@f,@est,@obs)";
+            int recepcionId;
+            using (var cmd = new SqlCommand(ins, c, tr))
+            {
+                cmd.Parameters.AddWithValue("@pid", proveedorId);
+                cmd.Parameters.AddWithValue("@cid", compraId);
+                cmd.Parameters.AddWithValue("@f", DateTime.Now);
+                cmd.Parameters.AddWithValue("@est", "Recibido");
+                cmd.Parameters.AddWithValue("@obs", $"Desde factura compra #{compraId} (OC #{ordenId})");
+                recepcionId = (int)cmd.ExecuteScalar();
+            }
+
+            foreach (var i in items)
+            {
+                using (var cmdD = new SqlCommand(@"INSERT INTO RecepcionCompraDetalle (RecepcionID,ProductoID,CantidadEsperada,CantidadRecibida,PrecioCosto)
+                    VALUES (@rid,@pid,@ce,@cr,@pc)", c, tr))
+                {
+                    cmdD.Parameters.AddWithValue("@rid", recepcionId);
+                    cmdD.Parameters.AddWithValue("@pid", i.ProductoID);
+                    cmdD.Parameters.AddWithValue("@ce", i.Cantidad);
+                    cmdD.Parameters.AddWithValue("@cr", i.Cantidad);
+                    cmdD.Parameters.AddWithValue("@pc", i.PrecioUnitario);
+                    cmdD.ExecuteNonQuery();
                 }
             }
         }
@@ -4333,10 +4425,12 @@ ORDER BY Fecha DESC";
                     c.Open();
                     string sql = string.IsNullOrWhiteSpace(filtro)
                         ? @"SELECT c.CompraID, c.Fecha, c.Total, c.TipoComprobante,
+                                   ISNULL(c.StockRecibido,0) AS StockRecibido, c.OrdenCompraID,
                                    ISNULL(p.RazonSocial,'(Sin proveedor)') AS Proveedor, c.ProveedorID
                             FROM Compras c LEFT JOIN Proveedores p ON c.ProveedorID=p.ProveedorID
                             ORDER BY c.Fecha DESC"
                         : @"SELECT c.CompraID, c.Fecha, c.Total, c.TipoComprobante,
+                                   ISNULL(c.StockRecibido,0) AS StockRecibido, c.OrdenCompraID,
                                    ISNULL(p.RazonSocial,'(Sin proveedor)') AS Proveedor, c.ProveedorID
                             FROM Compras c LEFT JOIN Proveedores p ON c.ProveedorID=p.ProveedorID
                             WHERE p.RazonSocial LIKE @f OR c.TipoComprobante LIKE @f
@@ -4352,7 +4446,70 @@ ORDER BY Fecha DESC";
 
         public static bool EliminarCompra(int id)
         {
-            try { using (var c = new SqlConnection(_connectionString)) { c.Open(); new SqlCommand($"DELETE FROM Compras WHERE CompraID={id}", c).ExecuteNonQuery(); return true; } } catch { return false; }
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    using (var tr = c.BeginTransaction())
+                    {
+                        bool recibioStock = false;
+                        using (var cmdChk = new SqlCommand("SELECT ISNULL(StockRecibido,0) FROM Compras WHERE CompraID=@id", c, tr))
+                        {
+                            cmdChk.Parameters.AddWithValue("@id", id);
+                            object o = cmdChk.ExecuteScalar();
+                            if (o == null || o == DBNull.Value) { tr.Rollback(); return false; }
+                            recibioStock = Convert.ToBoolean(o);
+                        }
+
+                        if (recibioStock)
+                        {
+                            var det = new DataTable();
+                            using (var da = new SqlDataAdapter("SELECT ProductoID, Cantidad FROM CompraDetalle WHERE CompraID=@id", c))
+                            {
+                                da.SelectCommand.Transaction = tr;
+                                da.SelectCommand.Parameters.AddWithValue("@id", id);
+                                da.Fill(det);
+                            }
+                            foreach (DataRow r in det.Rows)
+                            {
+                                int pid = Convert.ToInt32(r["ProductoID"]);
+                                int cant = Convert.ToInt32(r["Cantidad"]);
+                                new SqlCommand($"UPDATE Productos SET StockActual=StockActual-{cant} WHERE ProductoID={pid}", c, tr).ExecuteNonQuery();
+                            }
+                            new SqlCommand($"DELETE FROM MovimientosStock WHERE CompraID={id}", c, tr).ExecuteNonQuery();
+                        }
+
+                        new SqlCommand($"DELETE FROM CompraDetalle WHERE CompraID={id}", c, tr).ExecuteNonQuery();
+                        new SqlCommand($"DELETE FROM Compras WHERE CompraID={id}", c, tr).ExecuteNonQuery();
+                        tr.Commit();
+                        return true;
+                    }
+                }
+            }
+            catch { return false; }
+        }
+
+        public static DataTable GetOrdenesCompraAbiertas(int proveedorId)
+        {
+            var dt = new DataTable();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    var da = new SqlDataAdapter(@"SELECT oc.OrdenID AS OrdenCompraID, oc.Fecha, oc.Estado, oc.Total,
+                        ISNULL(p.RazonSocial,'') AS Proveedor
+                        FROM OrdenCompra oc LEFT JOIN Proveedores p ON oc.ProveedorID=p.ProveedorID
+                        WHERE oc.ProveedorID=@pid AND oc.Estado IN (N'Pendiente', N'Parcial')
+                        ORDER BY oc.Fecha DESC", c);
+                    da.SelectCommand.Parameters.AddWithValue("@pid", proveedorId);
+                    da.Fill(dt);
+                }
+            }
+            catch { }
+            return dt;
         }
 
         public static DataTable GetRecepcionesCompra(string filtro = "")
@@ -4677,10 +4834,11 @@ ORDER BY Fecha DESC";
             catch { return false; }
         }
 
-        public static int GuardarOrdenCompra(int ordenId, int proveedorId, DateTime? fechaEntrega, string observaciones, List<(int ProductoID, int Cantidad, decimal Costo)> items)
+        public static int GuardarOrdenCompra(int ordenId, int proveedorId, DateTime? fechaEntrega, string observaciones, List<(int ProductoID, int Cantidad, decimal Costo)> items, string estado = null)
         {
             try
             {
+                string estadoOrden = string.IsNullOrWhiteSpace(estado) ? "Pendiente" : estado.Trim();
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
@@ -4691,12 +4849,13 @@ ORDER BY Fecha DESC";
                         int id = ordenId;
                         if (ordenId == 0)
                         {
-                            string ins = "INSERT INTO OrdenCompra (ProveedorID,Fecha,FechaEntrega,Estado,Observaciones,Total) OUTPUT INSERTED.OrdenID VALUES (@pid,@f,@fe,'Pendiente',@obs,@t)";
+                            string ins = "INSERT INTO OrdenCompra (ProveedorID,Fecha,FechaEntrega,Estado,Observaciones,Total) OUTPUT INSERTED.OrdenID VALUES (@pid,@f,@fe,@est,@obs,@t)";
                             using (var cmd = new SqlCommand(ins, c, tx))
                             {
                                 cmd.Parameters.AddWithValue("@pid", proveedorId);
                                 cmd.Parameters.AddWithValue("@f", DateTime.Now);
                                 cmd.Parameters.AddWithValue("@fe", (object)fechaEntrega ?? DBNull.Value);
+                                cmd.Parameters.AddWithValue("@est", estadoOrden);
                                 cmd.Parameters.AddWithValue("@obs", observaciones ?? "");
                                 cmd.Parameters.AddWithValue("@t", total);
                                 id = (int)cmd.ExecuteScalar();
@@ -4704,11 +4863,12 @@ ORDER BY Fecha DESC";
                         }
                         else
                         {
-                            string upd = "UPDATE OrdenCompra SET ProveedorID=@pid,FechaEntrega=@fe,Observaciones=@obs,Total=@t WHERE OrdenID=@id";
+                            string upd = "UPDATE OrdenCompra SET ProveedorID=@pid,FechaEntrega=@fe,Estado=@est,Observaciones=@obs,Total=@t WHERE OrdenID=@id";
                             using (var cmd = new SqlCommand(upd, c, tx))
                             {
                                 cmd.Parameters.AddWithValue("@pid", proveedorId);
                                 cmd.Parameters.AddWithValue("@fe", (object)fechaEntrega ?? DBNull.Value);
+                                cmd.Parameters.AddWithValue("@est", estadoOrden);
                                 cmd.Parameters.AddWithValue("@obs", observaciones ?? "");
                                 cmd.Parameters.AddWithValue("@t", total);
                                 cmd.Parameters.AddWithValue("@id", ordenId);

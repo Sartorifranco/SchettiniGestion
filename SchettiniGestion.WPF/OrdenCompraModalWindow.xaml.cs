@@ -26,9 +26,15 @@ namespace SchettiniGestion.WPF
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            if (_ordenId > 0)
+            if (_ordenId == 0)
+            {
+                cmbEstado.IsEnabled = false;
+                SeleccionarEstado("Pendiente");
+            }
+            else
             {
                 lblTitulo.Text = "Editar Orden de Compra";
+                cmbEstado.IsEnabled = true;
                 try
                 {
                     var dt = DatabaseService.GetOrdenesCompra();
@@ -42,6 +48,7 @@ namespace SchettiniGestion.WPF
                             _ignorarTC = false;
                             if (r["FechaEntrega"] != DBNull.Value) dtpFechaEntrega.SelectedDate = Convert.ToDateTime(r["FechaEntrega"]);
                             txtObservaciones.Text = r["Observaciones"]?.ToString() ?? "";
+                            SeleccionarEstado(r["Estado"]?.ToString() ?? "Pendiente");
                             break;
                         }
                     }
@@ -52,6 +59,28 @@ namespace SchettiniGestion.WPF
                 catch { }
             }
             ActualizarTotal();
+        }
+
+        private void SeleccionarEstado(string estado)
+        {
+            if (cmbEstado == null) return;
+            foreach (var item in cmbEstado.Items)
+            {
+                if (item is System.Windows.Controls.ComboBoxItem cbi
+                    && string.Equals(cbi.Content?.ToString(), estado, StringComparison.OrdinalIgnoreCase))
+                {
+                    cmbEstado.SelectedItem = item;
+                    return;
+                }
+            }
+            cmbEstado.SelectedIndex = 0;
+        }
+
+        private string ObtenerEstadoSeleccionado()
+        {
+            if (cmbEstado?.SelectedItem is System.Windows.Controls.ComboBoxItem cbi)
+                return cbi.Content?.ToString() ?? "Pendiente";
+            return "Pendiente";
         }
 
         private void txtBuscarProveedor_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -121,7 +150,7 @@ namespace SchettiniGestion.WPF
             if (_items.Count == 0) { MessageBox.Show("Agregue al menos un ítem.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
             var items = new List<(int, int, decimal)>();
             foreach (var it in _items) items.Add((it.ProductoID, it.Cantidad, it.Costo));
-            int id = DatabaseService.GuardarOrdenCompra(_ordenId, _proveedorId, dtpFechaEntrega.SelectedDate, txtObservaciones.Text.Trim(), items);
+            int id = DatabaseService.GuardarOrdenCompra(_ordenId, _proveedorId, dtpFechaEntrega.SelectedDate, txtObservaciones.Text.Trim(), items, ObtenerEstadoSeleccionado());
             if (id > 0) { _onGuardado?.Invoke(); DialogResult = true; Close(); }
             else MessageBox.Show("Error al guardar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }

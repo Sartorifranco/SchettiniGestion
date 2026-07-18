@@ -60,8 +60,10 @@
                                 <DataGridTextColumn Header="ID" Binding="{Binding CompraID}" Width="60"/>
                                 <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy}" Width="100"/>
                                 <DataGridTextColumn Header="Proveedor" Binding="{Binding Proveedor}" Width="*"/>
-                                <DataGridTextColumn Header="Tipo" Binding="{Binding TipoComprobante}" Width="120"/>
-                                <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C2}" Width="120"/>
+                                <DataGridTextColumn Header="Tipo" Binding="{Binding TipoComprobante}" Width="110"/>
+                                <DataGridTextColumn Header="OC" Binding="{Binding OrdenCompraID}" Width="55"/>
+                                <DataGridCheckBoxColumn Header="Stock" Binding="{Binding StockRecibido}" Width="60" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C2}" Width="110"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Border>

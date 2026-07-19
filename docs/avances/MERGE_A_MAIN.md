@@ -1,6 +1,7 @@
 # Merge de avances → `main` (v2.2.0 propuesta)
 
-Rama lista para merge: **`cursor/avances-v2.2-d53a`**
+Rama lista para merge: **`cursor/avances-v2.2-d53a`**  
+**PR:** https://github.com/Sartorifranco/SchettiniGestion/pull/12
 
 Incluye **Sprints 1 a 4** completos sobre `main` v2.1.9.
 

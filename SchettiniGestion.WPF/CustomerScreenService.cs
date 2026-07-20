@@ -36,17 +36,54 @@ namespace SchettiniGestion.WPF
         {
             if (!VisorEstaHabilitado()) return;
 
-            if (Screen.AllScreens.Length > 1)
+            if (Screen.AllScreens.Length <= 1)
+                return;
+
+            var pantallaSecundaria = Screen.AllScreens.FirstOrDefault(s => !s.Primary) ?? Screen.AllScreens[1];
+            var area = pantallaSecundaria.WorkingArea;
+
+            // Si el usuario cerró el visor, la instancia queda inválida: no se puede volver a Show().
+            if (_visor != null && !_visor.IsLoaded)
+                _visor = null;
+
+            if (_visor == null)
             {
-                var pantallaSecundaria = Screen.AllScreens.FirstOrDefault(s => !s.Primary) ?? Screen.AllScreens[1];
-                var area = pantallaSecundaria.WorkingArea;
-
-                if (_visor == null)
+                var ventana = new VisorClienteWindow();
+                ventana.Closed += (_, __) =>
                 {
-                    _visor = new VisorClienteWindow();
-                    _visor.OnOpcionSeleccionada += (opcion) => OnClienteEligioPago?.Invoke(opcion);
-                }
+                    if (ReferenceEquals(_visor, ventana))
+                        _visor = null;
+                };
+                ventana.OnOpcionSeleccionada += (opcion) => OnClienteEligioPago?.Invoke(opcion);
+                _visor = ventana;
+            }
 
+            try
+            {
+                _visor.WindowState = System.Windows.WindowState.Normal;
+                _visor.Top = area.Top;
+                _visor.Left = area.Left;
+                _visor.Width = area.Width;
+                _visor.Height = area.Height;
+                _visor.WindowState = System.Windows.WindowState.Maximized;
+
+                if (_visor.IsVisible)
+                    _visor.Activate();
+                else
+                    _visor.Show();
+            }
+            catch (InvalidOperationException)
+            {
+                // Defensa extra: recrear y reintentar una vez.
+                _visor = null;
+                var ventana = new VisorClienteWindow();
+                ventana.Closed += (_, __) =>
+                {
+                    if (ReferenceEquals(_visor, ventana))
+                        _visor = null;
+                };
+                ventana.OnOpcionSeleccionada += (opcion) => OnClienteEligioPago?.Invoke(opcion);
+                _visor = ventana;
                 _visor.Top = area.Top;
                 _visor.Left = area.Left;
                 _visor.Width = area.Width;
@@ -115,7 +152,15 @@ namespace SchettiniGestion.WPF
 
         public static void Cerrar()
         {
-            if (_visor != null) { _visor.Close(); _visor = null; }
+            if (_visor == null) return;
+            var ventana = _visor;
+            _visor = null;
+            try
+            {
+                if (ventana.IsLoaded)
+                    ventana.Close();
+            }
+            catch { }
         }
 
         /// <summary>Reaplica la configuración de visor (pantalla única vs. cliente en segundo monitor).</summary>

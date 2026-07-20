@@ -19,7 +19,7 @@
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
             <TextBlock Text="Promociones" FontSize="24" FontWeight="Bold"
                        Foreground="{DynamicResource HeaderForegroundBrush}"/>
-            <TextBlock Text="Descuentos que se aplican solos en la caja cuando cargás el producto. Ej: 20% en remeras, 10% en todo el local, etc."
+            <TextBlock Text="Descuentos que se aplican solos en la caja al cargar el producto. En el carrito vas a ver el nombre de la promo (ej: 🎯 Promo verano · -50%)."
                        FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"
                        Foreground="{DynamicResource TextSecondary}"/>
         </StackPanel>
@@ -104,7 +104,44 @@
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" Grid.Column="3" VerticalAlignment="Top" Margin="0,0,0,12">
-                    <CheckBox x:Name="chkActiva" Content="Promo activa" IsChecked="True" Margin="0,22,0,0"/>
+                    <TextBlock Text="Estado:" Style="{StaticResource ModuleLabelStyle}"/>
+                    <ToggleButton x:Name="chkActiva" IsChecked="True"
+                                  MinHeight="48" MinWidth="140" Padding="14,8"
+                                  FontSize="15" FontWeight="SemiBold" Cursor="Hand">
+                        <ToggleButton.Style>
+                            <Style TargetType="ToggleButton">
+                                <Setter Property="Background" Value="#27AE60"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                                    CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="False">
+                                                    <Setter TargetName="bd" Property="Background" Value="#7F8C8D"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Content" Value="● Activa"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsChecked" Value="False">
+                                        <Setter Property="Content" Value="○ Pausada"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ToggleButton.Style>
+                    </ToggleButton>
+                    <TextBlock Text="Tocá para activar o pausar."
+                               FontSize="11" Foreground="#888" Margin="0,6,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4">

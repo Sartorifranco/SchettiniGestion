@@ -313,6 +313,7 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Row="0" Text="Resumen de la venta"
@@ -332,6 +333,11 @@
 
                                 <TextBlock Grid.Row="2" x:Name="txtAyudaResumen" Text="% Total = descuento a toda la venta · Tocá un producto abajo = editar solo ese ítem"
                                            FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,4"/>
+                                <Border Grid.Row="3" x:Name="bdrAvisoPromo" Visibility="Collapsed" Background="#1A27AE60"
+                                        BorderBrush="#27AE60" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,4,0,0">
+                                    <TextBlock x:Name="txtAvisoPromo" TextWrapping="Wrap" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="#2ECC71"/>
+                                </Border>
                             </Grid>
 
                             <Expander x:Name="expConfigVenta" Grid.Row="1" Header="Configuración" IsExpanded="False" Margin="0,0,0,6"

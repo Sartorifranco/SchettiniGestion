@@ -30,6 +30,8 @@ namespace SchettiniGestion
         public decimal PrecioUnitario { get; set; }
         public decimal DescuentoPorcentaje { get; set; } = 0;
         public decimal RecargoPorcentaje { get; set; } = 0;
+        /// <summary>Nombre de la promoción automática aplicada (si hubo).</summary>
+        public string PromoNombre { get; set; }
         /// <summary>IVA aplicado sobre el precio (subtotal línea incluye este IVA), p. ej. 21 por 21%.</summary>
         public decimal AlicuotaIvaPct { get; set; } = 21m;
         /// <summary>Si es false, el precio unitario en POS no puede modificarse manualmente.</summary>
@@ -40,7 +42,12 @@ namespace SchettiniGestion
         {
             get
             {
-                if (DescuentoPorcentaje > 0m) return $"-{DescuentoPorcentaje:N0}% dto";
+                if (DescuentoPorcentaje > 0m)
+                {
+                    if (!string.IsNullOrWhiteSpace(PromoNombre))
+                        return $"🎯 {PromoNombre} · -{DescuentoPorcentaje:N0}%";
+                    return $"-{DescuentoPorcentaje:N0}% dto";
+                }
                 if (RecargoPorcentaje > 0m) return $"+{RecargoPorcentaje:N0}% rec.";
                 return "";
             }

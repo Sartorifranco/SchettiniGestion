@@ -922,6 +922,7 @@ namespace SchettiniGestion.WPF
                     Cantidad = cant,
                     PrecioUnitario = precioFinal,
                     DescuentoPorcentaje = promo != null && promo.Porcentaje > 0 ? promo.Porcentaje : 0,
+                    PromoNombre = promo != null && promo.Porcentaje > 0 ? promo.Nombre : null,
                     AlicuotaIvaPct = alicuota,
                     ImagenPath = imgPath,
                     PermiteModificarPrecioVenta = LeerPermiteModificarPrecioVenta(_productoSeleccionado)
@@ -932,6 +933,31 @@ namespace SchettiniGestion.WPF
             LimpiarProducto();
             ActualizarTotal();
             MarcarItemCarrito(CarritoDeVenta.LastOrDefault(i => i.EsValido));
+            if (promo != null && promo.Porcentaje > 0 && item == null)
+                MostrarAvisoPromo(promo.Nombre, promo.Porcentaje);
+        }
+
+        private DispatcherTimer _timerAvisoPromo;
+
+        private void MostrarAvisoPromo(string nombrePromo, decimal porcentaje)
+        {
+            if (bdrAvisoPromo == null || txtAvisoPromo == null) return;
+            string nombre = string.IsNullOrWhiteSpace(nombrePromo) ? "Promoción" : nombrePromo.Trim();
+            txtAvisoPromo.Text = $"🎯 Se aplicó «{nombre}»: -{porcentaje:N0}% en este producto.";
+            bdrAvisoPromo.Visibility = Visibility.Visible;
+
+            if (_timerAvisoPromo == null)
+            {
+                _timerAvisoPromo = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
+                _timerAvisoPromo.Tick += (_, __) =>
+                {
+                    _timerAvisoPromo.Stop();
+                    if (bdrAvisoPromo != null)
+                        bdrAvisoPromo.Visibility = Visibility.Collapsed;
+                };
+            }
+            _timerAvisoPromo.Stop();
+            _timerAvisoPromo.Start();
         }
 
         /// <summary>
@@ -2084,7 +2110,9 @@ namespace SchettiniGestion.WPF
             if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 100)
             {
                 item.DescuentoPorcentaje = pct;
+                item.PromoNombre = null; // descuento manual: ya no es la promo automática
                 if (pct > 0) item.RecargoPorcentaje = 0;
+                RefrescarVistaCarrito();
                 ActualizarTotal();
             }
         }
@@ -2097,7 +2125,12 @@ namespace SchettiniGestion.WPF
             if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 1000)
             {
                 item.RecargoPorcentaje = pct;
-                if (pct > 0) item.DescuentoPorcentaje = 0;
+                if (pct > 0)
+                {
+                    item.DescuentoPorcentaje = 0;
+                    item.PromoNombre = null;
+                }
+                RefrescarVistaCarrito();
                 ActualizarTotal();
             }
         }

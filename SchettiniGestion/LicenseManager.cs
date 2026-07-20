@@ -106,19 +106,20 @@ namespace SchettiniGestion
         }
 
         // ─────────────────────────────────────────────────────────────
-        //  Obtención de la clave cruda (archivo → config → base de datos)
+        //  Obtención de la clave cruda
+        //  Orden: ProgramData → BD → exe → App.config
+        //  (el .key junto al exe puede ser viejo si no se pudo sobrescribir en Program Files)
         // ─────────────────────────────────────────────────────────────
         private static string ObtenerClaveLicencia()
         {
-            string desdeArchivo = LicenseFileHelper.LeerClaveDesdeArchivos();
-            if (!string.IsNullOrWhiteSpace(desdeArchivo))
-                return desdeArchivo.Trim();
-
             try
             {
-                string fromConfig = ConfigurationManager.AppSettings["LicenciaBase64"];
-                if (!string.IsNullOrWhiteSpace(fromConfig))
-                    return fromConfig.Trim();
+                if (File.Exists(LicenseFileHelper.RutaLicenciaProgramData))
+                {
+                    string desdePd = File.ReadAllText(LicenseFileHelper.RutaLicenciaProgramData).Trim();
+                    if (!string.IsNullOrWhiteSpace(desdePd))
+                        return desdePd;
+                }
             }
             catch { }
 
@@ -130,7 +131,43 @@ namespace SchettiniGestion
             }
             catch { }
 
+            try
+            {
+                string rutaExe = LicenseFileHelper.ObtenerRutaLicenciaEjecutable();
+                if (File.Exists(rutaExe))
+                {
+                    string desdeExe = File.ReadAllText(rutaExe).Trim();
+                    if (!string.IsNullOrWhiteSpace(desdeExe))
+                        return desdeExe;
+                }
+            }
+            catch { }
+
+            try
+            {
+                string fromConfig = ConfigurationManager.AppSettings["LicenciaBase64"];
+                if (!string.IsNullOrWhiteSpace(fromConfig))
+                    return fromConfig.Trim();
+            }
+            catch { }
+
             return null;
+        }
+
+        private static bool CargarLicenciaDesdeClave(string claveLicencia)
+        {
+            if (string.IsNullOrWhiteSpace(claveLicencia))
+                return false;
+            try
+            {
+                string json = Desencriptar(claveLicencia.Trim());
+                _licenciaActual = JsonConvert.DeserializeObject<LicenseData>(json);
+                return _licenciaActual != null;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -140,14 +177,8 @@ namespace SchettiniGestion
         {
             try
             {
-                string claveLicencia = ObtenerClaveLicencia();
-
-                if (!string.IsNullOrWhiteSpace(claveLicencia))
-                {
-                    string json = Desencriptar(claveLicencia);
-                    _licenciaActual = JsonConvert.DeserializeObject<LicenseData>(json);
-                    return _licenciaActual != null;
-                }
+                if (CargarLicenciaDesdeClave(ObtenerClaveLicencia()))
+                    return true;
 
 #if DEBUG
                 // Licencia de desarrollo embebida: solo activa en compilaciones Debug,
@@ -181,18 +212,27 @@ namespace SchettiniGestion
         //  Validación completa: desencripta → verifica vencimiento →
         //  verifica Hardware ID (solo en Release)
         // ─────────────────────────────────────────────────────────────
-        public static bool ValidarLicencia()
+        /// <param name="claveForzada">
+        /// Si se indica (p. ej. al activar), valida esa clave en memoria
+        /// en lugar de releer un licencia.key posiblemente desactualizado.
+        /// </param>
+        public static bool ValidarLicencia(string claveForzada = null)
         {
             UltimoMensajeError = null;
             InvalidarCache();
 
-            if (!CargarLicencia())
+            bool cargada = !string.IsNullOrWhiteSpace(claveForzada)
+                ? CargarLicenciaDesdeClave(claveForzada)
+                : CargarLicencia();
+
+            if (!cargada)
             {
                 UltimoMensajeError = "No hay licencia activa. Pegue la clave que le envió el proveedor o cargue el archivo licencia.key.";
                 return false;
             }
 
-            if (DateTime.Now > _licenciaActual.FechaExpiracion)
+            // Comparar por día de calendario (la clave guarda medianoche del día de vencimiento).
+            if (DateTime.Now.Date > _licenciaActual.FechaExpiracion.Date)
             {
                 UltimoMensajeError = "Licencia expirada. Solicite una renovación al proveedor.";
                 return false;

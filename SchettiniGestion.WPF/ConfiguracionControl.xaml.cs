@@ -918,14 +918,17 @@ namespace SchettiniGestion.WPF
 
             if (DatabaseService.GuardarNuevaLicencia(nuevaKey))
             {
-                if (LicenseManager.ValidarLicencia())
+                if (LicenseManager.ValidarLicencia(nuevaKey))
                 {
                     ModernMessageBox.Show("¡Licencia activada correctamente!\n\nPor favor, reinicie el sistema para aplicar los cambios en los módulos.", "Activación Exitosa", MessageBoxButton.OK, MessageBoxImage.Information);
                     Application.Current.Shutdown();
                 }
                 else
                 {
-                    ModernMessageBox.Show("La licencia se guardó pero parece ser INVÁLIDA o está vencida.", "Advertencia", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    string detalle = string.IsNullOrWhiteSpace(LicenseManager.UltimoMensajeError)
+                        ? "La licencia se guardó pero parece ser INVÁLIDA o está vencida."
+                        : "La licencia se guardó pero no es válida:\n\n" + LicenseManager.UltimoMensajeError;
+                    ModernMessageBox.Show(detalle, "Advertencia", MessageBoxButton.OK, MessageBoxImage.Warning);
                     CargarDatosLicencia();
                 }
             }

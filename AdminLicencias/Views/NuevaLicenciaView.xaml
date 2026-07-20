@@ -101,7 +101,7 @@
                     <Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Versión SCHPOS" Style="{StaticResource FieldLabel}"/>
-                        <TextBox x:Name="txtVersion" Style="{StaticResource Field}" Height="38" Text="1.0.0"/>
+                        <TextBox x:Name="txtVersion" Style="{StaticResource Field}" Height="38" Text="2.1.9"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="¿Es renovación?" Style="{StaticResource FieldLabel}"/>

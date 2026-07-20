@@ -157,9 +157,22 @@
                         <Grid Grid.Row="2">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+
+                            <Border x:Name="bdrPromosHoy" Grid.Row="0" Visibility="Collapsed"
+                                    Background="#1A27AE60" BorderBrush="#27AE60" BorderThickness="1"
+                                    CornerRadius="6" Padding="10,8" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <TextBlock Text="Promos activas hoy" FontSize="11" FontWeight="Bold"
+                                               Foreground="#2ECC71" Margin="0,0,0,2"/>
+                                    <TextBlock x:Name="txtPromosHoy" TextWrapping="Wrap" FontSize="12"
+                                               Foreground="{DynamicResource TextPrimary}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
                                 <Button x:Name="btnVistaCatalogoLista" Content="Lista" Click="btnVistaCatalogoLista_Click"
                                         Style="{StaticResource ButtonStyle}" Padding="14,6" Margin="0,0,6,0"/>
                                 <Button x:Name="btnVistaCatalogoCards" Content="Cards" Click="btnVistaCatalogoCards_Click"
@@ -167,7 +180,7 @@
                                 <TextBlock x:Name="lblCantidadCatalogo" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}" FontSize="13"/>
                             </StackPanel>
 
-                            <DataGrid x:Name="dgvCatalogo" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                            <DataGrid x:Name="dgvCatalogo" Grid.Row="2" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                                       HeadersVisibility="Column" GridLinesVisibility="Horizontal" BorderThickness="0"
                                       RowHeight="48" FontSize="14" SelectionMode="Single" HorizontalScrollBarVisibility="Auto"
                                       MouseLeftButtonUp="dgvCatalogo_MouseLeftButtonUp">
@@ -190,6 +203,27 @@
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
+                                    <DataGridTemplateColumn Header="" Width="78" MinWidth="72">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#27AE60" CornerRadius="4" Padding="6,3"
+                                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                        ToolTip="{Binding PromoTooltip}">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding EnPromo}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="EN PROMO" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" MinWidth="140" Width="*">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
@@ -238,7 +272,7 @@
                                 </DataGrid.RowStyle>
                             </DataGrid>
 
-                            <ScrollViewer x:Name="svCatalogoCards" Grid.Row="1" Visibility="Collapsed"
+                            <ScrollViewer x:Name="svCatalogoCards" Grid.Row="2" Visibility="Collapsed"
                                           VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                 <ItemsControl x:Name="icCatalogo">
                                     <ItemsControl.ItemsPanel>
@@ -250,7 +284,8 @@
                                         <DataTemplate>
                                             <Border Margin="6" Width="168" Padding="10" CornerRadius="8" Cursor="Hand"
                                                     MouseLeftButtonUp="CatalogoCard_Click"
-                                                    BorderThickness="2">
+                                                    BorderThickness="2"
+                                                    ToolTip="{Binding PromoTooltip}">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
                                                         <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
@@ -260,6 +295,9 @@
                                                                 <Setter Property="BorderBrush" Value="#C0392B"/>
                                                                 <Setter Property="Background" Value="#33C0392B"/>
                                                             </DataTrigger>
+                                                            <DataTrigger Binding="{Binding EnPromo}" Value="True">
+                                                                <Setter Property="BorderBrush" Value="#27AE60"/>
+                                                            </DataTrigger>
                                                             <Trigger Property="IsMouseOver" Value="True">
                                                                 <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
                                                             </Trigger>
@@ -267,9 +305,26 @@
                                                     </Style>
                                                 </Border.Style>
                                                 <StackPanel>
-                                                    <Border Height="72" CornerRadius="6" Background="{DynamicResource ModuleBackgroundBrush}" Margin="0,0,0,8">
-                                                        <Image Source="{Binding ImagenPath, Converter={StaticResource PathToImageConverter}}" Stretch="Uniform" Margin="4"/>
-                                                    </Border>
+                                                    <Grid Height="72" Margin="0,0,0,8">
+                                                        <Border CornerRadius="6" Background="{DynamicResource ModuleBackgroundBrush}">
+                                                            <Image Source="{Binding ImagenPath, Converter={StaticResource PathToImageConverter}}" Stretch="Uniform" Margin="4"/>
+                                                        </Border>
+                                                        <Border HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                                Background="#27AE60" CornerRadius="4" Padding="5,2" Margin="0,2,2,0"
+                                                                ToolTip="{Binding PromoTooltip}">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding EnPromo}" Value="True">
+                                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <TextBlock Text="EN PROMO" FontSize="9" FontWeight="Bold" Foreground="White"/>
+                                                        </Border>
+                                                    </Grid>
                                                     <TextBlock Text="{Binding Codigo}" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
                                                     <TextBlock Text="{Binding Descripcion}" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="40" Margin="0,2,0,4"/>
                                                     <TextBlock Text="{Binding PrecioLista, StringFormat=C2}" Foreground="{StaticResource SuccessColor}" FontWeight="Bold" FontSize="16"/>

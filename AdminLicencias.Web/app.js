@@ -606,7 +606,7 @@ async function onGenerateSubmit(event) {
     fechaVencimiento: $("fechaVencimiento").value,
     montoLicencia: formSnapshot.montoLicencia,
     abonoMensual: formSnapshot.abonoMensual,
-    versionSchpos: $("versionSchpos").value.trim() || "2.0.8",
+    versionSchpos: $("versionSchpos").value.trim() || "2.1.9",
     esRenovacion: $("esRenovacion").checked,
     observaciones: $("observaciones").value.trim()
   };
@@ -844,6 +844,50 @@ async function loadAuditoria() {
   }
 }
 
+async function loadActualizaciones() {
+  const list = $("actualizacionesList");
+  if (!list) return;
+  list.innerHTML = '<div class="text-secondary text-center py-4">Cargando…</div>';
+
+  try {
+    const base = (window.location.origin || "").replace(/\/+$/, "") || getApiBase();
+    const url = `${base}/actualizaciones.json?t=${Date.now()}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`No se pudo cargar actualizaciones (${res.status})`);
+    const data = await res.json();
+
+    if ($("actVersionActual")) $("actVersionActual").textContent = data.versionActual || "—";
+    if ($("actInstalador")) $("actInstalador").textContent = data.instalador || "—";
+
+    const notas = Array.isArray(data.notas) ? data.notas : [];
+    if (!notas.length) {
+      list.innerHTML = '<div class="text-secondary text-center py-4">Sin notas publicadas.</div>';
+      return;
+    }
+
+    list.innerHTML = notas
+      .map((n) => {
+        const items = (n.items || [])
+          .map((it) => `<li>${escapeHtml(it)}</li>`)
+          .join("");
+        return `
+          <div class="card card-panel update-card mb-3">
+            <div class="card-body">
+              <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                <span class="badge badge-version">v${escapeHtml(n.version || "")}</span>
+                <span class="small text-secondary">${escapeHtml(n.fecha || "")}</span>
+              </div>
+              <h3 class="h6 mb-2">${escapeHtml(n.titulo || "")}</h3>
+              <ul class="mb-0 small">${items}</ul>
+            </div>
+          </div>`;
+      })
+      .join("");
+  } catch (err) {
+    list.innerHTML = `<div class="text-danger text-center py-4">${escapeHtml(err.message)}</div>`;
+  }
+}
+
 function resetGenerateForm() {
   $("formGenerar").reset();
   $("clienteSelect").value = "";
@@ -917,6 +961,13 @@ document.addEventListener("DOMContentLoaded", () => {
   $("filtroAuditoriaUsuario").addEventListener("input", applyAuditoriaFilters);
   $("filtroAuditoriaAccion").addEventListener("input", applyAuditoriaFilters);
   $("filtroAuditoriaIp").addEventListener("input", applyAuditoriaFilters);
+
+  $("tab-actualizaciones").addEventListener("shown.bs.tab", () => {
+    loadActualizaciones().catch((err) => showToast(err.message));
+  });
+  $("btnRefrescarActualizaciones").addEventListener("click", () =>
+    loadActualizaciones().catch((err) => showToast(err.message))
+  );
 
   if (!getAdminApiKey() || !getUserIdentifier()) {
     setTimeout(() => bootstrap.Modal.getOrCreateInstance($("configModal")).show(), 400);

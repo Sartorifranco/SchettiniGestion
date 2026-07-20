@@ -30,6 +30,8 @@ namespace SchettiniGestion.WPF
             public bool SinStock { get; set; }
             public string StockTexto { get; set; }
             public string ImagenPath { get; set; }
+            public bool EnPromo { get; set; }
+            public string PromoTooltip { get; set; }
         }
 
         private ObservableCollection<FacturaItem> CarritoDeVenta;
@@ -85,7 +87,10 @@ namespace SchettiniGestion.WPF
         private void FacturacionControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (IsVisible)
+            {
                 ActualizarBloqueoAperturaCaja();
+                ActualizarPromosPos();
+            }
         }
 
         private void ActualizarBloqueoAperturaCaja()
@@ -185,7 +190,51 @@ namespace SchettiniGestion.WPF
                     _catalogoCompleto.Add(CrearVmCatalogo(r, listaId));
                 }
             }
+            ActualizarPromosPos();
             FiltrarCatalogo();
+        }
+
+        /// <summary>Banner «Promos activas hoy» + badge EN PROMO en el catálogo.</summary>
+        private void ActualizarPromosPos()
+        {
+            var promos = DatabaseService.GetPromocionesVigentesHoy();
+            if (bdrPromosHoy != null && txtPromosHoy != null)
+            {
+                if (promos == null || promos.Count == 0)
+                {
+                    bdrPromosHoy.Visibility = Visibility.Collapsed;
+                    txtPromosHoy.Text = "";
+                }
+                else
+                {
+                    var partes = new List<string>();
+                    foreach (var p in promos)
+                    {
+                        string alcance = string.IsNullOrWhiteSpace(p.AlcanceTexto) ? "" : " (" + p.AlcanceTexto + ")";
+                        partes.Add($"{p.Nombre} -{p.Porcentaje:0.##}%{alcance}");
+                    }
+                    txtPromosHoy.Text = string.Join(" · ", partes);
+                    bdrPromosHoy.Visibility = Visibility.Visible;
+                }
+            }
+
+            if (_catalogoCompleto == null || _catalogoCompleto.Count == 0)
+                return;
+
+            foreach (var p in _catalogoCompleto)
+            {
+                string cat = p.Row != null && p.Row.Table.Columns.Contains("Categoria")
+                    ? (p.Row["Categoria"]?.ToString() ?? "")
+                    : "";
+                var promo = DatabaseService.ResolverMejorPromo(promos, p.ProductoID, cat);
+                p.EnPromo = promo != null && promo.Porcentaje > 0;
+                p.PromoTooltip = p.EnPromo
+                    ? $"🎯 {promo.Nombre} · -{promo.Porcentaje:0.##}%"
+                    : null;
+            }
+
+            dgvCatalogo?.Items.Refresh();
+            icCatalogo?.Items.Refresh();
         }
 
         private int? ObtenerListaIdSeleccionada()

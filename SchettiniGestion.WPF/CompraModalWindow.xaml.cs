@@ -5,6 +5,7 @@ using System.Data;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Microsoft.Win32;
 using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
@@ -54,13 +55,16 @@ namespace SchettiniGestion.WPF
                 txtCantidad.IsEnabled = false;
                 txtCosto.IsEnabled = false;
                 cmbTipoComprobante.IsEnabled = false;
+                if (btnImportarPdf != null) btnImportarPdf.Visibility = Visibility.Collapsed;
                 if (FindName("btnGuardar") is Button btn) btn.IsEnabled = false;
             }
             else
             {
                 CargarOrdenesCompra();
             }
+            _ignorarTextChanged = true;
             txtBuscarProveedor.Text = "";
+            _ignorarTextChanged = false;
             ActualizarTotal();
         }
 
@@ -134,9 +138,11 @@ namespace SchettiniGestion.WPF
         private void txtBuscarProveedor_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (_ignorarTextChanged) return;
-            string q = txtBuscarProveedor.Text.Trim();
+            if (lstProveedores == null || popupProveedores == null) return;
+            string q = txtBuscarProveedor?.Text?.Trim() ?? "";
             if (q.Length < 2) { popupProveedores.IsOpen = false; return; }
             var dt = DatabaseService.BuscarProveedoresMultiples(q);
+            if (dt == null) { popupProveedores.IsOpen = false; return; }
             lstProveedores.ItemsSource = dt.DefaultView;
             popupProveedores.IsOpen = dt.Rows.Count > 0;
         }
@@ -192,11 +198,72 @@ namespace SchettiniGestion.WPF
             finally { _cargandoItemsOc = false; }
         }
 
+        private void btnImportarPdf_Click(object sender, RoutedEventArgs e)
+        {
+            if (_compraId > 0) return;
+            var dlg = new OpenFileDialog
+            {
+                Title = "Seleccionar factura PDF",
+                Filter = "PDF (*.pdf)|*.pdf",
+                CheckFileExists = true
+            };
+            if (dlg.ShowDialog(this) != true) return;
+
+            var win = new ImportarFacturaCompraWindow(this);
+            if (!win.CargarDesdeArchivo(dlg.FileName)) return;
+            if (win.ShowDialog() != true || win.LineasConfirmadas == null || win.LineasConfirmadas.Count == 0)
+                return;
+            AplicarImportacionPdf(win);
+        }
+
+        private void AplicarImportacionPdf(ImportarFacturaCompraWindow win)
+        {
+            if (win.ProveedorID > 0)
+            {
+                _proveedorId = win.ProveedorID;
+                _ignorarTextChanged = true;
+                txtBuscarProveedor.Text = win.ProveedorNombre ?? "";
+                lblProveedorSel.Text = win.ProveedorNombre ?? "";
+                _ignorarTextChanged = false;
+                CargarOrdenesCompra();
+            }
+
+            string tipo = win.TipoComprobante ?? "Factura A";
+            for (int i = 0; i < cmbTipoComprobante.Items.Count; i++)
+            {
+                if ((cmbTipoComprobante.Items[i] as ComboBoxItem)?.Content?.ToString() == tipo)
+                { cmbTipoComprobante.SelectedIndex = i; break; }
+            }
+
+            if (_items.Count > 0)
+            {
+                if (MessageBox.Show("¿Reemplazar el detalle actual por los ítems del PDF?",
+                    "Importar PDF", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return;
+            }
+
+            _items.Clear();
+            foreach (var l in win.LineasConfirmadas)
+            {
+                _items.Add(new CompraItem
+                {
+                    ProductoID = l.ProductoID,
+                    Codigo = l.CodigoProducto ?? "",
+                    Descripcion = l.DescripcionProducto ?? l.DescripcionPdf ?? "",
+                    Cantidad = l.Cantidad > 0 ? l.Cantidad : 1,
+                    Costo = l.CostoUnitario
+                });
+            }
+            ActualizarTotal();
+        }
+
         private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e)
         {
-            string q = txtBuscarProducto.Text.Trim();
+            if (lstProductos == null || popupProductos == null) return;
+            string q = txtBuscarProducto?.Text?.Trim() ?? "";
             if (q.Length < 2) { popupProductos.IsOpen = false; return; }
             var dt = DatabaseService.BuscarProductosMultiples_ParaCompra(q);
+            if (dt == null) { popupProductos.IsOpen = false; return; }
             lstProductos.ItemsSource = dt.DefaultView;
             popupProductos.IsOpen = dt.Rows.Count > 0;
         }

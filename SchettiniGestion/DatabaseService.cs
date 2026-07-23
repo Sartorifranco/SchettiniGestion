@@ -535,7 +535,17 @@ BEGIN
   WHERE EXISTS (SELECT 1 FROM MovimientosStock ms WHERE ms.CompraID = Compras.CompraID AND ms.TipoMovimiento = N'Compra');
 END
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='OrdenCompraDetalle' AND COLUMN_NAME='CantidadRecibida')
-  ALTER TABLE OrdenCompraDetalle ADD CantidadRecibida INT NOT NULL DEFAULT 0;", c))
+  ALTER TABLE OrdenCompraDetalle ADD CantidadRecibida INT NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='ProductoAliasProveedor')
+  CREATE TABLE dbo.ProductoAliasProveedor (
+    AliasID INT IDENTITY(1,1) PRIMARY KEY,
+    ProveedorID INT NOT NULL,
+    DescripcionProveedor NVARCHAR(300) NOT NULL,
+    ProductoID INT NOT NULL,
+    CodigoProveedor NVARCHAR(100) NULL,
+    UltimoUso DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT UQ_ProductoAliasProveedor UNIQUE (ProveedorID, DescripcionProveedor)
+  );", c))
                         cmd.ExecuteNonQuery();
                     _columnasMigracionLiteOk = true;
                 }

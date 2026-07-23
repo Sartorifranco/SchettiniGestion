@@ -301,6 +301,7 @@ namespace SchettiniGestion
         public const string PERMISO_MERCADOPAGO_POINT = "ACCESO_MERCADOPAGO_POINT";
         public const string PERMISO_SOPORTE           = "ACCESO_SOPORTE";
         public const string PERMISO_ESTADISTICAS      = "ACCESO_ESTADISTICAS";
+        public const string PERMISO_ETIQUETAS         = "ACCESO_ETIQUETAS";
 
         private static void NotificarError(string mensaje)
         {
@@ -710,7 +711,7 @@ PosListaPrecioID=@lid, PosTipoComprobante=@tc, PosCondicionVenta=@cv, PosConfigE
             catch (Exception ex) { NotificarError(ex.Message); return false; }
         }
 
-        /// <summary>CUIT del emisor solo dígitos (para WSAA/AFIP).</summary>
+        /// <summary>CUIT del emisor solo dígitos (para WSAA/ARCA).</summary>
         public static string ObtenerCuitEmpresaSoloDigitos(DataRow configuracionRow = null)
         {
             var raw = ObtenerCuitEmpresaTextoBruto(configuracionRow);
@@ -4953,7 +4954,7 @@ INSERT INTO Configuracion (
             catch { return false; }
         }
 
-        /// <summary>Persiste rutas del par .key / .crt generado por el asistente de activación AFIP.</summary>
+        /// <summary>Persiste rutas del par .key / .crt generado por el asistente de activación ARCA.</summary>
         public static bool GuardarRutasActivacionAfip(string clavePrivadaPath, string certificadoPath)
         {
             try
@@ -4985,7 +4986,7 @@ WHERE ID = 1", c))
             }
         }
 
-        /// <summary>Ruta de la clave privada (.key) del asistente AFIP, o vacío.</summary>
+        /// <summary>Ruta de la clave privada (.key) del asistente ARCA, o vacío.</summary>
         public static string ObtenerAfipClavePrivadaPath()
         {
             try
@@ -4997,7 +4998,7 @@ WHERE ID = 1", c))
             catch { return ""; }
         }
 
-        /// <summary>True = ambiente WSFE producción AFIP.</summary>
+        /// <summary>True = ambiente WSFE producción ARCA.</summary>
         public static bool GetAfipAmbienteProduccion()
         {
             try

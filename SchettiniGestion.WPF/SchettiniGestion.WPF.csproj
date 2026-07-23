@@ -122,6 +122,10 @@
       <HintPath>..\packages\QRCoder.1.7.0\lib\net40\QRCoder.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="zxing, Version=0.16.9.0, Culture=neutral, PublicKeyToken=4e88037ac681fe60, processorArchitecture=MSIL">
+      <HintPath>..\packages\ZXing.Net.0.16.9\lib\net47\zxing.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="SharpVectors.Converters.Wpf, Version=1.8.4.2, Culture=neutral, PublicKeyToken=b532964b8548be77, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpVectors.Wpf.1.8.4.2\lib\net46\SharpVectors.Converters.Wpf.dll</HintPath>
       <Private>True</Private>
@@ -411,6 +415,9 @@
     <Compile Include="EstadisticasControl.xaml.cs">
       <DependentUpon>EstadisticasControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="EtiquetasControl.xaml.cs">
+      <DependentUpon>EtiquetasControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="StockControl.xaml.cs">
       <DependentUpon>StockControl.xaml</DependentUpon>
     </Compile>
@@ -654,6 +661,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="EstadisticasControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EtiquetasControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

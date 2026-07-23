@@ -103,7 +103,7 @@
                 <Style TargetType="TabItem" BasedOn="{StaticResource ConfigTabItemStyle}"/>
             </TabControl.Resources>
 
-            <TabItem Header="🏢 Negocio y AFIP">
+            <TabItem Header="🏢 Negocio y ARCA">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="0,4,8,8">
 
@@ -219,16 +219,16 @@
 
                         <Border Style="{StaticResource ConfigSectionCard}">
                         <StackPanel x:Name="panelSeccionAfip">
-                        <TextBlock Text="Facturación Electrónica (AFIP)" Style="{StaticResource ConfigSectionTitle}"/>
+                        <TextBlock Text="Facturación Electrónica (ARCA)" Style="{StaticResource ConfigSectionTitle}"/>
 
-                        <!-- Activación Fiscal AFIP/ARCA (CSR + certificado) -->
+                        <!-- Activación Fiscal ARCA (CSR + certificado) -->
                         <Border Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="16" Margin="0,0,0,16"
                                 BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="Activación Fiscal AFIP/ARCA" FontWeight="SemiBold" FontSize="15"
+                                <TextBlock Text="Activación Fiscal ARCA" FontWeight="SemiBold" FontSize="15"
                                            Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
                                 <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"
-                                           Text="Genere el pedido de certificado (CSR) desde el sistema, súbalo en AFIP/ARCA con su Clave Fiscal y luego importe aquí el .crt emitido. Usa los datos de empresa de arriba (CUIT, Razón Social, Nombre de Fantasía)."/>
+                                           Text="Genere el pedido de certificado (CSR) desde el sistema, súbalo en ARCA con su Clave Fiscal y luego importe aquí el .crt emitido. Usa los datos de empresa de arriba (CUIT, Razón Social, Nombre de Fantasía)."/>
                                 <TextBlock x:Name="lblEstadoActivacionAfip" Foreground="{DynamicResource SuccessColor}"
                                            FontSize="12" FontWeight="SemiBold" Margin="0,0,0,12"/>
 
@@ -237,13 +237,13 @@
                                         Style="{StaticResource ButtonStyle}" Padding="16,10"
                                         HorizontalAlignment="Left" Margin="0,0,0,16"/>
 
-                                <TextBlock Text="Subir Certificado AFIP (.crt):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBlock Text="Subir Certificado ARCA (.crt):" Style="{StaticResource ModuleLabelStyle}"/>
                                 <DockPanel LastChildFill="True" Margin="0,0,0,4">
                                     <Button x:Name="btnSubirCertificadoAfip" DockPanel.Dock="Right" Content="📂 Subir .crt"
                                             MinWidth="120" MinHeight="44" Margin="8,0,0,0"
                                             Click="btnSubirCertificadoAfip_Click"
                                             Style="{StaticResource SecondaryButtonStyle}"
-                                            ToolTip="Importar certificado emitido por AFIP/ARCA"/>
+                                            ToolTip="Importar certificado emitido por ARCA"/>
                                     <TextBox x:Name="txtCertificadoCrtPath" Style="{StaticResource ModuleTextBoxStyle}"
                                              IsReadOnly="True" VerticalAlignment="Center"
                                              ToolTip="Ruta del certificado .crt guardado en el sistema"/>
@@ -252,7 +252,7 @@
                                            Text="El certificado debe corresponder al CSR generado en esta misma PC. La clave privada (.key) queda guardada de forma segura en el servidor."/>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <Button x:Name="btnProbarConexionAfip" Content="🔌  Probar conexión AFIP"
+                                    <Button x:Name="btnProbarConexionAfip" Content="🔌  Probar conexión ARCA"
                                             Click="btnProbarConexionAfip_Click"
                                             Style="{StaticResource SecondaryButtonStyle}" Padding="16,10"
                                             MinHeight="44" VerticalAlignment="Center"/>
@@ -296,7 +296,7 @@
                                 <TextBox x:Name="txtTipoCambioUSD" Style="{StaticResource ModuleTextBoxStyle}"/>
                                 <TextBlock Style="{StaticResource FieldHintTextStyle}" Text="Ej: 1050 para $1050 por 1 USD"/>
 
-                                <CheckBox x:Name="chkAfipProduccion" Content="Ambiente AFIP: producción (no homologación)"
+                                <CheckBox x:Name="chkAfipProduccion" Content="Ambiente ARCA: producción (no homologación)"
                                           Foreground="{DynamicResource TextPrimary}" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Grid>
@@ -667,6 +667,39 @@
                                     Style="{StaticResource SecondaryButtonStyle}"
                                     Click="btnTestA4_Click"/>
                         </Grid>
+
+                        <TextBlock Text="Impresora de etiquetas" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,20,0,6"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,8"
+                                   Text="Usada en el módulo Etiquetas. Instalá el driver Windows de la impresora (igual que una A4) y elegila acá. La medida del rollo debe coincidir con la configurada abajo."/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="cmbImpresoraEtiquetas" Grid.Column="0"
+                                      Style="{StaticResource TouchComboBoxStyle}"
+                                      Height="44" FontSize="14" Margin="0,0,8,0"/>
+                            <Button x:Name="btnTestEtiquetas" Grid.Column="1"
+                                    Content="🖨️ Probar" Padding="14,10"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Click="btnTestEtiquetas_Click"/>
+                        </Grid>
+                        <TextBlock Text="Medida de la etiqueta" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
+                        <ComboBox x:Name="cmbMedidaEtiqueta" Style="{StaticResource TouchComboBoxStyle}"
+                                  Height="44" FontSize="14" Margin="0,0,0,8"
+                                  SelectionChanged="cmbMedidaEtiqueta_SelectionChanged"/>
+                        <StackPanel x:Name="pnlMedidaEtiquetaCustom" Orientation="Horizontal" Visibility="Collapsed" Margin="0,0,0,4">
+                            <TextBlock Text="Ancho (mm):" VerticalAlignment="Center" Margin="0,0,8,0"
+                                       Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBox x:Name="txtEtiquetaAnchoMm" Width="70" Height="40" FontSize="14"
+                                     VerticalContentAlignment="Center" Margin="0,0,16,0" Text="50"/>
+                            <TextBlock Text="Alto (mm):" VerticalAlignment="Center" Margin="0,0,8,0"
+                                       Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBox x:Name="txtEtiquetaAltoMm" Width="70" Height="40" FontSize="14"
+                                     VerticalContentAlignment="Center" Text="25"/>
+                        </StackPanel>
                             </StackPanel>
                         </Border>
 
@@ -720,7 +753,7 @@
                             <StackPanel>
                         <TextBlock Text="Contenido del ticket térmico" Style="{StaticResource ConfigSectionTitle}"/>
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"
-                                   Text="Marcá qué datos querés que aparezcan en el ticket. El logo se configura en la pestaña Negocio y AFIP."/>
+                                   Text="Marcá qué datos querés que aparezcan en el ticket. El logo se configura en la pestaña Negocio y ARCA."/>
                         <WrapPanel Margin="0,0,0,20">
                             <CheckBox x:Name="chkTicketLogo" Content="Logo" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketDireccion" Content="Dirección" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
@@ -735,7 +768,7 @@
                             <CheckBox x:Name="chkTicketVendedor" Content="Vendedor / cajero que cobró" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                         </WrapPanel>
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,0"
-                                   Text="El número de punto de venta se configura en la pestaña «Negocio y AFIP». El vendedor/cajero es el «Nombre del personal» del usuario que inició sesión (Usuarios)."/>
+                                   Text="El número de punto de venta se configura en la pestaña «Negocio y ARCA». El vendedor/cajero es el «Nombre del personal» del usuario que inició sesión (Usuarios)."/>
                             </StackPanel>
                         </Border>
 

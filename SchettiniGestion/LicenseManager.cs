@@ -193,7 +193,7 @@ namespace SchettiniGestion
                         "ACCESO_VENTAS", "ACCESO_FACTURACION", "ACCESO_PRODUCTOS", "ACCESO_STOCK",
                         "ACCESO_CLIENTES", "ACCESO_CAJA", "ACCESO_LISTASPRECIOS", "ACCESO_PRECIOS",
                         "ACCESO_PRESUPUESTOS", "ACCESO_ESTADISTICAS", "ACCESO_COMPRAS", "ACCESO_PROVEEDORES",
-                        "ACCESO_CUENTASCORRIENTES", "ACCESO_RED", "ACCESO_AFIP", "ACCESO_VISOR_CLIENTE",
+                        "ACCESO_CUENTASCORRIENTES", "ACCESO_RED", "ACCESO_AFIP", "ACCESO_ETIQUETAS", "ACCESO_VISOR_CLIENTE",
                         "ACCESO_MERCADOPAGO_QR", "ACCESO_MERCADOPAGO_POINT", "ACCESO_SOPORTE"
                     })
                 };
@@ -299,7 +299,7 @@ namespace SchettiniGestion
             return _licenciaActual.ModulosPermitidos.Contains(mod);
         }
 
-        /// <summary>Extras monetizables (RED, AFIP, visor, MP QR, MP Point, soporte). Respeta licencias legacy.</summary>
+        /// <summary>Extras monetizables (RED, ARCA, etiquetas, visor, MP QR, MP Point, soporte). Respeta licencias legacy.</summary>
         public static bool IsExtraEnabled(string extraCode)
         {
             if (string.IsNullOrWhiteSpace(extraCode))
@@ -314,6 +314,7 @@ namespace SchettiniGestion
 
         public static bool TieneConexionRed() => IsExtraEnabled("ACCESO_RED");
         public static bool TieneAfip() => IsExtraEnabled("ACCESO_AFIP");
+        public static bool TieneEtiquetas() => IsExtraEnabled("ACCESO_ETIQUETAS");
         public static bool TieneVisorCliente() => IsExtraEnabled("ACCESO_VISOR_CLIENTE");
         /// <summary>Abono independiente: cobro con código QR de Mercado Pago.</summary>
         public static bool TieneMercadoPagoQr() => IsExtraEnabled("ACCESO_MERCADOPAGO_QR");

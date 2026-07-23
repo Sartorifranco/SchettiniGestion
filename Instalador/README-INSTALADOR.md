@@ -82,7 +82,7 @@ Login admin → cambiar contraseña → usar el sistema
 - [ ] (Opcional) `licencia.key` en prerequisites
 - [ ] Probar en VM o PC limpia
 - [ ] Documentar: usuario `admin`, cambiar contraseña
-- [ ] AFIP en homologación hasta certificado de producción (`docs/Guia_Activacion_AFIP_ARCA.md`)
+- [ ] ARCA en homologación hasta certificado de producción (`docs/Guia_Activacion_ARCA_ARCA.md`)
 
 ## Solución de problemas
 

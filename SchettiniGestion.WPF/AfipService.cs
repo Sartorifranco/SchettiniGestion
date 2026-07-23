@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -40,7 +40,7 @@ namespace SchettiniGestion.WPF
                 string cuitRaw = config["CUIT"]?.ToString().Replace("-", "").Trim() ?? "";
                 if (string.IsNullOrEmpty(cuitRaw) || !long.TryParse(cuitRaw, out long cuitEmpresa))
                 {
-                    resultado.Error = "CUIT de la empresa no configurado o inválido. Vaya a Configuración > Negocio y AFIP.";
+                    resultado.Error = "CUIT de la empresa no configurado o inválido. Vaya a Configuración > Negocio y ARCA.";
                     return resultado;
                 }
                 string rutaCert = config["CertificadoPath"]?.ToString() ?? "";
@@ -158,12 +158,12 @@ namespace SchettiniGestion.WPF
                 {
                     resultado.Exito = false;
                     // Motivo real del rechazo: Observaciones del detalle o Errors.
-                    // (Events trae avisos informativos de AFIP que no son el motivo.)
+                    // (Events trae avisos informativos de ARCA que no son el motivo.)
                     var errorMsg = doc.Descendants(ns + "Observaciones").Descendants(ns + "Msg").FirstOrDefault()?.Value
                         ?? doc.Descendants(ns + "Obs").Descendants(ns + "Msg").FirstOrDefault()?.Value
                         ?? doc.Descendants(ns + "Errors").Descendants(ns + "Msg").FirstOrDefault()?.Value
                         ?? doc.Descendants(ns + "Msg").FirstOrDefault()?.Value;
-                    resultado.Error = "Rechazo AFIP: " + (errorMsg ?? respuestaXml);
+                    resultado.Error = "Rechazo ARCA: " + (errorMsg ?? respuestaXml);
                 }
                 return resultado;
             }
@@ -194,7 +194,7 @@ namespace SchettiniGestion.WPF
                 string rutaCert = config["CertificadoPath"]?.ToString() ?? "";
                 if (string.IsNullOrWhiteSpace(rutaCert) || !File.Exists(rutaCert))
                 {
-                    resultado.Mensaje = "No hay certificado AFIP configurado. Genere el CSR, obtenga el .crt en AFIP/ARCA e impórtelo en esta pantalla.";
+                    resultado.Mensaje = "No hay certificado ARCA configurado. Genere el CSR, obtenga el .crt en ARCA e impórtelo en esta pantalla.";
                     return resultado;
                 }
 
@@ -223,12 +223,12 @@ namespace SchettiniGestion.WPF
                 {
                     if (DateTime.Now > cert.NotAfter)
                     {
-                        resultado.Mensaje = $"El certificado AFIP está vencido (venció el {cert.NotAfter:dd/MM/yyyy}). Solicite uno nuevo en AFIP/ARCA.";
+                        resultado.Mensaje = $"El certificado ARCA está vencido (venció el {cert.NotAfter:dd/MM/yyyy}). Solicite uno nuevo en ARCA.";
                         return resultado;
                     }
                     if (DateTime.Now < cert.NotBefore)
                     {
-                        resultado.Mensaje = $"El certificado AFIP aún no es válido (válido desde {cert.NotBefore:dd/MM/yyyy}).";
+                        resultado.Mensaje = $"El certificado ARCA aún no es válido (válido desde {cert.NotBefore:dd/MM/yyyy}).";
                         return resultado;
                     }
                 }
@@ -236,7 +236,7 @@ namespace SchettiniGestion.WPF
                 LoginTicket ticket = await AutenticarWSAA_Remoto(rutaCert, passCert, produccion, "wsfe");
                 if (ticket == null || string.IsNullOrWhiteSpace(ticket.Token) || string.IsNullOrWhiteSpace(ticket.Sign))
                 {
-                    resultado.Mensaje = $"AFIP ({ambiente}) respondió pero no devolvió un ticket válido. Verifique la delegación del servicio wsfe en AFIP/ARCA.";
+                    resultado.Mensaje = $"ARCA ({ambiente}) respondió pero no devolvió un ticket válido. Verifique la delegación del servicio wsfe en ARCA.";
                     return resultado;
                 }
 
@@ -270,7 +270,7 @@ namespace SchettiniGestion.WPF
             string resp = await EnviarSoap(url, xmlSoap, "");
             var docSoap = XDocument.Parse(resp);
             var loginReturnString = docSoap.Descendants().FirstOrDefault(n => n.Name.LocalName == "loginCmsReturn")?.Value;
-            if (string.IsNullOrEmpty(loginReturnString)) { var fault = docSoap.Descendants().FirstOrDefault(n => n.Name.LocalName == "faultstring")?.Value; throw new Exception("Error Login AFIP: " + (fault ?? resp)); }
+            if (string.IsNullOrEmpty(loginReturnString)) { var fault = docSoap.Descendants().FirstOrDefault(n => n.Name.LocalName == "faultstring")?.Value; throw new Exception("Error Login ARCA: " + (fault ?? resp)); }
             var docTicket = XDocument.Parse(loginReturnString);
             return new LoginTicket { Token = docTicket.Descendants("token").First().Value, Sign = docTicket.Descendants("sign").First().Value, XmlRespuestaOriginal = loginReturnString };
         }
@@ -280,7 +280,7 @@ namespace SchettiniGestion.WPF
         private static byte[] FirmarTra(byte[] tra, string rutaCert, string pass)
         {
             if (string.IsNullOrWhiteSpace(rutaCert) || !File.Exists(rutaCert))
-                throw new FileNotFoundException("Certificado AFIP no encontrado.", rutaCert ?? "");
+                throw new FileNotFoundException("Certificado ARCA no encontrado.", rutaCert ?? "");
 
             string ext = Path.GetExtension(rutaCert).ToLowerInvariant();
             if (ext == ".crt" || ext == ".cer")
@@ -298,7 +298,7 @@ namespace SchettiniGestion.WPF
                 return signedCms.Encode();
             }
 
-            throw new NotSupportedException("Formato de certificado AFIP no soportado: " + ext);
+            throw new NotSupportedException("Formato de certificado ARCA no soportado: " + ext);
         }
 
         private static async Task<int> ObtenerUltimoComprobante(LoginTicket ticket, long cuit, int ptoVta, int tipoCbte, bool produccion)
@@ -324,7 +324,7 @@ namespace SchettiniGestion.WPF
             return new string(cuit.Where(char.IsDigit).ToArray());
         }
 
-        // --- CONSULTA PADR├ôN (CUIT en AFIP) ---
+        // --- CONSULTA PADR├ôN (CUIT en ARCA) ---
         public static async Task<PersonaAfip> ObtenerPersonaPorCuitAsync(string cuit)
         {
             var resultado = new PersonaAfip { Exito = false };
@@ -336,16 +336,16 @@ namespace SchettiniGestion.WPF
 
                 bool prod = DatabaseService.GetAfipAmbienteProduccion();
                 DataRow config = DatabaseService.GetConfiguracion();
-                if (config == null) { resultado.Error = "No hay configuraci├│n de negocio. Vaya a Configuraci├│n > Negocio y AFIP."; return resultado; }
+                if (config == null) { resultado.Error = "No hay configuraci├│n de negocio. Vaya a Configuraci├│n > Negocio y ARCA."; return resultado; }
                 string cuitEmpresaStr = LimpiarCuit(config["CUIT"]?.ToString());
                 if (string.IsNullOrEmpty(cuitEmpresaStr) || !long.TryParse(cuitEmpresaStr, out long cuitEmpresa))
                 {
-                    resultado.Error = "CUIT de la empresa no configurado o inv├ílido. Configure el CUIT en Configuraci├│n > Negocio y AFIP.";
+                    resultado.Error = "CUIT de la empresa no configurado o inv├ílido. Configure el CUIT en Configuraci├│n > Negocio y ARCA.";
                     return resultado;
                 }
                 string rutaCert = config["CertificadoPath"]?.ToString();
                 string passCert = config["PasswordAfip"]?.ToString();
-                if (string.IsNullOrEmpty(rutaCert) || !File.Exists(rutaCert)) { resultado.Error = "Certificado AFIP no configurado o no encontrado"; return resultado; }
+                if (string.IsNullOrEmpty(rutaCert) || !File.Exists(rutaCert)) { resultado.Error = "Certificado ARCA no configurado o no encontrado"; return resultado; }
 
                 LoginTicket ticket = await ObtenerTicketAccesoPadron(rutaCert, passCert ?? "", prod);
                 string urlPadron = prod ? URL_PADRON_PROD : URL_PADRON_HOMO;
@@ -365,12 +365,12 @@ namespace SchettiniGestion.WPF
                         string respXml = await response.Content.ReadAsStringAsync();
                         var doc = XDocument.Parse(respXml);
                         var fault = doc.Descendants().FirstOrDefault(n => n.Name.LocalName == "Fault" || n.Name.LocalName == "faultstring");
-                        if (fault != null) { resultado.Error = "AFIP: " + (fault.Value ?? fault.ToString()); return resultado; }
+                        if (fault != null) { resultado.Error = "ARCA: " + (fault.Value ?? fault.ToString()); return resultado; }
 
                         var personaReturn = doc.Descendants().FirstOrDefault(n => n.Name.LocalName == "personaReturn");
-                        if (personaReturn == null) { resultado.Error = "AFIP: Respuesta sin datos de persona"; return resultado; }
+                        if (personaReturn == null) { resultado.Error = "ARCA: Respuesta sin datos de persona"; return resultado; }
                         var persona = personaReturn.Descendants().FirstOrDefault(n => n.Name.LocalName == "persona" || n.Name.LocalName == "datosGenerales");
-                        if (persona == null) { resultado.Error = "AFIP: No se encontr├│ el CUIT en el padr├│n"; return resultado; }
+                        if (persona == null) { resultado.Error = "ARCA: No se encontr├│ el CUIT en el padr├│n"; return resultado; }
 
                         string razonSocial = persona.Descendants().FirstOrDefault(n => n.Name.LocalName == "razonSocial")?.Value ?? persona.Descendants().FirstOrDefault(n => n.Name.LocalName == "denominacion")?.Value;
                         if (string.IsNullOrEmpty(razonSocial))
@@ -392,7 +392,7 @@ namespace SchettiniGestion.WPF
             {
                 string msg = ex.Message;
                 if (msg.Contains("no autorizado") || msg.Contains("Computador"))
-                    msg += "\n\nDebe autorizar su IP en AFIP: ingrese a afip.gob.ar con Clave Fiscal, vaya a Administraci├│n de Relaciones / Web Services, adhiera el servicio ws_sr_padron_a4 y registre la IP de su computadora.";
+                    msg += "\n\nDebe autorizar su IP en ARCA: ingrese a afip.gob.ar con Clave Fiscal, vaya a Administraci├│n de Relaciones / Web Services, adhiera el servicio ws_sr_padron_a4 y registre la IP de su computadora.";
                 resultado.Error = "Error: " + msg;
                 return resultado;
             }
@@ -408,7 +408,7 @@ namespace SchettiniGestion.WPF
             return "Consumidor Final";
         }
 
-        /// <summary>Mapea la condición IVA del cliente al código AFIP (CondicionIVAReceptorId).</summary>
+        /// <summary>Mapea la condición IVA del cliente al código ARCA (CondicionIVAReceptorId).</summary>
         private static int MapearCondicionIvaAfip(string condicionIva, long cuitCliente)
         {
             if (cuitCliente <= 0) return 5;
@@ -449,7 +449,7 @@ namespace SchettiniGestion.WPF
                 return "No se encontró el certificado o la clave privada en disco. Vuelva a importar el .crt o verifique la ruta del .pfx.";
 
             if (texto.Contains("venc") || texto.Contains("expir") || texto.Contains("caduc") || texto.Contains("not yet valid"))
-                return "El certificado AFIP está vencido o aún no es válido. Solicite uno nuevo en AFIP/ARCA.";
+                return "El certificado ARCA está vencido o aún no es válido. Solicite uno nuevo en ARCA.";
 
             if (texto.Contains("contraseña") || texto.Contains("password") || texto.Contains("bad password") || texto.Contains("incorrect password"))
                 return "La contraseña del certificado .pfx es incorrecta. Verifíquela en Configuración y vuelva a probar.";
@@ -458,8 +458,8 @@ namespace SchettiniGestion.WPF
                 || texto.Contains("no está autorizado") || texto.Contains("coe.notauthorized")
                 || texto.Contains("no registered") || texto.Contains("servicio no") || texto.Contains("deleg"))
             {
-                return "AFIP rechazó la autorización del certificado.\n\n" +
-                       "Verifique en AFIP/ARCA (Clave Fiscal) que:\n" +
+                return "ARCA rechazó la autorización del certificado.\n\n" +
+                       "Verifique en ARCA (Clave Fiscal) que:\n" +
                        "• El certificado esté asociado al CUIT del negocio.\n" +
                        "• El servicio wsfe esté delegado al «Computador Fiscal» correcto.\n" +
                        "• Esté usando el ambiente correcto (" + ambiente + ").";
@@ -468,7 +468,7 @@ namespace SchettiniGestion.WPF
             if (texto.Contains("cms") || texto.Contains("firma") || texto.Contains("signature")
                 || texto.Contains("certificado no") || texto.Contains("ac de confianza"))
             {
-                return "AFIP no pudo validar la firma del certificado. Asegúrese de usar el .crt emitido por AFIP/ARCA para el CSR generado en este sistema.";
+                return "ARCA no pudo validar la firma del certificado. Asegúrese de usar el .crt emitido por ARCA para el CSR generado en este sistema.";
             }
 
             if (texto.Contains("clave privada") || texto.Contains("private key") || texto.Contains("does not match"))
@@ -478,14 +478,14 @@ namespace SchettiniGestion.WPF
                 || texto.Contains("timeout") || texto.Contains("timed out") || texto.Contains("conexión")
                 || texto.Contains("connection") || texto.Contains("host") || texto.Contains("ssl"))
             {
-                return "No se pudo conectar con los servidores de AFIP (" + ambiente + ").\n\n" +
+                return "No se pudo conectar con los servidores de ARCA (" + ambiente + ").\n\n" +
                        "Verifique su conexión a Internet, firewall o proxy, e intente nuevamente en unos segundos.";
             }
 
             if (texto.Contains("error login afip"))
-                return "AFIP respondió con error: " + ex.Message.Replace("Error Login AFIP: ", "").Trim();
+                return "ARCA respondió con error: " + ex.Message.Replace("Error Login ARCA: ", "").Trim();
 
-            return "No se pudo autenticar con AFIP (" + ambiente + "): " + ex.Message;
+            return "No se pudo autenticar con ARCA (" + ambiente + "): " + ex.Message;
         }
 
         private static string ObtenerMensajeExcepcionCompleto(Exception ex)

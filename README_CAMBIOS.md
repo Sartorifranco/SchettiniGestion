@@ -25,22 +25,22 @@ Este documento registra todos los cambios realizados en el sistema y cómo proba
 
 ---
 
-### 2. Búsqueda de clientes por CUIT en AFIP (Padrón)
+### 2. Búsqueda de clientes por CUIT en ARCA (Padrón)
 
 **Archivos modificados:**
 - `SchettiniGestion.WPF/AfipService.cs`
 - `SchettiniGestion.WPF/ClientesControl.xaml.cs`
 
 **Qué se cambió:**
-- Nuevo método `ObtenerPersonaPorCuitAsync()` en AfipService que consulta el padrón AFIP (ws_sr_padron_a4).
-- Al presionar **Enter** en el campo CUIT de Gestión Clientes, se consulta AFIP y se autocompletan Razón Social y Condición IVA.
+- Nuevo método `ObtenerPersonaPorCuitAsync()` en AfipService que consulta el padrón ARCA (ws_sr_padron_a4).
+- Al presionar **Enter** en el campo CUIT de Gestión Clientes, se consulta ARCA y se autocompletan Razón Social y Condición IVA.
 - ComboBox de Condición IVA precargado con opciones: Consumidor Final, Responsable Inscripto, Monotributo, Exento.
 
 **Requisitos (usted debe configurar):**
-1. Ir a **Configuración > Negocio y AFIP**.
+1. Ir a **Configuración > Negocio y ARCA**.
 2. Completar el **CUIT de la empresa** (ej: 20-38646611-5 o 20386466115).
-3. Seleccionar el **Certificado digital (.pfx)** de AFIP y su contraseña.
-4. En AFIP (afip.gob.ar), tener el servicio **ws_sr_padron_a4** autorizado para el CUIT de la empresa.
+3. Seleccionar el **Certificado digital (.pfx)** de ARCA y su contraseña.
+4. En ARCA (afip.gob.ar), tener el servicio **ws_sr_padron_a4** autorizado para el CUIT de la empresa.
 
 Si falta el CUIT o el certificado, aparecerá un mensaje claro indicando qué configurar.
 
@@ -53,7 +53,7 @@ Si falta el CUIT o el certificado, aparecerá un mensaje claro indicando qué co
 
 ---
 
-### 3. Condición IVA visible al cargar cliente (AFIP o desde grilla)
+### 3. Condición IVA visible al cargar cliente (ARCA o desde grilla)
 
 **Archivos modificados:**
 - `SchettiniGestion.WPF/ClientesControl.xaml.cs`
@@ -61,11 +61,11 @@ Si falta el CUIT o el certificado, aparecerá un mensaje claro indicando qué co
 **Qué se cambió:**
 - El ComboBox de Condición IVA no mostraba el valor al asignar `Text` (comportamiento de WPF).
 - Se creó el método `EstablecerCondicionIVA()` que usa `SelectedItem` para seleccionar correctamente el ítem.
-- Si el valor viene de AFIP o de la grilla y no existe en la lista, se agrega y se selecciona.
-- Se aplica tanto al cargar desde AFIP (Enter en CUIT) como al seleccionar un cliente en la grilla.
+- Si el valor viene de ARCA o de la grilla y no existe en la lista, se agrega y se selecciona.
+- Se aplica tanto al cargar desde ARCA (Enter en CUIT) como al seleccionar un cliente en la grilla.
 
 **Cómo probar:**
-1. Cargar cliente por AFIP (CUIT + Enter) → verificar que Condición IVA se muestre en el dropdown.
+1. Cargar cliente por ARCA (CUIT + Enter) → verificar que Condición IVA se muestre en el dropdown.
 2. Seleccionar un cliente existente en la grilla → verificar que Condición IVA se muestre.
 
 ---
@@ -182,12 +182,12 @@ Si falta el CUIT o el certificado, aparecerá un mensaje claro indicando qué co
 
 **Qué se cambió:**
 - **Condición IVA:** ComboBox con ítems fijos en XAML (RI, Mono, Exento, Cons final) para que funcione correctamente.
-- **CUIT/CUIL:** Enter para buscar AFIP (si falla, carga manual).
+- **CUIT/CUIL:** Enter para buscar ARCA (si falla, carga manual).
 - **Datos de contacto:** Teléfono, Domicilio, Email.
 - **Cuenta corriente:** Checkbox "Permite cuenta corriente" y campo "Monto límite".
 - Migración BD: columnas PermiteCuentaCorriente, MontoLimiteCtaCte.
 
-**Cómo probar:** Clientes → CUIT + Enter (AFIP) o carga manual → Condición IVA visible → guardar con todos los datos.
+**Cómo probar:** Clientes → CUIT + Enter (ARCA) o carga manual → Condición IVA visible → guardar con todos los datos.
 
 ---
 
@@ -254,7 +254,7 @@ Si falta el CUIT o el certificado, aparecerá un mensaje claro indicando qué co
 - **Stock:** Checkbox stockeable, acepta stock negativo, variantes (color/talle/unidad), producto simple o combo (componentes: código:cantidad), cant. disponible/mínima/ideal.
 - **Datos adicionales:** Proveedor, Código externo.
 - **Botones:** Crear, Crear y agregar otro, Volver atrás.
-- **Configuración:** Campo "Tipo de cambio USD" en pestaña Negocio y AFIP.
+- **Configuración:** Campo "Tipo de cambio USD" en pestaña Negocio y ARCA.
 
 **Cómo probar:**
 1. Configuración > Negocio > cargar Tipo de cambio USD (ej: 1050).
@@ -430,8 +430,8 @@ Start-Process "c:\SchettiniGestion\SchettiniGestion.WPF\bin\x64\Release\Schettin
 ## Checklist de pruebas (al finalizar todos los cambios)
 
 - [ ] GeneradorLicencias: Enter sin Hardware ID no crashea
-- [ ] Clientes: Búsqueda por CUIT en AFIP funciona
-- [ ] Clientes: Condición IVA visible al cargar desde AFIP
+- [ ] Clientes: Búsqueda por CUIT en ARCA funciona
+- [ ] Clientes: Condición IVA visible al cargar desde ARCA
 - [ ] Clientes: Condición IVA visible al seleccionar cliente en la grilla
 - [ ] ComboBox: texto legible (negro sobre blanco) en todos los módulos
 - [ ] Config: Autenticación Windows y credenciales ocultas para no-admin

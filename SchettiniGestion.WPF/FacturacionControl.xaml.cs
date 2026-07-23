@@ -620,8 +620,8 @@ namespace SchettiniGestion.WPF
                     {
                         cmbTipoComprobante.SelectedIndex = i;
                         CustomMessageBox.Show(
-                            "La factura electrónica AFIP no está incluida en su licencia.\n\n" +
-                            "Solicite el extra «AFIP / Factura electrónica» o use «Ticket» para comprobante interno.",
+                            "La factura electrónica ARCA no está incluida en su licencia.\n\n" +
+                            "Solicite el extra «ARCA / Factura electrónica» o use «Ticket» para comprobante interno.",
                             "Extra no habilitado", MessageBoxButton.OK, MessageBoxImage.Information);
                         break;
                     }
@@ -1393,7 +1393,7 @@ namespace SchettiniGestion.WPF
                 if (pvGuardado > 0) puntoVentaConfig = pvGuardado;
             }
 
-            // 2. Determinar Tipo AFIP
+            // 2. Determinar Tipo ARCA
             decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
 
             // Un emisor monotributista siempre emite Factura C (tipo 11), nunca A ni B.
@@ -1436,8 +1436,8 @@ namespace SchettiniGestion.WPF
                 if (tipoCompTexto == "Factura" && !afipLicenciado)
                 {
                     CustomMessageBox.Show(
-                        "La factura electrónica AFIP no está incluida en su licencia.\n\n" +
-                        "Use «Ticket» para comprobante interno o solicite el extra AFIP.",
+                        "La factura electrónica ARCA no está incluida en su licencia.\n\n" +
+                        "Use «Ticket» para comprobante interno o solicite el extra ARCA.",
                         "Extra no habilitado", MessageBoxButton.OK, MessageBoxImage.Warning);
                     btnGuardarFactura.IsEnabled = true;
                     return;
@@ -1445,7 +1445,7 @@ namespace SchettiniGestion.WPF
                 if (tipoAfip > 0 && afipConfigurado && puntoVentaConfig <= 0)
                 {
                     CustomMessageBox.Show(
-                        "No hay un punto de venta AFIP configurado.\n\n" +
+                        "No hay un punto de venta ARCA configurado.\n\n" +
                         "Ingrese el número real asignado por ARCA antes de emitir comprobantes fiscales.",
                         "Punto de venta requerido", MessageBoxButton.OK, MessageBoxImage.Warning);
                     btnGuardarFactura.IsEnabled = true;
@@ -1520,28 +1520,28 @@ namespace SchettiniGestion.WPF
                     cobroConfirmado = cobranzasConfirmadas != null && cobranzasConfirmadas.Count > 0;
                 }
 
-                // Aviso AFIP después del cobro (no interrumpe el flujo antes de cobrar)
+                // Aviso ARCA después del cobro (no interrumpe el flujo antes de cobrar)
                 if (tipoCompTexto == "Factura" && !afipConfigurado)
                 {
                     if (CustomMessageBox.Show(
-                            "AFIP no está configurado (CUIT y certificado).\n\n" +
+                            "ARCA no está configurado (CUIT y certificado).\n\n" +
                             "La venta se guardará sin CAE ni numeración fiscal.\n\n¿Desea continuar?",
-                            "Factura sin AFIP", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                            "Factura sin ARCA", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
                     {
                         btnGuardarFactura.IsEnabled = true;
                         return;
                     }
                 }
 
-                // ── PASO 2: AFIP (solo si el cobro fue confirmado) ──
+                // ── PASO 2: ARCA (solo si el cobro fue confirmado) ──
                 string cae = null;
                 string vtoCae = null;
                 int nroComprobante = 0;
 
-                // Solo llamar AFIP si está configurado (tiene CUIT y certificado)
+                // Solo llamar ARCA si está configurado (tiene CUIT y certificado)
                 if (tipoAfip > 0 && afipConfigurado)
                 {
-                    CustomerScreenService.ActualizarMensajeQR("Facturando AFIP...", Brushes.Orange);
+                    CustomerScreenService.ActualizarMensajeQR("Facturando ARCA...", Brushes.Orange);
                     string cuitLimpio = _clienteSeleccionado["CUIT"].ToString().Replace("-", "").Trim();
                     long cuitCliente = 0;
                     long.TryParse(cuitLimpio, out cuitCliente);
@@ -1556,13 +1556,13 @@ namespace SchettiniGestion.WPF
                     else
                     {
                         CustomMessageBox.Show(
-                            "❌ AFIP rechazó la factura electrónica.\n\n" +
+                            "❌ ARCA rechazó la factura electrónica.\n\n" +
                             "Detalle: " + resultadoAfip.Error + "\n\n" +
                             "⚠️ IMPORTANTE: el cobro fue confirmado pero la venta NO quedó registrada.\n\n" +
                             "Opciones:\n" +
                             "• Intentar de nuevo (el cobro ya fue recibido, NO vuelva a cobrar).\n" +
-                            "• Cambiar el tipo a 'Ticket' para guardar sin código AFIP.",
-                            "Error AFIP — venta no registrada");
+                            "• Cambiar el tipo a 'Ticket' para guardar sin código ARCA.",
+                            "Error ARCA — venta no registrada");
                         btnGuardarFactura.IsEnabled = true;
                         return;
                     }
@@ -1590,7 +1590,7 @@ namespace SchettiniGestion.WPF
                 if (fid > 0)
                 {
                     // El cobro electrónico se consume recién cuando la venta quedó persistida.
-                    // Si AFIP o SQL fallan, el reintento no debe volver a cobrar al cliente.
+                    // Si ARCA o SQL fallan, el reintento no debe volver a cobrar al cliente.
                     _pagoPointAprobado = false;
                     _parcelasPoint = null;
                     _pagoMPAprobado = false;
@@ -1611,10 +1611,10 @@ namespace SchettiniGestion.WPF
 
                     if (!string.IsNullOrEmpty(cae))
                     {
-                        // AFIP aprobó y cobro confirmado, pero el INSERT en BD falló → situación crítica
+                        // ARCA aprobó y cobro confirmado, pero el INSERT en BD falló → situación crítica
                         CustomMessageBox.Show(
                             "⛔ ERROR CRÍTICO: La venta no se guardó en el sistema.\n\n" +
-                            "El cobro fue recibido y AFIP ya emitió el comprobante:\n" +
+                            "El cobro fue recibido y ARCA ya emitió el comprobante:\n" +
                             $"CAE: {cae}  |  Vto: {vtoCae}  |  Nro: {nroComprobante}\n\n" +
                             "⚠️ NO vuelva a cobrar al cliente.\n" +
                             "Anote el CAE y comuníquese con soporte." +

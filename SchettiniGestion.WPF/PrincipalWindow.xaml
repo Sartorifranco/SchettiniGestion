@@ -184,6 +184,10 @@
                                 Content="🛍️  Productos (catálogo)"
                                 Style="{StaticResource LiteNavButton}"
                                 Click="btnProductos_Click"/>
+                        <Button x:Name="btnEtiquetas"
+                                Content="🏷️  Etiquetas"
+                                Style="{StaticResource LiteNavButton}"
+                                Click="btnEtiquetas_Click"/>
                         <Button x:Name="btnGestionStock"
                                 Content="📦  Stock y movimientos"
                                 Style="{StaticResource LiteNavButton}"

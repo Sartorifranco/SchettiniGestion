@@ -138,15 +138,55 @@
                   Style="{StaticResource ModuleDataGridStyle}"
                   AutoGenerateColumns="False" IsReadOnly="False"
                   CanUserAddRows="False" SelectionMode="Extended"
-                  HeadersVisibility="Column">
+                  HeadersVisibility="Column"
+                  RowHeight="56">
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Header="Sel." Binding="{Binding Seleccionado, UpdateSourceTrigger=PropertyChanged}" Width="50"/>
+                <DataGridTemplateColumn Header="Sel." Width="72" CanUserResize="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ToggleButton IsChecked="{Binding Seleccionado, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Width="44" Height="44" Cursor="Hand"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          ToolTip="Seleccionar para imprimir">
+                                <ToggleButton.Style>
+                                    <Style TargetType="ToggleButton">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border x:Name="bd" Width="44" Height="44" CornerRadius="8"
+                                                            Background="{DynamicResource SurfaceDark}"
+                                                            BorderBrush="{DynamicResource BorderColor}"
+                                                            BorderThickness="1.5">
+                                                        <TextBlock x:Name="tick" Text="✓" FontSize="22" FontWeight="Bold"
+                                                                   Foreground="White"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                   Visibility="Collapsed"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsChecked" Value="True">
+                                                            <Setter TargetName="bd" Property="Background" Value="#3498DB"/>
+                                                            <Setter TargetName="bd" Property="BorderBrush" Value="#3498DB"/>
+                                                            <Setter TargetName="tick" Property="Visibility" Value="Visible"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ToggleButton.Style>
+                            </ToggleButton>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="100" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Barras" Binding="{Binding CodigoBarra}" Width="120" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Marca" Binding="{Binding Marca}" Width="100" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Precio" Binding="{Binding PrecioVenta, StringFormat=C2}" Width="90" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad, UpdateSourceTrigger=PropertyChanged}" Width="60"/>
+                <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad, UpdateSourceTrigger=PropertyChanged}" Width="70"/>
             </DataGrid.Columns>
         </DataGrid>
 

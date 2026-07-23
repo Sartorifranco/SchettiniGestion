@@ -635,11 +635,24 @@
 
                     <Border x:Name="bdrBloqueoApertura" Grid.ColumnSpan="2" Visibility="Collapsed"
                             Background="#CC0D1117" Panel.ZIndex="20">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="440" Margin="24">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="480" Margin="24">
                             <TextBlock Text="🔒 Ventas bloqueadas" FontSize="22" FontWeight="Bold"
                                        Foreground="#F59E0B" HorizontalAlignment="Center" Margin="0,0,0,12"/>
                             <TextBlock x:Name="txtBloqueoApertura" TextWrapping="Wrap" TextAlignment="Center"
-                                       Foreground="{DynamicResource TextPrimary}" FontSize="15" LineHeight="22"/>
+                                       Foreground="{DynamicResource TextPrimary}" FontSize="15" LineHeight="22"
+                                       Margin="0,0,0,20"/>
+                            <Button x:Name="btnAbrirCajaDesdePos"
+                                    Content="🔓  ABRIR CAJA"
+                                    Style="{StaticResource SuccessButtonStyle}"
+                                    FontSize="18" FontWeight="Bold"
+                                    MinHeight="56" MinWidth="260" Padding="24,14"
+                                    HorizontalAlignment="Center"
+                                    Click="btnAbrirCajaDesdePos_Click"
+                                    ToolTip="Registrar el fondo fijo e iniciar el turno"/>
+                            <TextBlock Text="También podés hacerlo desde Caja → Apertura de caja."
+                                       FontSize="12" Foreground="{DynamicResource TextSecondary}"
+                                       HorizontalAlignment="Center" Margin="0,14,0,0" TextWrapping="Wrap"
+                                       TextAlignment="Center"/>
                         </StackPanel>
                     </Border>
                 </Grid>

@@ -3959,7 +3959,7 @@ FROM FacturaDetalle fd JOIN Productos p ON fd.ProductoID = p.ProductoID WHERE fd
             if (TieneCierreCajaHoy())
                 return "El cierre de caja de hoy ya fue registrado.\n\nPara volver a vender, desactivá «Apertura y cierre de caja» en Configuración o esperá al día siguiente y abrí un nuevo turno.";
             if (!TieneAperturaCajaHoy())
-                return "Debe abrir la caja antes de vender.\n\nVaya a Caja → Apertura de caja e indique el fondo fijo inicial.";
+                return "Debe abrir la caja antes de vender.\n\nUsá el botón «ABRIR CAJA» e indicá el fondo fijo inicial.";
             return "";
         }
 

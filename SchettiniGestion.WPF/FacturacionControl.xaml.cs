@@ -115,6 +115,65 @@ namespace SchettiniGestion.WPF
             return false;
         }
 
+        private void btnAbrirCajaDesdePos_Click(object sender, RoutedEventArgs e)
+        {
+            if (DatabaseService.TieneAperturaCajaHoy())
+            {
+                CustomMessageBox.Show("La caja ya está abierta para hoy.", "Apertura",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                ActualizarBloqueoAperturaCaja();
+                return;
+            }
+
+            var win = CrearInputModal(
+                "Abrir caja",
+                "Monto del fondo fijo inicial (efectivo con el que arranca el turno):",
+                "0",
+                soloNumeros: true);
+            if (win.ShowDialog() != true)
+                return;
+
+            string texto = win.ResponseText?.Trim().Replace(",", ".") ?? "";
+            if (!decimal.TryParse(texto, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal monto)
+                && !decimal.TryParse(win.ResponseText?.Trim(), NumberStyles.Number, CultureInfo.CurrentCulture, out monto))
+            {
+                CustomMessageBox.Show("Ingresá un monto válido para el fondo fijo.", "Monto inválido",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (monto < 0)
+            {
+                CustomMessageBox.Show("El fondo fijo no puede ser negativo.", "Monto inválido",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (CustomMessageBox.Show(
+                    $"¿Abrir la caja con fondo fijo de {monto:C2}?",
+                    "Confirmar apertura",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            if (DatabaseService.AbrirCaja(monto, null))
+            {
+                CustomMessageBox.Show(
+                    $"Caja abierta.\nFondo fijo: {monto:C2}\nYa podés vender.",
+                    "Apertura registrada",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                ActualizarBloqueoAperturaCaja();
+            }
+            else
+            {
+                string det = !string.IsNullOrEmpty(DatabaseService.UltimoError)
+                    ? "\n\n" + DatabaseService.UltimoError : "";
+                CustomMessageBox.Show("No se pudo abrir la caja." + det, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void FacturacionControl_Loaded(object sender, RoutedEventArgs e)
         {
             CargarListasPrecios();

@@ -30,6 +30,8 @@ namespace SchettiniGestion
         public decimal PrecioUnitario { get; set; }
         public decimal DescuentoPorcentaje { get; set; } = 0;
         public decimal RecargoPorcentaje { get; set; } = 0;
+        /// <summary>Nombre de la promoción automática aplicada (si hubo).</summary>
+        public string PromoNombre { get; set; }
         /// <summary>IVA aplicado sobre el precio (subtotal línea incluye este IVA), p. ej. 21 por 21%.</summary>
         public decimal AlicuotaIvaPct { get; set; } = 21m;
         /// <summary>Si es false, el precio unitario en POS no puede modificarse manualmente.</summary>
@@ -40,7 +42,12 @@ namespace SchettiniGestion
         {
             get
             {
-                if (DescuentoPorcentaje > 0m) return $"-{DescuentoPorcentaje:N0}% dto";
+                if (DescuentoPorcentaje > 0m)
+                {
+                    if (!string.IsNullOrWhiteSpace(PromoNombre))
+                        return $"🎯 {PromoNombre} · -{DescuentoPorcentaje:N0}%";
+                    return $"-{DescuentoPorcentaje:N0}% dto";
+                }
                 if (RecargoPorcentaje > 0m) return $"+{RecargoPorcentaje:N0}% rec.";
                 return "";
             }
@@ -294,6 +301,7 @@ namespace SchettiniGestion
         public const string PERMISO_MERCADOPAGO_POINT = "ACCESO_MERCADOPAGO_POINT";
         public const string PERMISO_SOPORTE           = "ACCESO_SOPORTE";
         public const string PERMISO_ESTADISTICAS      = "ACCESO_ESTADISTICAS";
+        public const string PERMISO_ETIQUETAS         = "ACCESO_ETIQUETAS";
 
         private static void NotificarError(string mensaje)
         {
@@ -713,7 +721,7 @@ PosListaPrecioID=@lid, PosTipoComprobante=@tc, PosCondicionVenta=@cv, PosConfigE
             catch (Exception ex) { NotificarError(ex.Message); return false; }
         }
 
-        /// <summary>CUIT del emisor solo dígitos (para WSAA/AFIP).</summary>
+        /// <summary>CUIT del emisor solo dígitos (para WSAA/ARCA).</summary>
         public static string ObtenerCuitEmpresaSoloDigitos(DataRow configuracionRow = null)
         {
             var raw = ObtenerCuitEmpresaTextoBruto(configuracionRow);
@@ -4097,7 +4105,7 @@ FROM FacturaDetalle fd JOIN Productos p ON fd.ProductoID = p.ProductoID WHERE fd
             if (TieneCierreCajaHoy())
                 return "El cierre de caja de hoy ya fue registrado.\n\nPara volver a vender, desactivá «Apertura y cierre de caja» en Configuración o esperá al día siguiente y abrí un nuevo turno.";
             if (!TieneAperturaCajaHoy())
-                return "Debe abrir la caja antes de vender.\n\nVaya a Caja → Apertura de caja e indique el fondo fijo inicial.";
+                return "Debe abrir la caja antes de vender.\n\nUsá el botón «ABRIR CAJA» e indicá el fondo fijo inicial.";
             return "";
         }
 
@@ -5314,7 +5322,7 @@ INSERT INTO Configuracion (
             catch { return false; }
         }
 
-        /// <summary>Persiste rutas del par .key / .crt generado por el asistente de activación AFIP.</summary>
+        /// <summary>Persiste rutas del par .key / .crt generado por el asistente de activación ARCA.</summary>
         public static bool GuardarRutasActivacionAfip(string clavePrivadaPath, string certificadoPath)
         {
             try
@@ -5346,7 +5354,7 @@ WHERE ID = 1", c))
             }
         }
 
-        /// <summary>Ruta de la clave privada (.key) del asistente AFIP, o vacío.</summary>
+        /// <summary>Ruta de la clave privada (.key) del asistente ARCA, o vacío.</summary>
         public static string ObtenerAfipClavePrivadaPath()
         {
             try
@@ -5358,7 +5366,7 @@ WHERE ID = 1", c))
             catch { return ""; }
         }
 
-        /// <summary>True = ambiente WSFE producción AFIP.</summary>
+        /// <summary>True = ambiente WSFE producción ARCA.</summary>
         public static bool GetAfipAmbienteProduccion()
         {
             try

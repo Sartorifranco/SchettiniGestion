@@ -213,6 +213,8 @@
     <Compile Include="DatabaseService.Dashboard.cs" />
     <Compile Include="DatabaseService.Estadisticas.cs" />
     <Compile Include="DatabaseService.Promociones.cs" />
+    <Compile Include="DatabaseService.Etiquetas.cs" />
+    <Compile Include="OpcionesEtiqueta.cs" />
     <Compile Include="LicenseFileHelper.cs" />
     <Compile Include="LicenseManager.cs" />
     <Compile Include="ModulosCatalog.cs" />

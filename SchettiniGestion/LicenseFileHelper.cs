@@ -24,9 +24,13 @@ namespace SchettiniGestion
             return Path.IsPathRooted(rutaRelativa) ? rutaRelativa : Path.Combine(baseDir, rutaRelativa);
         }
 
+        /// <summary>
+        /// Preferir ProgramData (siempre escribible al activar) sobre el .key junto al exe
+        /// (a menudo de solo lectura en Program Files y puede quedar desactualizado).
+        /// </summary>
         public static string LeerClaveDesdeArchivos()
         {
-            foreach (string path in new[] { ObtenerRutaLicenciaEjecutable(), RutaLicenciaProgramData })
+            foreach (string path in new[] { RutaLicenciaProgramData, ObtenerRutaLicenciaEjecutable() })
             {
                 try
                 {

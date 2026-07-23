@@ -81,7 +81,7 @@ string buildId = Assembly.GetExecutingAssembly()
 app.MapGet("/api", () => Results.Ok(new
 {
     servicio = "SCHPOS License API",
-    version = "1.1",
+    version = "1.2",
     build = buildId,
     endpoints = new[]
     {
@@ -98,7 +98,7 @@ app.MapGet("/api/version", (DataStore dataStore) =>
     string? dataDir = Path.GetDirectoryName(dataPath);
     return Results.Ok(new
     {
-        version = "1.1",
+        version = "1.2",
         build = buildId,
         environment = app.Environment.EnvironmentName,
         dataFile = dataPath,

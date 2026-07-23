@@ -5,7 +5,7 @@ using System.Text;
 namespace SchettiniGestion
 {
     /// <summary>
-    /// Cifrado en reposo de la contraseña del certificado (.pfx) AFIP mediante DPAPI.
+    /// Cifrado en reposo de la contraseña del certificado (.pfx) ARCA mediante DPAPI.
     /// Las filas antiguas en texto plano siguen funcionando hasta el próximo guardado.
     /// </summary>
     internal static class AfipCertPasswordDpapi
@@ -38,7 +38,7 @@ namespace SchettiniGestion
             catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    "No se pudo usar la contraseña del certificado AFIP guardada. " +
+                    "No se pudo usar la contraseña del certificado ARCA guardada. " +
                     "Si cambió el usuario de Windows o restauró una copia de la base desde otra máquina, " +
                     "vuelva a ingresar la contraseña del .pfx en Configuración.", ex);
             }

@@ -87,12 +87,12 @@ namespace SchettiniGestion.WPF
                 }
                 else
                 {
-                    CustomMessageBox.Show(persona.Error ?? "No se encontró el CUIT en AFIP. Ingrese los datos manualmente.", "AFIP", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    CustomMessageBox.Show(persona.Error ?? "No se encontró el CUIT en ARCA. Ingrese los datos manualmente.", "ARCA", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (Exception ex)
             {
-                CustomMessageBox.Show("Error al consultar AFIP: " + ex.Message + "\n\nIngrese los datos manualmente.", "AFIP", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Error al consultar ARCA: " + ex.Message + "\n\nIngrese los datos manualmente.", "ARCA", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally
             {
@@ -123,7 +123,7 @@ namespace SchettiniGestion.WPF
         }
 
         /// <summary>
-        /// Valida el CUIT/CUIL argentino usando el algoritmo módulo-11 de AFIP.
+        /// Valida el CUIT/CUIL argentino usando el algoritmo módulo-11 de ARCA.
         /// Acepta formatos con o sin guiones: 20-12345678-9 / 20123456789.
         /// </summary>
         private static bool EsCuitValido(string cuit)
@@ -131,7 +131,7 @@ namespace SchettiniGestion.WPF
             string solo = System.Text.RegularExpressions.Regex.Replace(cuit ?? "", "[^0-9]", "");
             if (solo.Length != 11) return false;
 
-            // Algoritmo módulo 11 AFIP
+            // Algoritmo módulo 11 ARCA
             int[] pesos = { 5, 4, 3, 2, 7, 6, 5, 4, 3, 2 };
             int suma = 0;
             for (int i = 0; i < 10; i++)

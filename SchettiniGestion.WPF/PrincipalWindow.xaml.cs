@@ -216,6 +216,9 @@ namespace SchettiniGestion.WPF
                 // Garantiza que los botones principales también respeten la licencia activa.
                 btnVentasFacturacion.Visibility = PuedeModulo(DatabaseService.PERMISO_VENTAS) ? Visibility.Visible : Visibility.Collapsed;
                 btnProductos.Visibility         = PuedeModulo(DatabaseService.PERMISO_PRODUCTOS) ? Visibility.Visible : Visibility.Collapsed;
+                if (btnEtiquetas != null)
+                    btnEtiquetas.Visibility = (LicenseManager.TieneEtiquetas() && PuedeModulo(DatabaseService.PERMISO_PRODUCTOS))
+                        ? Visibility.Visible : Visibility.Collapsed;
                 btnGestionStock.Visibility      = PuedeModulo(DatabaseService.PERMISO_STOCK)  ? Visibility.Visible : Visibility.Collapsed;
                 btnListasPrecios.Visibility     = PuedeModulo(DatabaseService.PERMISO_LISTASPRECIOS) ? Visibility.Visible : Visibility.Collapsed;
                 if (btnPromociones != null)
@@ -245,6 +248,7 @@ namespace SchettiniGestion.WPF
         {
             if (btnVentasFacturacion != null) btnVentasFacturacion.Visibility = Visibility.Collapsed;
             if (btnProductos != null) btnProductos.Visibility = Visibility.Collapsed;
+            if (btnEtiquetas != null) btnEtiquetas.Visibility = Visibility.Collapsed;
             if (btnGestionStock != null) btnGestionStock.Visibility = Visibility.Collapsed;
             if (btnListasPrecios != null) btnListasPrecios.Visibility = Visibility.Collapsed;
             if (btnPromociones != null) btnPromociones.Visibility = Visibility.Collapsed;
@@ -308,6 +312,19 @@ namespace SchettiniGestion.WPF
         }
 
         private void productosMenuItem_Click(object sender, RoutedEventArgs e) => btnProductos_Click(sender, e);
+
+        private void btnEtiquetas_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenseManager.TieneEtiquetas() || !PuedeModulo(DatabaseService.PERMISO_PRODUCTOS))
+            {
+                MessageBox.Show(
+                    "La impresión de etiquetas no está incluida en su licencia.\n\nSolicite el extra «Impresión de etiquetas».",
+                    "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            SetModuloActivo(btnEtiquetas);
+            mainContentArea.Content = new EtiquetasControl();
+        }
 
         private void btnProductos_Click(object sender, RoutedEventArgs e)
         {
@@ -511,9 +528,10 @@ namespace SchettiniGestion.WPF
             RegistrarTextoNav(btnInicio);
             RegistrarTextoNav(btnVentasFacturacion);
             RegistrarTextoNav(btnProductos);
+            RegistrarTextoNav(btnEtiquetas);
             RegistrarTextoNav(btnGestionStock);
             RegistrarTextoNav(btnListasPrecios);
-            if (btnPromociones != null) RegistrarTextoNav(btnPromociones);
+            RegistrarTextoNav(btnPromociones);
             RegistrarTextoNav(btnClientes);
             RegistrarTextoNav(btnProveedores);
             RegistrarTextoNav(btnCompras);

@@ -33,7 +33,7 @@ public class Licencia
     /// <summary>Abono mensual según módulos contratados.</summary>
     public decimal AbonoMensual { get; set; }
 
-    public string VersionSchpos { get; set; } = "2.0.0";
+    public string VersionSchpos { get; set; } = "2.1.9";
     public string Observaciones { get; set; } = "";
     public bool EsRenovacion { get; set; }
     public Guid? LicenciaAnteriorId { get; set; }

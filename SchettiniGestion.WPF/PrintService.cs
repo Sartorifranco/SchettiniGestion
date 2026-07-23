@@ -1,7 +1,8 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using QRCoder;
 using SchettiniGestion;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,8 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
+using ZXing;
+using ZXing.Common;
 using WinDrawing = System.Drawing;
 using WinPrinting = System.Drawing.Printing;
 
@@ -723,7 +726,7 @@ namespace SchettiniGestion.WPF
                 pieFiscal = $"CAE: {cae}    Vto CAE: {vto}";
 
             string pieLegal = tipo.Equals("Factura", StringComparison.OrdinalIgnoreCase)
-                ? "Comprobante fiscal autorizado por AFIP."
+                ? "Comprobante fiscal autorizado por ARCA."
                 : "Documento no válido como factura fiscal.";
 
             var opciones = DatabaseService.GetOpcionesImpresionTicket();
@@ -827,6 +830,31 @@ namespace SchettiniGestion.WPF
                 WinPrinting.PrintDocument doc = new WinPrinting.PrintDocument();
                 doc.PrinterSettings.PrinterName = nombreImpresora;
                 doc.PrintController = new WinPrinting.StandardPrintController();
+
+                if (string.Equals(tipo, "Etiqueta", StringComparison.OrdinalIgnoreCase))
+                {
+                    var opEtiq = DatabaseService.GetOpcionesEtiqueta();
+                    AplicarTamanoEtiqueta(doc, opEtiq.AnchoMm, opEtiq.AltoMm);
+                    doc.PrintPage += (s, e) =>
+                    {
+                        DibujarEtiquetaGDI(e.Graphics, opEtiq,
+                            new EtiquetaPrintItem
+                            {
+                                Descripcion = "Producto de prueba",
+                                Codigo = "PRUEBA",
+                                CodigoBarra = "7790001000019",
+                                PrecioVenta = 1234.50m,
+                                Marca = "SCHPOS",
+                                Cantidad = 1
+                            });
+                        e.HasMorePages = false;
+                    };
+                    doc.Print();
+                    MessageBox.Show($"Etiqueta de prueba ({opEtiq.AnchoMm}×{opEtiq.AltoMm} mm) enviada a:\n{nombreImpresora}",
+                        "Prueba de impresión", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
                 doc.PrintPage += (s, e) =>
                 {
                     var g = e.Graphics;
@@ -1110,6 +1138,200 @@ namespace SchettiniGestion.WPF
 
         private static void DibujarLinea(WinDrawing.Graphics g, ref float y, float w) { y += 3; g.DrawLine(new WinDrawing.Pen(WinDrawing.Color.Black) { DashStyle = WinDrawing.Drawing2D.DashStyle.Dash }, 2, y, w - 2, y); y += 5; }
         private static void DibujarTextoCentrado(WinDrawing.Graphics g, string t, WinDrawing.Font f, float w, ref float y) { WinDrawing.SizeF s = g.MeasureString(t, f); g.DrawString(t, f, WinDrawing.Brushes.Black, (w - s.Width) / 2, y); y += s.Height; }
+
+        #region ETIQUETAS
+
+        public static void ImprimirEtiquetas(IList<EtiquetaPrintItem> items, OpcionesEtiqueta opciones = null)
+        {
+            if (items == null || items.Count == 0)
+            {
+                MessageBox.Show("No hay productos para imprimir.");
+                return;
+            }
+
+            opciones = opciones ?? DatabaseService.GetOpcionesEtiqueta();
+            var cola = new List<EtiquetaPrintItem>();
+            foreach (var it in items)
+            {
+                if (it == null) continue;
+                int n = Math.Max(1, it.Cantidad);
+                for (int i = 0; i < n; i++)
+                    cola.Add(it);
+            }
+            if (cola.Count == 0)
+            {
+                MessageBox.Show("Indicá al menos 1 etiqueta.");
+                return;
+            }
+
+            try
+            {
+                string impresora = DatabaseService.GetImpresoraEtiquetas();
+                var doc = new WinPrinting.PrintDocument();
+                doc.PrintController = new WinPrinting.StandardPrintController();
+                AplicarTamanoEtiqueta(doc, opciones.AnchoMm, opciones.AltoMm);
+
+                int idx = 0;
+                doc.PrintPage += (s, e) =>
+                {
+                    DibujarEtiquetaGDI(e.Graphics, opciones, cola[idx]);
+                    idx++;
+                    e.HasMorePages = idx < cola.Count;
+                };
+
+                ImprimirDocumentoTicket(doc, impresora);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al imprimir etiquetas: " + ex.Message);
+            }
+        }
+
+        private static void AplicarTamanoEtiqueta(WinPrinting.PrintDocument doc, int anchoMm, int altoMm)
+        {
+            anchoMm = Math.Max(10, Math.Min(300, anchoMm));
+            altoMm = Math.Max(10, Math.Min(300, altoMm));
+            // PaperSize usa centésimas de pulgada
+            int w = (int)Math.Round(anchoMm / 25.4 * 100.0);
+            int h = (int)Math.Round(altoMm / 25.4 * 100.0);
+            var paper = new WinPrinting.PaperSize($"Etiqueta{anchoMm}x{altoMm}", w, h);
+            doc.DefaultPageSettings.PaperSize = paper;
+            doc.DefaultPageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 0);
+            doc.PrinterSettings.DefaultPageSettings.PaperSize = paper;
+            doc.PrinterSettings.DefaultPageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 0);
+        }
+
+        private static void DibujarEtiquetaGDI(WinDrawing.Graphics g, OpcionesEtiqueta op, EtiquetaPrintItem item)
+        {
+            if (g == null || item == null) return;
+            g.PageUnit = WinDrawing.GraphicsUnit.Millimeter;
+            g.SmoothingMode = WinDrawing.Drawing2D.SmoothingMode.None;
+            g.InterpolationMode = WinDrawing.Drawing2D.InterpolationMode.NearestNeighbor;
+
+            float w = Math.Max(10, op.AnchoMm);
+            float h = Math.Max(10, op.AltoMm);
+            float margin = Math.Max(0.8f, Math.Min(w, h) * 0.04f);
+            float y = margin;
+            float contentW = w - margin * 2;
+
+            float fontDesc = h <= 28 ? 2.2f : (h <= 40 ? 2.6f : 3.2f);
+            float fontSec = h <= 28 ? 1.8f : 2.2f;
+            float fontPrecio = h <= 28 ? 2.8f : 3.4f;
+
+            using (var fDesc = new WinDrawing.Font("Arial", fontDesc, WinDrawing.FontStyle.Bold, WinDrawing.GraphicsUnit.Millimeter))
+            using (var fSec = new WinDrawing.Font("Arial", fontSec, WinDrawing.FontStyle.Regular, WinDrawing.GraphicsUnit.Millimeter))
+            using (var fPrecio = new WinDrawing.Font("Arial", fontPrecio, WinDrawing.FontStyle.Bold, WinDrawing.GraphicsUnit.Millimeter))
+            {
+                if (op.MostrarDescripcion && !string.IsNullOrWhiteSpace(item.Descripcion))
+                {
+                    string desc = TruncarTextoEtiqueta(g, item.Descripcion.Trim(), fDesc, contentW);
+                    g.DrawString(desc, fDesc, WinDrawing.Brushes.Black, margin, y);
+                    y += g.MeasureString(desc, fDesc).Height + 0.3f;
+                }
+
+                if (op.MostrarMarca && !string.IsNullOrWhiteSpace(item.Marca))
+                {
+                    string marca = TruncarTextoEtiqueta(g, item.Marca.Trim(), fSec, contentW);
+                    g.DrawString(marca, fSec, WinDrawing.Brushes.Black, margin, y);
+                    y += g.MeasureString(marca, fSec).Height + 0.2f;
+                }
+
+                if (op.MostrarCodigo && !string.IsNullOrWhiteSpace(item.Codigo))
+                {
+                    string cod = "Cod: " + item.Codigo.Trim();
+                    g.DrawString(TruncarTextoEtiqueta(g, cod, fSec, contentW), fSec, WinDrawing.Brushes.Black, margin, y);
+                    y += g.MeasureString("X", fSec).Height + 0.2f;
+                }
+
+                if (op.MostrarCodigoBarras)
+                {
+                    string data = !string.IsNullOrWhiteSpace(item.CodigoBarra) ? item.CodigoBarra.Trim()
+                        : (!string.IsNullOrWhiteSpace(item.Codigo) ? item.Codigo.Trim() : "");
+                    if (!string.IsNullOrWhiteSpace(data))
+                    {
+                        float barH = Math.Max(6f, h - y - (op.MostrarPrecio ? fontPrecio + 1.5f : margin) - margin);
+                        barH = Math.Min(barH, h * 0.45f);
+                        using (var bmp = GenerarBitmapCodigoBarras(data, (int)(contentW * 12), (int)(barH * 12)))
+                        {
+                            if (bmp != null)
+                                g.DrawImage(bmp, margin, y, contentW, barH);
+                        }
+                        y += barH + 0.4f;
+                        // Texto humano debajo del código
+                        string human = TruncarTextoEtiqueta(g, data, fSec, contentW);
+                        var sz = g.MeasureString(human, fSec);
+                        g.DrawString(human, fSec, WinDrawing.Brushes.Black, margin + (contentW - sz.Width) / 2f, y);
+                        y += sz.Height + 0.2f;
+                    }
+                }
+
+                if (op.MostrarPrecio)
+                {
+                    string precio = item.PrecioVenta.ToString("C2");
+                    var sz = g.MeasureString(precio, fPrecio);
+                    float py = Math.Max(y, h - margin - sz.Height);
+                    g.DrawString(precio, fPrecio, WinDrawing.Brushes.Black, margin + (contentW - sz.Width) / 2f, py);
+                }
+            }
+        }
+
+        private static string TruncarTextoEtiqueta(WinDrawing.Graphics g, string texto, WinDrawing.Font f, float maxW)
+        {
+            if (string.IsNullOrEmpty(texto)) return "";
+            if (g.MeasureString(texto, f).Width <= maxW) return texto;
+            string t = texto;
+            while (t.Length > 1 && g.MeasureString(t + "…", f).Width > maxW)
+                t = t.Substring(0, t.Length - 1);
+            return t + "…";
+        }
+
+        private static WinDrawing.Bitmap GenerarBitmapCodigoBarras(string data, int widthPx, int heightPx)
+        {
+            try
+            {
+                widthPx = Math.Max(80, widthPx);
+                heightPx = Math.Max(40, heightPx);
+                var writer = new BarcodeWriter
+                {
+                    Format = BarcodeFormat.CODE_128,
+                    Options = new EncodingOptions
+                    {
+                        Width = widthPx,
+                        Height = heightPx,
+                        Margin = 0,
+                        PureBarcode = true
+                    }
+                };
+                // EAN-13 si aplica
+                string digits = new string(data.Where(char.IsDigit).ToArray());
+                if (digits.Length == 13)
+                {
+                    writer.Format = BarcodeFormat.EAN_13;
+                    data = digits;
+                }
+                else if (digits.Length == 8)
+                {
+                    writer.Format = BarcodeFormat.EAN_8;
+                    data = digits;
+                }
+                return writer.Write(data);
+            }
+            catch
+            {
+                try
+                {
+                    var writer = new BarcodeWriter
+                    {
+                        Format = BarcodeFormat.CODE_128,
+                        Options = new EncodingOptions { Width = widthPx, Height = heightPx, Margin = 0, PureBarcode = true }
+                    };
+                    return writer.Write(data);
+                }
+                catch { return null; }
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// Carga una imagen desde disco usando MemoryStream y aplica Freeze().

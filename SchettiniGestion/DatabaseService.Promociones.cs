@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
@@ -20,6 +21,18 @@ namespace SchettiniGestion
             public int PromoID { get; set; }
             public string Nombre { get; set; }
             public decimal Porcentaje { get; set; }
+        }
+
+        /// <summary>Promo activa y vigente en la fecha de hoy (para banner POS / catálogo).</summary>
+        public class PromoActivaHoy
+        {
+            public int PromoID { get; set; }
+            public string Nombre { get; set; }
+            public string Tipo { get; set; }
+            public int? ProductoID { get; set; }
+            public string Categoria { get; set; }
+            public decimal Porcentaje { get; set; }
+            public string AlcanceTexto { get; set; }
         }
 
         private static bool _tablaPromocionesOk;
@@ -181,6 +194,93 @@ ORDER BY pr.Activo DESC, pr.Nombre", c).Fill(dt);
                 NotificarError("No se pudo eliminar la promoción: " + ex.Message);
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Promos activas cuya ventana de fechas incluye hoy (para banner del POS).
+        /// </summary>
+        public static List<PromoActivaHoy> GetPromocionesVigentesHoy()
+        {
+            var list = new List<PromoActivaHoy>();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarTablaPromociones(c);
+                    using (var cmd = new SqlCommand(@"
+SELECT PromoID, Nombre, Tipo, ProductoID, Categoria, Porcentaje,
+       CASE Tipo
+         WHEN 'PCT_PRODUCTO' THEN N'un producto'
+         WHEN 'PCT_CATEGORIA' THEN N'categoría'
+         WHEN 'PCT_TODOS' THEN N'todo el local'
+         ELSE Tipo END AS AlcanceTexto
+FROM Promociones
+WHERE Activo = 1
+  AND (FechaDesde IS NULL OR FechaDesde <= CAST(GETDATE() AS DATE))
+  AND (FechaHasta IS NULL OR FechaHasta >= CAST(GETDATE() AS DATE))
+ORDER BY
+  CASE Tipo WHEN 'PCT_TODOS' THEN 1 WHEN 'PCT_CATEGORIA' THEN 2 ELSE 3 END,
+  Porcentaje DESC, Nombre", c))
+                    using (var rd = cmd.ExecuteReader())
+                    {
+                        while (rd.Read())
+                        {
+                            list.Add(new PromoActivaHoy
+                            {
+                                PromoID = Convert.ToInt32(rd["PromoID"]),
+                                Nombre = rd["Nombre"]?.ToString() ?? "",
+                                Tipo = rd["Tipo"]?.ToString() ?? "",
+                                ProductoID = rd["ProductoID"] == DBNull.Value ? (int?)null : Convert.ToInt32(rd["ProductoID"]),
+                                Categoria = rd["Categoria"]?.ToString() ?? "",
+                                Porcentaje = Convert.ToDecimal(rd["Porcentaje"]),
+                                AlcanceTexto = rd["AlcanceTexto"]?.ToString() ?? ""
+                            });
+                        }
+                    }
+                }
+            }
+            catch { /* silencioso: el POS sigue sin banner */ }
+            return list;
+        }
+
+        /// <summary>
+        /// Elige la promo más específica (producto &gt; categoría &gt; todo)
+        /// y, a igual alcance, la de mayor porcentaje.
+        /// </summary>
+        public static PromoVigente ResolverMejorPromo(IList<PromoActivaHoy> promos, int productoId, string categoria)
+        {
+            if (promos == null || promos.Count == 0) return null;
+            string cat = (categoria ?? "").Trim();
+            PromoActivaHoy best = null;
+            int bestRank = 99;
+            foreach (var p in promos)
+            {
+                int rank;
+                if (p.Tipo == TiposPromo.PctProducto && p.ProductoID.HasValue && p.ProductoID.Value == productoId)
+                    rank = 1;
+                else if (p.Tipo == TiposPromo.PctCategoria
+                         && string.Equals((p.Categoria ?? "").Trim(), cat, StringComparison.OrdinalIgnoreCase)
+                         && !string.IsNullOrEmpty(cat))
+                    rank = 2;
+                else if (p.Tipo == TiposPromo.PctTodos)
+                    rank = 3;
+                else
+                    continue;
+
+                if (best == null || rank < bestRank || (rank == bestRank && p.Porcentaje > best.Porcentaje))
+                {
+                    best = p;
+                    bestRank = rank;
+                }
+            }
+            if (best == null) return null;
+            return new PromoVigente
+            {
+                PromoID = best.PromoID,
+                Nombre = best.Nombre,
+                Porcentaje = best.Porcentaje
+            };
         }
 
         /// <summary>

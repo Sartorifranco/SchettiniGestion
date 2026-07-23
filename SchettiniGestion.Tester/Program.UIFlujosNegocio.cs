@@ -271,7 +271,7 @@ namespace SchettiniGestion.Tester
                 if (winCobro == null)
                 {
                     CerrarModalesInformativosSiHay(app, automation, principal);
-                    Registrar("⚠️ UI-FLOW-POS: No apareció ventana «Cobro» (validación AFIP/tipo o mensaje bloqueante). Revisar capturas y CustomMessageBox.");
+                    Registrar("⚠️ UI-FLOW-POS: No apareció ventana «Cobro» (validación ARCA/tipo o mensaje bloqueante). Revisar capturas y CustomMessageBox.");
                     return;
                 }
 

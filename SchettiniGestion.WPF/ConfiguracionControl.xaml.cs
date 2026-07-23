@@ -392,7 +392,7 @@ namespace SchettiniGestion.WPF
             if (btnSubirCertificadoAfip != null) btnSubirCertificadoAfip.IsEnabled = false;
             if (pbProbarConexionAfip != null) pbProbarConexionAfip.Visibility = Visibility.Visible;
 
-            EstablecerEstadoActivacionAfip("Probando conexión con WSAA de AFIP…", true);
+            EstablecerEstadoActivacionAfip("Probando conexión con WSAA de ARCA…", true);
             if (lblEstadoActivacionAfip != null)
                 lblEstadoActivacionAfip.Foreground = (Brush)FindResource("TextSecondary");
 
@@ -405,7 +405,7 @@ namespace SchettiniGestion.WPF
                 {
                     ModernMessageBox.Show(
                         resultado.Mensaje,
-                        "Conexión AFIP",
+                        "Conexión ARCA",
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);
                 }
@@ -413,7 +413,7 @@ namespace SchettiniGestion.WPF
                 {
                     ModernMessageBox.Show(
                         resultado.Mensaje,
-                        "Error de conexión AFIP",
+                        "Error de conexión ARCA",
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);
                 }
@@ -442,8 +442,8 @@ namespace SchettiniGestion.WPF
                 string nombreFantasia = txtNombreFantasia.Text?.Trim() ?? "";
 
                 if (ModernMessageBox.Show(
-                    "Se generará una nueva clave privada RSA y un CSR. Si ya tiene un certificado activo, deberá solicitar uno nuevo en AFIP/ARCA.\n\n¿Continuar?",
-                    "Generar CSR AFIP",
+                    "Se generará una nueva clave privada RSA y un CSR. Si ya tiene un certificado activo, deberá solicitar uno nuevo en ARCA.\n\n¿Continuar?",
+                    "Generar CSR ARCA",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question) != MessageBoxResult.Yes)
                     return;
@@ -470,7 +470,7 @@ namespace SchettiniGestion.WPF
 
                 ModernMessageBox.Show(
                     "CSR generado correctamente.\n\n" +
-                    "1. Suba el archivo .csr en AFIP/ARCA (Administrador de Relaciones de Clave Fiscal).\n" +
+                    "1. Suba el archivo .csr en ARCA (Administrador de Relaciones de Clave Fiscal).\n" +
                     "2. Cuando reciba el certificado .crt, impórtelo con el botón «Subir .crt».\n\n" +
                     "La clave privada quedó guardada en:\n" + resultado.RutaClavePrivada,
                     "CSR listo",
@@ -489,8 +489,8 @@ namespace SchettiniGestion.WPF
             {
                 var ofd = new OpenFileDialog
                 {
-                    Title = "Seleccionar certificado AFIP",
-                    Filter = "Certificado AFIP (*.crt;*.cer)|*.crt;*.cer"
+                    Title = "Seleccionar certificado ARCA",
+                    Filter = "Certificado ARCA (*.crt;*.cer)|*.crt;*.cer"
                 };
                 if (ofd.ShowDialog() != true) return;
 
@@ -506,7 +506,7 @@ namespace SchettiniGestion.WPF
                 ActualizarEstadoActivacionAfip();
 
                 ModernMessageBox.Show(
-                    "Certificado AFIP importado correctamente.\n\nEl sistema ya puede conectarse al WebService de Facturación Electrónica usando el par .key + .crt.\n\nRecuerde autorizar el servicio wsfe en AFIP/ARCA y registrar la IP si corresponde.",
+                    "Certificado ARCA importado correctamente.\n\nEl sistema ya puede conectarse al WebService de Facturación Electrónica usando el par .key + .crt.\n\nRecuerde autorizar el servicio wsfe en ARCA y registrar la IP si corresponde.",
                     "Certificado listo",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
@@ -707,7 +707,7 @@ namespace SchettiniGestion.WPF
                 {
                     if (!int.TryParse(ptoTexto, out pto) || pto <= 0 || pto > 99999)
                     {
-                        ModernMessageBox.Show("Punto de venta AFIP inválido. Debe ser un número entre 1 y 99999, o dejar el campo vacío si todavía no tiene uno asignado en ARCA.");
+                        ModernMessageBox.Show("Punto de venta ARCA inválido. Debe ser un número entre 1 y 99999, o dejar el campo vacío si todavía no tiene uno asignado en ARCA.");
                         return;
                     }
                 }
@@ -918,14 +918,17 @@ namespace SchettiniGestion.WPF
 
             if (DatabaseService.GuardarNuevaLicencia(nuevaKey))
             {
-                if (LicenseManager.ValidarLicencia())
+                if (LicenseManager.ValidarLicencia(nuevaKey))
                 {
                     ModernMessageBox.Show("¡Licencia activada correctamente!\n\nPor favor, reinicie el sistema para aplicar los cambios en los módulos.", "Activación Exitosa", MessageBoxButton.OK, MessageBoxImage.Information);
                     Application.Current.Shutdown();
                 }
                 else
                 {
-                    ModernMessageBox.Show("La licencia se guardó pero parece ser INVÁLIDA o está vencida.", "Advertencia", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    string detalle = string.IsNullOrWhiteSpace(LicenseManager.UltimoMensajeError)
+                        ? "La licencia se guardó pero parece ser INVÁLIDA o está vencida."
+                        : "La licencia se guardó pero no es válida:\n\n" + LicenseManager.UltimoMensajeError;
+                    ModernMessageBox.Show(detalle, "Advertencia", MessageBoxButton.OK, MessageBoxImage.Warning);
                     CargarDatosLicencia();
                 }
             }
@@ -1124,10 +1127,18 @@ namespace SchettiniGestion.WPF
 
                 cmbImpresoraTicket.ItemsSource = impresoras;
                 cmbImpresoraA4.ItemsSource = new System.Collections.Generic.List<string>(impresoras);
+                if (cmbImpresoraEtiquetas != null)
+                    cmbImpresoraEtiquetas.ItemsSource = new System.Collections.Generic.List<string>(impresoras);
 
                 var (ticket, a4) = DatabaseService.GetImpresoras();
                 cmbImpresoraTicket.SelectedItem = string.IsNullOrWhiteSpace(ticket) ? "(Preguntar cada vez)" : ticket;
                 cmbImpresoraA4.SelectedItem     = string.IsNullOrWhiteSpace(a4)     ? "(Preguntar cada vez)" : a4;
+
+                string etiquetas = DatabaseService.GetImpresoraEtiquetas();
+                if (cmbImpresoraEtiquetas != null)
+                    cmbImpresoraEtiquetas.SelectedItem = string.IsNullOrWhiteSpace(etiquetas) ? "(Preguntar cada vez)" : etiquetas;
+
+                CargarMedidaEtiquetaEnUi();
 
                 if (chkPreguntarAntesImprimir != null)
                     chkPreguntarAntesImprimir.IsChecked = DatabaseService.GetPreguntarAntesImprimir();
@@ -1215,23 +1226,106 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        private void CargarMedidaEtiquetaEnUi()
+        {
+            if (cmbMedidaEtiqueta == null) return;
+            var op = DatabaseService.GetOpcionesEtiqueta();
+            cmbMedidaEtiqueta.ItemsSource = new[]
+            {
+                "40 × 30 mm",
+                "50 × 25 mm",
+                "60 × 40 mm",
+                "80 × 50 mm",
+                "100 × 50 mm",
+                "Personalizado…"
+            };
+
+            string match = null;
+            foreach (string item in cmbMedidaEtiqueta.Items)
+            {
+                if (item.StartsWith("Personalizado")) continue;
+                var parts = item.Replace("mm", "").Split('×');
+                if (parts.Length != 2) continue;
+                if (int.TryParse(parts[0].Trim(), out int w) && int.TryParse(parts[1].Trim(), out int h)
+                    && w == op.AnchoMm && h == op.AltoMm)
+                {
+                    match = item;
+                    break;
+                }
+            }
+
+            if (match != null)
+                cmbMedidaEtiqueta.SelectedItem = match;
+            else
+            {
+                cmbMedidaEtiqueta.SelectedItem = "Personalizado…";
+                if (txtEtiquetaAnchoMm != null) txtEtiquetaAnchoMm.Text = op.AnchoMm.ToString();
+                if (txtEtiquetaAltoMm != null) txtEtiquetaAltoMm.Text = op.AltoMm.ToString();
+            }
+            ActualizarVisibilidadMedidaCustom();
+        }
+
+        private void cmbMedidaEtiqueta_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ActualizarVisibilidadMedidaCustom();
+        }
+
+        private void ActualizarVisibilidadMedidaCustom()
+        {
+            if (pnlMedidaEtiquetaCustom == null) return;
+            bool custom = cmbMedidaEtiqueta?.SelectedItem?.ToString()?.StartsWith("Personalizado") == true;
+            pnlMedidaEtiquetaCustom.Visibility = custom ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private OpcionesEtiqueta LeerOpcionesEtiquetaDesdeUi()
+        {
+            var op = DatabaseService.GetOpcionesEtiqueta();
+            string sel = cmbMedidaEtiqueta?.SelectedItem?.ToString() ?? "50 × 25 mm";
+            if (sel.StartsWith("Personalizado"))
+            {
+                int.TryParse(txtEtiquetaAnchoMm?.Text?.Trim(), out int w);
+                int.TryParse(txtEtiquetaAltoMm?.Text?.Trim(), out int h);
+                op.AnchoMm = w > 0 ? w : 50;
+                op.AltoMm = h > 0 ? h : 25;
+            }
+            else
+            {
+                var parts = sel.Replace("mm", "").Split('×');
+                if (parts.Length == 2
+                    && int.TryParse(parts[0].Trim(), out int w)
+                    && int.TryParse(parts[1].Trim(), out int h))
+                {
+                    op.AnchoMm = w;
+                    op.AltoMm = h;
+                }
+            }
+            return op;
+        }
+
         private void btnGuardarImpresoras_Click(object sender, RoutedEventArgs e)
         {
             string ticket = cmbImpresoraTicket.SelectedItem?.ToString();
             string a4     = cmbImpresoraA4.SelectedItem?.ToString();
+            string etiquetas = cmbImpresoraEtiquetas?.SelectedItem?.ToString();
 
             if (ticket == "(Preguntar cada vez)") ticket = null;
             if (a4     == "(Preguntar cada vez)") a4     = null;
+            if (etiquetas == "(Preguntar cada vez)") etiquetas = null;
 
             string destino = cmbDestinoImpresionVenta?.SelectedValue?.ToString() ?? "Ticket";
             var opciones = LeerOpcionesTicketDesdeUi();
+            var opEtiq = LeerOpcionesEtiquetaDesdeUi();
 
-            if (DatabaseService.GuardarConfiguracionImpresoras(
+            bool ok = DatabaseService.GuardarConfiguracionImpresoras(
                 ticket, a4, chkPreguntarAntesImprimir?.IsChecked != false, opciones,
                 destinoImpresionVenta: destino,
                 carpetaArchivos: txtCarpetaArchivosComprobantes?.Text?.Trim(),
                 anchoTicketMm: opciones.AnchoMm,
-                logoEnTicket: opciones.MostrarLogo))
+                logoEnTicket: opciones.MostrarLogo);
+
+            ok = DatabaseService.GuardarConfigEtiquetas(etiquetas, opEtiq) && ok;
+
+            if (ok)
                 ModernMessageBox.Show("Configuración de impresoras guardada correctamente.", "Guardado", MessageBoxButton.OK, MessageBoxImage.Information);
             else
                 ModernMessageBox.Show("No se pudo guardar la configuración.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -1257,6 +1351,20 @@ namespace SchettiniGestion.WPF
                 return;
             }
             PrintService.ImprimirPaginaDePrueba(nombre, "A4");
+        }
+
+        private void btnTestEtiquetas_Click(object sender, RoutedEventArgs e)
+        {
+            string nombre = cmbImpresoraEtiquetas?.SelectedItem?.ToString();
+            if (nombre == "(Preguntar cada vez)" || string.IsNullOrWhiteSpace(nombre))
+            {
+                ModernMessageBox.Show("Seleccioná una impresora de etiquetas primero.");
+                return;
+            }
+            // Guardar medida actual en memoria de impresión vía opciones leídas de UI
+            var op = LeerOpcionesEtiquetaDesdeUi();
+            DatabaseService.GuardarConfigEtiquetas(nombre, op);
+            PrintService.ImprimirPaginaDePrueba(nombre, "Etiqueta");
         }
     }
 }

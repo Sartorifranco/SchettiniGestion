@@ -44,7 +44,7 @@ Para **generar** licencias de testing usar **`LicenseGenerator`** (consola inter
 | Cadena de conexión SQL y base creada / migrada | Responsabilidad del despliegue |
 | Archivo **`licencia.key`** (o `LicenciaBase64` en config) con módulos **Lite** | Generar con herramienta de licencias |
 | Usuario SQL con permisos sobre la BD | Configuración en servidor |
-| Prueba en homologación AFIP antes de producción | Ver `ENTREGA_AFIP_Y_AMBIENTE.md` |
+| Prueba en homologación ARCA antes de producción | Ver `ENTREGA_AFIP_Y_AMBIENTE.md` |
 | Instalador Setup.exe (Inno) | `Instalador/build-release.ps1` + `SchettiniGestion.iss` |
 
 ---

@@ -183,7 +183,7 @@ namespace SchettiniGestion.WPF
 
             if (ok)
             {
-                CustomMessageBox.Show("Promo guardada. En la caja se aplica sola al cargar el producto.");
+                CustomMessageBox.Show("Promo guardada.\n\nEn Ventas vas a ver el descuento con el nombre de la promo en el carrito (ej: 🎯 Promo verano · -50%).");
                 CargarPromos();
                 Limpiar();
             }

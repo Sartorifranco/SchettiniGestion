@@ -30,6 +30,8 @@ namespace SchettiniGestion.WPF
             public bool SinStock { get; set; }
             public string StockTexto { get; set; }
             public string ImagenPath { get; set; }
+            public bool EnPromo { get; set; }
+            public string PromoTooltip { get; set; }
         }
 
         private ObservableCollection<FacturaItem> CarritoDeVenta;
@@ -85,7 +87,10 @@ namespace SchettiniGestion.WPF
         private void FacturacionControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (IsVisible)
+            {
                 ActualizarBloqueoAperturaCaja();
+                ActualizarPromosPos();
+            }
         }
 
         private void ActualizarBloqueoAperturaCaja()
@@ -108,6 +113,65 @@ namespace SchettiniGestion.WPF
                 MessageBoxImage.Warning);
             ActualizarBloqueoAperturaCaja();
             return false;
+        }
+
+        private void btnAbrirCajaDesdePos_Click(object sender, RoutedEventArgs e)
+        {
+            if (DatabaseService.TieneAperturaCajaHoy())
+            {
+                CustomMessageBox.Show("La caja ya está abierta para hoy.", "Apertura",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                ActualizarBloqueoAperturaCaja();
+                return;
+            }
+
+            var win = CrearInputModal(
+                "Abrir caja",
+                "Monto del fondo fijo inicial (efectivo con el que arranca el turno):",
+                "0",
+                soloNumeros: true);
+            if (win.ShowDialog() != true)
+                return;
+
+            string texto = win.ResponseText?.Trim().Replace(",", ".") ?? "";
+            if (!decimal.TryParse(texto, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal monto)
+                && !decimal.TryParse(win.ResponseText?.Trim(), NumberStyles.Number, CultureInfo.CurrentCulture, out monto))
+            {
+                CustomMessageBox.Show("Ingresá un monto válido para el fondo fijo.", "Monto inválido",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (monto < 0)
+            {
+                CustomMessageBox.Show("El fondo fijo no puede ser negativo.", "Monto inválido",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (CustomMessageBox.Show(
+                    $"¿Abrir la caja con fondo fijo de {monto:C2}?",
+                    "Confirmar apertura",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            if (DatabaseService.AbrirCaja(monto, null))
+            {
+                CustomMessageBox.Show(
+                    $"Caja abierta.\nFondo fijo: {monto:C2}\nYa podés vender.",
+                    "Apertura registrada",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                ActualizarBloqueoAperturaCaja();
+            }
+            else
+            {
+                string det = !string.IsNullOrEmpty(DatabaseService.UltimoError)
+                    ? "\n\n" + DatabaseService.UltimoError : "";
+                CustomMessageBox.Show("No se pudo abrir la caja." + det, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void FacturacionControl_Loaded(object sender, RoutedEventArgs e)
@@ -185,7 +249,51 @@ namespace SchettiniGestion.WPF
                     _catalogoCompleto.Add(CrearVmCatalogo(r, listaId));
                 }
             }
+            ActualizarPromosPos();
             FiltrarCatalogo();
+        }
+
+        /// <summary>Banner «Promos activas hoy» + badge EN PROMO en el catálogo.</summary>
+        private void ActualizarPromosPos()
+        {
+            var promos = DatabaseService.GetPromocionesVigentesHoy();
+            if (bdrPromosHoy != null && txtPromosHoy != null)
+            {
+                if (promos == null || promos.Count == 0)
+                {
+                    bdrPromosHoy.Visibility = Visibility.Collapsed;
+                    txtPromosHoy.Text = "";
+                }
+                else
+                {
+                    var partes = new List<string>();
+                    foreach (var p in promos)
+                    {
+                        string alcance = string.IsNullOrWhiteSpace(p.AlcanceTexto) ? "" : " (" + p.AlcanceTexto + ")";
+                        partes.Add($"{p.Nombre} -{p.Porcentaje:0.##}%{alcance}");
+                    }
+                    txtPromosHoy.Text = string.Join(" · ", partes);
+                    bdrPromosHoy.Visibility = Visibility.Visible;
+                }
+            }
+
+            if (_catalogoCompleto == null || _catalogoCompleto.Count == 0)
+                return;
+
+            foreach (var p in _catalogoCompleto)
+            {
+                string cat = p.Row != null && p.Row.Table.Columns.Contains("Categoria")
+                    ? (p.Row["Categoria"]?.ToString() ?? "")
+                    : "";
+                var promo = DatabaseService.ResolverMejorPromo(promos, p.ProductoID, cat);
+                p.EnPromo = promo != null && promo.Porcentaje > 0;
+                p.PromoTooltip = p.EnPromo
+                    ? $"🎯 {promo.Nombre} · -{promo.Porcentaje:0.##}%"
+                    : null;
+            }
+
+            dgvCatalogo?.Items.Refresh();
+            icCatalogo?.Items.Refresh();
         }
 
         private int? ObtenerListaIdSeleccionada()
@@ -571,8 +679,8 @@ namespace SchettiniGestion.WPF
                     {
                         cmbTipoComprobante.SelectedIndex = i;
                         CustomMessageBox.Show(
-                            "La factura electrónica AFIP no está incluida en su licencia.\n\n" +
-                            "Solicite el extra «AFIP / Factura electrónica» o use «Ticket» para comprobante interno.",
+                            "La factura electrónica ARCA no está incluida en su licencia.\n\n" +
+                            "Solicite el extra «ARCA / Factura electrónica» o use «Ticket» para comprobante interno.",
                             "Extra no habilitado", MessageBoxButton.OK, MessageBoxImage.Information);
                         break;
                     }
@@ -922,6 +1030,7 @@ namespace SchettiniGestion.WPF
                     Cantidad = cant,
                     PrecioUnitario = precioFinal,
                     DescuentoPorcentaje = promo != null && promo.Porcentaje > 0 ? promo.Porcentaje : 0,
+                    PromoNombre = promo != null && promo.Porcentaje > 0 ? promo.Nombre : null,
                     AlicuotaIvaPct = alicuota,
                     ImagenPath = imgPath,
                     PermiteModificarPrecioVenta = LeerPermiteModificarPrecioVenta(_productoSeleccionado)
@@ -932,6 +1041,31 @@ namespace SchettiniGestion.WPF
             LimpiarProducto();
             ActualizarTotal();
             MarcarItemCarrito(CarritoDeVenta.LastOrDefault(i => i.EsValido));
+            if (promo != null && promo.Porcentaje > 0 && item == null)
+                MostrarAvisoPromo(promo.Nombre, promo.Porcentaje);
+        }
+
+        private DispatcherTimer _timerAvisoPromo;
+
+        private void MostrarAvisoPromo(string nombrePromo, decimal porcentaje)
+        {
+            if (bdrAvisoPromo == null || txtAvisoPromo == null) return;
+            string nombre = string.IsNullOrWhiteSpace(nombrePromo) ? "Promoción" : nombrePromo.Trim();
+            txtAvisoPromo.Text = $"🎯 Se aplicó «{nombre}»: -{porcentaje:N0}% en este producto.";
+            bdrAvisoPromo.Visibility = Visibility.Visible;
+
+            if (_timerAvisoPromo == null)
+            {
+                _timerAvisoPromo = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
+                _timerAvisoPromo.Tick += (_, __) =>
+                {
+                    _timerAvisoPromo.Stop();
+                    if (bdrAvisoPromo != null)
+                        bdrAvisoPromo.Visibility = Visibility.Collapsed;
+                };
+            }
+            _timerAvisoPromo.Stop();
+            _timerAvisoPromo.Start();
         }
 
         /// <summary>
@@ -1318,7 +1452,7 @@ namespace SchettiniGestion.WPF
                 if (pvGuardado > 0) puntoVentaConfig = pvGuardado;
             }
 
-            // 2. Determinar Tipo AFIP
+            // 2. Determinar Tipo ARCA
             decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
 
             // Un emisor monotributista siempre emite Factura C (tipo 11), nunca A ni B.
@@ -1361,8 +1495,8 @@ namespace SchettiniGestion.WPF
                 if (tipoCompTexto == "Factura" && !afipLicenciado)
                 {
                     CustomMessageBox.Show(
-                        "La factura electrónica AFIP no está incluida en su licencia.\n\n" +
-                        "Use «Ticket» para comprobante interno o solicite el extra AFIP.",
+                        "La factura electrónica ARCA no está incluida en su licencia.\n\n" +
+                        "Use «Ticket» para comprobante interno o solicite el extra ARCA.",
                         "Extra no habilitado", MessageBoxButton.OK, MessageBoxImage.Warning);
                     btnGuardarFactura.IsEnabled = true;
                     return;
@@ -1370,7 +1504,7 @@ namespace SchettiniGestion.WPF
                 if (tipoAfip > 0 && afipConfigurado && puntoVentaConfig <= 0)
                 {
                     CustomMessageBox.Show(
-                        "No hay un punto de venta AFIP configurado.\n\n" +
+                        "No hay un punto de venta ARCA configurado.\n\n" +
                         "Ingrese el número real asignado por ARCA antes de emitir comprobantes fiscales.",
                         "Punto de venta requerido", MessageBoxButton.OK, MessageBoxImage.Warning);
                     btnGuardarFactura.IsEnabled = true;
@@ -1445,28 +1579,28 @@ namespace SchettiniGestion.WPF
                     cobroConfirmado = cobranzasConfirmadas != null && cobranzasConfirmadas.Count > 0;
                 }
 
-                // Aviso AFIP después del cobro (no interrumpe el flujo antes de cobrar)
+                // Aviso ARCA después del cobro (no interrumpe el flujo antes de cobrar)
                 if (tipoCompTexto == "Factura" && !afipConfigurado)
                 {
                     if (CustomMessageBox.Show(
-                            "AFIP no está configurado (CUIT y certificado).\n\n" +
+                            "ARCA no está configurado (CUIT y certificado).\n\n" +
                             "La venta se guardará sin CAE ni numeración fiscal.\n\n¿Desea continuar?",
-                            "Factura sin AFIP", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                            "Factura sin ARCA", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
                     {
                         btnGuardarFactura.IsEnabled = true;
                         return;
                     }
                 }
 
-                // ── PASO 2: AFIP (solo si el cobro fue confirmado) ──
+                // ── PASO 2: ARCA (solo si el cobro fue confirmado) ──
                 string cae = null;
                 string vtoCae = null;
                 int nroComprobante = 0;
 
-                // Solo llamar AFIP si está configurado (tiene CUIT y certificado)
+                // Solo llamar ARCA si está configurado (tiene CUIT y certificado)
                 if (tipoAfip > 0 && afipConfigurado)
                 {
-                    CustomerScreenService.ActualizarMensajeQR("Facturando AFIP...", Brushes.Orange);
+                    CustomerScreenService.ActualizarMensajeQR("Facturando ARCA...", Brushes.Orange);
                     string cuitLimpio = _clienteSeleccionado["CUIT"].ToString().Replace("-", "").Trim();
                     long cuitCliente = 0;
                     long.TryParse(cuitLimpio, out cuitCliente);
@@ -1481,13 +1615,13 @@ namespace SchettiniGestion.WPF
                     else
                     {
                         CustomMessageBox.Show(
-                            "❌ AFIP rechazó la factura electrónica.\n\n" +
+                            "❌ ARCA rechazó la factura electrónica.\n\n" +
                             "Detalle: " + resultadoAfip.Error + "\n\n" +
                             "⚠️ IMPORTANTE: el cobro fue confirmado pero la venta NO quedó registrada.\n\n" +
                             "Opciones:\n" +
                             "• Intentar de nuevo (el cobro ya fue recibido, NO vuelva a cobrar).\n" +
-                            "• Cambiar el tipo a 'Ticket' para guardar sin código AFIP.",
-                            "Error AFIP — venta no registrada");
+                            "• Cambiar el tipo a 'Ticket' para guardar sin código ARCA.",
+                            "Error ARCA — venta no registrada");
                         btnGuardarFactura.IsEnabled = true;
                         return;
                     }
@@ -1515,7 +1649,7 @@ namespace SchettiniGestion.WPF
                 if (fid > 0)
                 {
                     // El cobro electrónico se consume recién cuando la venta quedó persistida.
-                    // Si AFIP o SQL fallan, el reintento no debe volver a cobrar al cliente.
+                    // Si ARCA o SQL fallan, el reintento no debe volver a cobrar al cliente.
                     _pagoPointAprobado = false;
                     _parcelasPoint = null;
                     _pagoMPAprobado = false;
@@ -1536,10 +1670,10 @@ namespace SchettiniGestion.WPF
 
                     if (!string.IsNullOrEmpty(cae))
                     {
-                        // AFIP aprobó y cobro confirmado, pero el INSERT en BD falló → situación crítica
+                        // ARCA aprobó y cobro confirmado, pero el INSERT en BD falló → situación crítica
                         CustomMessageBox.Show(
                             "⛔ ERROR CRÍTICO: La venta no se guardó en el sistema.\n\n" +
-                            "El cobro fue recibido y AFIP ya emitió el comprobante:\n" +
+                            "El cobro fue recibido y ARCA ya emitió el comprobante:\n" +
                             $"CAE: {cae}  |  Vto: {vtoCae}  |  Nro: {nroComprobante}\n\n" +
                             "⚠️ NO vuelva a cobrar al cliente.\n" +
                             "Anote el CAE y comuníquese con soporte." +
@@ -2084,7 +2218,9 @@ namespace SchettiniGestion.WPF
             if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 100)
             {
                 item.DescuentoPorcentaje = pct;
+                item.PromoNombre = null; // descuento manual: ya no es la promo automática
                 if (pct > 0) item.RecargoPorcentaje = 0;
+                RefrescarVistaCarrito();
                 ActualizarTotal();
             }
         }
@@ -2097,7 +2233,12 @@ namespace SchettiniGestion.WPF
             if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 1000)
             {
                 item.RecargoPorcentaje = pct;
-                if (pct > 0) item.DescuentoPorcentaje = 0;
+                if (pct > 0)
+                {
+                    item.DescuentoPorcentaje = 0;
+                    item.PromoNombre = null;
+                }
+                RefrescarVistaCarrito();
                 ActualizarTotal();
             }
         }

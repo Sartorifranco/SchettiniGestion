@@ -26,7 +26,7 @@
 
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="CUIT / CUIL (Enter para buscar AFIP)" Style="{DynamicResource LabelStyle}"/>
+                        <TextBlock Text="CUIT / CUIL (Enter para buscar ARCA)" Style="{DynamicResource LabelStyle}"/>
                         <TextBox x:Name="txtCuit" Style="{DynamicResource ModernTextBox}" MaxLength="13" KeyDown="txtCuit_KeyDown" Margin="0,0,0,15"/>
 
                         <TextBlock Text="RAZÓN SOCIAL / NOMBRE" Style="{DynamicResource LabelStyle}"/>

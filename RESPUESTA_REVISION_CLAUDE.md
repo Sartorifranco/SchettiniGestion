@@ -4,7 +4,7 @@ Este documento contrasta los hallazgos del código con correcciones aplicadas en
 
 ## ✅ Diagnóstico acertado (ya estaba o reconocido)
 
-- Facturación con CAE, cobranzas, AFIP desde BD y SQL parametrizado en búsquedas sensibles era coherente con la versión actual.
+- Facturación con CAE, cobranzas, ARCA desde BD y SQL parametrizado en búsquedas sensibles era coherente con la versión actual.
 - **README_CAMBIOS §16** mencionaba `Informe*Control*.xaml` que **no existían**: el texto se **actualizó** para describir solo `InformesControl` y aclarar el alcance real.
 - **Bypass `admin`** (login sin contraseña y sesión forzada) era real y **grave para producción** — ver abajo (**corregido**).
 - **Libro IVA con /1.21** sobre el total de la factura **ignoraba alícuotas por línea** — ver abajo (**corregido** en SQL usando detalle × `TipoIVA` por producto, con clasificación simplificada Exento / 10,5 % / otros→21%).
@@ -23,7 +23,7 @@ Este documento contrasta los hallazgos del código con correcciones aplicadas en
 | Llamadas al arranque | Tras inicializar BD: `DatabaseService.AsegurarUsuarioAdminInicial()` desde `App` y desde el asistente de primer uso. |
 | Libro IVA | Consultas desde `FacturaDetalle`/`CompraDetalle` + `TipoIVA` del producto. |
 | Migración Productos | Columnas `StockMinimo`, `UsaVariantes`, `EsCombo`; `InitializeDatabase()` ejecuta migración lite. |
-| Stock al facturar | Validación en `FacturacionControl` antes de AFIP/guardado (omitido código `VARIOS`). |
+| Stock al facturar | Validación en `FacturacionControl` antes de ARCA/guardado (omitido código `VARIOS`). |
 | Tester / QA extendido | Sesión mediante `ValidarUsuario` / credencial bootstrap cuando la BD está vacía. |
 | EliminarProducto | `DELETE … WHERE ProductoID=@id` parametrizado. |
 

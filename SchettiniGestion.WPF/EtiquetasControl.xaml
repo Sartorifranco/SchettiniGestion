@@ -8,6 +8,64 @@
              Background="{DynamicResource ModuleBackgroundBrush}"
              Loaded="UserControl_Loaded">
 
+    <UserControl.Resources>
+        <!-- Chips táctiles para opciones de etiqueta (área de toque ~48px) -->
+        <Style x:Key="TouchOptionToggleStyle" TargetType="ToggleButton">
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Margin" Value="0,0,10,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}"
+                                MinHeight="{TemplateBinding MinHeight}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border x:Name="box" Width="22" Height="22" CornerRadius="4"
+                                        BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5"
+                                        Background="Transparent" Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="tick" Text="✓" FontSize="14" FontWeight="Bold"
+                                               Foreground="White" HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" Visibility="Collapsed"/>
+                                </Border>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#1B4F72"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#3498DB"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="box" Property="Background" Value="#3498DB"/>
+                                <Setter TargetName="box" Property="BorderBrush" Value="#3498DB"/>
+                                <Setter TargetName="tick" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.92"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -53,20 +111,24 @@
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
-                    <TextBlock Text="Qué mostrar en la etiqueta:" Style="{StaticResource ModuleLabelStyle}" Margin="0,0,0,6"/>
-                    <WrapPanel>
-                        <CheckBox x:Name="chkDesc" Content="Descripción" IsChecked="True" Margin="0,0,16,6"
-                                  Foreground="{DynamicResource TextPrimary}"/>
-                        <CheckBox x:Name="chkPrecio" Content="Precio" IsChecked="True" Margin="0,0,16,6"
-                                  Foreground="{DynamicResource TextPrimary}"/>
-                        <CheckBox x:Name="chkCodigo" Content="Código interno" Margin="0,0,16,6"
-                                  Foreground="{DynamicResource TextPrimary}"/>
-                        <CheckBox x:Name="chkBarras" Content="Código de barras" IsChecked="True" Margin="0,0,16,6"
-                                  Foreground="{DynamicResource TextPrimary}"/>
-                        <CheckBox x:Name="chkMarca" Content="Marca" Margin="0,0,16,6"
-                                  Foreground="{DynamicResource TextPrimary}"/>
-                        <Button Content="Guardar opciones" Style="{StaticResource SecondaryButtonStyle}"
-                                Padding="12,6" Margin="8,0,0,6" Click="btnGuardarOpciones_Click"/>
+                    <TextBlock Text="Qué mostrar en la etiqueta:" Style="{StaticResource ModuleLabelStyle}" Margin="0,0,0,8"/>
+                    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <ToggleButton x:Name="chkDesc" Content="Descripción" IsChecked="True"
+                                      Style="{StaticResource TouchOptionToggleStyle}"/>
+                        <ToggleButton x:Name="chkPrecio" Content="Precio" IsChecked="True"
+                                      Style="{StaticResource TouchOptionToggleStyle}"/>
+                        <ToggleButton x:Name="chkCodigo" Content="Código interno"
+                                      Style="{StaticResource TouchOptionToggleStyle}"/>
+                        <ToggleButton x:Name="chkBarras" Content="Código de barras" IsChecked="True"
+                                      Style="{StaticResource TouchOptionToggleStyle}"/>
+                        <ToggleButton x:Name="chkMarca" Content="Marca"
+                                      Style="{StaticResource TouchOptionToggleStyle}"/>
+                        <Button Content="Guardar opciones"
+                                Style="{StaticResource ActionButtonStyle}"
+                                MinHeight="48" MinWidth="150" Padding="16,10"
+                                FontSize="14" FontWeight="SemiBold"
+                                Margin="4,0,0,8" VerticalAlignment="Center"
+                                Click="btnGuardarOpciones_Click"/>
                     </WrapPanel>
                 </StackPanel>
             </Grid>

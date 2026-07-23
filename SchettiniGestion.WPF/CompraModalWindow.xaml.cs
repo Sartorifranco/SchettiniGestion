@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using Microsoft.Win32;
 using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
@@ -18,19 +20,51 @@ namespace SchettiniGestion.WPF
         private int _productoId = 0;
         private ObservableCollection<CompraItem> _items = new ObservableCollection<CompraItem>();
         private bool _ignorarTextChanged = false;
+        private bool _cargandoOrdenes = false;
+        private bool _cargandoItemsOc = false;
 
-        public CompraModalWindow() { InitializeComponent(); _items.CollectionChanged += (s, e) => ActualizarTotal(); dgvItems.ItemsSource = _items; Loaded += OnLoaded; }
-        public CompraModalWindow(Window owner, Action onGuardado) : this() { Owner = owner; _onGuardado = onGuardado; }
-        public CompraModalWindow(Window owner, Action onGuardado, int compraId) : this(owner, onGuardado) { _compraId = compraId; }
+        public CompraModalWindow()
+        {
+            InitializeComponent();
+            _items.CollectionChanged += (s, e) => ActualizarTotal();
+            dgvItems.ItemsSource = _items;
+            Loaded += OnLoaded;
+        }
+
+        public CompraModalWindow(Window owner, Action onGuardado) : this()
+        {
+            Owner = owner;
+            _onGuardado = onGuardado;
+        }
+
+        public CompraModalWindow(Window owner, Action onGuardado, int compraId) : this(owner, onGuardado)
+        {
+            _compraId = compraId;
+        }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             if (_compraId > 0)
             {
-                lblTitulo.Text = "Editar Factura de Compra";
+                lblTitulo.Text = "Ver Factura de Compra";
                 CargarCompraExistente();
+                chkRecepcionarStock.IsEnabled = false;
+                cmbOrdenCompra.IsEnabled = false;
+                txtBuscarProveedor.IsEnabled = false;
+                txtBuscarProducto.IsEnabled = false;
+                txtCantidad.IsEnabled = false;
+                txtCosto.IsEnabled = false;
+                cmbTipoComprobante.IsEnabled = false;
+                if (btnImportarPdf != null) btnImportarPdf.Visibility = Visibility.Collapsed;
+                if (FindName("btnGuardar") is Button btn) btn.IsEnabled = false;
             }
+            else
+            {
+                CargarOrdenesCompra();
+            }
+            _ignorarTextChanged = true;
             txtBuscarProveedor.Text = "";
+            _ignorarTextChanged = false;
             ActualizarTotal();
         }
 
@@ -45,9 +79,18 @@ namespace SchettiniGestion.WPF
                     {
                         _proveedorId = Convert.ToInt32(r["ProveedorID"]);
                         lblProveedorSel.Text = r["Proveedor"]?.ToString();
+                        if (r.Table.Columns.Contains("OrdenCompraID") && r["OrdenCompraID"] != DBNull.Value)
+                        {
+                            int ocId = Convert.ToInt32(r["OrdenCompraID"]);
+                            if (ocId > 0) lblProveedorSel.Text += $"  |  OC #{ocId}";
+                        }
+                        if (r.Table.Columns.Contains("StockRecibido") && r["StockRecibido"] != DBNull.Value)
+                            chkRecepcionarStock.IsChecked = Convert.ToBoolean(r["StockRecibido"]);
                         for (int i = 0; i < cmbTipoComprobante.Items.Count; i++)
-                            if ((cmbTipoComprobante.Items[i] as System.Windows.Controls.ComboBoxItem)?.Content?.ToString() == r["TipoComprobante"]?.ToString())
+                        {
+                            if ((cmbTipoComprobante.Items[i] as ComboBoxItem)?.Content?.ToString() == r["TipoComprobante"]?.ToString())
                             { cmbTipoComprobante.SelectedIndex = i; break; }
+                        }
                         break;
                     }
                 }
@@ -65,12 +108,41 @@ namespace SchettiniGestion.WPF
             catch { }
         }
 
-        private void txtBuscarProveedor_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        private void CargarOrdenesCompra()
+        {
+            _cargandoOrdenes = true;
+            try
+            {
+                var lista = new List<OrdenCompraOpcion> { new OrdenCompraOpcion { OrdenCompraID = 0, Etiqueta = "(Sin orden de compra)" } };
+                if (_proveedorId > 0)
+                {
+                    var dt = DatabaseService.GetOrdenesCompraAbiertas(_proveedorId);
+                    foreach (DataRow r in dt.Rows)
+                    {
+                        int oid = Convert.ToInt32(r["OrdenCompraID"]);
+                        string est = r["Estado"]?.ToString() ?? "";
+                        string fecha = r["Fecha"] != DBNull.Value ? Convert.ToDateTime(r["Fecha"]).ToString("dd/MM/yyyy") : "";
+                        lista.Add(new OrdenCompraOpcion
+                        {
+                            OrdenCompraID = oid,
+                            Etiqueta = $"OC #{oid} — {fecha} — {est}"
+                        });
+                    }
+                }
+                cmbOrdenCompra.ItemsSource = lista;
+                cmbOrdenCompra.SelectedIndex = 0;
+            }
+            finally { _cargandoOrdenes = false; }
+        }
+
+        private void txtBuscarProveedor_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (_ignorarTextChanged) return;
-            string q = txtBuscarProveedor.Text.Trim();
+            if (lstProveedores == null || popupProveedores == null) return;
+            string q = txtBuscarProveedor?.Text?.Trim() ?? "";
             if (q.Length < 2) { popupProveedores.IsOpen = false; return; }
             var dt = DatabaseService.BuscarProveedoresMultiples(q);
+            if (dt == null) { popupProveedores.IsOpen = false; return; }
             lstProveedores.ItemsSource = dt.DefaultView;
             popupProveedores.IsOpen = dt.Rows.Count > 0;
         }
@@ -85,14 +157,113 @@ namespace SchettiniGestion.WPF
                 lblProveedorSel.Text = row["RazonSocial"].ToString();
                 _ignorarTextChanged = false;
                 popupProveedores.IsOpen = false;
+                CargarOrdenesCompra();
             }
         }
 
-        private void txtBuscarProducto_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        private void chkRecepcionarStock_Changed(object sender, RoutedEventArgs e)
         {
-            string q = txtBuscarProducto.Text.Trim();
+            // Sin acción extra: el checkbox solo controla el flag al guardar.
+        }
+
+        private void cmbOrdenCompra_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_cargandoOrdenes || _cargandoItemsOc || _compraId > 0) return;
+            if (!(cmbOrdenCompra.SelectedItem is OrdenCompraOpcion sel) || sel.OrdenCompraID <= 0) return;
+
+            if (_items.Count > 0)
+            {
+                if (MessageBox.Show("¿Cargar los ítems de la orden de compra seleccionada? Se reemplazará el detalle actual.",
+                    "Cargar OC", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return;
+            }
+
+            _cargandoItemsOc = true;
+            try
+            {
+                _items.Clear();
+                var det = DatabaseService.GetOrdenCompraDetalleFull(sel.OrdenCompraID);
+                foreach (DataRow r in det.Rows)
+                {
+                    _items.Add(new CompraItem
+                    {
+                        ProductoID = Convert.ToInt32(r["ProductoID"]),
+                        Codigo = r["Codigo"]?.ToString() ?? "",
+                        Descripcion = r["Descripcion"]?.ToString() ?? "",
+                        Cantidad = Convert.ToInt32(r["Cantidad"]),
+                        Costo = Convert.ToDecimal(r["PrecioCosto"])
+                    });
+                }
+            }
+            finally { _cargandoItemsOc = false; }
+        }
+
+        private void btnImportarPdf_Click(object sender, RoutedEventArgs e)
+        {
+            if (_compraId > 0) return;
+            var dlg = new OpenFileDialog
+            {
+                Title = "Seleccionar factura PDF",
+                Filter = "PDF (*.pdf)|*.pdf",
+                CheckFileExists = true
+            };
+            if (dlg.ShowDialog(this) != true) return;
+
+            var win = new ImportarFacturaCompraWindow(this);
+            if (!win.CargarDesdeArchivo(dlg.FileName)) return;
+            if (win.ShowDialog() != true || win.LineasConfirmadas == null || win.LineasConfirmadas.Count == 0)
+                return;
+            AplicarImportacionPdf(win);
+        }
+
+        private void AplicarImportacionPdf(ImportarFacturaCompraWindow win)
+        {
+            if (win.ProveedorID > 0)
+            {
+                _proveedorId = win.ProveedorID;
+                _ignorarTextChanged = true;
+                txtBuscarProveedor.Text = win.ProveedorNombre ?? "";
+                lblProveedorSel.Text = win.ProveedorNombre ?? "";
+                _ignorarTextChanged = false;
+                CargarOrdenesCompra();
+            }
+
+            string tipo = win.TipoComprobante ?? "Factura A";
+            for (int i = 0; i < cmbTipoComprobante.Items.Count; i++)
+            {
+                if ((cmbTipoComprobante.Items[i] as ComboBoxItem)?.Content?.ToString() == tipo)
+                { cmbTipoComprobante.SelectedIndex = i; break; }
+            }
+
+            if (_items.Count > 0)
+            {
+                if (MessageBox.Show("¿Reemplazar el detalle actual por los ítems del PDF?",
+                    "Importar PDF", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return;
+            }
+
+            _items.Clear();
+            foreach (var l in win.LineasConfirmadas)
+            {
+                _items.Add(new CompraItem
+                {
+                    ProductoID = l.ProductoID,
+                    Codigo = l.CodigoProducto ?? "",
+                    Descripcion = l.DescripcionProducto ?? l.DescripcionPdf ?? "",
+                    Cantidad = l.Cantidad > 0 ? l.Cantidad : 1,
+                    Costo = l.CostoUnitario
+                });
+            }
+            ActualizarTotal();
+        }
+
+        private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (lstProductos == null || popupProductos == null) return;
+            string q = txtBuscarProducto?.Text?.Trim() ?? "";
             if (q.Length < 2) { popupProductos.IsOpen = false; return; }
             var dt = DatabaseService.BuscarProductosMultiples_ParaCompra(q);
+            if (dt == null) { popupProductos.IsOpen = false; return; }
             lstProductos.ItemsSource = dt.DefaultView;
             popupProductos.IsOpen = dt.Rows.Count > 0;
         }
@@ -117,10 +288,31 @@ namespace SchettiniGestion.WPF
             if (!decimal.TryParse(txtCosto.Text.Replace(",", "."), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out decimal costo) || costo < 0)
             { MessageBox.Show("Costo inválido.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
-            var existente = null as CompraItem;
+            CompraItem existente = null;
             foreach (var it in _items) if (it.ProductoID == _productoId) { existente = it; break; }
-            if (existente != null) { _items.Remove(existente); _items.Add(new CompraItem { ProductoID = existente.ProductoID, Codigo = existente.Codigo, Descripcion = existente.Descripcion, Cantidad = existente.Cantidad + cant, Costo = costo }); }
-            else _items.Add(new CompraItem { ProductoID = _productoId, Codigo = "", Descripcion = txtBuscarProducto.Text, Cantidad = cant, Costo = costo });
+            if (existente != null)
+            {
+                _items.Remove(existente);
+                _items.Add(new CompraItem
+                {
+                    ProductoID = existente.ProductoID,
+                    Codigo = existente.Codigo,
+                    Descripcion = existente.Descripcion,
+                    Cantidad = existente.Cantidad + cant,
+                    Costo = costo
+                });
+            }
+            else
+            {
+                _items.Add(new CompraItem
+                {
+                    ProductoID = _productoId,
+                    Codigo = "",
+                    Descripcion = txtBuscarProducto.Text,
+                    Cantidad = cant,
+                    Costo = costo
+                });
+            }
 
             txtBuscarProducto.Text = "";
             txtCantidad.Text = "1";
@@ -142,14 +334,42 @@ namespace SchettiniGestion.WPF
 
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
+            if (_compraId > 0)
+            {
+                MessageBox.Show("La edición de facturas de compra no está disponible en esta versión.", "Atención", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
             if (_proveedorId == 0) { MessageBox.Show("Seleccione un proveedor.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
             if (_items.Count == 0) { MessageBox.Show("Agregue al menos un ítem.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            string tipo = (cmbTipoComprobante.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Content?.ToString() ?? "Factura A";
-            decimal total = 0; foreach (var it in _items) total += it.Subtotal;
+
+            string tipo = (cmbTipoComprobante.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Factura A";
+            decimal total = 0;
+            foreach (var it in _items) total += it.Subtotal;
             var items = new List<(int, int, decimal)>();
             foreach (var it in _items) items.Add((it.ProductoID, it.Cantidad, it.Costo));
-            bool ok = DatabaseService.GuardarCompra(_proveedorId, tipo, total, items, "Contado");
-            if (ok) { _onGuardado?.Invoke(); DialogResult = true; Close(); }
+
+            int? ordenId = null;
+            if (cmbOrdenCompra.SelectedItem is OrdenCompraOpcion oc && oc.OrdenCompraID > 0)
+                ordenId = oc.OrdenCompraID;
+
+            bool recepcionar = chkRecepcionarStock.IsChecked == true;
+
+            if (!recepcionar)
+            {
+                string msg = ordenId.HasValue
+                    ? "Se registrará la factura vinculada a la OC sin mover stock. ¿Continuar?"
+                    : "Se registrará la factura sin recepcionar mercadería (no se moverá el stock). ¿Continuar?";
+                if (MessageBox.Show(msg, "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return;
+            }
+
+            bool ok = DatabaseService.GuardarCompra(_proveedorId, tipo, total, items, "Contado", ordenId, recepcionar);
+            if (ok)
+            {
+                _onGuardado?.Invoke();
+                DialogResult = true;
+                Close();
+            }
             else MessageBox.Show("Error al guardar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
@@ -165,6 +385,12 @@ namespace SchettiniGestion.WPF
             public decimal Subtotal => Cantidad * Costo;
             public string CostoFmt => Costo.ToString("C2");
             public string SubtotalFmt => Subtotal.ToString("C2");
+        }
+
+        private class OrdenCompraOpcion
+        {
+            public int OrdenCompraID { get; set; }
+            public string Etiqueta { get; set; }
         }
     }
 }

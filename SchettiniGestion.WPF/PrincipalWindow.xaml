@@ -204,10 +204,22 @@
                                 Content="👥  Clientes"
                                 Style="{StaticResource LiteNavButton}"
                                 Click="clientesMenuItem_Click"/>
+                        <Button x:Name="btnProveedores"
+                                Content="🏭  Proveedores"
+                                Style="{StaticResource LiteNavButton}"
+                                Click="btnProveedores_Click"/>
+                        <Button x:Name="btnCompras"
+                                Content="🛒  Compras"
+                                Style="{StaticResource LiteNavButton}"
+                                Click="btnCompras_Click"/>
                         <Button x:Name="btnCaja"
                                 Content="💵  Caja / tesorería"
                                 Style="{StaticResource LiteNavButton}"
                                 Click="btnCaja_Click"/>
+                        <Button x:Name="btnInformes"
+                                Content="📋  Informes"
+                                Style="{StaticResource LiteNavButton}"
+                                Click="btnInformes_Click"/>
                         <Button x:Name="btnEstadisticas"
                                 Content="📊  Gráficos y Estadísticas"
                                 Style="{StaticResource LiteNavButton}"
@@ -233,7 +245,7 @@
                             Style="{StaticResource LiteDangerOutlineButton}"
                             Margin="0,4,0,0"
                             Click="btnSalirSistema_Click"/>
-                    <TextBlock x:Name="txtVersionFooter" Text="v2.1.9"
+                    <TextBlock x:Name="txtVersionFooter" Text="v2.2.0-avances"
                                HorizontalAlignment="Center"
                                Margin="0,12,0,0"
                                Foreground="{DynamicResource TextSecondary}"

@@ -35,26 +35,39 @@ namespace SchettiniGestion.WPF
             catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
         private void txtFiltroFacturas_TextChanged(object sender, TextChangedEventArgs e) => CargarFacturasCompras();
+        private void RefrescarTrasFacturaCompra()
+        {
+            CargarFacturasCompras();
+            CargarRecepciones();
+            CargarOrdenes();
+        }
+
         private void btnNuevaFacturaCompra_Click(object sender, RoutedEventArgs e)
         {
-            var modal = new CompraModalWindow(Window.GetWindow(this), CargarFacturasCompras);
+            var modal = new CompraModalWindow(Window.GetWindow(this), RefrescarTrasFacturaCompra);
             modal.ShowDialog();
         }
         private void btnEditarFacturaCompra_Click(object sender, RoutedEventArgs e)
         {
             int? id = ObtenerId(dgvFacturasCompras, "CompraID");
             if (!id.HasValue) { MessageBox.Show("Seleccione una factura.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            var modal = new CompraModalWindow(Window.GetWindow(this), CargarFacturasCompras, id.Value);
+            var modal = new CompraModalWindow(Window.GetWindow(this), RefrescarTrasFacturaCompra, id.Value);
             modal.ShowDialog();
         }
         private void btnEliminarFacturaCompra_Click(object sender, RoutedEventArgs e)
         {
             int? id = ObtenerId(dgvFacturasCompras, "CompraID");
             if (!id.HasValue) { MessageBox.Show("Seleccione una factura.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            if (MessageBox.Show("¿Eliminar esta compra? Se revertirá stock y movimientos.", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            bool recibioStock = false;
+            if (dgvFacturasCompras.SelectedItem is DataRowView row && row.Row.Table.Columns.Contains("StockRecibido") && row["StockRecibido"] != DBNull.Value)
+                recibioStock = Convert.ToBoolean(row["StockRecibido"]);
+            string msg = recibioStock
+                ? "¿Eliminar esta compra? Se revertirá el stock y los movimientos asociados."
+                : "¿Eliminar esta compra? (No se movió stock al registrarla.)";
+            if (MessageBox.Show(msg, "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
             try
             {
-                if (DatabaseService.EliminarCompra(id.Value)) { MessageBox.Show("Compra eliminada.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information); CargarFacturasCompras(); }
+                if (DatabaseService.EliminarCompra(id.Value)) { MessageBox.Show("Compra eliminada.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information); RefrescarTrasFacturaCompra(); }
                 else MessageBox.Show("No se pudo eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
@@ -63,7 +76,7 @@ namespace SchettiniGestion.WPF
         {
             int? id = ObtenerId(dgvFacturasCompras, "CompraID");
             if (!id.HasValue) return;
-            var modal = new CompraModalWindow(Window.GetWindow(this), CargarFacturasCompras, id.Value);
+            var modal = new CompraModalWindow(Window.GetWindow(this), RefrescarTrasFacturaCompra, id.Value);
             modal.ShowDialog();
         }
 
@@ -210,16 +223,8 @@ namespace SchettiniGestion.WPF
         {
             int? id = ObtenerId(dgvOrdenes, "OrdenCompraID");
             if (!id.HasValue) return;
-            try
-            {
-                var det = DatabaseService.GetOrdenCompraDetalle(id.Value);
-                string msg = "Detalle Orden:\n\n";
-                decimal total = 0;
-                foreach (DataRow r in det.Rows) { decimal st = Convert.ToDecimal(r["Cantidad"]) * Convert.ToDecimal(r["PrecioUnitario"]); total += st; msg += $"{r["Codigo"]} - {r["Descripcion"]}: {r["Cantidad"]} x ${Convert.ToDecimal(r["PrecioUnitario"]):N2} = ${st:N2}\n"; }
-                msg += $"\nTotal: ${total:N2}";
-                MessageBox.Show(msg, "Detalle Orden #" + id, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+            var modal = new OrdenCompraModalWindow(Window.GetWindow(this), id.Value, CargarOrdenes);
+            modal.ShowDialog();
         }
 
         private int? ObtenerId(DataGrid dg, string colName)

@@ -4,59 +4,101 @@
              Background="{DynamicResource BackgroundDark}"
              Loaded="Control_Loaded">
     <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" Text="Informes" FontSize="22" FontWeight="Bold"
-                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,15"/>
+        <TabControl x:Name="tabInformesHub" Background="Transparent" BorderThickness="0">
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="FontSize" Value="14"/>
+                    <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+                    <Setter Property="Padding" Value="15,10"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border x:Name="bdr" Background="Transparent" BorderThickness="0,0,0,3" BorderBrush="Transparent" Margin="0,0,10,0">
+                                    <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="bdr" Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
 
-        <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="14,12" Margin="0,0,0,14">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="14"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="14"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="14"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="14"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="Tipo de Informe" Style="{StaticResource LabelStyle}"/>
-                    <ComboBox x:Name="cmbTipoInforme" Style="{StaticResource ModuleComboBoxStyle}" Width="200" SelectionChanged="cmbTipoInforme_SelectionChanged">
-                        <ComboBoxItem Content="Ventas por Período" IsSelected="True"/>
-                        <ComboBoxItem Content="Libro IVA Ventas"/>
-                        <ComboBoxItem Content="Libro IVA Compras"/>
-                        <ComboBoxItem Content="Productos Más Vendidos"/>
-                        <ComboBoxItem Content="Ranking Clientes"/>
-                    </ComboBox>
-                </StackPanel>
-                <StackPanel Grid.Column="2">
-                    <TextBlock Text="Desde" Style="{StaticResource LabelStyle}"/>
-                    <DatePicker x:Name="dpDesde" MinWidth="170" MinHeight="48"/>
-                </StackPanel>
-                <StackPanel Grid.Column="4">
-                    <TextBlock Text="Hasta" Style="{StaticResource LabelStyle}"/>
-                    <DatePicker x:Name="dpHasta" MinWidth="170" MinHeight="48"/>
-                </StackPanel>
-                <StackPanel Grid.Column="8" VerticalAlignment="Bottom">
-                    <Button Content="📊 Generar" Style="{StaticResource ButtonStyle}" Padding="12,8" Click="btnGenerar_Click"/>
-                </StackPanel>
-                <StackPanel Grid.Column="10" VerticalAlignment="Bottom">
-                    <Button Content="📄 Exportar CSV" Style="{StaticResource SecondaryButtonStyle}" Padding="12,8" Click="btnExportar_Click"/>
-                </StackPanel>
-            </Grid>
-        </Border>
+            <TabItem Header="📋 Informes tabulares">
+                <Grid Margin="0,10,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="Informes" FontSize="22" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,15"/>
 
-        <DataGrid Grid.Row="2" x:Name="dgvInforme"
-                  Style="{StaticResource {x:Type DataGrid}}"
-                  AutoGenerateColumns="True" IsReadOnly="True"
-                  HeadersVisibility="Column" CanUserAddRows="False"/>
+                    <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="14,12" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="14"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="14"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="14"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="14"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Tipo de Informe" Style="{StaticResource LabelStyle}"/>
+                                <ComboBox x:Name="cmbTipoInforme" Style="{StaticResource ModuleComboBoxStyle}" Width="240" SelectionChanged="cmbTipoInforme_SelectionChanged">
+                                    <ComboBoxItem Content="Ventas por Período" IsSelected="True"/>
+                                    <ComboBoxItem Content="Libro IVA Ventas"/>
+                                    <ComboBoxItem Content="Libro IVA Compras"/>
+                                    <ComboBoxItem Content="Productos Más Vendidos"/>
+                                    <ComboBoxItem Content="Ranking Clientes"/>
+                                    <ComboBoxItem Content="Valorización de Stock"/>
+                                    <ComboBoxItem Content="Ventas por Vendedor"/>
+                                    <ComboBoxItem Content="Faltantes en Pedidos"/>
+                                    <ComboBoxItem Content="Cuenta Corriente Proveedores"/>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Desde" Style="{StaticResource LabelStyle}"/>
+                                <DatePicker x:Name="dpDesde" MinWidth="170" MinHeight="48"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="Hasta" Style="{StaticResource LabelStyle}"/>
+                                <DatePicker x:Name="dpHasta" MinWidth="170" MinHeight="48"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="8" VerticalAlignment="Bottom">
+                                <Button Content="📊 Generar" Style="{StaticResource ButtonStyle}" Padding="12,8" Click="btnGenerar_Click"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="10" VerticalAlignment="Bottom">
+                                <Button Content="📄 CSV" Style="{StaticResource SecondaryButtonStyle}" Padding="12,8" Click="btnExportar_Click"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="12" VerticalAlignment="Bottom">
+                                <Button Content="📕 PDF" Style="{StaticResource SecondaryButtonStyle}" Padding="12,8" Click="btnExportarPdf_Click"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <DataGrid Grid.Row="2" x:Name="dgvInforme"
+                              Style="{StaticResource {x:Type DataGrid}}"
+                              AutoGenerateColumns="True" IsReadOnly="True"
+                              HeadersVisibility="Column" CanUserAddRows="False"/>
+                </Grid>
+            </TabItem>
+
+            <TabItem x:Name="tabGraficos" Header="📈 Gráficos y KPIs">
+                <ContentControl x:Name="hostEstadisticas" Margin="0,6,0,0"/>
+            </TabItem>
+        </TabControl>
     </Grid>
 </UserControl>

@@ -178,7 +178,14 @@ namespace SchettiniGestion
             try
             {
                 if (CargarLicenciaDesdeClave(ObtenerClaveLicencia()))
+                {
+#if DEBUG
+                    // Si hay licencia.key (p. ej. Lite) sin Compras/Proveedores, en Debug
+                    // se suman módulos de avance para poder probar v2.2 sin regenerar clave.
+                    AsegurarModulosDebugParaPruebasAvances();
+#endif
                     return true;
+                }
 
 #if DEBUG
                 // Licencia de desarrollo embebida: solo activa en compilaciones Debug,
@@ -208,6 +215,25 @@ namespace SchettiniGestion
             }
         }
 
+#if DEBUG
+        /// <summary>
+        /// Solo Debug: garantiza módulos de avances v2.2 aunque la licencia.key del equipo sea Lite.
+        /// No aplica en Release / instaladores de clientes.
+        /// </summary>
+        private static void AsegurarModulosDebugParaPruebasAvances()
+        {
+            if (_licenciaActual == null) return;
+
+            var baseMods = _licenciaActual.ModulosPermitidos ?? new List<string>();
+            var unidos = new List<string>(baseMods)
+            {
+                "ACCESO_PROVEEDORES", "ACCESO_COMPRAS", "ACCESO_ESTADISTICAS",
+                "ACCESO_ETIQUETAS", "ACCESO_CUENTASCORRIENTES"
+            };
+            _licenciaActual.ModulosPermitidos = ModulosCatalog.ResolverLicencia(unidos);
+        }
+#endif
+
         // ─────────────────────────────────────────────────────────────
         //  Validación completa: desencripta → verifica vencimiento →
         //  verifica Hardware ID (solo en Release)
@@ -230,6 +256,10 @@ namespace SchettiniGestion
                 UltimoMensajeError = "No hay licencia activa. Pegue la clave que le envió el proveedor o cargue el archivo licencia.key.";
                 return false;
             }
+
+#if DEBUG
+            AsegurarModulosDebugParaPruebasAvances();
+#endif
 
             // Comparar por día de calendario (la clave guarda medianoche del día de vencimiento).
             if (DateTime.Now.Date > _licenciaActual.FechaExpiracion.Date)

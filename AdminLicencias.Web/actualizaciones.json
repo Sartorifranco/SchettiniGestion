@@ -4,9 +4,14 @@
   "notas": [
     {
       "version": "2.1.9",
-      "fecha": "2026-07-20",
-      "titulo": "Promociones visibles en el POS + instalador estable",
+      "fecha": "2026-07-22",
+      "titulo": "Impresión de etiquetas + promociones en el POS",
       "items": [
+        "Nuevo módulo licenciable Impresión de etiquetas (ACCESO_ETIQUETAS, extra único; depende de Productos).",
+        "Pantalla Etiquetas: selección de productos, cantidad, código de barras y precio; impresora con driver Windows.",
+        "Configuración: impresora de etiquetas y medidas del rollo.",
+        "Checkbox «Impresión de etiquetas» en el panel web al generar licencias (Extras únicos).",
+        "AFIP renombrado a ARCA en UI y catálogo de módulos.",
         "Badge verde EN PROMO en el catálogo (lista y cards), con tooltip de nombre y %.",
         "Renglón Promos activas hoy arriba del catálogo en Ventas.",
         "Toggle táctil Activa / Pausada en el módulo Promociones.",

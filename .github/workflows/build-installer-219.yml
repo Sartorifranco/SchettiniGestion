@@ -48,7 +48,6 @@ jobs:
           }
           if (-not $iscc) { throw "ISCC.exe no encontrado" }
           Write-Host "ISCC: $iscc"
-          & $iscc /? | Select-Object -First 3
 
       - name: Build Release + Setup 2.1.9
         shell: powershell

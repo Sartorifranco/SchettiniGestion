@@ -4,19 +4,17 @@
   "notas": [
     {
       "version": "2.1.9",
-      "fecha": "2026-07-22",
-      "titulo": "Impresión de etiquetas + promociones en el POS",
+      "fecha": "2026-07-25",
+      "titulo": "Modificaciones SCH POS + QR fiscal ARCA",
       "items": [
-        "Nuevo módulo licenciable Impresión de etiquetas (ACCESO_ETIQUETAS, extra único; depende de Productos).",
-        "Pantalla Etiquetas: selección de productos, cantidad, código de barras y precio; impresora con driver Windows.",
-        "Configuración: impresora de etiquetas y medidas del rollo.",
-        "Checkbox «Impresión de etiquetas» en el panel web al generar licencias (Extras únicos).",
-        "AFIP renombrado a ARCA en UI y catálogo de módulos.",
-        "Badge verde EN PROMO en el catálogo (lista y cards), con tooltip de nombre y %.",
-        "Renglón Promos activas hoy arriba del catálogo en Ventas.",
-        "Toggle táctil Activa / Pausada en el módulo Promociones.",
-        "Feedback en el carrito al aplicar una promo (línea 🎯 y aviso temporal).",
-        "Fix: el visor de cliente ya no falla al reabrir Ventas después de cerrarlo.",
+        "Teclado ON/OFF en Login con preferencia persistente.",
+        "Visor cliente: promo vs banner, eliminar medios, sin logo en área promocional.",
+        "Ticket fiscal: CUIT, CAE, Punto de venta y QR ARCA siempre obligatorios.",
+        "Promociones ampliadas: SKU, combos, monto fijo, 2x1/3x2, bonificar y escala.",
+        "Excel de productos completo + control de duplicados + deshabilitar productos.",
+        "Notas de crédito total/parcial desde historial vinculadas a la factura.",
+        "Etiquetas ampliadas: presets, A4, carteles/góndola.",
+        "Usuario técnico oculto 9999 + auditoría AccionesTecnicas.",
         "Instalador SCHPOS-Setup-2.1.9.exe (.NET 4.8 y LocalDB opcionales)."
       ]
     },

@@ -193,10 +193,11 @@ namespace SchettiniGestion.WPF
         {
             if (_rutasPromoVertical.Count > 0)
             {
-                double h = ActualHeight > 100 ? ActualHeight : 768;
-                double anchoIdeal = h * (1080.0 / 1440.0);
-                double maxAncho = ActualWidth > 100 ? ActualWidth * 0.42 : 480;
-                double ancho = Math.Min(Math.Max(anchoIdeal, 260), maxAncho);
+                // Imagen promo: proporción 1080×1920 (9:16) o 1080×1080
+                double h = ActualHeight > 100 ? ActualHeight : 1080;
+                double anchoIdeal = h * (1080.0 / 1920.0);
+                double maxAncho = ActualWidth > 100 ? ActualWidth * 0.48 : 540;
+                double ancho = Math.Min(Math.Max(anchoIdeal, 280), maxAncho);
                 colPromoLateral.Width = new GridLength(ancho);
                 panelPromoLateral.Visibility = Visibility.Visible;
             }
@@ -208,8 +209,10 @@ namespace SchettiniGestion.WPF
 
             if (_rutasPromoHorizontal.Count > 0)
             {
-                double alto = ActualHeight > 100 ? Math.Min(ActualHeight * 0.22, 220) : 160;
-                alto = Math.Max(alto, 110);
+                // Banner inferior: proporción recomendada 1200×300
+                double w = ActualWidth > 100 ? ActualWidth : 1200;
+                double altoIdeal = w * (300.0 / 1200.0);
+                double alto = Math.Min(Math.Max(altoIdeal, 90), Math.Min(ActualHeight * 0.28, 300));
                 rowPromoInferior.Height = new GridLength(alto);
                 panelPromoInferior.Visibility = Visibility.Visible;
             }
@@ -222,9 +225,23 @@ namespace SchettiniGestion.WPF
 
         private static bool EsPromoVertical(string path)
         {
+            string fileName = Path.GetFileName(path) ?? "";
+            // Prefijos opcionales para forzar ubicación: banner_ / horizontal_ → franja; promo_ / vertical_ → lateral
+            if (fileName.StartsWith("banner_", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("horizontal_", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("h_", StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (fileName.StartsWith("promo_", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("vertical_", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("v_", StringComparison.OrdinalIgnoreCase))
+                return true;
+
             string ext = Path.GetExtension(path);
             if (DatabaseService.EsExtensionPromoVideoCliente(ext))
+            {
+                // Videos: si el nombre no indica banner, van al panel vertical (1080×1920)
                 return true;
+            }
 
             if (!DatabaseService.EsExtensionPromoImagenCliente(ext))
                 return true;
@@ -237,7 +254,8 @@ namespace SchettiniGestion.WPF
                 bi.CacheOption = BitmapCacheOption.OnLoad;
                 bi.EndInit();
                 bi.Freeze();
-                return bi.PixelHeight >= bi.PixelWidth;
+                // Banner típico 1200×300 (ancho > alto * 1.6); promo 1080×1920 o cuadrado
+                return bi.PixelWidth <= bi.PixelHeight * 1.6;
             }
             catch
             {

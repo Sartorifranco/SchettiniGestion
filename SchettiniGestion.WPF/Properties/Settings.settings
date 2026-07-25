@@ -7,5 +7,8 @@
     <Setting Name="Theme" Type="System.String" Scope="User">
       <Value Profile="(Default)">Dark</Value>
     </Setting>
+    <Setting Name="KeyboardEnabled" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

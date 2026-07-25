@@ -466,16 +466,18 @@ namespace SchettiniGestion.WPF
         {
             if (btnTeclado == null) return;
             bool on = KeyboardService.IsEnabled;
-            // Cambiar icono y etiqueta según estado
             var iconBlock  = btnTeclado.FindName("txtIconoTeclado") as System.Windows.Controls.TextBlock;
             var labelBlock = btnTeclado.FindName("txtLabelTeclado") as System.Windows.Controls.TextBlock;
-            if (iconBlock  != null) iconBlock.Text  = on ? "⌨" : "⌨";
+            if (iconBlock  != null) iconBlock.Text  = "⌨";
             if (labelBlock != null) labelBlock.Text  = on ? "Teclado ON" : "Teclado OFF";
 
             btnTeclado.BorderBrush = on
                 ? (System.Windows.Media.Brush)FindResource("VKAccentBar")
                 : (System.Windows.Media.Brush)FindResource("BorderColor");
             btnTeclado.Opacity = on ? 1.0 : 0.55;
+            btnTeclado.ToolTip = on
+                ? "Teclado táctil activo. Se recuerda al reiniciar."
+                : "Teclado táctil apagado. Tocá para activarlo (se recuerda al reiniciar).";
         }
 
         private void btnTema_Click(object sender, RoutedEventArgs e)

@@ -858,9 +858,6 @@ namespace SchettiniGestion.WPF
                 doc.PrintPage += (s, e) =>
                 {
                     var g = e.Graphics;
-                    g.SmoothingMode = WinDrawing.Drawing2D.SmoothingMode.HighQuality;
-                    g.InterpolationMode = WinDrawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-
                     string razonSocial = conf?["RazonSocial"]?.ToString()?.Trim() ?? "";
                     if (string.IsNullOrWhiteSpace(razonSocial))
                         razonSocial = fan;
@@ -869,11 +866,12 @@ namespace SchettiniGestion.WPF
 
                     if (tipo == "Ticket")
                     {
+                        ConfigurarGraphicsTicketTermico(g);
                         float w = ObtenerAnchoTicketPixels(DatabaseService.GetOpcionesImpresionTicket().AnchoMm);
                         float y = 14;
-                        var fT = new WinDrawing.Font("Arial", 10, WinDrawing.FontStyle.Bold);
-                        var fN = new WinDrawing.Font("Arial", 8);
-                        var fS = new WinDrawing.Font("Arial", 7);
+                        var fT = new WinDrawing.Font("Lucida Console", 10f, WinDrawing.FontStyle.Bold);
+                        var fN = new WinDrawing.Font("Lucida Console", 9f, WinDrawing.FontStyle.Regular);
+                        var fS = new WinDrawing.Font("Lucida Console", 8f, WinDrawing.FontStyle.Regular);
 
                         if (mostrarLog && !string.IsNullOrWhiteSpace(logoPath) && System.IO.File.Exists(logoPath))
                         {
@@ -988,20 +986,38 @@ namespace SchettiniGestion.WPF
             catch (Exception ex) { MessageBox.Show("Error al imprimir prueba: " + ex.Message); }
         }
 
+        /// <summary>
+        /// Configura el render GDI para tickets térmicos: texto nítido (sin antialias borroso).
+        /// </summary>
+        private static void ConfigurarGraphicsTicketTermico(WinDrawing.Graphics g)
+        {
+            g.SmoothingMode = WinDrawing.Drawing2D.SmoothingMode.None;
+            g.InterpolationMode = WinDrawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            g.PixelOffsetMode = WinDrawing.Drawing2D.PixelOffsetMode.Half;
+            g.CompositingQuality = WinDrawing.Drawing2D.CompositingQuality.HighSpeed;
+            g.TextRenderingHint = WinDrawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
+            try { g.TextContrast = 0; } catch { /* no disponible en algunos drivers */ }
+        }
+
         private static void DibujarTicketGDI(WinDrawing.Graphics g, string tit, string nro, string cli, DateTime fec, DataTable its, decimal tot, string extra, string let, string pie, ref float y, string nombreVendedor = null)
         {
-            g.SmoothingMode         = WinDrawing.Drawing2D.SmoothingMode.HighQuality;
-            g.InterpolationMode     = WinDrawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            ConfigurarGraphicsTicketTermico(g);
 
             var opciones = DatabaseService.GetOpcionesImpresionTicket();
+            // Datos fiscales obligatorios: siempre se imprimen (no dependen de checkboxes).
+            opciones.MostrarCuit = true;
+            opciones.MostrarPieFiscal = true;
+            opciones.MostrarPuntoVenta = true;
+
             float w = ObtenerAnchoTicketPixels(opciones.AnchoMm);
             bool angosto = opciones.AnchoMm <= 58;
 
-            WinDrawing.Font fT  = new WinDrawing.Font("Arial", angosto ? 9 : 10, WinDrawing.FontStyle.Bold);
-            WinDrawing.Font fN  = new WinDrawing.Font("Consolas", angosto ? 7 : 8);
-            WinDrawing.Font fC  = new WinDrawing.Font("Consolas", angosto ? 6 : 7);
-            WinDrawing.Font fB  = new WinDrawing.Font("Arial", angosto ? 12 : 14, WinDrawing.FontStyle.Bold);
-            WinDrawing.Font fSub = new WinDrawing.Font("Arial", angosto ? 6 : 7);
+            // Fuentes monoespaciadas + bold para mejor nitidez en térmica
+            WinDrawing.Font fT  = new WinDrawing.Font("Lucida Console", angosto ? 9f : 10f, WinDrawing.FontStyle.Bold);
+            WinDrawing.Font fN  = new WinDrawing.Font("Lucida Console", angosto ? 8f : 9f, WinDrawing.FontStyle.Regular);
+            WinDrawing.Font fC  = new WinDrawing.Font("Lucida Console", angosto ? 7f : 8f, WinDrawing.FontStyle.Regular);
+            WinDrawing.Font fB  = new WinDrawing.Font("Lucida Console", angosto ? 12f : 14f, WinDrawing.FontStyle.Bold);
+            WinDrawing.Font fSub = new WinDrawing.Font("Lucida Console", angosto ? 7f : 8f, WinDrawing.FontStyle.Regular);
 
             DataRow conf = DatabaseService.GetConfiguracion();
             string fan   = conf?["NombreFantasia"]?.ToString() ?? "Mi Negocio";

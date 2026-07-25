@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using SchettiniGestion.WPF.Properties;
 
 namespace SchettiniGestion.WPF
 {
@@ -24,7 +25,7 @@ namespace SchettiniGestion.WPF
         private static WeakReference<PasswordBox> _activePasswordBox;
 
         /// <summary>Indica si el teclado virtual está habilitado.</summary>
-        public static bool IsEnabled { get; private set; } = true;
+        public static bool IsEnabled { get; private set; }
 
         /// <summary>Posición Y superior del teclado cuando está visible (0 si está oculto).</summary>
         public static double KeyboardTop { get; private set; } = double.MaxValue;
@@ -35,12 +36,37 @@ namespace SchettiniGestion.WPF
         /// </summary>
         public static event Action<bool> VisibilityChanged;
 
+        /// <summary>Se dispara cuando cambia el estado habilitado/deshabilitado.</summary>
+        public static event Action EnabledChanged;
+
+        /// <summary>Carga la preferencia persistida (OFF por defecto para no tapar el Login).</summary>
+        public static void LoadSavedPreference()
+        {
+            try { IsEnabled = Settings.Default.KeyboardEnabled; }
+            catch { IsEnabled = false; }
+            if (!IsEnabled) Hide();
+            EnabledChanged?.Invoke();
+        }
+
+        /// <summary>Activa o desactiva el teclado y guarda la preferencia entre sesiones.</summary>
+        public static void SetEnabled(bool enabled)
+        {
+            if (IsEnabled == enabled) return;
+            IsEnabled = enabled;
+            try
+            {
+                Settings.Default.KeyboardEnabled = enabled;
+                Settings.Default.Save();
+            }
+            catch { /* sin userSettings en config antiguo */ }
+            if (!IsEnabled) Hide();
+            EnabledChanged?.Invoke();
+        }
+
         /// <summary>Alterna el estado habilitado/deshabilitado del teclado virtual.</summary>
         public static void Toggle()
         {
-            IsEnabled = !IsEnabled;
-            if (!IsEnabled)
-                Hide();
+            SetEnabled(!IsEnabled);
         }
 
         // ── Palabras clave que indican campo numérico ─────────────

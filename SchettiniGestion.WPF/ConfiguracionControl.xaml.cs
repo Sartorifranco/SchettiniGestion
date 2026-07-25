@@ -216,6 +216,84 @@ namespace SchettiniGestion.WPF
                     txtVisorPromoIntervalo.Text = dr["VisorPromoIntervaloSeg"].ToString();
                 else if (txtVisorPromoIntervalo != null)
                     txtVisorPromoIntervalo.Text = "8";
+
+                RefrescarListaArchivosVisor();
+            }
+        }
+
+        private void RefrescarListaArchivosVisor()
+        {
+            if (lstArchivosVisorPromo == null) return;
+            try
+            {
+                string carpeta = txtVisorPromoCarpeta?.Text?.Trim();
+                var archivos = DatabaseService.ListarArchivosPromoVisorCliente(
+                    string.IsNullOrWhiteSpace(carpeta) ? null : carpeta);
+                lstArchivosVisorPromo.Items.Clear();
+                foreach (string ruta in archivos)
+                {
+                    string nombre = Path.GetFileName(ruta);
+                    string tipo = EsBannerPorNombre(nombre) ? "Banner" : "Promo";
+                    lstArchivosVisorPromo.Items.Add(new VisorArchivoItem
+                    {
+                        RutaCompleta = ruta,
+                        Display = $"{tipo}: {nombre}"
+                    });
+                }
+                lstArchivosVisorPromo.DisplayMemberPath = "Display";
+            }
+            catch { /* lista vacía si la carpeta no existe */ }
+        }
+
+        private static bool EsBannerPorNombre(string nombre)
+        {
+            if (string.IsNullOrEmpty(nombre)) return false;
+            return nombre.StartsWith("banner_", StringComparison.OrdinalIgnoreCase)
+                || nombre.StartsWith("horizontal_", StringComparison.OrdinalIgnoreCase)
+                || nombre.StartsWith("h_", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private sealed class VisorArchivoItem
+        {
+            public string RutaCompleta { get; set; }
+            public string Display { get; set; }
+        }
+
+        private void btnRefrescarArchivosVisor_Click(object sender, RoutedEventArgs e)
+        {
+            RefrescarListaArchivosVisor();
+        }
+
+        private void btnEliminarArchivoVisor_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var item = lstArchivosVisorPromo?.SelectedItem as VisorArchivoItem;
+                if (item == null || string.IsNullOrWhiteSpace(item.RutaCompleta))
+                {
+                    ModernMessageBox.Show("Seleccioná un archivo de la lista para eliminarlo.", "Aviso",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                if (ModernMessageBox.Show(
+                        $"¿Eliminar «{Path.GetFileName(item.RutaCompleta)}» de la carpeta del visor?\nEsta acción no se puede deshacer.",
+                        "Confirmar eliminación",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return;
+
+                if (File.Exists(item.RutaCompleta))
+                    File.Delete(item.RutaCompleta);
+
+                RefrescarListaArchivosVisor();
+                try { CustomerScreenService.RecargarPublicidades(); } catch { }
+                ModernMessageBox.Show("Archivo eliminado.", "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show("No se pudo eliminar: " + ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -336,6 +414,7 @@ namespace SchettiniGestion.WPF
                     "Promociones del visor guardadas. Si la pantalla del cliente está abierta, el carrusel se actualizará al instante.",
                     "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
 
+                RefrescarListaArchivosVisor();
                 try { CustomerScreenService.RecargarPublicidades(); } catch { }
             }
             catch (Exception ex)
@@ -1185,31 +1264,29 @@ namespace SchettiniGestion.WPF
             if (chkTicketLogo != null) chkTicketLogo.IsChecked = op.MostrarLogo;
             if (chkTicketDireccion != null) chkTicketDireccion.IsChecked = op.MostrarDireccion;
             if (chkTicketTelefono != null) chkTicketTelefono.IsChecked = op.MostrarTelefono;
-            if (chkTicketCuit != null) chkTicketCuit.IsChecked = op.MostrarCuit;
             if (chkTicketCliente != null) chkTicketCliente.IsChecked = op.MostrarCliente;
             if (chkTicketCodigo != null) chkTicketCodigo.IsChecked = op.MostrarCodigo;
             if (chkTicketFormaPago != null) chkTicketFormaPago.IsChecked = op.MostrarFormaPago;
-            if (chkTicketPieFiscal != null) chkTicketPieFiscal.IsChecked = op.MostrarPieFiscal;
             if (chkTicketGracias != null) chkTicketGracias.IsChecked = op.MostrarGracias;
-            if (chkTicketPuntoVenta != null) chkTicketPuntoVenta.IsChecked = op.MostrarPuntoVenta;
             if (chkTicketVendedor != null) chkTicketVendedor.IsChecked = op.MostrarVendedor;
         }
 
         private OpcionesImpresionTicket LeerOpcionesTicketDesdeUi()
         {
+            // CUIT, CAE y Punto de venta son obligatorios por normativa ARCA: siempre se imprimen.
             return new OpcionesImpresionTicket
             {
                 AnchoMm = cmbAnchoTicketMm?.SelectedItem?.ToString()?.StartsWith("58") == true ? 58 : 80,
                 MostrarLogo = chkTicketLogo?.IsChecked != false,
                 MostrarDireccion = chkTicketDireccion?.IsChecked != false,
                 MostrarTelefono = chkTicketTelefono?.IsChecked != false,
-                MostrarCuit = chkTicketCuit?.IsChecked != false,
+                MostrarCuit = true,
                 MostrarCliente = chkTicketCliente?.IsChecked != false,
                 MostrarCodigo = chkTicketCodigo?.IsChecked == true,
                 MostrarFormaPago = chkTicketFormaPago?.IsChecked != false,
-                MostrarPieFiscal = chkTicketPieFiscal?.IsChecked != false,
+                MostrarPieFiscal = true,
                 MostrarGracias = chkTicketGracias?.IsChecked != false,
-                MostrarPuntoVenta = chkTicketPuntoVenta?.IsChecked != false,
+                MostrarPuntoVenta = true,
                 MostrarVendedor = chkTicketVendedor?.IsChecked == true
             };
         }

@@ -36,6 +36,7 @@ namespace SchettiniGestion.WPF
 
             // Registrar teclado virtual inteligente (responde a cualquier TextBox/PasswordBox).
             KeyboardService.Initialize();
+            KeyboardService.LoadSavedPreference();
             WindowEscapeService.Initialize();
 
             this.DispatcherUnhandledException += App_DispatcherUnhandledException;

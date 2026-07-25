@@ -639,6 +639,7 @@ namespace SchettiniGestion.WPF
             SincronizarCarritoVisible();
             dgvFactura.Items.Refresh();
             icCardsFactura.Items.Refresh();
+            if (icCarrito != null) icCarrito.Items.Refresh();
         }
 
         private void ExpanderCarrito_Expanded(object sender, RoutedEventArgs e)

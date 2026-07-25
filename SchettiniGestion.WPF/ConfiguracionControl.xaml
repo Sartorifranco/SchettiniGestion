@@ -418,17 +418,35 @@
                         <StackPanel x:Name="panelSeccionVisorCliente">
                         <TextBlock Text="Pantalla cliente (segundo monitor)" Style="{StaticResource ConfigSectionTitle}"/>
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" LineHeight="18"
-                                   Margin="0,0,0,8" MaxWidth="900" HorizontalAlignment="Left"
-                                   Text="Si usa dos monitores y activó el modo en la barra principal, las publicidades rotan en el panel izquierdo (vertical) o en la franja inferior (horizontal) mientras no hay venta en curso."/>
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" LineHeight="18"
-                                   Margin="0,0,0,16" MaxWidth="900" HorizontalAlignment="Left" FontStyle="Italic"
-                                   ToolTip="Recomendaciones de diseño para publicidades del visor cliente">
-                            <Run Text="Recomendación: "/>
-                            <Run Text="utilice imágenes o videos en formato vertical u horizontal (ej.: 1080×1080 px o 1080×1920 px). Formatos soportados: JPG, PNG, GIF, MP4 y AVI."/>
-                        </TextBlock>
+                                   Margin="0,0,0,12" MaxWidth="900" HorizontalAlignment="Left"
+                                   Text="Activá el modo en la barra principal. Hay dos espacios: imagen promocional (izquierda) y banner (abajo). El logo del negocio no se muestra en el visor para aprovechar toda el área."/>
 
-                        <TextBlock Text="Carpeta de promociones:" Style="{StaticResource ModuleLabelStyle}"/>
-                        <Grid Margin="0,0,0,10">
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1" CornerRadius="8" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="Imagen promocional (izquierda)" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4"/>
+                                    <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,0"
+                                               Text="Ideal 1080×1920 px (vertical). También 1080×1080. Prefijo de archivo: promo_ o vertical_. Acepta imagen y video."/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1" CornerRadius="8" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="Banner (franja inferior)" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4"/>
+                                    <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,0"
+                                               Text="Ideal 1200×300 px (horizontal). Prefijo: banner_ o horizontal_. Acepta imagen y video."/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <TextBlock Text="Carpeta de medios:" Style="{StaticResource ModuleLabelStyle}"/>
+                        <Grid Margin="0,0,0,6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -442,20 +460,45 @@
                                     Click="btnBuscarCarpetaPromo_Click"
                                     Style="{StaticResource SecondaryButtonStyle}" ToolTip="Elegir carpeta"/>
                         </Grid>
+                        <TextBlock Style="{StaticResource FieldHintTextStyle}"
+                                   Text="Todos los archivos de esta carpeta rotan en el visor. El sistema ubica cada uno por proporción o por el prefijo del nombre."/>
 
-                        <TextBlock Text="Agregar archivo de promoción:" Style="{StaticResource ModuleLabelStyle}"/>
-                        <DockPanel LastChildFill="True" Margin="0,0,0,12">
+                        <TextBlock Text="Agregar imagen o video:" Style="{StaticResource ModuleLabelStyle}"/>
+                        <DockPanel LastChildFill="True" Margin="0,0,0,8">
                             <Button x:Name="btnImportarImagen" DockPanel.Dock="Left" Content="Subir archivo"
                                     Click="btnImportarImagen_Click"
                                     Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Padding="14,0"
                                     MinHeight="44" MinWidth="120"
-                                    ToolTip="Copia imágenes (JPG, PNG, GIF) o videos (MP4, AVI) a la carpeta de publicidades"/>
+                                    ToolTip="Copia JPG, PNG, GIF, MP4 o AVI a la carpeta"/>
                             <TextBox x:Name="txtRutaImagenPromocionImportada"
                                      Style="{StaticResource ModuleTextBoxStyle}"
                                      VerticalContentAlignment="Center"
                                      IsReadOnly="True"
                                      ToolTip="Archivo seleccionado para copiar al guardar"/>
                         </DockPanel>
+
+                        <TextBlock Text="Archivos cargados" Style="{StaticResource ModuleLabelStyle}"/>
+                        <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,6"
+                                   Text="Seleccioná un archivo y tocá Eliminar para quitarlo de la carpeta del visor."/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ListBox x:Name="lstArchivosVisorPromo" Grid.Column="0" Height="120" Margin="0,0,10,0"
+                                     Background="{DynamicResource SurfaceDark}" Foreground="{DynamicResource TextPrimary}"
+                                     BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"/>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                                <Button x:Name="btnEliminarArchivoVisor" Content="🗑 Eliminar"
+                                        Click="btnEliminarArchivoVisor_Click"
+                                        Background="#C0392B" Foreground="White" FontWeight="SemiBold"
+                                        Padding="14,10" MinHeight="44" Margin="0,0,0,8"
+                                        ToolTip="Elimina el archivo seleccionado de la carpeta"/>
+                                <Button x:Name="btnRefrescarArchivosVisor" Content="↻ Actualizar"
+                                        Click="btnRefrescarArchivosVisor_Click"
+                                        Style="{StaticResource SecondaryButtonStyle}" Padding="14,10" MinHeight="44"/>
+                            </StackPanel>
+                        </Grid>
 
                         <TextBlock Text="Segundos entre cambios (imágenes estáticas, 3–120):" Style="{StaticResource ModuleLabelStyle}"/>
                         <TextBox x:Name="txtVisorPromoIntervalo" Style="{StaticResource ModuleTextBoxStyle}" Width="100" HorizontalAlignment="Left" Text="8" Margin="0,0,0,12"/>
@@ -752,23 +795,27 @@
                         <Border Style="{StaticResource ConfigSectionCard}">
                             <StackPanel>
                         <TextBlock Text="Contenido del ticket térmico" Style="{StaticResource ConfigSectionTitle}"/>
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"
-                                   Text="Marcá qué datos querés que aparezcan en el ticket. El logo se configura en la pestaña Negocio y ARCA."/>
-                        <WrapPanel Margin="0,0,0,20">
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,8"
+                                   Text="Marcá solo datos opcionales del ticket. Los datos fiscales obligatorios (CUIT, CAE y Punto de venta) siempre se imprimen."/>
+                        <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
+                                CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
+                            <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource TextPrimary}">
+                                <Run FontWeight="SemiBold" Text="Siempre en el ticket: "/>
+                                <Run Text="CUIT, condición IVA, Punto de venta y pie fiscal (CAE) cuando corresponda. No se pueden desactivar."/>
+                            </TextBlock>
+                        </Border>
+                        <WrapPanel Margin="0,0,0,12">
                             <CheckBox x:Name="chkTicketLogo" Content="Logo" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketDireccion" Content="Dirección" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketTelefono" Content="Teléfono" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
-                            <CheckBox x:Name="chkTicketCuit" Content="CUIT" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketCliente" Content="Cliente" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketCodigo" Content="Código de producto" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketFormaPago" Content="Forma de pago" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
-                            <CheckBox x:Name="chkTicketPieFiscal" Content="Pie fiscal (CAE)" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketGracias" Content="Mensaje de cierre" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
-                            <CheckBox x:Name="chkTicketPuntoVenta" Content="Punto de venta" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketVendedor" Content="Vendedor / cajero que cobró" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                         </WrapPanel>
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,0"
-                                   Text="El número de punto de venta se configura en la pestaña «Negocio y ARCA». El vendedor/cajero es el «Nombre del personal» del usuario que inició sesión (Usuarios)."/>
+                        <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,0"
+                                   Text="El punto de venta se configura en «Negocio y ARCA». El vendedor es el «Nombre del personal» del usuario logueado."/>
                             </StackPanel>
                         </Border>
 

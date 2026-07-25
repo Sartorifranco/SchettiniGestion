@@ -21,23 +21,116 @@ namespace SchettiniGestion
     // ==========================================
     // CLASES DE AYUDA
     // ==========================================
-    public class FacturaItem
+    public class FacturaItem : System.ComponentModel.INotifyPropertyChanged
     {
-        public int ProductoID { get; set; }
-        public string Codigo { get; set; }
-        public string Descripcion { get; set; }
-        public int Cantidad { get; set; }
-        public decimal PrecioUnitario { get; set; }
-        public decimal DescuentoPorcentaje { get; set; } = 0;
-        public decimal RecargoPorcentaje { get; set; } = 0;
+        private int _productoId;
+        private string _codigo;
+        private string _descripcion;
+        private int _cantidad;
+        private decimal _precioUnitario;
+        private decimal _descuentoPorcentaje;
+        private decimal _recargoPorcentaje;
+        private string _promoNombre;
+        private decimal _alicuotaIvaPct = 21m;
+        private bool _permiteModificarPrecioVenta;
+        private string _imagenPath;
+
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyChanged(string name) =>
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
+
+        public int ProductoID
+        {
+            get => _productoId;
+            set { if (_productoId == value) return; _productoId = value; OnPropertyChanged(nameof(ProductoID)); }
+        }
+        public string Codigo
+        {
+            get => _codigo;
+            set { if (_codigo == value) return; _codigo = value; OnPropertyChanged(nameof(Codigo)); }
+        }
+        public string Descripcion
+        {
+            get => _descripcion;
+            set { if (_descripcion == value) return; _descripcion = value; OnPropertyChanged(nameof(Descripcion)); }
+        }
+        public int Cantidad
+        {
+            get => _cantidad;
+            set
+            {
+                if (_cantidad == value) return;
+                _cantidad = value;
+                OnPropertyChanged(nameof(Cantidad));
+                OnPropertyChanged(nameof(Subtotal));
+                OnPropertyChanged(nameof(EsValido));
+            }
+        }
+        public decimal PrecioUnitario
+        {
+            get => _precioUnitario;
+            set
+            {
+                if (_precioUnitario == value) return;
+                _precioUnitario = value;
+                OnPropertyChanged(nameof(PrecioUnitario));
+                OnPropertyChanged(nameof(Subtotal));
+            }
+        }
+        public decimal DescuentoPorcentaje
+        {
+            get => _descuentoPorcentaje;
+            set
+            {
+                if (_descuentoPorcentaje == value) return;
+                _descuentoPorcentaje = value;
+                OnPropertyChanged(nameof(DescuentoPorcentaje));
+                OnPropertyChanged(nameof(Subtotal));
+                OnPropertyChanged(nameof(AjusteLineaTexto));
+            }
+        }
+        public decimal RecargoPorcentaje
+        {
+            get => _recargoPorcentaje;
+            set
+            {
+                if (_recargoPorcentaje == value) return;
+                _recargoPorcentaje = value;
+                OnPropertyChanged(nameof(RecargoPorcentaje));
+                OnPropertyChanged(nameof(Subtotal));
+                OnPropertyChanged(nameof(AjusteLineaTexto));
+            }
+        }
         /// <summary>Nombre de la promoción automática aplicada (si hubo).</summary>
-        public string PromoNombre { get; set; }
+        public string PromoNombre
+        {
+            get => _promoNombre;
+            set
+            {
+                if (_promoNombre == value) return;
+                _promoNombre = value;
+                OnPropertyChanged(nameof(PromoNombre));
+                OnPropertyChanged(nameof(AjusteLineaTexto));
+            }
+        }
         /// <summary>IVA aplicado sobre el precio (subtotal línea incluye este IVA), p. ej. 21 por 21%.</summary>
-        public decimal AlicuotaIvaPct { get; set; } = 21m;
+        public decimal AlicuotaIvaPct
+        {
+            get => _alicuotaIvaPct;
+            set { if (_alicuotaIvaPct == value) return; _alicuotaIvaPct = value; OnPropertyChanged(nameof(AlicuotaIvaPct)); }
+        }
         /// <summary>Si es false, el precio unitario en POS no puede modificarse manualmente.</summary>
-        public bool PermiteModificarPrecioVenta { get; set; }
-        public decimal Subtotal { get { return Cantidad * PrecioUnitario * (1 - DescuentoPorcentaje / 100) * (1 + RecargoPorcentaje / 100); } }
-        public string ImagenPath { get; set; }
+        public bool PermiteModificarPrecioVenta
+        {
+            get => _permiteModificarPrecioVenta;
+            set { if (_permiteModificarPrecioVenta == value) return; _permiteModificarPrecioVenta = value; OnPropertyChanged(nameof(PermiteModificarPrecioVenta)); }
+        }
+        public decimal Subtotal => Cantidad * PrecioUnitario * (1 - DescuentoPorcentaje / 100) * (1 + RecargoPorcentaje / 100);
+        public string ImagenPath
+        {
+            get => _imagenPath;
+            set { if (_imagenPath == value) return; _imagenPath = value; OnPropertyChanged(nameof(ImagenPath)); }
+        }
         public string AjusteLineaTexto
         {
             get

@@ -61,6 +61,7 @@ namespace SchettiniGestion.WPF
         private bool _guardandoVenta;
         private DispatcherTimer _timerLectorBarras;
         private string _textoPendienteLector;
+        private List<DatabaseService.PromoActivaHoy> _promosVigentesPos = new List<DatabaseService.PromoActivaHoy>();
 
         /// <summary>Si se asigna (ej. "Remito", "Pedido"), preselecciona ese tipo al cargar. Usado cuando se abre desde Nuevo Remito/Pedido.</summary>
         public string TipoComprobanteInicial { get; set; }
@@ -257,6 +258,7 @@ namespace SchettiniGestion.WPF
         private void ActualizarPromosPos()
         {
             var promos = DatabaseService.GetPromocionesVigentesHoy();
+            _promosVigentesPos = promos ?? new List<DatabaseService.PromoActivaHoy>();
             if (bdrPromosHoy != null && txtPromosHoy != null)
             {
                 if (promos == null || promos.Count == 0)
@@ -270,7 +272,8 @@ namespace SchettiniGestion.WPF
                     foreach (var p in promos)
                     {
                         string alcance = string.IsNullOrWhiteSpace(p.AlcanceTexto) ? "" : " (" + p.AlcanceTexto + ")";
-                        partes.Add($"{p.Nombre} -{p.Porcentaje:0.##}%{alcance}");
+                        string valor = DatabaseService.DescribirValorPromo(p.Modalidad, p.Porcentaje, p.MontoFijo, p.PrecioCombo, p.CantidadMinima, p.CantidadBonificada);
+                        partes.Add($"{p.Nombre} {valor}{alcance}");
                     }
                     txtPromosHoy.Text = string.Join(" · ", partes);
                     bdrPromosHoy.Visibility = Visibility.Visible;
@@ -286,9 +289,9 @@ namespace SchettiniGestion.WPF
                     ? (p.Row["Categoria"]?.ToString() ?? "")
                     : "";
                 var promo = DatabaseService.ResolverMejorPromo(promos, p.ProductoID, cat);
-                p.EnPromo = promo != null && promo.Porcentaje > 0;
+                p.EnPromo = promo != null;
                 p.PromoTooltip = p.EnPromo
-                    ? $"🎯 {promo.Nombre} · -{promo.Porcentaje:0.##}%"
+                    ? $"🎯 {promo.Nombre} · {DatabaseService.DescribirValorPromo(promo.Modalidad, promo.Porcentaje, promo.MontoFijo, promo.PrecioCombo, promo.CantidadMinima, promo.CantidadBonificada)}"
                     : null;
             }
 
@@ -494,7 +497,11 @@ namespace SchettiniGestion.WPF
                 && pct >= 0 && pct <= 100)
             {
                 foreach (var item in CarritoDeVenta)
+                {
                     item.DescuentoPorcentaje = pct;
+                    item.PromoNombre = null;
+                    item.DescuentoPromocionAutomatica = false;
+                }
                 ActualizarTotal();
             }
         }
@@ -1013,37 +1020,33 @@ namespace SchettiniGestion.WPF
                 : Convert.ToDecimal(_productoSeleccionado["PrecioVenta"]);
             string imgPath = _productoSeleccionado.Table.Columns.Contains("ImagenPath") ? _productoSeleccionado["ImagenPath"].ToString() : null;
 
-            string categoria = _productoSeleccionado.Table.Columns.Contains("Categoria")
-                ? (_productoSeleccionado["Categoria"]?.ToString() ?? "")
-                : "";
-            var promo = DatabaseService.ObtenerPromoVigenteParaProducto(id, categoria);
-
             var item = CarritoDeVenta.FirstOrDefault(x => x.ProductoID == id);
             if (item != null) item.Cantidad += cant;
             else
             {
                 decimal alicuota = DatabaseService.ObtenerAlicuotaIvaVentaProducto(_productoSeleccionado);
-                CarritoDeVenta.Add(new FacturaItem
+                item = new FacturaItem
                 {
                     ProductoID = id,
                     Codigo = _productoSeleccionado["Codigo"].ToString(),
                     Descripcion = _productoSeleccionado["Descripcion"].ToString(),
                     Cantidad = cant,
                     PrecioUnitario = precioFinal,
-                    DescuentoPorcentaje = promo != null && promo.Porcentaje > 0 ? promo.Porcentaje : 0,
-                    PromoNombre = promo != null && promo.Porcentaje > 0 ? promo.Nombre : null,
+                    DescuentoPorcentaje = 0,
+                    PromoNombre = null,
                     AlicuotaIvaPct = alicuota,
                     ImagenPath = imgPath,
                     PermiteModificarPrecioVenta = LeerPermiteModificarPrecioVenta(_productoSeleccionado)
-                });
+                };
+                CarritoDeVenta.Add(item);
             }
             RefrescarVistaCarrito();
             popupProducto.IsOpen = false;
             LimpiarProducto();
             ActualizarTotal();
             MarcarItemCarrito(CarritoDeVenta.LastOrDefault(i => i.EsValido));
-            if (promo != null && promo.Porcentaje > 0 && item == null)
-                MostrarAvisoPromo(promo.Nombre, promo.Porcentaje);
+            if (item != null && item.DescuentoPromocionAutomatica)
+                MostrarAvisoPromo(item.PromoNombre, item.DescuentoPorcentaje);
         }
 
         private DispatcherTimer _timerAvisoPromo;
@@ -1052,7 +1055,7 @@ namespace SchettiniGestion.WPF
         {
             if (bdrAvisoPromo == null || txtAvisoPromo == null) return;
             string nombre = string.IsNullOrWhiteSpace(nombrePromo) ? "Promoción" : nombrePromo.Trim();
-            txtAvisoPromo.Text = $"🎯 Se aplicó «{nombre}»: -{porcentaje:N0}% en este producto.";
+            txtAvisoPromo.Text = $"🎯 Se aplicó «{nombre}»: -{porcentaje:N0}% efectivo.";
             bdrAvisoPromo.Visibility = Visibility.Visible;
 
             if (_timerAvisoPromo == null)
@@ -1766,7 +1769,7 @@ namespace SchettiniGestion.WPF
             decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
             string descripcion = ConstruirDescripcionCarrito();
             GuardarDocumentoSinCobro(
-                () => DatabaseService.GuardarNotaCreditoDebitoVenta(Convert.ToInt32(_clienteSeleccionado["ClienteID"]), tipoCodigo, total, descripcion),
+                () => DatabaseService.GuardarNotaCreditoDebitoVenta(Convert.ToInt32(_clienteSeleccionado["ClienteID"]), tipoCodigo, total, descripcion, facturaId: null),
                 tipoNombre, id => PrintService.ImprimirNotaCreditoDebitoVenta(id));
         }
 
@@ -1829,9 +1832,203 @@ namespace SchettiniGestion.WPF
             txtBuscarProducto.Focus();
         }
 
+        private class PromoLineaCalculada
+        {
+            public decimal Porcentaje { get; set; }
+            public string Nombre { get; set; }
+        }
+
+        private bool PuedeAplicarPromoAutomatica(FacturaItem item)
+        {
+            if (item == null || !item.EsValido) return false;
+            if (item.RecargoPorcentaje > 0m) return false;
+            return item.DescuentoPromocionAutomatica
+                   || item.DescuentoPorcentaje <= 0m
+                   || !string.IsNullOrWhiteSpace(item.PromoNombre);
+        }
+
+        private void AplicarPromocionesCarrito()
+        {
+            if (CarritoDeVenta == null || CarritoDeVenta.Count == 0) return;
+
+            var promos = _promosVigentesPos;
+            if (promos == null || promos.Count == 0)
+            {
+                promos = DatabaseService.GetPromocionesVigentesHoy();
+                _promosVigentesPos = promos ?? new List<DatabaseService.PromoActivaHoy>();
+            }
+
+            foreach (var item in CarritoDeVenta)
+            {
+                if (item == null) continue;
+                if (item.DescuentoPromocionAutomatica || !string.IsNullOrWhiteSpace(item.PromoNombre))
+                {
+                    item.DescuentoPorcentaje = 0m;
+                    item.PromoNombre = null;
+                    item.DescuentoPromocionAutomatica = false;
+                }
+            }
+
+            if (promos == null || promos.Count == 0) return;
+
+            var mejores = new Dictionary<FacturaItem, PromoLineaCalculada>();
+
+            foreach (var item in CarritoDeVenta)
+            {
+                if (!PuedeAplicarPromoAutomatica(item)) continue;
+                string categoria = ObtenerCategoriaProductoCarrito(item.ProductoID);
+                foreach (var promo in promos)
+                {
+                    if (promo.Tipo == DatabaseService.TiposPromo.ComboProductos) continue;
+                    if (!PromoAplicaAItem(promo, item.ProductoID, categoria)) continue;
+                    if (CalcularPorcentajePromoLinea(promo, item.Cantidad, item.PrecioUnitario, out decimal pct)
+                        && pct > 0m)
+                    {
+                        RegistrarMejorPromo(mejores, item, pct, promo.Nombre);
+                    }
+                }
+            }
+
+            foreach (var promo in promos.Where(p => p.Tipo == DatabaseService.TiposPromo.ComboProductos))
+                EvaluarPromoCombo(promo, mejores);
+
+            foreach (var kv in mejores)
+            {
+                var item = kv.Key;
+                if (!PuedeAplicarPromoAutomatica(item)) continue;
+                item.DescuentoPorcentaje = LimitarPorcentaje(Math.Round(kv.Value.Porcentaje, 4));
+                item.PromoNombre = kv.Value.Nombre;
+                item.DescuentoPromocionAutomatica = item.DescuentoPorcentaje > 0m;
+            }
+        }
+
+        private string ObtenerCategoriaProductoCarrito(int productoId)
+        {
+            var vm = _catalogoCompleto?.FirstOrDefault(p => p.ProductoID == productoId);
+            if (vm?.Row != null && vm.Row.Table.Columns.Contains("Categoria"))
+                return vm.Row["Categoria"]?.ToString() ?? "";
+            return "";
+        }
+
+        private bool PromoAplicaAItem(DatabaseService.PromoActivaHoy promo, int productoId, string categoria)
+        {
+            if (promo == null) return false;
+            if (promo.Tipo == DatabaseService.TiposPromo.PctProducto)
+                return promo.ProductoID.HasValue && promo.ProductoID.Value == productoId;
+            if (promo.Tipo == DatabaseService.TiposPromo.PctCategoria)
+                return !string.IsNullOrWhiteSpace(categoria)
+                       && string.Equals((promo.Categoria ?? "").Trim(), categoria.Trim(), StringComparison.OrdinalIgnoreCase);
+            return promo.Tipo == DatabaseService.TiposPromo.PctTodos;
+        }
+
+        private static bool CalcularPorcentajePromoLinea(DatabaseService.PromoActivaHoy promo, int cantidad, decimal precioUnitario, out decimal porcentaje)
+        {
+            porcentaje = 0m;
+            if (promo == null || cantidad <= 0 || precioUnitario <= 0m) return false;
+            decimal bruto = cantidad * precioUnitario;
+            string modalidad = promo.Modalidad ?? DatabaseService.ModalidadesPromo.Porcentaje;
+
+            if (modalidad == DatabaseService.ModalidadesPromo.Porcentaje)
+                porcentaje = promo.Porcentaje;
+            else if (modalidad == DatabaseService.ModalidadesPromo.MontoFijo)
+                porcentaje = (Math.Min(promo.MontoFijo * cantidad, bruto) / bruto) * 100m;
+            else if (modalidad == DatabaseService.ModalidadesPromo.PrecioFinal)
+                porcentaje = promo.PrecioCombo > 0m ? (Math.Max(0m, bruto - (promo.PrecioCombo * cantidad)) / bruto) * 100m : 0m;
+            else if (modalidad == DatabaseService.ModalidadesPromo.DosPorUno)
+                porcentaje = CalcularPorcentajeBonificacion(cantidad, 2, 1);
+            else if (modalidad == DatabaseService.ModalidadesPromo.TresPorDos)
+                porcentaje = CalcularPorcentajeBonificacion(cantidad, 3, 1);
+            else if (modalidad == DatabaseService.ModalidadesPromo.Bonificar)
+                porcentaje = CalcularPorcentajeBonificacion(cantidad, promo.CantidadMinima, promo.CantidadBonificada);
+            else if (modalidad == DatabaseService.ModalidadesPromo.EscalaCantidad)
+                porcentaje = promo.CantidadMinima > 0 && cantidad >= promo.CantidadMinima ? promo.Porcentaje : 0m;
+
+            porcentaje = LimitarPorcentaje(porcentaje);
+            return porcentaje > 0m;
+        }
+
+        private static decimal CalcularPorcentajeBonificacion(int cantidad, int cantidadMinima, int cantidadBonificada)
+        {
+            if (cantidad <= 0 || cantidadMinima <= 0 || cantidadBonificada <= 0) return 0m;
+            int bonificadas = (cantidad / cantidadMinima) * cantidadBonificada;
+            if (bonificadas > cantidad) bonificadas = cantidad;
+            return ((decimal)bonificadas / cantidad) * 100m;
+        }
+
+        private void EvaluarPromoCombo(DatabaseService.PromoActivaHoy promo, Dictionary<FacturaItem, PromoLineaCalculada> mejores)
+        {
+            if (promo?.ProductoIDs == null || promo.ProductoIDs.Count < 2) return;
+            var items = new List<FacturaItem>();
+            foreach (int pid in promo.ProductoIDs)
+            {
+                var item = CarritoDeVenta.FirstOrDefault(x => x.ProductoID == pid && PuedeAplicarPromoAutomatica(x));
+                if (item == null || item.Cantidad <= 0 || item.PrecioUnitario <= 0m)
+                    return;
+                items.Add(item);
+            }
+
+            int combosCompletos = items.Min(i => i.Cantidad);
+            if (combosCompletos <= 0) return;
+
+            decimal brutoComboUnitario = items.Sum(i => i.PrecioUnitario);
+            decimal brutoParticipante = brutoComboUnitario * combosCompletos;
+            if (brutoParticipante <= 0m) return;
+
+            decimal descuentoTotal = CalcularDescuentoTotalCombo(promo, combosCompletos, brutoComboUnitario, brutoParticipante);
+            if (descuentoTotal <= 0m) return;
+            if (descuentoTotal > brutoParticipante) descuentoTotal = brutoParticipante;
+
+            foreach (var item in items)
+            {
+                decimal brutoItemParticipante = item.PrecioUnitario * combosCompletos;
+                decimal proporcion = brutoItemParticipante / brutoParticipante;
+                decimal descuentoItem = descuentoTotal * proporcion;
+                decimal brutoLinea = item.PrecioUnitario * item.Cantidad;
+                if (brutoLinea <= 0m) continue;
+                decimal pctLinea = (descuentoItem / brutoLinea) * 100m;
+                RegistrarMejorPromo(mejores, item, pctLinea, promo.Nombre);
+            }
+        }
+
+        private static decimal CalcularDescuentoTotalCombo(DatabaseService.PromoActivaHoy promo, int combosCompletos, decimal brutoComboUnitario, decimal brutoParticipante)
+        {
+            string modalidad = promo.Modalidad ?? DatabaseService.ModalidadesPromo.Porcentaje;
+            if (modalidad == DatabaseService.ModalidadesPromo.Porcentaje)
+                return brutoParticipante * LimitarPorcentaje(promo.Porcentaje) / 100m;
+            if (modalidad == DatabaseService.ModalidadesPromo.MontoFijo)
+                return promo.MontoFijo * combosCompletos;
+            if (modalidad == DatabaseService.ModalidadesPromo.PrecioFinal)
+                return promo.PrecioCombo > 0m ? Math.Max(0m, brutoParticipante - (promo.PrecioCombo * combosCompletos)) : 0m;
+            if (modalidad == DatabaseService.ModalidadesPromo.DosPorUno)
+                return brutoComboUnitario * ((combosCompletos / 2) * 1);
+            if (modalidad == DatabaseService.ModalidadesPromo.TresPorDos)
+                return brutoComboUnitario * ((combosCompletos / 3) * 1);
+            if (modalidad == DatabaseService.ModalidadesPromo.Bonificar)
+                return brutoComboUnitario * ((combosCompletos / Math.Max(1, promo.CantidadMinima)) * Math.Max(0, promo.CantidadBonificada));
+            if (modalidad == DatabaseService.ModalidadesPromo.EscalaCantidad && promo.CantidadMinima > 0 && combosCompletos >= promo.CantidadMinima)
+                return brutoParticipante * LimitarPorcentaje(promo.Porcentaje) / 100m;
+            return 0m;
+        }
+
+        private static void RegistrarMejorPromo(Dictionary<FacturaItem, PromoLineaCalculada> mejores, FacturaItem item, decimal porcentaje, string nombre)
+        {
+            porcentaje = LimitarPorcentaje(porcentaje);
+            if (porcentaje <= 0m) return;
+            if (!mejores.TryGetValue(item, out var actual) || porcentaje > actual.Porcentaje)
+                mejores[item] = new PromoLineaCalculada { Porcentaje = porcentaje, Nombre = nombre };
+        }
+
+        private static decimal LimitarPorcentaje(decimal porcentaje)
+        {
+            if (porcentaje < 0m) return 0m;
+            if (porcentaje > 100m) return 100m;
+            return porcentaje;
+        }
+
         private void ActualizarTotal()
         {
             PurgeCarritoInvalido();
+            AplicarPromocionesCarrito();
             decimal subtotal = 0m, descuentos = 0m, recargos = 0m;
             foreach (var it in CarritoDeVenta)
             {
@@ -2220,6 +2417,7 @@ namespace SchettiniGestion.WPF
             {
                 item.DescuentoPorcentaje = pct;
                 item.PromoNombre = null; // descuento manual: ya no es la promo automática
+                item.DescuentoPromocionAutomatica = false;
                 if (pct > 0) item.RecargoPorcentaje = 0;
                 RefrescarVistaCarrito();
                 ActualizarTotal();
@@ -2238,6 +2436,7 @@ namespace SchettiniGestion.WPF
                 {
                     item.DescuentoPorcentaje = 0;
                     item.PromoNombre = null;
+                    item.DescuentoPromocionAutomatica = false;
                 }
                 RefrescarVistaCarrito();
                 ActualizarTotal();

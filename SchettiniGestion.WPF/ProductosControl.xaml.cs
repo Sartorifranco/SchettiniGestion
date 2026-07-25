@@ -20,14 +20,22 @@ namespace SchettiniGestion.WPF
 
         // Columnas en el orden de la plantilla (alta masiva)
         private static readonly string[] COLS_HEADER = {
-            "CODIGO", "CODIGO_BARRAS", "DESCRIPCION", "CATEGORIA",
-            "SUB_RUBRO", "MARCA", "PROVEEDOR", "COSTO", "PRECIO_VENTA", "STOCK"
+            "Codigo", "CodigoBarras", "CodigoExterno", "Descripcion", "Categoria",
+            "SubRubro", "Marca", "Proveedor", "TipoMoneda", "CostoCompra", "% IVA",
+            "ImpuestoInterno", "CostoIncluyeIVA", "Stock", "StockMinimo", "StockIdeal",
+            "PermitirModificarPrecioVenta", "Stockeable", "PermitirStockNegativo",
+            "UsaVariantes", "EsCombo", "Activo", "PrecioVenta", "VarianteColor",
+            "VarianteTalle", "VarianteUnidadMedida", "CobraIvaAlCliente", "ImagenPath"
         };
 
         // Columnas exportación / importación de actualización masiva
         private static readonly string[] COLS_ACTUALIZACION = {
-            "ProductoID", "Codigo", "Nombre", "Costo de Compra", "% IVA", "Impuesto Interno",
-            "CostoIncluyeIva", "EsStockeable", "VendeEnNegativo"
+            "ProductoID", "Codigo", "CodigoBarras", "CodigoExterno", "Descripcion", "Categoria",
+            "SubRubro", "Marca", "Proveedor", "TipoMoneda", "CostoCompra", "% IVA",
+            "ImpuestoInterno", "CostoIncluyeIva", "Stock", "StockMinimo", "StockIdeal",
+            "PermitirModificarPrecioVenta", "EsStockeable", "PermitirStockNegativo",
+            "UsaVariantes", "EsCombo", "Activo", "PrecioVenta", "VarianteColor",
+            "VarianteTalle", "VarianteUnidadMedida", "CobraIvaAlCliente", "ImagenPath"
         };
 
         public ProductosControl()
@@ -44,7 +52,7 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                _dtProductos = DatabaseService.GetProductos("");
+                _dtProductos = DatabaseService.GetProductos("", chkMostrarInactivos?.IsChecked == true);
                 EnriquecerColumnasProductos(_dtProductos);
                 dgvProductos.ItemsSource = _dtProductos.DefaultView;
                 AplicarFiltro();
@@ -99,6 +107,8 @@ namespace SchettiniGestion.WPF
         }
 
         private void txtFiltro_TextChanged(object sender, TextChangedEventArgs e) => AplicarFiltro();
+
+        private void chkMostrarInactivos_Checked(object sender, RoutedEventArgs e) => CargarProductos();
 
         private void btnNuevo_Click(object sender, RoutedEventArgs e)
         {
@@ -219,9 +229,8 @@ namespace SchettiniGestion.WPF
                     rowIdx++;
                 }
 
-                int[] widths = { 12, 16, 40, 16, 10, 18, 16, 14, 16 };
-                for (int c = 0; c < widths.Length; c++)
-                    ws.Column(c + 1).Width = widths[c];
+                for (int c = 0; c < COLS_ACTUALIZACION.Length; c++)
+                    ws.Column(c + 1).Width = c == 4 ? 40 : 18;
 
                 ws.View.FreezePanes(2, 1);
                 pkg.SaveAs(new FileInfo(ruta));
@@ -328,33 +337,68 @@ namespace SchettiniGestion.WPF
             return filas;
         }
 
-        /// <summary>[0]=ProductoID [1]=Codigo [2]=Nombre [3]=Costo [4]=IVA [5]=Imp [6]=CostoIncluyeIva [7]=Stockeable [8]=VendeNeg</summary>
+        /// <summary>Mapeo completo de campos de ficha. Indices: ProductoID + COLS_HEADER.</summary>
         private static int[] MapearColumnasActualizacion(IList<string> headers)
         {
             string[][] alias = {
                 new[]{ "PRODUCTOID", "ID", "ID_PRODUCTO" },
                 new[]{ "CODIGO", "COD", "CODE" },
-                new[]{ "NOMBRE", "DESCRIPCION", "DESCRIPCIÓN", "PRODUCTO" },
-                new[]{ "COSTO_DE_COMPRA", "COSTO", "PRECIO_COSTO", "PRECIO COSTO", "COSTO COMPRA" },
-                new[]{ "%_IVA", "IVA", "PORCENTAJE_IVA", "PORC_IVA", "TIPOIVA" },
-                new[]{ "IMPUESTO_INTERNO", "IMPUESTO", "IMP_INTERNO", "IMPUESTO INTERNO" },
+                new[]{ "CODIGOBARRAS", "CODIGO_BARRAS", "CODIGOBARRA", "CODIGO_BARRA", "BARCODE", "EAN", "CB" },
+                new[]{ "CODIGOEXTERNO", "CODIGO_EXTERNO", "COD_EXT" },
+                new[]{ "DESCRIPCION", "DESCRIPCIÓN", "NOMBRE", "PRODUCTO", "PRODUCT" },
+                new[]{ "CATEGORIA", "CATEGORÍA", "RUBRO", "CATEGORY" },
+                new[]{ "SUBRUBRO", "SUB_RUBRO", "SUBCATEGORIA", "SUBCATEGORÍA", "SUB_RUBRO" },
+                new[]{ "MARCA", "BRAND" },
+                new[]{ "PROVEEDOR", "PROVIDER", "SUPPLIER" },
+                new[]{ "TIPOMONEDA", "TIPO_MONEDA", "MONEDA", "CURRENCY" },
+                new[]{ "COSTOCOMPRA", "COSTO_COMPRA", "COSTO_DE_COMPRA", "COSTO", "PRECIO_COSTO", "PRECIO COSTO", "COSTO COMPRA" },
+                new[]{ "%IVA", "%_IVA", "IVA", "PORCENTAJE_IVA", "PORC_IVA", "TIPOIVA", "TIPO_IVA" },
+                new[]{ "IMPUESTOINTERNO", "IMPUESTO_INTERNO", "IMPUESTO", "IMP_INTERNO", "IMPUESTO INTERNO" },
                 new[]{ "COSTOINCLUYEIVA", "COSTO_INCLUYE_IVA", "INCLUYE_IVA", "COSTO INCLUYE IVA" },
+                new[]{ "STOCK", "STOCKACTUAL", "STOCK_ACTUAL", "CANTIDAD", "QTY", "QUANTITY" },
+                new[]{ "STOCKMINIMO", "STOCK_MINIMO", "MINIMO", "MÍNIMO" },
+                new[]{ "STOCKIDEAL", "STOCK_IDEAL", "IDEAL" },
+                new[]{ "PERMITIRMODIFICARPRECIOVENTA", "PERMITIR_MODIFICAR_PRECIO_VENTA", "PERMITE_MODIFICAR_PRECIO_VENTA", "MODIFICA_PRECIO_VENTA" },
                 new[]{ "ESSTOCKEABLE", "STOCKEABLE", "ES_STOCKEABLE", "CONTROLA_STOCK" },
-                new[]{ "VENDEENNEGATIVO", "VENDE_EN_NEGATIVO", "STOCK_NEGATIVO", "ACEPTA_STOCK_NEGATIVO", "VENDE EN NEGATIVO" }
+                new[]{ "PERMITIRSTOCKNEGATIVO", "PERMITIR_STOCK_NEGATIVO", "VENDEENNEGATIVO", "VENDE_EN_NEGATIVO", "STOCK_NEGATIVO", "ACEPTA_STOCK_NEGATIVO", "VENDE EN NEGATIVO" },
+                new[]{ "USAVARIANTES", "USA_VARIANTES", "VARIANTES" },
+                new[]{ "ESCOMBO", "ES_COMBO", "COMBO" },
+                new[]{ "ACTIVO", "HABILITADO", "EN_CATALOGO" },
+                new[]{ "PRECIOVENTA", "PRECIO_VENTA", "VENTA", "PRICE", "PRECIO" },
+                new[]{ "VARIANTECOLOR", "VARIANTE_COLOR", "COLOR" },
+                new[]{ "VARIANTETALLE", "VARIANTE_TALLE", "TALLE" },
+                new[]{ "VARIANTEUNIDADMEDIDA", "VARIANTE_UNIDAD_MEDIDA", "UNIDAD_MEDIDA", "UNIDAD" },
+                new[]{ "COBRAIVAALCLIENTE", "COBRA_IVA_AL_CLIENTE", "IVA_AL_CLIENTE" },
+                new[]{ "IMAGENPATH", "IMAGEN_PATH", "IMAGEN", "RUTA_IMAGEN" }
             };
 
-            var norm = headers.Select(h => h.ToUpperInvariant().Replace(" ", "_").Replace("%", "%")).ToList();
+            var norm = headers.Select(NormalizarHeader).ToList();
             var resultado = new int[alias.Length];
             for (int i = 0; i < alias.Length; i++)
             {
                 resultado[i] = -1;
                 foreach (string a in alias[i])
                 {
-                    int idx = norm.FindIndex(h => h == a || h.Replace("_", "") == a.Replace("_", ""));
+                    string na = NormalizarHeader(a);
+                    int idx = norm.FindIndex(h => h == na || h.Replace("_", "") == na.Replace("_", ""));
                     if (idx >= 0) { resultado[i] = idx; break; }
                 }
             }
             return resultado;
+        }
+
+        private static string NormalizarHeader(string header)
+        {
+            return (header ?? "")
+                .Trim()
+                .ToUpperInvariant()
+                .Replace("Á", "A")
+                .Replace("É", "E")
+                .Replace("Í", "I")
+                .Replace("Ó", "O")
+                .Replace("Ú", "U")
+                .Replace(" ", "_")
+                .Replace("-", "_");
         }
 
         private static DatabaseService.ProductoActualizacionMasivaItem ConstruirItemActualizacion(IList<string> datos, int[] mapa, int numeroFila)
@@ -377,46 +421,96 @@ namespace SchettiniGestion.WPF
             {
                 NumeroFila = numeroFila,
                 ProductoId = productoId,
-                Codigo = codigo
+                Codigo = HasCol(mapa, 1) ? codigo : null,
+                CodigoBarra = GetColOrNull(datos, mapa, 2),
+                CodigoExterno = GetColOrNull(datos, mapa, 3),
+                Descripcion = GetColOrNull(datos, mapa, 4),
+                Categoria = GetColOrNull(datos, mapa, 5),
+                SubRubro = GetColOrNull(datos, mapa, 6),
+                Marca = GetColOrNull(datos, mapa, 7),
+                Proveedor = GetColOrNull(datos, mapa, 8),
+                TipoMoneda = GetColOrNull(datos, mapa, 9),
+                VarianteColor = GetColOrNull(datos, mapa, 24),
+                VarianteTalle = GetColOrNull(datos, mapa, 25),
+                VarianteUnidadMedida = GetColOrNull(datos, mapa, 26),
+                ImagenPath = GetColOrNull(datos, mapa, 28)
             };
 
-            string costoTxt = GetCol(datos, mapa, 3);
+            string costoTxt = GetCol(datos, mapa, 10);
             if (!string.IsNullOrWhiteSpace(costoTxt))
                 item.CostoCompra = ParseDecimal(costoTxt);
 
-            string ivaTxt = GetCol(datos, mapa, 4);
+            string ivaTxt = GetCol(datos, mapa, 11);
             if (!string.IsNullOrWhiteSpace(ivaTxt))
                 item.IvaPct = ParseDecimal(ivaTxt.Replace("%", ""));
 
-            string impTxt = GetCol(datos, mapa, 5);
+            string impTxt = GetCol(datos, mapa, 12);
             if (!string.IsNullOrWhiteSpace(impTxt))
                 item.ImpuestoInterno = ParseDecimal(impTxt);
 
-            string costoIncluyeIvaTxt = GetCol(datos, mapa, 6);
+            string costoIncluyeIvaTxt = GetCol(datos, mapa, 13);
             if (!string.IsNullOrWhiteSpace(costoIncluyeIvaTxt))
-            {
-                if (!DatabaseService.TryParseSiNo(costoIncluyeIvaTxt, out bool incluyeIva))
-                    throw new Exception($"Fila {numeroFila}: CostoIncluyeIva inválido '{costoIncluyeIvaTxt}' (use SI o NO).");
-                item.CostoIncluyeIva = incluyeIva;
-            }
+                item.CostoIncluyeIva = ParseSiNoCampo(costoIncluyeIvaTxt, numeroFila, "CostoIncluyeIva");
 
-            string stockeableTxt = GetCol(datos, mapa, 7);
+            string stockTxt = GetCol(datos, mapa, 14);
+            if (!string.IsNullOrWhiteSpace(stockTxt))
+                item.Stock = ParseDecimal(stockTxt);
+
+            string stockMinTxt = GetCol(datos, mapa, 15);
+            if (!string.IsNullOrWhiteSpace(stockMinTxt))
+                item.StockMinimo = ParseDecimal(stockMinTxt);
+
+            string stockIdealTxt = GetCol(datos, mapa, 16);
+            if (!string.IsNullOrWhiteSpace(stockIdealTxt))
+                item.StockIdeal = ParseDecimal(stockIdealTxt);
+
+            string permiteModTxt = GetCol(datos, mapa, 17);
+            if (!string.IsNullOrWhiteSpace(permiteModTxt))
+                item.PermitirModificarPrecioVenta = ParseSiNoCampo(permiteModTxt, numeroFila, "PermitirModificarPrecioVenta");
+
+            string stockeableTxt = GetCol(datos, mapa, 18);
             if (!string.IsNullOrWhiteSpace(stockeableTxt))
-            {
-                if (!DatabaseService.TryParseSiNo(stockeableTxt, out bool esStockeable))
-                    throw new Exception($"Fila {numeroFila}: EsStockeable inválido '{stockeableTxt}' (use SI o NO).");
-                item.EsStockeable = esStockeable;
-            }
+                item.EsStockeable = ParseSiNoCampo(stockeableTxt, numeroFila, "EsStockeable");
 
-            string negativoTxt = GetCol(datos, mapa, 8);
+            string negativoTxt = GetCol(datos, mapa, 19);
             if (!string.IsNullOrWhiteSpace(negativoTxt))
-            {
-                if (!DatabaseService.TryParseSiNo(negativoTxt, out bool vendeNeg))
-                    throw new Exception($"Fila {numeroFila}: VendeEnNegativo inválido '{negativoTxt}' (use SI o NO).");
-                item.VendeEnNegativo = vendeNeg;
-            }
+                item.VendeEnNegativo = ParseSiNoCampo(negativoTxt, numeroFila, "PermitirStockNegativo");
+
+            string usaVarTxt = GetCol(datos, mapa, 20);
+            if (!string.IsNullOrWhiteSpace(usaVarTxt))
+                item.UsaVariantes = ParseSiNoCampo(usaVarTxt, numeroFila, "UsaVariantes");
+
+            string comboTxt = GetCol(datos, mapa, 21);
+            if (!string.IsNullOrWhiteSpace(comboTxt))
+                item.EsCombo = ParseSiNoCampo(comboTxt, numeroFila, "EsCombo");
+
+            string activoTxt = GetCol(datos, mapa, 22);
+            if (!string.IsNullOrWhiteSpace(activoTxt))
+                item.Activo = ParseSiNoCampo(activoTxt, numeroFila, "Activo");
+
+            string precioVentaTxt = GetCol(datos, mapa, 23);
+            if (!string.IsNullOrWhiteSpace(precioVentaTxt))
+                item.PrecioVenta = ParseDecimal(precioVentaTxt);
+
+            string cobraIvaTxt = GetCol(datos, mapa, 27);
+            if (!string.IsNullOrWhiteSpace(cobraIvaTxt))
+                item.CobraIvaAlCliente = ParseSiNoCampo(cobraIvaTxt, numeroFila, "CobraIvaAlCliente");
 
             return item;
+        }
+
+        private static bool HasCol(int[] mapa, int campo) => mapa != null && campo >= 0 && campo < mapa.Length && mapa[campo] >= 0;
+
+        private static string GetColOrNull(IList<string> datos, int[] mapa, int campo)
+        {
+            return HasCol(mapa, campo) ? GetCol(datos, mapa, campo) : null;
+        }
+
+        private static bool ParseSiNoCampo(string valor, int numeroFila, string campo)
+        {
+            if (!DatabaseService.TryParseSiNo(valor, out bool result))
+                throw new Exception($"Fila {numeroFila}: {campo} inválido '{valor}' (use SI o NO).");
+            return result;
         }
 
         private static string GetCol(IList<string> datos, int[] mapa, int campo)
@@ -460,8 +554,8 @@ namespace SchettiniGestion.WPF
             {
                 var sb = new StringBuilder();
                 sb.AppendLine(string.Join(";", COLS_HEADER));
-                sb.AppendLine("COCA15;779123456789;Coca Cola 1.5 Litros;Bebidas;Gaseosas;Coca-Cola;Coca-Cola;1000;1500;50");
-                sb.AppendLine("PAN001;;Pan Frances Kg;Almacen;Panaderia;Varios;;800;1200;10");
+                sb.AppendLine("COCA15;779123456789;;Coca Cola 1.5 Litros;Bebidas;Gaseosas;Coca-Cola;Coca-Cola;ARS;1000;21;0;NO;50;5;20;NO;SI;NO;NO;NO;SI;1500;;;;SI;");
+                sb.AppendLine("PAN001;;;Pan Frances Kg;Almacen;Panaderia;Varios;;ARS;800;21;0;NO;10;2;8;NO;SI;NO;NO;NO;SI;1200;;;;SI;");
                 File.WriteAllText(sfd.FileName, sb.ToString(), new UTF8Encoding(true));
                 MessageBox.Show("Plantilla CSV guardada.\n\nAbrila con Excel, completá tus productos y guardá como CSV UTF-8.",
                     "Plantilla guardada", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -498,29 +592,17 @@ namespace SchettiniGestion.WPF
                     }
 
                     // Filas de ejemplo
-                    ws.Cells[2, 1].Value = "COCA15";
-                    ws.Cells[2, 2].Value = "779123456789";
-                    ws.Cells[2, 3].Value = "Coca Cola 1.5 Litros";
-                    ws.Cells[2, 4].Value = "Bebidas";
-                    ws.Cells[2, 5].Value = "Gaseosas";
-                    ws.Cells[2, 6].Value = "Coca-Cola";
-                    ws.Cells[2, 7].Value = "Coca-Cola";
-                    ws.Cells[2, 8].Value = 1000;
-                    ws.Cells[2, 9].Value = 1500;
-                    ws.Cells[2, 10].Value = 50;
-
-                    ws.Cells[3, 1].Value = "PAN001";
-                    ws.Cells[3, 3].Value = "Pan Frances Kg";
-                    ws.Cells[3, 4].Value = "Almacen";
-                    ws.Cells[3, 5].Value = "Panaderia";
-                    ws.Cells[3, 8].Value = 800;
-                    ws.Cells[3, 9].Value = 1200;
-                    ws.Cells[3, 10].Value = 10;
+                    object[] ejemplo1 = { "COCA15", "779123456789", "", "Coca Cola 1.5 Litros", "Bebidas", "Gaseosas", "Coca-Cola", "Coca-Cola", "ARS", 1000, 21, 0, "NO", 50, 5, 20, "NO", "SI", "NO", "NO", "NO", "SI", 1500, "", "", "", "SI", "" };
+                    object[] ejemplo2 = { "PAN001", "", "", "Pan Frances Kg", "Almacen", "Panaderia", "Varios", "", "ARS", 800, 21, 0, "NO", 10, 2, 8, "NO", "SI", "NO", "NO", "NO", "SI", 1200, "", "", "", "SI", "" };
+                    for (int c = 0; c < COLS_HEADER.Length; c++)
+                    {
+                        ws.Cells[2, c + 1].Value = ejemplo1[c];
+                        ws.Cells[3, c + 1].Value = ejemplo2[c];
+                    }
 
                     // Anchos fijos (AutoFitColumns requiere EPPlus.System.Drawing compatible)
-                    int[] colWidths = { 14, 18, 40, 16, 16, 14, 20, 12, 14, 10 };
-                    for (int c = 0; c < colWidths.Length; c++)
-                        ws.Column(c + 1).Width = colWidths[c];
+                    for (int c = 0; c < COLS_HEADER.Length; c++)
+                        ws.Column(c + 1).Width = c == 3 ? 40 : 18;
 
                     pkg.SaveAs(new FileInfo(sfd.FileName));
                 }
@@ -571,8 +653,9 @@ namespace SchettiniGestion.WPF
             char sep = DetectarSeparador(lineas[0]);
             int[] mapa = MapearColumnas(SplitCsv(lineas[0], sep));
 
-            int importados = 0, actualizados = 0, errores = 0;
+            int errores = 0;
             var mensajesError = new List<string>();
+            var filas = new List<DatabaseService.ProductoActualizacionMasivaItem>();
 
             for (int i = 1; i < lineas.Length; i++)
             {
@@ -582,8 +665,8 @@ namespace SchettiniGestion.WPF
                 try
                 {
                     var datos = SplitCsv(linea, sep);
-                    bool nuevo = ProcesarFila(datos, mapa);
-                    if (nuevo) importados++; else actualizados++;
+                    var item = ConstruirItemActualizacion(datos, mapa, i + 1);
+                    if (item != null) filas.Add(item);
                 }
                 catch (Exception ex)
                 {
@@ -593,8 +676,13 @@ namespace SchettiniGestion.WPF
                 }
             }
 
-            MostrarResultado(importados, actualizados, errores, mensajesError);
-            CargarProductos();
+            if (errores > 0)
+            {
+                MostrarResultado(0, 0, errores, mensajesError);
+                return;
+            }
+
+            ImportarFilasAltaMasiva(filas);
         }
 
         // ── EXCEL ─────────────────────────────────────────────────────────────
@@ -628,8 +716,9 @@ namespace SchettiniGestion.WPF
 
                 int[] mapa = MapearColumnas(headers);
 
-                int importados = 0, actualizados = 0, errores = 0;
+                int errores = 0;
                 var mensajesError = new List<string>();
+                var filas = new List<DatabaseService.ProductoActualizacionMasivaItem>();
 
                 for (int r = 2; r <= totalRows; r++)
                 {
@@ -646,8 +735,8 @@ namespace SchettiniGestion.WPF
 
                     try
                     {
-                        bool nuevo = ProcesarFila(datos, mapa);
-                        if (nuevo) importados++; else actualizados++;
+                        var item = ConstruirItemActualizacion(datos, mapa, r);
+                        if (item != null) filas.Add(item);
                     }
                     catch (Exception ex)
                     {
@@ -657,9 +746,28 @@ namespace SchettiniGestion.WPF
                     }
                 }
 
-                MostrarResultado(importados, actualizados, errores, mensajesError);
-                CargarProductos();
+                if (errores > 0)
+                {
+                    MostrarResultado(0, 0, errores, mensajesError);
+                    return;
+                }
+
+                ImportarFilasAltaMasiva(filas);
             }
+        }
+
+        private void ImportarFilasAltaMasiva(List<DatabaseService.ProductoActualizacionMasivaItem> filas)
+        {
+            if (filas == null || filas.Count == 0)
+            {
+                MessageBox.Show("El archivo no contiene filas de datos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var resultado = DatabaseService.ImportarActualizacionMasivaProductos(filas, true);
+            MostrarResultadoActualizacion(resultado);
+            if (resultado.Exitoso)
+                CargarProductos();
         }
 
         // ── LÓGICA COMÚN ─────────────────────────────────────────────────────
@@ -667,78 +775,12 @@ namespace SchettiniGestion.WPF
         /// <summary>Devuelve índices de columnas según el encabezado. -1 si no existe.</summary>
         private static int[] MapearColumnas(IList<string> headers)
         {
-            // [0]=CODIGO [1]=CB [2]=DESC [3]=CAT [4]=SUB [5]=MARCA [6]=PROV [7]=COSTO [8]=VENTA [9]=STOCK
-            string[] buscados = { "CODIGO", "CODIGO_BARRAS", "DESCRIPCION", "CATEGORIA",
-                                   "SUB_RUBRO", "MARCA", "PROVEEDOR", "COSTO", "PRECIO_VENTA", "STOCK" };
-            // Alias alternativos para mayor tolerancia
-            string[][] alias = {
-                new[]{ "CODIGO", "COD", "CODE" },
-                new[]{ "CODIGO_BARRAS", "CODIGOBARRA", "BARCODE", "EAN", "CB" },
-                new[]{ "DESCRIPCION", "DESCRIPCIÓN", "NOMBRE", "DESCRIPTION", "PRODUCT" },
-                new[]{ "CATEGORIA", "CATEGORÍA", "RUBRO", "CATEGORY" },
-                new[]{ "SUB_RUBRO", "SUBRUBRO", "SUBCATEGORIA", "SUBCATEGORÍA" },
-                new[]{ "MARCA", "BRAND" },
-                new[]{ "PROVEEDOR", "PROVIDER", "SUPPLIER" },
-                new[]{ "COSTO", "PRECIO_COSTO", "COST", "PRECIO COSTO" },
-                new[]{ "PRECIO_VENTA", "PRECIOVENTA", "VENTA", "PRICE", "PRECIO" },
-                new[]{ "STOCK", "CANTIDAD", "QTY", "QUANTITY" }
-            };
-
-            var norm = headers.Select(h => h.ToUpper().Replace(" ", "_")).ToList();
-            var resultado = new int[buscados.Length];
-            for (int i = 0; i < buscados.Length; i++)
-            {
-                resultado[i] = -1;
-                foreach (string a in alias[i])
-                {
-                    int idx = norm.IndexOf(a);
-                    if (idx >= 0) { resultado[i] = idx; break; }
-                }
-            }
-            return resultado;
-        }
-
-        private static string Get(IList<string> datos, int[] mapa, int campo)
-        {
-            int idx = mapa[campo];
-            if (idx < 0 || idx >= datos.Count) return "";
-            return datos[idx].Trim();
-        }
-
-        /// <summary>Procesa una fila. Devuelve true si es nuevo, false si se actualizó.</summary>
-        private static bool ProcesarFila(IList<string> datos, int[] mapa)
-        {
-            string codigo = Get(datos, mapa, 0);
-            string desc   = Get(datos, mapa, 2);
-            if (string.IsNullOrWhiteSpace(codigo))
-                throw new Exception("El campo CODIGO está vacío.");
-
-            string codigoBarra = Get(datos, mapa, 1);
-            if (string.IsNullOrEmpty(codigoBarra)) codigoBarra = codigo;
-
-            string categoria = Get(datos, mapa, 3);
-            string subRubro  = Get(datos, mapa, 4);
-            string marca     = Get(datos, mapa, 5);
-            string proveedor = Get(datos, mapa, 6);
-
-            decimal costo = ParseDecimal(Get(datos, mapa, 7));
-            decimal venta = ParseDecimal(Get(datos, mapa, 8));
-            int stock     = (int)ParseDecimal(Get(datos, mapa, 9));
-
-            decimal ganancia = costo > 0 ? Math.Round((venta - costo) / costo * 100, 2) : 0;
-
-            int idProd = 0;
-            var existente = DatabaseService.BuscarProductoPorCodigoExacto(codigo);
-            if (existente != null) idProd = Convert.ToInt32(existente["ProductoID"]);
-
-            if (string.IsNullOrWhiteSpace(desc))
-                throw new Exception("El campo DESCRIPCION está vacío.");
-
-            DatabaseService.GuardarProducto(idProd, codigo, codigoBarra, desc,
-                categoria, subRubro, marca, proveedor,
-                "21.0", costo, ganancia, 0, venta, stock, null);
-
-            return idProd == 0;
+            var mapaActualizacion = MapearColumnasActualizacion(headers);
+            var mapaAlta = new int[mapaActualizacion.Length];
+            mapaAlta[0] = -1; // ProductoID no existe en plantilla de alta.
+            for (int i = 1; i < mapaAlta.Length; i++)
+                mapaAlta[i] = mapaActualizacion[i];
+            return mapaAlta;
         }
 
         private void MostrarResultado(int importados, int actualizados, int errores, List<string> mensajesError)

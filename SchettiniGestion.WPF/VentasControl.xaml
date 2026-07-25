@@ -18,7 +18,11 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Historial de Ventas" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,15"/>
+        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock Text="Historial de Ventas" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+            <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,4,0,0"
+                       Text="Desde la acción NC podés generar una nota de crédito total o parcial vinculada a la factura original."/>
+        </StackPanel>
 
         <UniformGrid Grid.Row="1" Columns="5" Margin="0,0,0,15">
             <Button x:Name="btnHoy" Content="📅 HOY" Click="btnFiltroRapido_Click" Tag="Hoy" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Height="45"/>
@@ -73,6 +77,15 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="👁️ Ver" Style="{StaticResource SecondaryButtonStyle}" Padding="0" Height="28" Width="60" Click="btnVerDetalle_Click"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Width="130">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="NC" Style="{StaticResource SecondaryButtonStyle}" Padding="0" Height="28" Width="92"
+                                        ToolTip="Generar Nota de Crédito total o parcial"
+                                        Click="btnGenerarNotaCredito_Click"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

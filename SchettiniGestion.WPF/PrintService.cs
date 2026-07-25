@@ -1182,10 +1182,23 @@ namespace SchettiniGestion.WPF
 
             try
             {
+                if (string.Equals(opciones.ModoImpresion, "A4", StringComparison.OrdinalIgnoreCase))
+                {
+                    ImprimirEtiquetasA4(cola, opciones);
+                    return;
+                }
+                if (string.Equals(opciones.ModoImpresion, "Cartel", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(opciones.ModoImpresion, "Gondola", StringComparison.OrdinalIgnoreCase))
+                {
+                    ImprimirCartelesYGondolas(cola, opciones);
+                    return;
+                }
+
                 string impresora = DatabaseService.GetImpresoraEtiquetas();
                 var doc = new WinPrinting.PrintDocument();
                 doc.PrintController = new WinPrinting.StandardPrintController();
                 AplicarTamanoEtiqueta(doc, opciones.AnchoMm, opciones.AltoMm);
+                doc.DefaultPageSettings.Landscape = string.Equals(opciones.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
 
                 int idx = 0;
                 doc.PrintPage += (s, e) =>
@@ -1201,6 +1214,81 @@ namespace SchettiniGestion.WPF
             {
                 MessageBox.Show("Error al imprimir etiquetas: " + ex.Message);
             }
+        }
+
+        private static void ImprimirEtiquetasA4(IList<EtiquetaPrintItem> cola, OpcionesEtiqueta op)
+        {
+            string impresora = DatabaseService.GetImpresoraEtiquetas();
+            var doc = new WinPrinting.PrintDocument();
+            doc.PrintController = new WinPrinting.StandardPrintController();
+            doc.DefaultPageSettings.PaperSize = new WinPrinting.PaperSize("A4", 827, 1169);
+            doc.DefaultPageSettings.Landscape = string.Equals(op.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
+            doc.DefaultPageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 0);
+
+            int idx = 0;
+            doc.PrintPage += (s, e) =>
+            {
+                var g = e.Graphics;
+                g.PageUnit = WinDrawing.GraphicsUnit.Millimeter;
+                float pageW = doc.DefaultPageSettings.Landscape ? 297f : 210f;
+                float pageH = doc.DefaultPageSettings.Landscape ? 210f : 297f;
+                float x0 = Math.Max(0, op.MargenIzquierdoMm);
+                float y = Math.Max(0, op.MargenSuperiorMm);
+                float x = x0;
+                float labelW = Math.Max(10, op.AnchoMm);
+                float labelH = Math.Max(10, op.AltoMm);
+                float gapH = Math.Max(0, op.GapHorizontalMm);
+                float gapV = Math.Max(0, op.GapVerticalMm);
+                int col = 0;
+                int maxCols = Math.Max(1, op.Columnas);
+
+                while (idx < cola.Count)
+                {
+                    if (col >= maxCols || x + labelW > pageW - op.MargenDerechoMm + 0.1f)
+                    {
+                        col = 0;
+                        x = x0;
+                        y += labelH + gapV;
+                    }
+                    if (y + labelH > pageH - op.MargenInferiorMm + 0.1f)
+                        break;
+
+                    var state = g.Save();
+                    g.TranslateTransform(x, y);
+                    DibujarEtiquetaGDI(g, op, cola[idx]);
+                    g.Restore(state);
+                    using (var pen = new WinDrawing.Pen(WinDrawing.Color.LightGray, 0.1f))
+                        g.DrawRectangle(pen, x, y, labelW, labelH);
+
+                    idx++;
+                    col++;
+                    x += labelW + gapH;
+                }
+                e.HasMorePages = idx < cola.Count;
+            };
+
+            ImprimirDocumentoTicket(doc, impresora);
+        }
+
+        private static void ImprimirCartelesYGondolas(IList<EtiquetaPrintItem> cola, OpcionesEtiqueta op)
+        {
+            string impresora = DatabaseService.GetImpresoraEtiquetas();
+            var doc = new WinPrinting.PrintDocument();
+            doc.PrintController = new WinPrinting.StandardPrintController();
+            doc.DefaultPageSettings.PaperSize = new WinPrinting.PaperSize("A4", 827, 1169);
+            doc.DefaultPageSettings.Landscape = string.Equals(op.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(op.ModoImpresion, "Gondola", StringComparison.OrdinalIgnoreCase);
+            doc.DefaultPageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 0);
+
+            int idx = 0;
+            doc.PrintPage += (s, e) =>
+            {
+                DibujarCartelGDI(e.Graphics, op, cola[idx]);
+                idx++;
+                e.HasMorePages = idx < cola.Count;
+            };
+
+            ImprimirDocumentoTicket(doc, impresora);
         }
 
         private static void AplicarTamanoEtiqueta(WinPrinting.PrintDocument doc, int anchoMm, int altoMm)
@@ -1243,6 +1331,13 @@ namespace SchettiniGestion.WPF
                     string desc = TruncarTextoEtiqueta(g, item.Descripcion.Trim(), fDesc, contentW);
                     g.DrawString(desc, fDesc, WinDrawing.Brushes.Black, margin, y);
                     y += g.MeasureString(desc, fDesc).Height + 0.3f;
+                }
+
+                if (op.MostrarDescripcionExtra && !string.IsNullOrWhiteSpace(item.DescripcionExtra))
+                {
+                    string descExtra = TruncarTextoEtiqueta(g, item.DescripcionExtra.Trim(), fSec, contentW);
+                    g.DrawString(descExtra, fSec, WinDrawing.Brushes.Black, margin, y);
+                    y += g.MeasureString(descExtra, fSec).Height + 0.2f;
                 }
 
                 if (op.MostrarMarca && !string.IsNullOrWhiteSpace(item.Marca))
@@ -1289,6 +1384,72 @@ namespace SchettiniGestion.WPF
                     g.DrawString(precio, fPrecio, WinDrawing.Brushes.Black, margin + (contentW - sz.Width) / 2f, py);
                 }
             }
+        }
+
+        private static void DibujarCartelGDI(WinDrawing.Graphics g, OpcionesEtiqueta op, EtiquetaPrintItem item)
+        {
+            if (g == null || item == null) return;
+            g.PageUnit = WinDrawing.GraphicsUnit.Millimeter;
+            g.SmoothingMode = WinDrawing.Drawing2D.SmoothingMode.AntiAlias;
+            float pageW = string.Equals(op.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(op.ModoImpresion, "Gondola", StringComparison.OrdinalIgnoreCase) ? 297f : 210f;
+            float pageH = pageW > 210f ? 210f : 297f;
+            float margin = Math.Max(8, op.MargenIzquierdoMm);
+            float contentW = pageW - margin * 2;
+            float y = margin;
+
+            using (var fMarca = new WinDrawing.Font("Arial", 16, WinDrawing.FontStyle.Bold, WinDrawing.GraphicsUnit.Millimeter))
+            using (var fNombre = new WinDrawing.Font("Arial", 9, WinDrawing.FontStyle.Bold, WinDrawing.GraphicsUnit.Millimeter))
+            using (var fDesc = new WinDrawing.Font("Arial", 5, WinDrawing.FontStyle.Regular, WinDrawing.GraphicsUnit.Millimeter))
+            using (var fPrecio = new WinDrawing.Font("Arial", pageW > 210f ? 30 : 26, WinDrawing.FontStyle.Bold, WinDrawing.GraphicsUnit.Millimeter))
+            using (var fCodigo = new WinDrawing.Font("Arial", 4, WinDrawing.FontStyle.Regular, WinDrawing.GraphicsUnit.Millimeter))
+            {
+                if (op.MostrarMarca && !string.IsNullOrWhiteSpace(item.Marca))
+                    DibujarTextoCartelCentrado(g, item.Marca.ToUpperInvariant(), fMarca, margin, contentW, ref y);
+
+                if (op.MostrarDescripcion && !string.IsNullOrWhiteSpace(item.Descripcion))
+                    DibujarTextoCartelCentrado(g, item.Descripcion, fNombre, margin, contentW, ref y);
+
+                if (op.MostrarDescripcionExtra && !string.IsNullOrWhiteSpace(item.DescripcionExtra))
+                    DibujarTextoCartelCentrado(g, item.DescripcionExtra, fDesc, margin, contentW, ref y);
+
+                if (op.MostrarPrecio)
+                {
+                    string precio = item.PrecioVenta.ToString("C2");
+                    var sz = g.MeasureString(precio, fPrecio);
+                    g.DrawString(precio, fPrecio, WinDrawing.Brushes.Black, margin + (contentW - sz.Width) / 2f, y + 8);
+                    y += sz.Height + 12;
+                }
+
+                if (op.MostrarCodigoBarras)
+                {
+                    string data = !string.IsNullOrWhiteSpace(item.CodigoBarra) ? item.CodigoBarra.Trim() : item.Codigo?.Trim();
+                    if (!string.IsNullOrWhiteSpace(data))
+                    {
+                        float barW = Math.Min(contentW, 120f);
+                        float barH = 22f;
+                        using (var bmp = GenerarBitmapCodigoBarras(data, (int)(barW * 10), (int)(barH * 10)))
+                        {
+                            if (bmp != null)
+                                g.DrawImage(bmp, margin + (contentW - barW) / 2f, Math.Min(y, pageH - margin - barH - 8), barW, barH);
+                        }
+                        y += barH + 2;
+                        DibujarTextoCartelCentrado(g, data, fCodigo, margin, contentW, ref y);
+                    }
+                }
+
+                if (op.MostrarCodigo && !string.IsNullOrWhiteSpace(item.Codigo))
+                    g.DrawString("Cod: " + item.Codigo, fCodigo, WinDrawing.Brushes.Black, margin, pageH - margin - 6);
+            }
+        }
+
+        private static void DibujarTextoCartelCentrado(WinDrawing.Graphics g, string texto, WinDrawing.Font font, float x, float w, ref float y)
+        {
+            if (string.IsNullOrWhiteSpace(texto)) return;
+            var rect = new WinDrawing.RectangleF(x, y, w, g.MeasureString(texto, font, (int)w).Height + 6);
+            using (var sf = new WinDrawing.StringFormat { Alignment = WinDrawing.StringAlignment.Center, LineAlignment = WinDrawing.StringAlignment.Center })
+                g.DrawString(texto, font, WinDrawing.Brushes.Black, rect, sf);
+            y += rect.Height;
         }
 
         private static string TruncarTextoEtiqueta(WinDrawing.Graphics g, string texto, WinDrawing.Font f, float maxW)

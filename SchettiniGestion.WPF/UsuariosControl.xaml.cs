@@ -47,9 +47,32 @@ namespace SchettiniGestion.WPF
 
         private void UsuariosControl_Loaded(object sender, RoutedEventArgs e)
         {
+            ConfigurarUiTecnica();
             CargarUsuarios();
             CargarRoles();
             Limpiar();
+        }
+
+        private void ConfigurarUiTecnica()
+        {
+            bool tecnico = SesionUsuario.EsUsuarioTecnico;
+            if (tabTecnico != null)
+                tabTecnico.Visibility = tecnico ? Visibility.Visible : Visibility.Collapsed;
+            if (cmbTechTabla != null)
+            {
+                cmbTechTabla.ItemsSource = new[]
+                {
+                    "Productos",
+                    "Clientes",
+                    "Usuarios",
+                    "Proveedores",
+                    "Facturas",
+                    "NotasCreditoDebitoVentas"
+                };
+                cmbTechTabla.SelectedIndex = 0;
+            }
+            if (tecnico)
+                CargarAuditoriaTecnica();
         }
 
         private void CargarPermisosDesdeConstantes()
@@ -211,6 +234,86 @@ namespace SchettiniGestion.WPF
                     CustomMessageBox.Show("No se pudo eliminar el usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
+        }
+
+        private void btnTechResetPassword_Click(object sender, RoutedEventArgs e)
+        {
+            if (!SesionUsuario.EsUsuarioTecnico) return;
+            if (_usuarioIdSeleccionado <= 0)
+            {
+                CustomMessageBox.Show("Seleccione un usuario de la grilla.", "Soporte técnico", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            string nueva = txtTechNuevaClave.Password?.Trim();
+            if (string.IsNullOrWhiteSpace(nueva))
+            {
+                CustomMessageBox.Show("Ingrese la nueva contraseña.", "Soporte técnico", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (DatabaseService.ResetearPasswordUsuarioTecnico(_usuarioIdSeleccionado, nueva))
+            {
+                txtTechNuevaClave.Clear();
+                CustomMessageBox.Show("Contraseña restablecida y auditada.", "Soporte técnico", MessageBoxButton.OK, MessageBoxImage.Information);
+                CargarAuditoriaTecnica();
+            }
+            else
+            {
+                CustomMessageBox.Show("No se pudo restablecer la contraseña.", "Soporte técnico", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void btnTechHardDelete_Click(object sender, RoutedEventArgs e)
+        {
+            if (!SesionUsuario.EsUsuarioTecnico) return;
+            string tabla = cmbTechTabla.SelectedItem?.ToString();
+            if (!int.TryParse(txtTechId.Text?.Trim(), out int id) || id <= 0)
+            {
+                CustomMessageBox.Show("Ingrese un ID válido.", "Soporte técnico", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (CustomMessageBox.Show($"¿Eliminar definitivamente {tabla} ID {id}?", "Confirmar borrado técnico",
+                    MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+
+            if (DatabaseService.HardDeleteRegistroTecnico(tabla, id))
+            {
+                CustomMessageBox.Show("Registro eliminado y auditado.", "Soporte técnico", MessageBoxButton.OK, MessageBoxImage.Information);
+                txtTechId.Text = "";
+                CargarUsuarios();
+                CargarAuditoriaTecnica();
+            }
+            else
+            {
+                CustomMessageBox.Show("No se pudo eliminar el registro. Revise que exista y no tenga dependencias.", "Soporte técnico", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void btnTechActivarFuncion_Click(object sender, RoutedEventArgs e)
+        {
+            if (!SesionUsuario.EsUsuarioTecnico) return;
+            string funcion = txtTechFuncion.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(funcion))
+            {
+                CustomMessageBox.Show("Indique la función o hook a activar/registrar.", "Soporte técnico", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (DatabaseService.RegistrarActivacionFuncionTecnica(funcion))
+            {
+                txtTechFuncion.Text = "";
+                CustomMessageBox.Show("Activación técnica registrada.", "Soporte técnico", MessageBoxButton.OK, MessageBoxImage.Information);
+                CargarAuditoriaTecnica();
+            }
+        }
+
+        private void btnTechRefrescarAuditoria_Click(object sender, RoutedEventArgs e)
+        {
+            CargarAuditoriaTecnica();
+        }
+
+        private void CargarAuditoriaTecnica()
+        {
+            if (!SesionUsuario.EsUsuarioTecnico || dgvAccionesTecnicas == null) return;
+            dgvAccionesTecnicas.ItemsSource = DatabaseService.GetAccionesTecnicas().DefaultView;
         }
 
         private void btnNuevoRol_Click(object sender, RoutedEventArgs e)

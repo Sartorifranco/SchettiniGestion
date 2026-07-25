@@ -1309,11 +1309,15 @@ namespace SchettiniGestion.WPF
             var op = DatabaseService.GetOpcionesEtiqueta();
             cmbMedidaEtiqueta.ItemsSource = new[]
             {
-                "40 × 30 mm",
+                "30 × 20 mm",
                 "50 × 25 mm",
-                "60 × 40 mm",
-                "80 × 50 mm",
-                "100 × 50 mm",
+                "50 × 30 mm",
+                "55 × 44 mm",
+                "64 × 32 mm",
+                "80 × 40 mm",
+                "100 × 80 mm",
+                "100 × 100 mm",
+                "100 × 150 mm",
                 "Personalizado…"
             };
 

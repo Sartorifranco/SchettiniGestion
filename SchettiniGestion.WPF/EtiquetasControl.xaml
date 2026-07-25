@@ -111,9 +111,40 @@
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
-                    <TextBlock Text="Qué mostrar en la etiqueta:" Style="{StaticResource ModuleLabelStyle}" Margin="0,0,0,8"/>
+                    <TextBlock Text="Formato de salida:" Style="{StaticResource ModuleLabelStyle}" Margin="0,0,0,8"/>
+                    <WrapPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <ComboBox x:Name="cmbPresetEtiqueta" Width="170" Height="44" Margin="0,0,8,8"
+                                  SelectionChanged="cmbPresetEtiqueta_SelectionChanged"/>
+                        <TextBox x:Name="txtAnchoMm" Width="58" Height="44" Margin="0,0,4,8" Text="50"
+                                 VerticalContentAlignment="Center" ToolTip="Ancho en mm"/>
+                        <TextBlock Text="x" VerticalAlignment="Center" Margin="0,0,4,8" Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBox x:Name="txtAltoMm" Width="58" Height="44" Margin="0,0,12,8" Text="25"
+                                 VerticalContentAlignment="Center" ToolTip="Alto en mm"/>
+                        <ComboBox x:Name="cmbModoImpresion" Width="150" Height="44" Margin="0,0,8,8"/>
+                        <ComboBox x:Name="cmbOrientacion" Width="130" Height="44" Margin="0,0,8,8"/>
+                        <TextBox x:Name="txtColumnas" Width="70" Height="44" Margin="0,0,8,8" Text="3"
+                                 VerticalContentAlignment="Center" ToolTip="Columnas en hoja A4"/>
+                        <TextBox x:Name="txtGapH" Width="70" Height="44" Margin="0,0,8,8" Text="2"
+                                 VerticalContentAlignment="Center" ToolTip="Separación horizontal mm"/>
+                        <TextBox x:Name="txtGapV" Width="70" Height="44" Margin="0,0,8,8" Text="2"
+                                 VerticalContentAlignment="Center" ToolTip="Separación vertical mm"/>
+                        <TextBox x:Name="txtMargenIzq" Width="70" Height="44" Margin="0,0,8,8" Text="5"
+                                 VerticalContentAlignment="Center" ToolTip="Margen izquierdo mm"/>
+                        <TextBox x:Name="txtMargenSup" Width="70" Height="44" Margin="0,0,8,8" Text="5"
+                                 VerticalContentAlignment="Center" ToolTip="Margen superior mm"/>
+                        <TextBox x:Name="txtMargenDer" Width="70" Height="44" Margin="0,0,8,8" Text="5"
+                                 VerticalContentAlignment="Center" ToolTip="Margen derecho mm"/>
+                        <TextBox x:Name="txtMargenInf" Width="70" Height="44" Margin="0,0,8,8" Text="5"
+                                 VerticalContentAlignment="Center" ToolTip="Margen inferior mm"/>
+                    </WrapPanel>
+                    <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,10"
+                               Text="Rollo imprime una etiqueta por página. A4 acomoda etiquetas en hoja. Cartel/Góndola arma piezas grandes con precio destacado."/>
+
+                    <TextBlock Text="Qué mostrar en la etiqueta/cartel:" Style="{StaticResource ModuleLabelStyle}" Margin="0,0,0,8"/>
                     <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <ToggleButton x:Name="chkDesc" Content="Descripción" IsChecked="True"
+                        <ToggleButton x:Name="chkDesc" Content="Nombre" IsChecked="True"
+                                      Style="{StaticResource TouchOptionToggleStyle}"/>
+                        <ToggleButton x:Name="chkDescExtra" Content="Descripción"
                                       Style="{StaticResource TouchOptionToggleStyle}"/>
                         <ToggleButton x:Name="chkPrecio" Content="Precio" IsChecked="True"
                                       Style="{StaticResource TouchOptionToggleStyle}"/>

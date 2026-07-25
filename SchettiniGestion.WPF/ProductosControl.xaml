@@ -23,6 +23,15 @@
                 <StackPanel>
                     <TextBlock Text="Buscar por: Código, Código barras, Descripción, Rubro, SubRubro, Marca, Proveedor" Style="{StaticResource LabelStyle}" Margin="0,0,0,5"/>
                     <TextBox x:Name="txtFiltro" Style="{StaticResource ModernTextBox}" TextChanged="txtFiltro_TextChanged"/>
+                    <CheckBox x:Name="chkMostrarInactivos"
+                              Content="Mostrar productos deshabilitados"
+                              Margin="0,8,0,0"
+                              Foreground="{DynamicResource TextSecondary}"
+                              Checked="chkMostrarInactivos_Checked"
+                              Unchecked="chkMostrarInactivos_Checked"/>
+                    <TextBlock Style="{StaticResource FieldHintTextStyle}"
+                               Text="Los deshabilitados no aparecen en el catálogo del POS, pero se conservan para historial y pueden reactivarse."
+                               Margin="0,2,0,0"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="15,0,0,0">
@@ -55,6 +64,7 @@
                     <DataGridTextColumn Header="SUB-RUBRO" Binding="{Binding SubRubro}" Width="Auto" MinWidth="80"/>
                     <DataGridTextColumn Header="MARCA" Binding="{Binding Marca}" Width="Auto" MinWidth="70"/>
                     <DataGridTextColumn Header="PROVEEDOR" Binding="{Binding Proveedor}" Width="Auto" MinWidth="100"/>
+                    <DataGridCheckBoxColumn Header="ACTIVO" Binding="{Binding Activo}" Width="Auto" MinWidth="70"/>
                     <DataGridTextColumn Header="COSTO COMPRA FINAL" Binding="{Binding CostoCompraFinal, StringFormat=C2}" Width="Auto" MinWidth="130">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource StockNumericCellStyle}">

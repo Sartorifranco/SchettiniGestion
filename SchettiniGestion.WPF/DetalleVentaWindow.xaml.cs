@@ -86,6 +86,7 @@ namespace SchettiniGestion.WPF
                 {
                     Title = "Detalle de Factura";
                     lblTitulo.Text = "Detalle de Factura / Venta";
+                    btnNotaCredito.Visibility = Visibility.Visible;
                     _encabezado = DatabaseService.GetFacturaPorID(_id);
                     _detalle = DatabaseService.GetFacturaDetalle(_id);
 
@@ -174,6 +175,23 @@ namespace SchettiniGestion.WPF
             catch (Exception ex)
             {
                 MessageBox.Show("Error al imprimir: " + ex.Message);
+            }
+        }
+
+        private void btnNotaCredito_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var win = new NotaCreditoVentaWindow(_id)
+                {
+                    Owner = this
+                };
+                if (win.ShowDialog() == true)
+                    ResultID = win.ResultID;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("No se pudo generar la nota de crédito: " + ex.Message);
             }
         }
 

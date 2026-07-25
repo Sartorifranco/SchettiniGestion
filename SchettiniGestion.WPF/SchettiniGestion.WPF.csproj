@@ -288,6 +288,7 @@
     <Compile Include="DetalleVentaWindow.xaml.cs">
       <DependentUpon>DetalleVentaWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="NotaCreditoVentaWindow.cs" />
     <Compile Include="CobroModalWindow.xaml.cs">
       <DependentUpon>CobroModalWindow.xaml</DependentUpon>
     </Compile>

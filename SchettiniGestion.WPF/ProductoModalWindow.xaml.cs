@@ -225,6 +225,7 @@ namespace SchettiniGestion.WPF
                     chk.Tag = new ListaPrecioItem
                     {
                         ListaID = listaId,
+                        NombreLista = nombre,
                         Porcentaje = pct,
                         TipoLista = tipo,
                         ListaRow = r,
@@ -243,6 +244,7 @@ namespace SchettiniGestion.WPF
         private class ListaPrecioItem
         {
             public int ListaID { get; set; }
+            public string NombreLista { get; set; }
             public decimal Porcentaje { get; set; }
             public string TipoLista { get; set; }
             public DataRow ListaRow { get; set; }
@@ -279,8 +281,23 @@ namespace SchettiniGestion.WPF
             {
                 if (item.PrecioFijoInput != null)
                     item.PrecioFijoInput.Visibility = chk.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+                ActualizarEtiquetaPrecioLista(chk, item);
             }
             ActualizarGrillaPreciosPreview();
+        }
+
+        private void ActualizarEtiquetaPrecioLista(CheckBox chk, ListaPrecioItem item)
+        {
+            if (chk == null || item == null || item.ListaRow == null) return;
+            decimal? precioFijo = null;
+            if (item.TipoLista == DatabaseService.TiposListaPrecio.PrecioFijo && item.PrecioFijoInput != null)
+                precioFijo = item.PrecioFijoInput.Value;
+
+            decimal precio = 0m;
+            var prod = ConstruirProductoPreview();
+            if (prod != null)
+                precio = DatabaseService.CalcularPrecioLista(prod, item.ListaRow, precioFijo);
+            chk.Content = $"{item.NombreLista}: {precio:C2}";
         }
 
         private void ActualizarGrillaPreciosPreview()
@@ -296,20 +313,24 @@ namespace SchettiniGestion.WPF
                 foreach (var item in pnlListasPrecio.Items)
                 {
                     if (item is StackPanel sp && sp.Children.Count > 0 && sp.Children[0] is CheckBox chk
-                        && chk.IsChecked == true && chk.Tag is ListaPrecioItem lp && lp.ListaRow != null)
+                        && chk.Tag is ListaPrecioItem lp && lp.ListaRow != null)
                     {
                         decimal? precioFijo = null;
                         if (lp.TipoLista == DatabaseService.TiposListaPrecio.PrecioFijo && lp.PrecioFijoInput != null)
                             precioFijo = lp.PrecioFijoInput.Value;
 
-                        items.Add(new PrecioListaPreviewItem
+                        ActualizarEtiquetaPrecioLista(chk, lp);
+                        if (chk.IsChecked == true)
                         {
-                            NombreLista = chk.Content?.ToString() ?? "",
-                            CostoBase = costoBase,
-                            TipoLista = DatabaseService.EtiquetaTipoLista(lp.TipoLista),
-                            Regla = ObtenerReglaLista(lp),
-                            PrecioVentaFinal = DatabaseService.CalcularPrecioLista(prod, lp.ListaRow, precioFijo)
-                        });
+                            items.Add(new PrecioListaPreviewItem
+                            {
+                                NombreLista = lp.NombreLista ?? "",
+                                CostoBase = costoBase,
+                                TipoLista = DatabaseService.EtiquetaTipoLista(lp.TipoLista),
+                                Regla = ObtenerReglaLista(lp),
+                                PrecioVentaFinal = DatabaseService.CalcularPrecioLista(prod, lp.ListaRow, precioFijo)
+                            });
+                        }
                     }
                 }
             }
@@ -360,7 +381,7 @@ namespace SchettiniGestion.WPF
 
         private void CargarProducto(int id)
         {
-            var dt = DatabaseService.GetProductos("");
+            var dt = DatabaseService.GetProductos("", true);
             if (dt == null) return;
             var rows = dt.Select($"ProductoID={id}");
             if (rows.Length == 0) return;
@@ -371,6 +392,7 @@ namespace SchettiniGestion.WPF
             txtDescripcion.Text = r["Descripcion"]?.ToString() ?? "";
             SeleccionarLookupPorNombre(cmbCategoria, V(r, "Categoria"));
             SeleccionarLookupPorNombre(cmbSubRubro, V(r, "SubRubro"));
+            txtMarca.Text = V(r, "Marca");
             SeleccionarLookupPorNombre(cmbProveedor, V(r, "Proveedor"));
             txtCodigoExterno.Text = V(r, "CodigoExterno");
 
@@ -407,6 +429,7 @@ namespace SchettiniGestion.WPF
             chkAceptaStockNegativo.IsChecked = r.Table.Columns.Contains("AceptaStockNegativo") && r["AceptaStockNegativo"] != DBNull.Value && Convert.ToBoolean(r["AceptaStockNegativo"]);
             chkUsaVariantes.IsChecked = r.Table.Columns.Contains("UsaVariantes") && r["UsaVariantes"] != DBNull.Value && Convert.ToBoolean(r["UsaVariantes"]);
             chkEsCombo.IsChecked = r.Table.Columns.Contains("EsCombo") && r["EsCombo"] != DBNull.Value && Convert.ToBoolean(r["EsCombo"]);
+            chkActivo.IsChecked = !r.Table.Columns.Contains("Activo") || r["Activo"] == DBNull.Value || Convert.ToBoolean(r["Activo"]);
 
             txtVarianteColor.Text = V(r, "VarianteColor");
             txtVarianteTalle.Text = V(r, "VarianteTalle");
@@ -441,7 +464,7 @@ namespace SchettiniGestion.WPF
                 {
                     var lineas = componentes.Select(c =>
                     {
-                        var prod = DatabaseService.GetProductos("");
+                        var prod = DatabaseService.GetProductos("", true);
                         if (prod == null) return $"{c.ProductoComponenteID}:{c.Cantidad}";
                         var row = prod.Select($"ProductoID={c.ProductoComponenteID}").FirstOrDefault();
                         string cod = row?["Codigo"]?.ToString() ?? c.ProductoComponenteID.ToString();
@@ -458,6 +481,7 @@ namespace SchettiniGestion.WPF
             ActualizarCostoCompraFinal();
             ActualizarAyudaCostoIva();
             ActualizarGrillaPreciosPreview();
+            ConfigurarBotonBaja();
             }
             finally { _suspendCalculoPrecio = false; }
         }
@@ -501,6 +525,7 @@ namespace SchettiniGestion.WPF
             txtDescripcion.Text = "";
             SeleccionarLookupPorNombre(cmbCategoria, "");
             SeleccionarLookupPorNombre(cmbSubRubro, "");
+            txtMarca.Text = "";
             SeleccionarLookupPorNombre(cmbProveedor, "");
             txtCodigoExterno.Text = "";
             cmbTipoMoneda.SelectedIndex = 0;
@@ -511,6 +536,7 @@ namespace SchettiniGestion.WPF
             chkAceptaStockNegativo.IsChecked = false;
             chkUsaVariantes.IsChecked = false;
             chkEsCombo.IsChecked = false;
+            chkActivo.IsChecked = true;
             txtVarianteColor.Text = "";
             txtVarianteTalle.Text = "";
             txtVarianteUnidadMedida.Text = "";
@@ -668,6 +694,11 @@ namespace SchettiniGestion.WPF
             pnlCombo.Visibility = chkEsCombo?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        private void chkActivo_Changed(object sender, RoutedEventArgs e)
+        {
+            ConfigurarBotonBaja();
+        }
+
         private bool GuardarProductoActual(bool crearYOtro)
         {
             if (string.IsNullOrWhiteSpace(txtCodigo.Text) || string.IsNullOrWhiteSpace(txtDescripcion.Text))
@@ -683,8 +714,15 @@ namespace SchettiniGestion.WPF
             string ivaStr = (cmbTipoIVA.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "21%";
             if (ivaStr.Contains("%")) ivaStr = ivaStr.Split('%')[0].Trim();
 
-            string tipoMoneda = (cmbTipoMoneda.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Pesos";
+            string tipoMoneda = (cmbTipoMoneda.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "ARS";
             int stock = chkEsStockeable?.IsChecked == true ? (int)(numStockDisponible?.Value ?? 0) : (_productoId != 0 ? _stockActual : 0);
+
+            if (DatabaseService.ExisteProductoDuplicado(_productoId, txtCodigo.Text.Trim(), codigoBarra, out string duplicadoMsg))
+            {
+                ModernMessageBox.Show("No se puede guardar porque hay códigos duplicados:\n\n" + duplicadoMsg,
+                    "Producto duplicado", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
 
             int productoId = DatabaseService.GuardarProducto(
                 _productoId,
@@ -693,7 +731,7 @@ namespace SchettiniGestion.WPF
                 txtDescripcion.Text.Trim(),
                 ObtenerTextoLookupCombo(cmbCategoria),
                 ObtenerTextoLookupCombo(cmbSubRubro),
-                "",
+                txtMarca?.Text?.Trim() ?? "",
                 ObtenerTextoLookupCombo(cmbProveedor),
                 ivaStr,
                 numCosto.Value ?? 0,
@@ -715,7 +753,8 @@ namespace SchettiniGestion.WPF
                 chkUsaVariantes?.IsChecked == true ? txtVarianteTalle?.Text?.Trim() : null,
                 chkUsaVariantes?.IsChecked == true ? txtVarianteUnidadMedida?.Text?.Trim() : null,
                 true,
-                chkCostoIncluyeIva?.IsChecked == true
+                chkCostoIncluyeIva?.IsChecked == true,
+                chkActivo?.IsChecked != false
             );
 
             if (productoId <= 0)
@@ -750,7 +789,7 @@ namespace SchettiniGestion.WPF
                     {
                         string cod = m.Groups[1].Value.Trim();
                         int cant = int.Parse(m.Groups[2].Value);
-                        var prod = DatabaseService.GetProductos("");
+                        var prod = DatabaseService.GetProductos("", true);
                         if (prod != null)
                         {
                             var rows = prod.Select($"Codigo='{cod.Replace("'", "''")}'");
@@ -798,12 +837,35 @@ namespace SchettiniGestion.WPF
             btnEliminar.Visibility = Visibility.Collapsed;
             btnCrearYOtro.Visibility = Visibility.Visible;
             btnGuardar.Content = "💾 Crear";
+            chkActivo.IsChecked = true;
+            ConfigurarBotonBaja();
+        }
+
+        private void ConfigurarBotonBaja()
+        {
+            if (btnEliminar == null || _productoId == 0) return;
+            bool activo = chkActivo?.IsChecked != false;
+            if (SesionUsuario.EsUsuarioTecnico)
+            {
+                btnEliminar.Content = "Eliminar";
+                btnEliminar.ToolTip = "Eliminación física reservada para usuario técnico.";
+            }
+            else
+            {
+                btnEliminar.Content = activo ? "Deshabilitar" : "Reactivar";
+                btnEliminar.ToolTip = activo
+                    ? "Oculta el producto del POS sin borrar historial."
+                    : "Vuelve a mostrar el producto en el POS.";
+            }
         }
 
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
-            if (ModernMessageBox.Show("¿Eliminar este producto?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            if (SesionUsuario.EsUsuarioTecnico)
             {
+                if (ModernMessageBox.Show("¿Eliminar definitivamente este producto? Esta acción es solo para soporte técnico.", "Confirmar eliminación técnica", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                    return;
+
                 if (DatabaseService.EliminarProducto(_productoId))
                 {
                     _onGuardado?.Invoke();
@@ -812,6 +874,28 @@ namespace SchettiniGestion.WPF
                 }
                 else
                     ModernMessageBox.Show("No se pudo eliminar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            bool activo = chkActivo?.IsChecked != false;
+            string accion = activo ? "deshabilitar" : "reactivar";
+            if (ModernMessageBox.Show($"¿{char.ToUpper(accion[0]) + accion.Substring(1)} este producto?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+
+            bool ok = activo
+                ? DatabaseService.DeshabilitarProducto(_productoId)
+                : DatabaseService.RehabilitarProducto(_productoId);
+            if (ok)
+            {
+                chkActivo.IsChecked = !activo;
+                ConfigurarBotonBaja();
+                _onGuardado?.Invoke();
+                DialogResult = true;
+                Close();
+            }
+            else
+            {
+                ModernMessageBox.Show("No se pudo actualizar el estado del producto.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

@@ -347,6 +347,13 @@ namespace SchettiniGestion.WPF
                         @"CREATE TABLE Permisos (PermisoID INT PRIMARY KEY IDENTITY(1,1), NombrePermiso NVARCHAR(100))",
                         @"CREATE TABLE Roles_Permisos (RolID INT, PermisoID INT, PRIMARY KEY (RolID, PermisoID))",
                         @"CREATE TABLE Usuarios (UsuarioID INT PRIMARY KEY IDENTITY(1,1), NombreUsuario NVARCHAR(50), PasswordHash NVARCHAR(MAX), RolID INT, Rol NVARCHAR(50))",
+                        @"CREATE TABLE AccionesTecnicas (
+                            AccionTecnicaID INT PRIMARY KEY IDENTITY(1,1),
+                            Fecha DATETIME NOT NULL DEFAULT GETDATE(),
+                            Usuario NVARCHAR(50) NOT NULL,
+                            Accion NVARCHAR(100) NOT NULL,
+                            Detalle NVARCHAR(MAX) NULL
+                        )",
                         "INSERT INTO Roles   (NombreRol)     VALUES ('Administrador')",
                         "INSERT INTO Permisos(NombrePermiso) VALUES ('ACCESO_TOTAL')",
                         @"CREATE TABLE Clientes (
@@ -358,7 +365,7 @@ namespace SchettiniGestion.WPF
                             ProductoID INT PRIMARY KEY IDENTITY(1,1), Codigo NVARCHAR(50), CodigoBarra NVARCHAR(50),
                             Descripcion NVARCHAR(200), Categoria NVARCHAR(50), SubRubro NVARCHAR(100), Marca NVARCHAR(100), Proveedor NVARCHAR(100),
                             TipoIVA NVARCHAR(20), PrecioCosto DECIMAL(18,2), Ganancia DECIMAL(18,2), ImpuestoInterno DECIMAL(18,2),
-                            PrecioVenta DECIMAL(18,2), StockActual INT, ImagenPath NVARCHAR(MAX)
+                            PrecioVenta DECIMAL(18,2), StockActual INT, ImagenPath NVARCHAR(MAX), Activo BIT NOT NULL DEFAULT 1
                         )",
                         @"CREATE TABLE Proveedores (
                             ProveedorID INT PRIMARY KEY IDENTITY(1,1), CUIT NVARCHAR(50), RazonSocial NVARCHAR(200),
@@ -613,6 +620,15 @@ namespace SchettiniGestion.WPF
                           Monto DECIMAL(18,2),
                           Descripcion NVARCHAR(500),
                           NumeroComprobante NVARCHAR(50)
+                      );",
+
+                    @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='AccionesTecnicas')
+                      CREATE TABLE AccionesTecnicas (
+                          AccionTecnicaID INT PRIMARY KEY IDENTITY(1,1),
+                          Fecha DATETIME NOT NULL DEFAULT GETDATE(),
+                          Usuario NVARCHAR(50) NOT NULL,
+                          Accion NVARCHAR(100) NOT NULL,
+                          Detalle NVARCHAR(MAX) NULL
                       );",
 
                     // Columnas que pueden faltar en tablas existentes

@@ -33,13 +33,22 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore SchettiniGestion.sln
 
-      - name: Install Inno Setup 6
+      - name: Ensure Inno Setup (ISCC)
         shell: powershell
         run: |
-          choco install innosetup --version=6.3.3 -y --no-progress
-          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
-            throw "ISCC.exe no encontrado tras instalar Inno Setup"
+          $candidates = @(
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+            "${env:ProgramFiles}\Inno Setup 6\ISCC.exe"
+          )
+          $iscc = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) {
+            Write-Host "Inno Setup no encontrado; instalando con Chocolatey..."
+            choco install innosetup -y --no-progress
+            $iscc = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
           }
+          if (-not $iscc) { throw "ISCC.exe no encontrado" }
+          Write-Host "ISCC: $iscc"
+          & $iscc /? | Select-Object -First 3
 
       - name: Build Release + Setup 2.1.9
         shell: powershell

@@ -1273,7 +1273,7 @@ namespace SchettiniGestion.WPF
 
         private OpcionesImpresionTicket LeerOpcionesTicketDesdeUi()
         {
-            // CUIT, CAE y Punto de venta son obligatorios por normativa ARCA: siempre se imprimen.
+            // CUIT, CAE, Punto de venta y QR ARCA son obligatorios: siempre se imprimen.
             return new OpcionesImpresionTicket
             {
                 AnchoMm = cmbAnchoTicketMm?.SelectedItem?.ToString()?.StartsWith("58") == true ? 58 : 80,

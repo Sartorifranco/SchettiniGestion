@@ -23,7 +23,8 @@ namespace SchettiniGestion.WPF
             string condicionPago,
             string pieFiscal,
             string pieLegal,
-            bool mostrarCodigo = true)
+            bool mostrarCodigo = true,
+            string urlQrFiscal = null)
         {
             DataRow conf = DatabaseService.GetConfiguracion();
             string razonSocial = conf?["RazonSocial"]?.ToString()?.Trim() ?? "";
@@ -271,6 +272,44 @@ namespace SchettiniGestion.WPF
                 {
                     gfx.DrawString(linea.Trim(), fEmpresaDet, XBrushes.Black, Margen, y);
                     y += 16;
+                }
+            }
+
+            // QR fiscal ARCA obligatorio cuando hay CAE
+            if (string.IsNullOrWhiteSpace(urlQrFiscal)
+                && cabecera.Table.Columns.Contains("CAE")
+                && !string.IsNullOrWhiteSpace(cabecera["CAE"]?.ToString()))
+            {
+                urlQrFiscal = ArcaQrHelper.ConstruirUrlDesdeFactura(cabecera, letra);
+            }
+
+            if (!string.IsNullOrWhiteSpace(urlQrFiscal))
+            {
+                string tmpQr = null;
+                try
+                {
+                    byte[] png = ArcaQrHelper.GenerarPngBytes(urlQrFiscal, 5);
+                    if (png != null && png.Length > 0)
+                    {
+                        tmpQr = Path.Combine(Path.GetTempPath(), "schpos_qr_" + Guid.NewGuid().ToString("N") + ".png");
+                        File.WriteAllBytes(tmpQr, png);
+                        using (var img = XImage.FromFile(tmpQr))
+                        {
+                            double side = 120;
+                            double xQr = Margen + (anchoContenido - side) / 2;
+                            y += 10;
+                            gfx.DrawImage(img, xQr, y, side, side);
+                            y += side + 6;
+                            gfx.DrawString("Escaneá el QR para verificar en ARCA", fEmpresaDet, XBrushes.DimGray,
+                                new XRect(Margen, y, anchoContenido, 14), XStringFormats.TopCenter);
+                            y += 16;
+                        }
+                    }
+                }
+                catch { /* no bloquear PDF si falla el QR */ }
+                finally
+                {
+                    try { if (tmpQr != null && File.Exists(tmpQr)) File.Delete(tmpQr); } catch { }
                 }
             }
 

@@ -241,6 +241,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AfipService.cs" />
+    <Compile Include="ArcaQrHelper.cs" />
     <Compile Include="NumericBox.cs" />
     <Compile Include="ProductoModalWindow.xaml.cs">
       <DependentUpon>ProductoModalWindow.xaml</DependentUpon>

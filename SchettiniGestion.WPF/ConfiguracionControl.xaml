@@ -796,12 +796,12 @@
                             <StackPanel>
                         <TextBlock Text="Contenido del ticket térmico" Style="{StaticResource ConfigSectionTitle}"/>
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,8"
-                                   Text="Marcá solo datos opcionales del ticket. Los datos fiscales obligatorios (CUIT, CAE y Punto de venta) siempre se imprimen."/>
+                                   Text="Marcá solo datos opcionales del ticket. Los datos fiscales obligatorios siempre se imprimen."/>
                         <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
                                 CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
                             <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource TextPrimary}">
-                                <Run FontWeight="SemiBold" Text="Siempre en el ticket: "/>
-                                <Run Text="CUIT, condición IVA, Punto de venta y pie fiscal (CAE) cuando corresponda. No se pueden desactivar."/>
+                                <Run FontWeight="SemiBold" Text="Siempre en el ticket fiscal: "/>
+                                <Run Text="CUIT, condición IVA, Punto de venta, pie fiscal (CAE) y el QR de verificación ARCA. No se pueden desactivar."/>
                             </TextBlock>
                         </Border>
                         <WrapPanel Margin="0,0,0,12">

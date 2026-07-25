@@ -82,13 +82,13 @@ namespace SchettiniGestion.WPF
             catch (Exception ex) { MessageBox.Show("Error crítico al imprimir: " + ex.Message); }
         }
 
-        public static void ImprimirTicketVenta(string tipo, int nro, string cli, DateTime fec, DataTable items, decimal tot, string cond, string cae = "", string vtoCae = "", string nombreVendedor = null)
+        public static void ImprimirTicketVenta(string tipo, int nro, string cli, DateTime fec, DataTable items, decimal tot, string cond, string cae = "", string vtoCae = "", string nombreVendedor = null, string clienteCuit = null, string urlQrFiscal = null)
         {
             string letra = "B";
             if (tipo != null)
             {
                 if (tipo.IndexOf("Factura", StringComparison.OrdinalIgnoreCase) >= 0)
-                    letra = ObtenerLetraFactura(cli);
+                    letra = ObtenerLetraFactura(!string.IsNullOrWhiteSpace(clienteCuit) ? clienteCuit : cli);
                 else if (tipo.IndexOf("Ticket", StringComparison.OrdinalIgnoreCase) >= 0)
                     letra = "X";
                 else if (tipo.Contains("A")) letra = "A";
@@ -113,8 +113,20 @@ namespace SchettiniGestion.WPF
                 pie = $"CAE: {cae}\nVto CAE: {vtoCae}";
             }
 
+            // QR fiscal ARCA obligatorio cuando hay CAE
+            if (string.IsNullOrWhiteSpace(urlQrFiscal) && !string.IsNullOrWhiteSpace(cae))
+            {
+                DataRow conf = DatabaseService.GetConfiguracion();
+                string cuitEmisor = conf?["CUIT"]?.ToString() ?? "";
+                string condicionIva = conf != null && conf.Table.Columns.Contains("CondicionIVAEmpresa")
+                    ? conf["CondicionIVAEmpresa"]?.ToString() ?? "" : "";
+                int.TryParse(conf?["PuntoVenta"]?.ToString()?.Trim(), out int ptoVta);
+                int tipoAfip = ArcaQrHelper.ResolverTipoComprobanteAfip(tipo, letra, clienteCuit, condicionIva);
+                urlQrFiscal = ArcaQrHelper.ConstruirUrl(fec, cuitEmisor, ptoVta, tipoAfip, nro, tot, cae, clienteCuit);
+            }
+
             if (USAR_MOTOR_GRAFICO_PARA_TICKETS)
-                ImprimirTicketGrafico(tit, nroStr, cli, fec, items, tot, cond, letra, pie, nombreVendedor);
+                ImprimirTicketGrafico(tit, nroStr, cli, fec, items, tot, cond, letra, pie, nombreVendedor, urlQrFiscal);
             else
                 MessageBox.Show("Motor A4 no activo.");
         }
@@ -152,11 +164,16 @@ namespace SchettiniGestion.WPF
                 string vto = cab["VencimientoCAE"]?.ToString() ?? "";
                 string nombreVendedor = cab.Table.Columns.Contains("NombrePersonal")
                     ? cab["NombrePersonal"]?.ToString()?.Trim() ?? "" : "";
+                string clienteCuit = cab.Table.Columns.Contains("ClienteCUIT")
+                    ? cab["ClienteCUIT"]?.ToString()?.Trim() ?? "" : "";
+                string letraTmp = tipo.Equals("Factura", StringComparison.OrdinalIgnoreCase)
+                    ? ObtenerLetraFactura(clienteCuit) : "X";
+                string urlQr = ArcaQrHelper.ConstruirUrlDesdeFactura(cab, letraTmp);
 
                 switch (destino)
                 {
                     case "Archivo":
-                        GuardarComprobanteArchivo(facturaId, cab, items, tipo, nro, cli, fec, tot, cond, cae, vto);
+                        GuardarComprobanteArchivo(facturaId, cab, items, tipo, nro, cli, fec, tot, cond, cae, vto, urlQr);
                         break;
                     case "A4":
                         string tituloA4 = tipo.Equals("Factura", StringComparison.OrdinalIgnoreCase) ? "FACTURA" : "TICKET";
@@ -164,10 +181,10 @@ namespace SchettiniGestion.WPF
                         string pieA4 = tipo.Equals("Factura", StringComparison.OrdinalIgnoreCase)
                             ? "Comprobante fiscal."
                             : "Comprobante no válido como factura fiscal.";
-                        GenerarDocumentoA4ConItems(tituloA4, "FacturaID", cab, items, tot, pieA4, extraA4);
+                        GenerarDocumentoA4ConItems(tituloA4, "FacturaID", cab, items, tot, pieA4, extraA4, urlQr);
                         break;
                     default:
-                        ImprimirTicketVenta(tipo, nro, cli, fec, items, tot, cond, cae, vto, nombreVendedor);
+                        ImprimirTicketVenta(tipo, nro, cli, fec, items, tot, cond, cae, vto, nombreVendedor, clienteCuit, urlQr);
                         break;
                 }
             }
@@ -368,7 +385,7 @@ namespace SchettiniGestion.WPF
         // ------------------------------------------
         #endregion
 
-        private static void GenerarDocumentoA4ConItems(string tituloDocumento, string idColumn, DataRow cabecera, DataTable items, decimal total, string pieLegal, string lineaExtra = null)
+        private static void GenerarDocumentoA4ConItems(string tituloDocumento, string idColumn, DataRow cabecera, DataTable items, decimal total, string pieLegal, string lineaExtra = null, string urlQrFiscal = null)
         {
             try
             {
@@ -377,10 +394,43 @@ namespace SchettiniGestion.WPF
                 doc.Blocks.Add(CrearBloqueCliente(cabecera));
                 doc.Blocks.Add(CrearTablaItems(items));
                 doc.Blocks.Add(CrearBloqueTotal(total));
+                if (!string.IsNullOrWhiteSpace(urlQrFiscal))
+                {
+                    var bloqueQr = CrearBloqueQrFiscal(urlQrFiscal);
+                    if (bloqueQr != null) doc.Blocks.Add(bloqueQr);
+                }
                 doc.Blocks.Add(new Paragraph(new Run(pieLegal)) { TextAlignment = TextAlignment.Center, FontSize = 10, Foreground = Brushes.Gray, Margin = new Thickness(0, 40, 0, 0) });
                 MostrarDialogoImpresion(doc, $"{tituloDocumento}_{cabecera[idColumn]}");
             }
             catch (Exception ex) { MessageBox.Show("Error generando PDF: " + ex.Message); }
+        }
+
+        private static Block CrearBloqueQrFiscal(string urlQr)
+        {
+            try
+            {
+                byte[] png = ArcaQrHelper.GenerarPngBytes(urlQr, 5);
+                if (png == null || png.Length == 0) return null;
+                var bi = new BitmapImage();
+                using (var ms = new MemoryStream(png))
+                {
+                    bi.BeginInit();
+                    bi.CacheOption = BitmapCacheOption.OnLoad;
+                    bi.StreamSource = ms;
+                    bi.EndInit();
+                    bi.Freeze();
+                }
+                var img = new System.Windows.Controls.Image
+                {
+                    Source = bi,
+                    Width = 140,
+                    Height = 140,
+                    Stretch = Stretch.Uniform
+                };
+                var container = new BlockUIContainer(img) { Margin = new Thickness(0, 16, 0, 4) };
+                return container;
+            }
+            catch { return null; }
         }
 
         private static void GenerarDocumentoA4Nota(string tituloDocumento, DataRow cabecera)
@@ -688,7 +738,7 @@ namespace SchettiniGestion.WPF
             };
         }
 
-        private static void ImprimirTicketGrafico(string t, string n, string c, DateTime f, DataTable i, decimal tot, string extra, string l, string pie, string nombreVendedor = null)
+        private static void ImprimirTicketGrafico(string t, string n, string c, DateTime f, DataTable i, decimal tot, string extra, string l, string pie, string nombreVendedor = null, string urlQrFiscal = null)
         {
             try
             {
@@ -700,7 +750,7 @@ namespace SchettiniGestion.WPF
                 {
                     var g = e.Graphics;
                     float y = 10f;
-                    DibujarTicketGDI(g, t, n, c ?? "", f, i, tot, extra, l, pie, ref y, nombreVendedor);
+                    DibujarTicketGDI(g, t, n, c ?? "", f, i, tot, extra, l, pie, ref y, nombreVendedor, urlQrFiscal);
                 };
 
                 ImprimirDocumentoTicket(doc, impresoraTicket);
@@ -708,7 +758,7 @@ namespace SchettiniGestion.WPF
             catch (Exception x) { MessageBox.Show("Error Ticket: " + x.Message); }
         }
 
-        private static void GuardarComprobanteArchivo(int facturaId, DataRow cab, DataTable items, string tipo, int nro, string cli, DateTime fec, decimal tot, string cond, string cae, string vto)
+        private static void GuardarComprobanteArchivo(int facturaId, DataRow cab, DataTable items, string tipo, int nro, string cli, DateTime fec, decimal tot, string cond, string cae, string vto, string urlQrFiscal = null)
         {
             string letra = "X";
             if (tipo != null && tipo.IndexOf("Factura", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -748,12 +798,17 @@ namespace SchettiniGestion.WPF
                 ruta = dlg.FileName;
             }
 
+            // CUIT/CAE/Punto de venta/QR son obligatorios en comprobantes con CAE.
+            if (string.IsNullOrWhiteSpace(urlQrFiscal) && !string.IsNullOrWhiteSpace(cae))
+                urlQrFiscal = ArcaQrHelper.ConstruirUrlDesdeFactura(cab, letra);
+
             PdfComprobanteGenerator.GenerarComprobanteVenta(
                 ruta, cab, items, tit, letra, nro > 0 ? nro : facturaId, tot,
                 opciones.MostrarFormaPago ? cond : null,
-                opciones.MostrarPieFiscal ? pieFiscal : null,
+                pieFiscal, // pie fiscal siempre (CAE)
                 pieLegal,
-                opciones.MostrarCodigo);
+                opciones.MostrarCodigo,
+                urlQrFiscal);
 
             MessageBox.Show(
                 $"Comprobante PDF guardado en:\n{ruta}\n\nPodés enviarlo por WhatsApp o correo.",
@@ -999,7 +1054,7 @@ namespace SchettiniGestion.WPF
             try { g.TextContrast = 0; } catch { /* no disponible en algunos drivers */ }
         }
 
-        private static void DibujarTicketGDI(WinDrawing.Graphics g, string tit, string nro, string cli, DateTime fec, DataTable its, decimal tot, string extra, string let, string pie, ref float y, string nombreVendedor = null)
+        private static void DibujarTicketGDI(WinDrawing.Graphics g, string tit, string nro, string cli, DateTime fec, DataTable its, decimal tot, string extra, string let, string pie, ref float y, string nombreVendedor = null, string urlQrFiscal = null)
         {
             ConfigurarGraphicsTicketTermico(g);
 
@@ -1134,7 +1189,33 @@ namespace SchettiniGestion.WPF
             if (opciones.MostrarPieFiscal && !string.IsNullOrEmpty(pie))
             {
                 DibujarLinea(g, ref y, w);
-                DibujarTextoCentrado(g, pie, fC, w, ref y);
+                foreach (string lineaPie in pie.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries))
+                    DibujarTextoCentrado(g, lineaPie.Trim(), fC, w, ref y);
+            }
+
+            // QR fiscal ARCA obligatorio cuando el comprobante tiene CAE.
+            if (!string.IsNullOrWhiteSpace(urlQrFiscal))
+            {
+                try
+                {
+                    using (var qrBmp = ArcaQrHelper.GenerarBitmap(urlQrFiscal, angosto ? 3 : 4))
+                    {
+                        if (qrBmp != null)
+                        {
+                            y += 6;
+                            float side = Math.Min(w - 8f, angosto ? 110f : 140f);
+                            float xQr = (w - side) / 2f;
+                            // NearestNeighbor mantiene módulos nítidos en térmica
+                            var oldInterp = g.InterpolationMode;
+                            g.InterpolationMode = WinDrawing.Drawing2D.InterpolationMode.NearestNeighbor;
+                            g.DrawImage(qrBmp, xQr, y, side, side);
+                            g.InterpolationMode = oldInterp;
+                            y += side + 4f;
+                            DibujarTextoCentrado(g, "Escaneá el QR para verificar en ARCA", fC, w, ref y);
+                        }
+                    }
+                }
+                catch { /* no bloquear la impresión si falla el QR */ }
             }
 
             if (opciones.MostrarGracias)

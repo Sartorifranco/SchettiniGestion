@@ -1,10 +1,10 @@
 {
-  "versionActual": "2.1.9",
-  "instalador": "SCHPOS-Setup-2.1.9.exe",
+  "versionActual": "2.2.0",
+  "instalador": "SCHPOS-Setup-2.2.0.exe",
   "notas": [
     {
-      "version": "2.1.9",
-      "fecha": "2026-07-25",
+      "version": "2.2.0",
+      "fecha": "2026-07-27",
       "titulo": "Modificaciones SCH POS + QR fiscal ARCA",
       "items": [
         "Teclado ON/OFF en Login con preferencia persistente.",
@@ -15,7 +15,17 @@
         "Notas de crédito total/parcial desde historial vinculadas a la factura.",
         "Etiquetas ampliadas: presets, A4, carteles/góndola.",
         "Usuario técnico oculto 9999 + auditoría AccionesTecnicas.",
-        "Instalador SCHPOS-Setup-2.1.9.exe (.NET 4.8 y LocalDB opcionales)."
+        "Instalador SCHPOS-Setup-2.2.0.exe (.NET 4.8 y LocalDB opcionales)."
+      ]
+    },
+    {
+      "version": "2.1.9",
+      "fecha": "2026-07-22",
+      "titulo": "Etiquetas, ARCA y POS",
+      "items": [
+        "Módulo Impresión de etiquetas (ACCESO_ETIQUETAS).",
+        "Renombre AFIP → ARCA en la interfaz.",
+        "Botón ABRIR CAJA desde el POS cuando hay fondo fijo."
       ]
     },
     {

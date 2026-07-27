@@ -326,7 +326,7 @@
                                                         </Border>
                                                     </Grid>
                                                     <TextBlock Text="{Binding Codigo}" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
-                                                    <TextBlock Text="{Binding Descripcion}" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="40" Margin="0,2,0,4"/>
+                                                    <TextBlock Text="{Binding Descripcion}" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="40" Margin="0,2,0,4"/>
                                                     <TextBlock Text="{Binding PrecioLista, StringFormat=C2}" Foreground="{StaticResource SuccessColor}" FontWeight="Bold" FontSize="16"/>
                                                     <TextBlock Text="{Binding StockTexto}" FontSize="12" Margin="0,4,0,0">
                                                         <TextBlock.Style>
@@ -529,7 +529,8 @@
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,10">
                                                         <Button Content="−" Width="48" Height="48" Click="btnCarritoRestar_Click" Tag="{Binding}"
                                                                 Background="{DynamicResource BorderColor}" Foreground="{DynamicResource TextPrimary}" BorderThickness="0" FontSize="22" FontWeight="Bold" Margin="0,0,12,0"/>
-                                                        <TextBlock Text="{Binding Cantidad}" VerticalAlignment="Center" FontSize="20" FontWeight="Bold" MinWidth="32" TextAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Cantidad}" Foreground="{DynamicResource TextPrimary}"
+                                                                   VerticalAlignment="Center" FontSize="20" FontWeight="Bold" MinWidth="32" TextAlignment="Center"/>
                                                         <Button Content="+" Width="48" Height="48" Click="btnCarritoSumar_Click" Tag="{Binding}"
                                                                 Background="{DynamicResource BorderColor}" Foreground="{DynamicResource TextPrimary}" BorderThickness="0" FontSize="22" FontWeight="Bold" Margin="12,0,0,0"/>
                                                     </StackPanel>

@@ -191,7 +191,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("No se pudo generar la nota de crédito: " + ex.Message);
+                ModernMessageBox.Show("No se pudo generar la nota de crédito: " + ex.Message, "Nota de Crédito", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

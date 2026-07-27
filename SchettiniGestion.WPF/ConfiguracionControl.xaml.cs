@@ -217,6 +217,11 @@ namespace SchettiniGestion.WPF
                 else if (txtVisorPromoIntervalo != null)
                     txtVisorPromoIntervalo.Text = "8";
 
+                if (dr.Table.Columns.Contains("VisorBannerIntervaloSeg") && dr["VisorBannerIntervaloSeg"] != DBNull.Value)
+                    txtVisorBannerIntervalo.Text = dr["VisorBannerIntervaloSeg"].ToString();
+                else if (txtVisorBannerIntervalo != null)
+                    txtVisorBannerIntervalo.Text = "8";
+
                 RefrescarListaArchivosVisor();
             }
         }
@@ -303,7 +308,7 @@ namespace SchettiniGestion.WPF
             {
                 var dlg = new OpenFileDialog
                 {
-                    Title = "Elegir publicidad para la pantalla del cliente",
+                    Title = "Elegir imagen o video para el panel IZQUIERDO de la pantalla del cliente",
                     Filter = "Publicidades|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.mp4;*.avi|" +
                                "Imágenes|*.jpg;*.jpeg;*.png;*.gif;*.bmp|" +
                                "Videos|*.mp4;*.avi|" +
@@ -311,6 +316,27 @@ namespace SchettiniGestion.WPF
                 };
                 if (dlg.ShowDialog() == true)
                     txtRutaImagenPromocionImportada.Text = dlg.FileName;
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void btnImportarBannerInferior_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new OpenFileDialog
+                {
+                    Title = "Elegir imagen o video para la franja INFERIOR (abajo) de la pantalla del cliente",
+                    Filter = "Publicidades|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.mp4;*.avi|" +
+                               "Imágenes|*.jpg;*.jpeg;*.png;*.gif;*.bmp|" +
+                               "Videos|*.mp4;*.avi|" +
+                               "Todos|*.*"
+                };
+                if (dlg.ShowDialog() == true)
+                    txtRutaBannerImportado.Text = dlg.FileName;
             }
             catch (Exception ex)
             {
@@ -328,30 +354,42 @@ namespace SchettiniGestion.WPF
             return carpeta;
         }
 
-        private void CopiarArchivoPromoSeleccionado(string carpetaDestino)
+        private static readonly string[] PrefijosPanelIzquierdo = { "promo_", "vertical_", "v_" };
+        private static readonly string[] PrefijosPanelInferior = { "banner_", "horizontal_", "h_" };
+
+        /// <summary>
+        /// Copia el archivo pendiente a la carpeta del visor, forzando el prefijo del panel elegido
+        /// (izquierda o abajo) para que la ubicación sea siempre la que el usuario indicó al subirlo,
+        /// sin depender de una detección automática por proporción de imagen.
+        /// </summary>
+        private string CopiarArchivoPromoConPanel(string origen, string carpetaDestino, string[] prefijosPropios, string prefijoForzado)
         {
-            string origen = txtRutaImagenPromocionImportada?.Text?.Trim();
             if (string.IsNullOrWhiteSpace(origen) || !File.Exists(origen))
-                return;
+                return null;
 
             string ext = Path.GetExtension(origen);
             if (!DatabaseService.EsExtensionPromoImagenCliente(ext) && !DatabaseService.EsExtensionPromoVideoCliente(ext))
             {
                 ModernMessageBox.Show("Formato no soportado. Use JPG, PNG, GIF, BMP, MP4 o AVI.", "Archivo no válido",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                return null;
             }
 
             string nombre = Path.GetFileName(origen);
+            bool yaTienePrefijoPropio = prefijosPropios.Any(p => nombre.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+            if (!yaTienePrefijoPropio)
+                nombre = prefijoForzado + nombre;
+
             string destino = Path.Combine(carpetaDestino, nombre);
-            if (File.Exists(destino))
+            if (File.Exists(destino) && !string.Equals(Path.GetFullPath(destino), Path.GetFullPath(origen), StringComparison.OrdinalIgnoreCase))
             {
                 string baseName = Path.GetFileNameWithoutExtension(nombre);
                 destino = Path.Combine(carpetaDestino, $"{baseName}_{DateTime.Now:yyyyMMdd_HHmmss}{ext}");
             }
 
-            File.Copy(origen, destino, overwrite: false);
-            txtRutaImagenPromocionImportada.Text = destino;
+            if (!string.Equals(Path.GetFullPath(destino), Path.GetFullPath(origen), StringComparison.OrdinalIgnoreCase))
+                File.Copy(origen, destino, overwrite: false);
+            return destino;
         }
 
         private void btnBuscarCarpetaPromo_Click(object sender, RoutedEventArgs e)
@@ -371,19 +409,28 @@ namespace SchettiniGestion.WPF
             try
             {
                 string carpeta = ResolverCarpetaPromoVisor();
-                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int seg))
-                    seg = 8;
+                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int segIzq))
+                    segIzq = 8;
+                if (!int.TryParse(txtVisorBannerIntervalo?.Text?.Trim(), out int segAbajo))
+                    segAbajo = 8;
 
-                var rutasExtra = new List<string>();
-                string pendiente = txtRutaImagenPromocionImportada?.Text?.Trim();
-                if (!string.IsNullOrWhiteSpace(pendiente) && File.Exists(pendiente))
-                    rutasExtra.Add(pendiente);
+                var rutasExtraIzquierda = new List<string>();
+                string pendienteIzquierda = txtRutaImagenPromocionImportada?.Text?.Trim();
+                if (!string.IsNullOrWhiteSpace(pendienteIzquierda) && File.Exists(pendienteIzquierda))
+                    rutasExtraIzquierda.Add(pendienteIzquierda);
+
+                var rutasExtraAbajo = new List<string>();
+                string pendienteAbajo = txtRutaBannerImportado?.Text?.Trim();
+                if (!string.IsNullOrWhiteSpace(pendienteAbajo) && File.Exists(pendienteAbajo))
+                    rutasExtraAbajo.Add(pendienteAbajo);
 
                 var preview = new VisorClienteWindow(
                     modoVistaPrevia: true,
                     carpetaPromoOverride: carpeta,
-                    intervaloSegundosOverride: seg,
-                    rutasPromoExtra: rutasExtra);
+                    intervaloVerticalSegundosOverride: segIzq,
+                    intervaloHorizontalSegundosOverride: segAbajo,
+                    rutasPromoVerticalExtra: rutasExtraIzquierda,
+                    rutasPromoHorizontalExtra: rutasExtraAbajo);
 
                 preview.ShowDialog();
             }
@@ -397,14 +444,25 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int seg))
-                    seg = 8;
+                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int segIzq))
+                    segIzq = 8;
+                if (!int.TryParse(txtVisorBannerIntervalo?.Text?.Trim(), out int segAbajo))
+                    segAbajo = 8;
 
                 string carpeta = ResolverCarpetaPromoVisor();
                 txtVisorPromoCarpeta.Text = carpeta;
-                CopiarArchivoPromoSeleccionado(carpeta);
 
-                if (!DatabaseService.ActualizarVisorPromociones(carpeta, seg))
+                string destinoIzquierda = CopiarArchivoPromoConPanel(
+                    txtRutaImagenPromocionImportada?.Text?.Trim(), carpeta, PrefijosPanelIzquierdo, "promo_");
+                if (destinoIzquierda != null)
+                    txtRutaImagenPromocionImportada.Text = destinoIzquierda;
+
+                string destinoAbajo = CopiarArchivoPromoConPanel(
+                    txtRutaBannerImportado?.Text?.Trim(), carpeta, PrefijosPanelInferior, "banner_");
+                if (destinoAbajo != null)
+                    txtRutaBannerImportado.Text = destinoAbajo;
+
+                if (!DatabaseService.ActualizarVisorPromociones(carpeta, segIzq, segAbajo))
                 {
                     ModernMessageBox.Show("No se pudo guardar la configuración del visor.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;

@@ -686,7 +686,9 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Accione
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='VisorPromoCarpeta')
   ALTER TABLE Configuracion ADD VisorPromoCarpeta NVARCHAR(500) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='VisorPromoIntervaloSeg')
-  ALTER TABLE Configuracion ADD VisorPromoIntervaloSeg INT NULL;", c))
+  ALTER TABLE Configuracion ADD VisorPromoIntervaloSeg INT NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='VisorBannerIntervaloSeg')
+  ALTER TABLE Configuracion ADD VisorBannerIntervaloSeg INT NULL;", c))
                     cmd.ExecuteNonQuery();
                 _columnasVisorPromoVerificadas = true;
             }
@@ -730,10 +732,16 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Apertur
         }
 
         /// <summary>Carpeta con archivos de promoción para la pantalla cliente (imágenes, GIF, videos cortos). Solo aplica si UsaVisorCliente está activo.</summary>
-        public static bool ActualizarVisorPromociones(string carpeta, int intervaloSegundos)
+        /// <param name="intervaloSegundos">Segundos entre cambios del panel izquierdo (imagen promocional vertical).</param>
+        /// <param name="intervaloBannerSegundos">Segundos entre cambios del banner inferior. Si es null, usa el mismo valor que <paramref name="intervaloSegundos"/>.</param>
+        public static bool ActualizarVisorPromociones(string carpeta, int intervaloSegundos, int? intervaloBannerSegundos = null)
         {
             if (intervaloSegundos < 3) intervaloSegundos = 3;
             if (intervaloSegundos > 120) intervaloSegundos = 120;
+
+            int intervaloBanner = intervaloBannerSegundos ?? intervaloSegundos;
+            if (intervaloBanner < 3) intervaloBanner = 3;
+            if (intervaloBanner > 120) intervaloBanner = 120;
             try
             {
                 using (var c = new SqlConnection(_connectionString))
@@ -741,10 +749,11 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Apertur
                     c.Open();
                     ForzarContextoBD(c);
                     AsegurarColumnasVisorPromo(c);
-                    using (var cmd = new SqlCommand("UPDATE Configuracion SET VisorPromoCarpeta=@p, VisorPromoIntervaloSeg=@i WHERE ID=1", c))
+                    using (var cmd = new SqlCommand("UPDATE Configuracion SET VisorPromoCarpeta=@p, VisorPromoIntervaloSeg=@i, VisorBannerIntervaloSeg=@ib WHERE ID=1", c))
                     {
                         cmd.Parameters.AddWithValue("@p", string.IsNullOrWhiteSpace(carpeta) ? (object)DBNull.Value : carpeta.Trim());
                         cmd.Parameters.AddWithValue("@i", intervaloSegundos);
+                        cmd.Parameters.AddWithValue("@ib", intervaloBanner);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -4211,7 +4220,7 @@ FROM Facturas f JOIN Clientes cl ON f.ClienteID=cl.ClienteID WHERE f.Fecha BETWE
                     c.Open();
                     AsegurarColumnaCondicionTicketFacturas(c);
                     var cmd = new SqlCommand(@"
-SELECT f.FacturaID, f.Fecha, f.TipoComprobante, f.Total, f.CondicionVenta,
+SELECT f.FacturaID, f.ClienteID, f.Fecha, f.TipoComprobante, f.Total, f.CondicionVenta,
        f.NumeroComprobanteAFIP, f.CAE, f.VencimientoCAE, f.CondicionTicket,
        ISNULL(f.NombrePersonal, '') AS NombrePersonal,
        ISNULL(cl.RazonSocial,'Consumidor Final') AS ClienteNombre,

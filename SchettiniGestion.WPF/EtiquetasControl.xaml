@@ -9,6 +9,23 @@
              Loaded="UserControl_Loaded">
 
     <UserControl.Resources>
+        <Style x:Key="EtiquetaSectionCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="18,16"/>
+        </Style>
+        <Style x:Key="EtiquetaSectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <!-- Campo numérico chico con etiqueta arriba, para grillas de formato/márgenes -->
+        <Style x:Key="EtiquetaMiniFieldStyle" TargetType="StackPanel">
+            <Setter Property="Margin" Value="0,0,14,10"/>
+        </Style>
         <!-- Chips táctiles para opciones de etiqueta (área de toque ~48px) -->
         <Style x:Key="TouchOptionToggleStyle" TargetType="ToggleButton">
             <Setter Property="MinHeight" Value="48"/>
@@ -82,88 +99,145 @@
                        Text="Buscá productos, indicá cuántas etiquetas de cada uno y qué datos mostrar. La impresora y la medida se configuran en Configuración → Impresoras. El rollo debe coincidir con esa medida (ej. 50×25)."/>
         </StackPanel>
 
-        <Border Grid.Row="1" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5" Padding="16" Margin="0,0,0,12">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12" MaxHeight="480">
+            <StackPanel>
 
-                <DockPanel Grid.Row="0" Grid.Column="0" Margin="0,0,12,10">
-                    <Button DockPanel.Dock="Right" Content="Buscar" Width="100" Height="40"
-                            Style="{StaticResource ActionButtonStyle}" Margin="8,0,0,0"
-                            Click="btnBuscar_Click"/>
-                    <TextBox x:Name="txtBuscar" Style="{StaticResource ModuleTextBoxStyle}" Height="40"
-                             VerticalContentAlignment="Center"
-                             KeyDown="txtBuscar_KeyDown"
-                             ToolTip="Código, barras o nombre"/>
-                </DockPanel>
+                <Border Style="{StaticResource EtiquetaSectionCard}" Margin="0,0,0,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,10">
-                    <TextBlock x:Name="lblTamano" VerticalAlignment="Center" Margin="0,0,16,0"
-                               Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
-                    <Button Content="Imprimir seleccionados" Style="{StaticResource SuccessButtonStyle}"
-                            Padding="16,10" MinHeight="40" Click="btnImprimir_Click"/>
-                </StackPanel>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Buscar producto:" Style="{StaticResource ModuleLabelStyle}"/>
+                            <DockPanel LastChildFill="True">
+                                <Button DockPanel.Dock="Right" Content="🔍 Buscar" MinWidth="110" MinHeight="44"
+                                        Style="{StaticResource ActionButtonStyle}" Margin="8,0,0,0"
+                                        Click="btnBuscar_Click"/>
+                                <TextBox x:Name="txtBuscar" Style="{StaticResource ModuleTextBoxStyle}"
+                                         KeyDown="txtBuscar_KeyDown"
+                                         ToolTip="Código, barras o nombre"/>
+                            </DockPanel>
+                        </StackPanel>
 
-                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2">
-                    <TextBlock Text="Formato de salida:" Style="{StaticResource ModuleLabelStyle}" Margin="0,0,0,8"/>
-                    <WrapPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <ComboBox x:Name="cmbPresetEtiqueta" Width="170" Height="44" Margin="0,0,8,8"
-                                  SelectionChanged="cmbPresetEtiqueta_SelectionChanged"/>
-                        <TextBox x:Name="txtAnchoMm" Width="58" Height="44" Margin="0,0,4,8" Text="50"
-                                 VerticalContentAlignment="Center" ToolTip="Ancho en mm"/>
-                        <TextBlock Text="x" VerticalAlignment="Center" Margin="0,0,4,8" Foreground="{DynamicResource TextSecondary}"/>
-                        <TextBox x:Name="txtAltoMm" Width="58" Height="44" Margin="0,0,12,8" Text="25"
-                                 VerticalContentAlignment="Center" ToolTip="Alto en mm"/>
-                        <ComboBox x:Name="cmbModoImpresion" Width="150" Height="44" Margin="0,0,8,8"/>
-                        <ComboBox x:Name="cmbOrientacion" Width="130" Height="44" Margin="0,0,8,8"/>
-                        <TextBox x:Name="txtColumnas" Width="70" Height="44" Margin="0,0,8,8" Text="3"
-                                 VerticalContentAlignment="Center" ToolTip="Columnas en hoja A4"/>
-                        <TextBox x:Name="txtGapH" Width="70" Height="44" Margin="0,0,8,8" Text="2"
-                                 VerticalContentAlignment="Center" ToolTip="Separación horizontal mm"/>
-                        <TextBox x:Name="txtGapV" Width="70" Height="44" Margin="0,0,8,8" Text="2"
-                                 VerticalContentAlignment="Center" ToolTip="Separación vertical mm"/>
-                        <TextBox x:Name="txtMargenIzq" Width="70" Height="44" Margin="0,0,8,8" Text="5"
-                                 VerticalContentAlignment="Center" ToolTip="Margen izquierdo mm"/>
-                        <TextBox x:Name="txtMargenSup" Width="70" Height="44" Margin="0,0,8,8" Text="5"
-                                 VerticalContentAlignment="Center" ToolTip="Margen superior mm"/>
-                        <TextBox x:Name="txtMargenDer" Width="70" Height="44" Margin="0,0,8,8" Text="5"
-                                 VerticalContentAlignment="Center" ToolTip="Margen derecho mm"/>
-                        <TextBox x:Name="txtMargenInf" Width="70" Height="44" Margin="0,0,8,8" Text="5"
-                                 VerticalContentAlignment="Center" ToolTip="Margen inferior mm"/>
-                    </WrapPanel>
-                    <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,10"
-                               Text="Rollo imprime una etiqueta por página. A4 acomoda etiquetas en hoja. Cartel/Góndola arma piezas grandes con precio destacado."/>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                            <TextBlock x:Name="lblTamano" VerticalAlignment="Center" Margin="0,0,0,8"
+                                       Foreground="{DynamicResource TextSecondary}" FontSize="12" HorizontalAlignment="Right"/>
+                            <Button Content="🖨️ Imprimir seleccionados" Style="{StaticResource SuccessButtonStyle}"
+                                    Padding="16,10" MinHeight="44" Click="btnImprimir_Click"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
 
-                    <TextBlock Text="Qué mostrar en la etiqueta/cartel:" Style="{StaticResource ModuleLabelStyle}" Margin="0,0,0,8"/>
-                    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <ToggleButton x:Name="chkDesc" Content="Nombre" IsChecked="True"
-                                      Style="{StaticResource TouchOptionToggleStyle}"/>
-                        <ToggleButton x:Name="chkDescExtra" Content="Descripción"
-                                      Style="{StaticResource TouchOptionToggleStyle}"/>
-                        <ToggleButton x:Name="chkPrecio" Content="Precio" IsChecked="True"
-                                      Style="{StaticResource TouchOptionToggleStyle}"/>
-                        <ToggleButton x:Name="chkCodigo" Content="Código interno"
-                                      Style="{StaticResource TouchOptionToggleStyle}"/>
-                        <ToggleButton x:Name="chkBarras" Content="Código de barras" IsChecked="True"
-                                      Style="{StaticResource TouchOptionToggleStyle}"/>
-                        <ToggleButton x:Name="chkMarca" Content="Marca"
-                                      Style="{StaticResource TouchOptionToggleStyle}"/>
-                        <Button Content="Guardar opciones"
-                                Style="{StaticResource ActionButtonStyle}"
-                                MinHeight="48" MinWidth="150" Padding="16,10"
-                                FontSize="14" FontWeight="SemiBold"
-                                Margin="4,0,0,8" VerticalAlignment="Center"
-                                Click="btnGuardarOpciones_Click"/>
-                    </WrapPanel>
-                </StackPanel>
-            </Grid>
-        </Border>
+                <Border Style="{StaticResource EtiquetaSectionCard}" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="Formato de salida" Style="{StaticResource EtiquetaSectionTitle}"/>
+                        <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,14"
+                                   Text="Rollo imprime una etiqueta por página. A4 acomoda etiquetas en hoja. Cartel/Góndola arma piezas grandes con precio destacado."/>
+
+                        <WrapPanel Orientation="Horizontal">
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="190">
+                                <TextBlock Text="Tipo de etiqueta:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <ComboBox x:Name="cmbPresetEtiqueta" Style="{StaticResource ModuleComboBoxStyle}"
+                                          SelectionChanged="cmbPresetEtiqueta_SelectionChanged"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="150">
+                                <TextBlock Text="Medida (ancho x alto, mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="18"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="txtAnchoMm" Grid.Column="0" Style="{StaticResource ModuleTextBoxStyle}" Text="50"
+                                             ToolTip="Ancho en mm"/>
+                                    <TextBlock Grid.Column="1" Text="x" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource TextSecondary}"/>
+                                    <TextBox x:Name="txtAltoMm" Grid.Column="2" Style="{StaticResource ModuleTextBoxStyle}" Text="25"
+                                             ToolTip="Alto en mm"/>
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="150">
+                                <TextBlock Text="Modo de impresión:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <ComboBox x:Name="cmbModoImpresion" Style="{StaticResource ModuleComboBoxStyle}"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="130">
+                                <TextBlock Text="Orientación:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <ComboBox x:Name="cmbOrientacion" Style="{StaticResource ModuleComboBoxStyle}"/>
+                            </StackPanel>
+                        </WrapPanel>
+
+                        <TextBlock Text="Diseño en hoja A4" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,8"/>
+                        <WrapPanel Orientation="Horizontal">
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Columnas:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtColumnas" Style="{StaticResource ModuleTextBoxStyle}" Text="3"
+                                         ToolTip="Columnas en hoja A4"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Sep. horiz. (mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtGapH" Style="{StaticResource ModuleTextBoxStyle}" Text="2"
+                                         ToolTip="Separación horizontal mm"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Sep. vert. (mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtGapV" Style="{StaticResource ModuleTextBoxStyle}" Text="2"
+                                         ToolTip="Separación vertical mm"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Margen izq. (mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtMargenIzq" Style="{StaticResource ModuleTextBoxStyle}" Text="5"
+                                         ToolTip="Margen izquierdo mm"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Margen sup. (mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtMargenSup" Style="{StaticResource ModuleTextBoxStyle}" Text="5"
+                                         ToolTip="Margen superior mm"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Margen der. (mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtMargenDer" Style="{StaticResource ModuleTextBoxStyle}" Text="5"
+                                         ToolTip="Margen derecho mm"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Margen inf. (mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtMargenInf" Style="{StaticResource ModuleTextBoxStyle}" Text="5"
+                                         ToolTip="Margen inferior mm"/>
+                            </StackPanel>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource EtiquetaSectionCard}">
+                    <StackPanel>
+                        <TextBlock Text="Qué mostrar en la etiqueta/cartel" Style="{StaticResource EtiquetaSectionTitle}" Margin="0,0,0,12"/>
+                        <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ToggleButton x:Name="chkDesc" Content="Nombre" IsChecked="True"
+                                          Style="{StaticResource TouchOptionToggleStyle}"/>
+                            <ToggleButton x:Name="chkDescExtra" Content="Descripción"
+                                          Style="{StaticResource TouchOptionToggleStyle}"/>
+                            <ToggleButton x:Name="chkPrecio" Content="Precio" IsChecked="True"
+                                          Style="{StaticResource TouchOptionToggleStyle}"/>
+                            <ToggleButton x:Name="chkCodigo" Content="Código interno"
+                                          Style="{StaticResource TouchOptionToggleStyle}"/>
+                            <ToggleButton x:Name="chkBarras" Content="Código de barras" IsChecked="True"
+                                          Style="{StaticResource TouchOptionToggleStyle}"/>
+                            <ToggleButton x:Name="chkMarca" Content="Marca"
+                                          Style="{StaticResource TouchOptionToggleStyle}"/>
+                            <Button Content="💾 Guardar opciones"
+                                    Style="{StaticResource ActionButtonStyle}"
+                                    MinHeight="48" MinWidth="150" Padding="16,10"
+                                    FontSize="14" FontWeight="SemiBold"
+                                    Margin="4,0,0,8" VerticalAlignment="Center"
+                                    Click="btnGuardarOpciones_Click"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
 
         <DataGrid x:Name="dgvProductos" Grid.Row="2"
                   Style="{StaticResource ModuleDataGridStyle}"

@@ -435,6 +435,8 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="8"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
@@ -451,7 +453,18 @@
                                             <ComboBoxItem Content="Nota de Débito"/>
                                         </ComboBox>
                                     </StackPanel>
-                                    <StackPanel x:Name="pnlCondicionPago" Grid.Column="2">
+                                    <Border Grid.Column="2" x:Name="brdLetraComprobante"
+                                            Width="56" Height="56" CornerRadius="8" VerticalAlignment="Bottom"
+                                            Background="#1A5276" BorderBrush="#154360" BorderThickness="1"
+                                            ToolTip="Letra del comprobante según emisor y cliente (se actualiza al cambiar cliente o tipo).">
+                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <TextBlock x:Name="lblLetraComprobante" Text="B" FontSize="26" FontWeight="Bold"
+                                                       Foreground="White" HorizontalAlignment="Center" LineHeight="28"/>
+                                            <TextBlock x:Name="lblLetraDetalle" Text="Factura" FontSize="9"
+                                                       Foreground="#D6EAF8" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <StackPanel x:Name="pnlCondicionPago" Grid.Column="4">
                                         <TextBlock Text="Pago" Foreground="{DynamicResource TextSecondary}" FontSize="11" Margin="0,0,0,2"/>
                                         <ComboBox x:Name="cmbCondicionVenta" SelectedIndex="0" SelectionChanged="cmbCondicionVenta_SelectionChanged" Style="{StaticResource WhiteTouchCombo}">
                                             <ComboBoxItem Content="Contado"/>
@@ -461,7 +474,7 @@
                                         </ComboBox>
                                     </StackPanel>
                                 </Grid>
-                                <TextBlock Text="Cliente y tipo de comprobante quedan a la vista para agilizar la venta."
+                                <TextBlock Text="La letra A/B/C se actualiza al elegir cliente o tipo de comprobante."
                                            FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,4"/>
 
                                 <Expander x:Name="expConfigVenta" Header="Más opciones (lista, efectivo…)" IsExpanded="False" Margin="0,2,0,0"

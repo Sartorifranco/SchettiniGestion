@@ -1,7 +1,16 @@
 {
-  "versionActual": "2.2.0",
-  "instalador": "SCHPOS-Setup-2.2.0.exe",
+  "versionActual": "2.2.1",
+  "instalador": "SCHPOS-Setup-2.2.1.exe",
   "notas": [
+    {
+      "version": "2.2.1",
+      "fecha": "2026-07-27",
+      "titulo": "POS: letra A/B/C en vivo",
+      "items": [
+        "Panel de ventas: letra A/B/C (o X) visible y actualizada al cambiar cliente o tipo de comprobante.",
+        "Instalador SCHPOS-Setup-2.2.1.exe."
+      ]
+    },
     {
       "version": "2.2.0",
       "fecha": "2026-07-27",

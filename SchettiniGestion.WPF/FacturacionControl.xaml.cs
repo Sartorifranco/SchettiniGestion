@@ -743,6 +743,73 @@ namespace SchettiniGestion.WPF
             {
                 cmbCondicionVenta_SelectionChanged(null, null);
             }
+
+            ActualizarLetraComprobanteVisible();
+        }
+
+        /// <summary>
+        /// Muestra en vivo la letra A/B/C (o X / —) según tipo de comprobante, condición IVA del emisor y CUIT del cliente.
+        /// </summary>
+        private void ActualizarLetraComprobanteVisible()
+        {
+            if (lblLetraComprobante == null || lblLetraDetalle == null) return;
+
+            string tipo = ObtenerTipoComprobanteSeleccionado();
+            string letra;
+            string detalle;
+            string colorFondo;
+
+            if (tipo == "Ticket")
+            {
+                letra = "X";
+                detalle = "No fiscal";
+                colorFondo = "#7F8C8D";
+            }
+            else if (tipo == "Factura" || tipo == "Nota de Crédito" || tipo == "Nota de Débito")
+            {
+                letra = ResolverLetraComprobanteFiscal();
+                detalle = tipo == "Factura" ? "Factura" : (tipo == "Nota de Crédito" ? "N.Crédito" : "N.Débito");
+                colorFondo = letra == "A" ? "#1A5276" : (letra == "B" ? "#117A65" : "#6C3483");
+            }
+            else
+            {
+                letra = "—";
+                detalle = tipo.Length > 10 ? tipo.Substring(0, 9) + "…" : tipo;
+                colorFondo = "#566573";
+            }
+
+            lblLetraComprobante.Text = letra;
+            lblLetraDetalle.Text = detalle;
+            if (brdLetraComprobante != null)
+            {
+                try
+                {
+                    brdLetraComprobante.Background = new System.Windows.Media.SolidColorBrush(
+                        (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorFondo));
+                }
+                catch { }
+            }
+        }
+
+        private string ResolverLetraComprobanteFiscal()
+        {
+            try
+            {
+                DataRow config = DatabaseService.GetConfiguracion();
+                string condicionEmisor = config != null && config.Table.Columns.Contains("CondicionIVAEmpresa")
+                    ? config["CondicionIVAEmpresa"]?.ToString() ?? ""
+                    : "";
+
+                if (condicionEmisor.IndexOf("monotrib", StringComparison.OrdinalIgnoreCase) >= 0)
+                    return "C";
+
+                string cuit = _clienteSeleccionado?["CUIT"]?.ToString()?.Replace("-", "").Trim() ?? "";
+                return cuit.Length >= 11 && !cuit.Contains("00000000") ? "A" : "B";
+            }
+            catch
+            {
+                return "B";
+            }
         }
 
         private void FacturacionControl_Unloaded(object sender, RoutedEventArgs e)
@@ -2167,6 +2234,7 @@ namespace SchettiniGestion.WPF
                 lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
                 txtBuscarCliente.Text = "";
             }
+            ActualizarLetraComprobanteVisible();
         }
         private void RecalcularCarritoConNuevaLista()
         {
@@ -2254,6 +2322,7 @@ namespace SchettiniGestion.WPF
             lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
             _ignorarPerdidaFoco = false;
             popupCliente.IsOpen = false;
+            ActualizarLetraComprobanteVisible();
             txtBuscarProducto.Focus();
         }
 
@@ -2401,6 +2470,7 @@ namespace SchettiniGestion.WPF
                     lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
                     txtBuscarCliente.Text = _clienteSeleccionado["RazonSocial"].ToString();
                     popupCliente.IsOpen = false;
+                    ActualizarLetraComprobanteVisible();
                     txtBuscarProducto.Focus();
                 }
             }

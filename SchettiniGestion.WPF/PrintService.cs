@@ -953,19 +953,27 @@ namespace SchettiniGestion.WPF
                 if (string.Equals(tipo, "Etiqueta", StringComparison.OrdinalIgnoreCase))
                 {
                     var opEtiq = DatabaseService.GetOpcionesEtiqueta();
-                    AplicarTamanoEtiqueta(doc, opEtiq.AnchoMm, opEtiq.AltoMm);
+                    bool horizontalPrueba = string.Equals(opEtiq.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
+                    if (horizontalPrueba)
+                        AplicarTamanoEtiqueta(doc, opEtiq.AltoMm, opEtiq.AnchoMm);
+                    else
+                        AplicarTamanoEtiqueta(doc, opEtiq.AnchoMm, opEtiq.AltoMm);
+
+                    var itemPrueba = new EtiquetaPrintItem
+                    {
+                        Descripcion = "Producto de prueba",
+                        Codigo = "PRUEBA",
+                        CodigoBarra = "7790001000019",
+                        PrecioVenta = 1234.50m,
+                        Marca = "SCHPOS",
+                        Cantidad = 1
+                    };
                     doc.PrintPage += (s, e) =>
                     {
-                        DibujarEtiquetaGDI(e.Graphics, opEtiq,
-                            new EtiquetaPrintItem
-                            {
-                                Descripcion = "Producto de prueba",
-                                Codigo = "PRUEBA",
-                                CodigoBarra = "7790001000019",
-                                PrecioVenta = 1234.50m,
-                                Marca = "SCHPOS",
-                                Cantidad = 1
-                            });
+                        if (horizontalPrueba)
+                            DibujarEtiquetaRotadaGDI(e.Graphics, opEtiq, itemPrueba);
+                        else
+                            DibujarEtiquetaGDI(e.Graphics, opEtiq, itemPrueba);
                         e.HasMorePages = false;
                     };
                     doc.Print();
@@ -1342,13 +1350,26 @@ namespace SchettiniGestion.WPF
                 string impresora = DatabaseService.GetImpresoraEtiquetas();
                 var doc = new WinPrinting.PrintDocument();
                 doc.PrintController = new WinPrinting.StandardPrintController();
-                AplicarTamanoEtiqueta(doc, opciones.AnchoMm, opciones.AltoMm);
-                doc.DefaultPageSettings.Landscape = string.Equals(opciones.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
+
+                // La rotación se resuelve por software (nunca con el flag Landscape del
+                // driver): muchas impresoras térmicas de etiquetas no soportan bien la
+                // rotación a nivel de driver y terminan imprimiendo rotado igual, o
+                // directamente en blanco. Acá directamente declaramos el tamaño físico
+                // de página ya intercambiado si corresponde, y giramos el contenido
+                // nosotros mismos al dibujar.
+                bool horizontal = string.Equals(opciones.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
+                if (horizontal)
+                    AplicarTamanoEtiqueta(doc, opciones.AltoMm, opciones.AnchoMm);
+                else
+                    AplicarTamanoEtiqueta(doc, opciones.AnchoMm, opciones.AltoMm);
 
                 int idx = 0;
                 doc.PrintPage += (s, e) =>
                 {
-                    DibujarEtiquetaGDI(e.Graphics, opciones, cola[idx]);
+                    if (horizontal)
+                        DibujarEtiquetaRotadaGDI(e.Graphics, opciones, cola[idx]);
+                    else
+                        DibujarEtiquetaGDI(e.Graphics, opciones, cola[idx]);
                     idx++;
                     e.HasMorePages = idx < cola.Count;
                 };
@@ -1528,6 +1549,38 @@ namespace SchettiniGestion.WPF
                     float py = Math.Max(y, h - margin - sz.Height);
                     g.DrawString(precio, fPrecio, WinDrawing.Brushes.Black, margin + (contentW - sz.Width) / 2f, py);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Dibuja la etiqueta girada 90° para el modo "Horizontal" del impresor directo
+        /// de etiquetas. En vez de girar vía PageSettings.Landscape (poco confiable en
+        /// impresoras térmicas de etiquetas, causa salidas rotadas o en blanco), se
+        /// renderiza la etiqueta a su tamaño natural (Ancho x Alto) en un bitmap interno
+        /// y se rota esa imagen antes de estamparla en la página física ya intercambiada
+        /// (Alto x Ancho).
+        /// </summary>
+        private static void DibujarEtiquetaRotadaGDI(WinDrawing.Graphics gPagina, OpcionesEtiqueta op, EtiquetaPrintItem item)
+        {
+            if (gPagina == null || item == null) return;
+
+            const float dpi = 300f;
+            int wPx = Math.Max(1, (int)Math.Round(Math.Max(10, op.AnchoMm) / 25.4 * dpi));
+            int hPx = Math.Max(1, (int)Math.Round(Math.Max(10, op.AltoMm) / 25.4 * dpi));
+
+            using (var bmp = new WinDrawing.Bitmap(wPx, hPx))
+            {
+                bmp.SetResolution(dpi, dpi);
+                using (var gBmp = WinDrawing.Graphics.FromImage(bmp))
+                {
+                    gBmp.Clear(WinDrawing.Color.White);
+                    DibujarEtiquetaGDI(gBmp, op, item);
+                }
+
+                bmp.RotateFlip(WinDrawing.RotateFlipType.Rotate90FlipNone);
+
+                gPagina.PageUnit = WinDrawing.GraphicsUnit.Millimeter;
+                gPagina.DrawImage(bmp, 0f, 0f, Math.Max(10, op.AltoMm), Math.Max(10, op.AnchoMm));
             }
         }
 

@@ -5431,7 +5431,10 @@ ORDER BY Fecha DESC";
         {
             try
             {
-                string ds = string.IsNullOrWhiteSpace(puerto) || puerto == "1433" ? servidor : $"{servidor},{puerto}";
+                // Siempre incluir el puerto si se especificó (incluso con instancia nombrada,
+                // ej. "192.168.1.5\SQLEXPRESS,1433"): así el driver conecta directo por TCP sin
+                // depender del servicio "SQL Server Browser" (UDP 1434) para resolver el puerto.
+                string ds = string.IsNullOrWhiteSpace(puerto) ? servidor : $"{servidor},{puerto}";
                 string cs = integrado
                     ? $"Server={ds};Database=SchPosDB;Integrated Security=True;Encrypt=False;TrustServerCertificate=True;"
                     : $"Server={ds};Database=SchPosDB;User Id={usuario};Password={password};Encrypt=False;TrustServerCertificate=True;";

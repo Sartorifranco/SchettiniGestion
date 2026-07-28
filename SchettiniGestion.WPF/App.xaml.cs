@@ -622,6 +622,17 @@ namespace SchettiniGestion.WPF
                           NumeroComprobante NVARCHAR(50)
                       );",
 
+                    @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='NotaCreditoDebitoVentaDetalle')
+                      CREATE TABLE NotaCreditoDebitoVentaDetalle (
+                          DetalleID INT PRIMARY KEY IDENTITY(1,1),
+                          NotaID INT NOT NULL,
+                          ProductoID INT NULL,
+                          Codigo NVARCHAR(50) NULL,
+                          Descripcion NVARCHAR(300) NOT NULL,
+                          Cantidad DECIMAL(18,2) NOT NULL,
+                          PrecioUnitario DECIMAL(18,2) NOT NULL
+                      );",
+
                     @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='AccionesTecnicas')
                       CREATE TABLE AccionesTecnicas (
                           AccionTecnicaID INT PRIMARY KEY IDENTITY(1,1),

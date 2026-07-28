@@ -1,5 +1,6 @@
 using SchettiniGestion;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
@@ -137,7 +138,9 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
-            int id = DatabaseService.GuardarNotaCreditoDebitoVenta(clienteId, "NC", monto, descripcion, facturaId: _facturaId);
+            var itemsDetalle = ConstruirItemsDetalle(tipoNc);
+
+            int id = DatabaseService.GuardarNotaCreditoDebitoVenta(clienteId, "NC", monto, descripcion, facturaId: _facturaId, items: itemsDetalle);
             if (id <= 0)
             {
                 ModernMessageBox.Show("No se pudo guardar la nota de crédito.", "Nota de Crédito", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -153,17 +156,28 @@ namespace SchettiniGestion.WPF
 
         private string ConstruirDescripcion(string tipoNc, decimal monto)
         {
+            // El detalle de ítems ya no se vuelca acá como texto: se guarda de forma
+            // estructurada (ver ConstruirItemsDetalle) y se imprime en una tabla real,
+            // igual que en una factura. Esta descripción queda solo para el motivo.
+            string tipoTexto = tipoNc == "TOTAL" ? "Nota de crédito total" : "Nota de crédito parcial";
             var sb = new StringBuilder();
-            sb.Append($"NC {tipoNc} generada desde FacturaID {_facturaId:D8}. ");
-            sb.Append($"Factura fecha {Convert.ToDateTime(_encabezado["Fecha"]):dd/MM/yyyy HH:mm}, cliente {Valor("ClienteNombre", "-")}, total original {TotalFactura():C2}, monto NC {monto:C2}.");
+            sb.Append(tipoTexto).Append(" de la Factura #").Append(_facturaId.ToString("D8"));
             if (!string.IsNullOrWhiteSpace(txtObservaciones.Text))
-                sb.Append(" Motivo: ").Append(txtObservaciones.Text.Trim());
-
-            var seleccionados = rbTotal.IsChecked == true ? _items : _items.Where(i => i.Seleccionado);
-            string detalle = string.Join("; ", seleccionados.Select(i => $"{i.Codigo} {i.Descripcion} x{i.CantidadNota:0.##} @ {i.PrecioUnitario:C2}"));
-            if (!string.IsNullOrWhiteSpace(detalle))
-                sb.Append(" Items: ").Append(detalle);
+                sb.Append(". Motivo: ").Append(txtObservaciones.Text.Trim());
             return sb.ToString();
+        }
+
+        private List<DatabaseService.NotaCreditoItemDetalle> ConstruirItemsDetalle(string tipoNc)
+        {
+            var seleccionados = tipoNc == "TOTAL" ? _items : _items.Where(i => i.Seleccionado && i.CantidadNota > 0);
+            return seleccionados.Select(i => new DatabaseService.NotaCreditoItemDetalle
+            {
+                ProductoID = i.ProductoID,
+                Codigo = i.Codigo,
+                Descripcion = i.Descripcion,
+                Cantidad = i.CantidadNota > 0 ? i.CantidadNota : i.CantidadVendida,
+                PrecioUnitario = i.PrecioUnitario
+            }).ToList();
         }
 
         private string Valor(string col, string fallback)

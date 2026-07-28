@@ -6206,28 +6206,71 @@ WHERE ProductoPadreID={productoId}", c).Fill(dt);
             return dt;
         }
 
-        public static int GuardarNotaCreditoDebitoVenta(int cid, string tipo, decimal monto, string descripcion, int? facturaId = null, string numeroComprobante = null)
+        public static int GuardarNotaCreditoDebitoVenta(int cid, string tipo, decimal monto, string descripcion, int? facturaId = null, string numeroComprobante = null, List<NotaCreditoItemDetalle> items = null)
         {
             try
             {
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    var cmd = new SqlCommand(
-                        "INSERT INTO NotasCreditoDebitoVentas (ClienteID,FacturaID,Tipo,Fecha,Monto,Descripcion,NumeroComprobante) VALUES (@cid,@fid,@t,@f,@m,@d,@nc); SELECT SCOPE_IDENTITY();", c);
-                    cmd.Parameters.AddWithValue("@cid", cid);
-                    cmd.Parameters.AddWithValue("@fid", (object)facturaId ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@t", tipo);
-                    cmd.Parameters.AddWithValue("@f", DateTime.Now);
-                    cmd.Parameters.AddWithValue("@m", monto);
-                    string desc = descripcion ?? "";
-                    if (desc.Length > 500) desc = desc.Substring(0, 500);
-                    cmd.Parameters.AddWithValue("@d", desc);
-                    cmd.Parameters.AddWithValue("@nc", (object)numeroComprobante ?? DBNull.Value);
-                    return Convert.ToInt32(cmd.ExecuteScalar());
+                    AsegurarTablaNotaCreditoDebitoVentaDetalle(c);
+                    using (var tx = c.BeginTransaction())
+                    {
+                        var cmd = new SqlCommand(
+                            "INSERT INTO NotasCreditoDebitoVentas (ClienteID,FacturaID,Tipo,Fecha,Monto,Descripcion,NumeroComprobante) VALUES (@cid,@fid,@t,@f,@m,@d,@nc); SELECT SCOPE_IDENTITY();", c, tx);
+                        cmd.Parameters.AddWithValue("@cid", cid);
+                        cmd.Parameters.AddWithValue("@fid", (object)facturaId ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@t", tipo);
+                        cmd.Parameters.AddWithValue("@f", DateTime.Now);
+                        cmd.Parameters.AddWithValue("@m", monto);
+                        string desc = descripcion ?? "";
+                        if (desc.Length > 500) desc = desc.Substring(0, 500);
+                        cmd.Parameters.AddWithValue("@d", desc);
+                        cmd.Parameters.AddWithValue("@nc", (object)numeroComprobante ?? DBNull.Value);
+                        int notaId = Convert.ToInt32(cmd.ExecuteScalar());
+
+                        if (items != null)
+                        {
+                            foreach (var it in items)
+                            {
+                                if (it == null || it.Cantidad <= 0) continue;
+                                var cmdIt = new SqlCommand(
+                                    "INSERT INTO NotaCreditoDebitoVentaDetalle (NotaID,ProductoID,Codigo,Descripcion,Cantidad,PrecioUnitario) VALUES (@nid,@pid,@cod,@desc,@cant,@pu)", c, tx);
+                                cmdIt.Parameters.AddWithValue("@nid", notaId);
+                                cmdIt.Parameters.AddWithValue("@pid", it.ProductoID > 0 ? (object)it.ProductoID : DBNull.Value);
+                                cmdIt.Parameters.AddWithValue("@cod", (object)it.Codigo ?? DBNull.Value);
+                                cmdIt.Parameters.AddWithValue("@desc", it.Descripcion ?? "");
+                                cmdIt.Parameters.AddWithValue("@cant", it.Cantidad);
+                                cmdIt.Parameters.AddWithValue("@pu", it.PrecioUnitario);
+                                cmdIt.ExecuteNonQuery();
+                            }
+                        }
+
+                        tx.Commit();
+                        return notaId;
+                    }
                 }
             }
             catch { return 0; }
+        }
+
+        private static void AsegurarTablaNotaCreditoDebitoVentaDetalle(SqlConnection c)
+        {
+            try
+            {
+                new SqlCommand(@"
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='NotaCreditoDebitoVentaDetalle')
+                    CREATE TABLE NotaCreditoDebitoVentaDetalle (
+                        DetalleID INT PRIMARY KEY IDENTITY(1,1),
+                        NotaID INT NOT NULL,
+                        ProductoID INT NULL,
+                        Codigo NVARCHAR(50) NULL,
+                        Descripcion NVARCHAR(300) NOT NULL,
+                        Cantidad DECIMAL(18,2) NOT NULL,
+                        PrecioUnitario DECIMAL(18,2) NOT NULL
+                    );", c).ExecuteNonQuery();
+            }
+            catch { }
         }
 
         public static DataRow GetNotaVentaPorID(int id)
@@ -6246,6 +6289,35 @@ WHERE ProductoPadreID={productoId}", c).Fill(dt);
                 }
             }
             catch { return null; }
+        }
+
+        public static DataTable GetNotaVentaDetalle(int notaId)
+        {
+            var dt = new DataTable();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarTablaNotaCreditoDebitoVentaDetalle(c);
+                    var cmd = new SqlCommand(
+                        "SELECT ProductoID, Codigo, Descripcion, Cantidad, PrecioUnitario, (Cantidad*PrecioUnitario) AS Subtotal " +
+                        "FROM NotaCreditoDebitoVentaDetalle WHERE NotaID=@id ORDER BY DetalleID", c);
+                    cmd.Parameters.AddWithValue("@id", notaId);
+                    new SqlDataAdapter(cmd).Fill(dt);
+                }
+            }
+            catch { }
+            return dt;
+        }
+
+        public class NotaCreditoItemDetalle
+        {
+            public int ProductoID { get; set; }
+            public string Codigo { get; set; }
+            public string Descripcion { get; set; }
+            public decimal Cantidad { get; set; }
+            public decimal PrecioUnitario { get; set; }
         }
     }
 }

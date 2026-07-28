@@ -437,26 +437,90 @@ namespace SchettiniGestion.WPF
         {
             try
             {
+                int notaId = Convert.ToInt32(cabecera["NotaID"]);
+                DataTable itemsDetalle = DatabaseService.GetNotaVentaDetalle(notaId);
+
                 FlowDocument doc = CrearDocumentoBase();
                 doc.Blocks.Add(CrearEncabezadoDocumento(tituloDocumento, "NotaID", cabecera));
                 doc.Blocks.Add(CrearBloqueCliente(cabecera));
 
-                Paragraph pDetalle = new Paragraph { FontSize = 12, Margin = new Thickness(0, 10, 0, 10) };
-                pDetalle.Inlines.Add(new Run("Descripción: ") { FontWeight = FontWeights.Bold });
-                pDetalle.Inlines.Add(new Run(cabecera["Descripcion"]?.ToString() ?? "—"));
-                if (cabecera["NumeroComprobante"] != DBNull.Value && !string.IsNullOrWhiteSpace(cabecera["NumeroComprobante"].ToString()))
+                doc.Blocks.Add(CrearBloqueReferenciaNota(cabecera));
+
+                if (itemsDetalle.Rows.Count > 0)
                 {
-                    pDetalle.Inlines.Add(new LineBreak());
-                    pDetalle.Inlines.Add(new Run("Comprobante asociado: ") { FontWeight = FontWeights.Bold });
-                    pDetalle.Inlines.Add(new Run(cabecera["NumeroComprobante"].ToString()));
+                    // Documento estructurado por ítems (igual que una factura), no un párrafo con todo junto.
+                    doc.Blocks.Add(CrearTablaItems(itemsDetalle));
                 }
-                doc.Blocks.Add(pDetalle);
+                else
+                {
+                    // Notas anteriores a esta mejora: no tienen detalle estructurado, se
+                    // muestra el texto original guardado en su momento.
+                    Paragraph pDetalle = new Paragraph { FontSize = 12, Margin = new Thickness(0, 4, 0, 14) };
+                    pDetalle.Inlines.Add(new Run("Descripción: ") { FontWeight = FontWeights.Bold });
+                    pDetalle.Inlines.Add(new Run(cabecera["Descripcion"]?.ToString() ?? "—"));
+                    doc.Blocks.Add(pDetalle);
+                }
 
                 doc.Blocks.Add(CrearBloqueTotal(Convert.ToDecimal(cabecera["Monto"])));
                 doc.Blocks.Add(new Paragraph(new Run("Documento no válido como factura fiscal.")) { TextAlignment = TextAlignment.Center, FontSize = 10, Foreground = Brushes.Gray, Margin = new Thickness(0, 40, 0, 0) });
                 MostrarDialogoImpresion(doc, $"{tituloDocumento}_{cabecera["NotaID"]}");
             }
             catch (Exception ex) { MessageBox.Show("Error generando PDF: " + ex.Message); }
+        }
+
+        private static Block CrearBloqueReferenciaNota(DataRow cabecera)
+        {
+            var section = new Section();
+            Paragraph p = new Paragraph { FontSize = 11, Margin = new Thickness(0, 0, 0, 12) };
+
+            bool tieneReferencia = false;
+            if (cabecera.Table.Columns.Contains("FacturaID") && cabecera["FacturaID"] != DBNull.Value)
+            {
+                DataRow factura = DatabaseService.GetFacturaPorID(Convert.ToInt32(cabecera["FacturaID"]));
+                if (factura != null)
+                {
+                    string tipoComp = factura.Table.Columns.Contains("TipoComprobante") ? factura["TipoComprobante"]?.ToString() ?? "Comprobante" : "Comprobante";
+                    int nroComp = factura["NumeroComprobanteAFIP"] != DBNull.Value && factura["NumeroComprobanteAFIP"] != null
+                        ? Convert.ToInt32(factura["NumeroComprobanteAFIP"]) : Convert.ToInt32(cabecera["FacturaID"]);
+                    DateTime fechaComp = Convert.ToDateTime(factura["Fecha"]);
+                    p.Inlines.Add(new Run("Comprobante que modifica: ") { FontWeight = FontWeights.Bold });
+                    p.Inlines.Add(new Run($"{tipoComp} N° {nroComp:D8} del {fechaComp:dd/MM/yyyy}"));
+                    tieneReferencia = true;
+                }
+            }
+
+            if (cabecera.Table.Columns.Contains("NumeroComprobante") && cabecera["NumeroComprobante"] != DBNull.Value
+                && !string.IsNullOrWhiteSpace(cabecera["NumeroComprobante"].ToString()))
+            {
+                if (tieneReferencia) p.Inlines.Add(new LineBreak());
+                p.Inlines.Add(new Run("Comprobante asociado: ") { FontWeight = FontWeights.Bold });
+                p.Inlines.Add(new Run(cabecera["NumeroComprobante"].ToString()));
+                tieneReferencia = true;
+            }
+
+            string motivo = ExtraerMotivo(cabecera["Descripcion"]?.ToString());
+            if (!string.IsNullOrWhiteSpace(motivo))
+            {
+                if (tieneReferencia) p.Inlines.Add(new LineBreak());
+                p.Inlines.Add(new Run("Motivo: ") { FontWeight = FontWeights.Bold });
+                p.Inlines.Add(new Run(motivo));
+                tieneReferencia = true;
+            }
+
+            if (!tieneReferencia)
+                p.Inlines.Add(new Run(cabecera["Descripcion"]?.ToString() ?? ""));
+
+            section.Blocks.Add(p);
+            return section;
+        }
+
+        private static string ExtraerMotivo(string descripcion)
+        {
+            if (string.IsNullOrWhiteSpace(descripcion)) return null;
+            const string marca = "Motivo:";
+            int idx = descripcion.IndexOf(marca, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0) return null;
+            return descripcion.Substring(idx + marca.Length).Trim();
         }
 
         private const double AnchoPaginaA4 = 793;
@@ -652,7 +716,7 @@ namespace SchettiniGestion.WPF
             foreach (DataRow item in items.Rows)
             {
                 TableRow r = new TableRow();
-                r.Cells.Add(CrearCelda(item["Cantidad"].ToString(), TextAlignment.Center));
+                r.Cells.Add(CrearCelda(Convert.ToDecimal(item["Cantidad"]).ToString("0.##"), TextAlignment.Center));
                 if (mostrarCodigo)
                     r.Cells.Add(CrearCelda(item.Table.Columns.Contains("Codigo") ? item["Codigo"]?.ToString() ?? "" : "", TextAlignment.Left));
                 r.Cells.Add(CrearCelda(item["Descripcion"].ToString(), TextAlignment.Left));

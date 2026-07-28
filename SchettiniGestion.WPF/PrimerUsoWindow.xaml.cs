@@ -189,6 +189,18 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
+            string diagLocalDb = null;
+            if (rbSoloPC.IsChecked == true)
+            {
+                SetTestStatus("⏳", "Preparando LocalDB...", "Creando/iniciando la instancia de SQL Server LocalDB en esta PC...", "pending");
+                // Forzar un pase de render para que el mensaje de arriba se vea antes
+                // de la llamada bloqueante de abajo (puede tardar unos segundos).
+                Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+                // Reintenta crear/arrancar la instancia acá mismo (no solo al abrir la app),
+                // para que "Probar conexión" siempre tenga el diagnóstico más fresco posible.
+                diagLocalDb = App.PrepararYDiagnosticarLocalDB();
+            }
+
             SetTestStatus("⏳", "Probando conexión...", "Conectando al servidor de base de datos...", "pending");
 
             try
@@ -215,8 +227,11 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                string ayuda = ObtenerAyudaError(ex.Message);
-                SetTestStatus("✖", "No se pudo conectar", $"{ex.Message}\n\n{ayuda}", "error");
+                string ayuda = ObtenerAyudaError(ex.Message, diagLocalDb);
+                string detalleTecnico = !string.IsNullOrWhiteSpace(diagLocalDb)
+                    ? $"{ex.Message}\n\nDetalle técnico de LocalDB:\n{diagLocalDb}"
+                    : ex.Message;
+                SetTestStatus("✖", "No se pudo conectar", $"{detalleTecnico}\n\n{ayuda}", "error");
                 _cadenaTesteada = null;
                 btnContinuar.IsEnabled = false;
 
@@ -225,10 +240,33 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        private string ObtenerAyudaError(string mensaje)
+        private string ObtenerAyudaError(string mensaje, string diagLocalDb = null)
         {
             if (rbSoloPC.IsChecked == true)
-                return "LocalDB no está instalado o no se puede iniciar. Si el problema persiste, reiniciá la PC y volvé a intentarlo.";
+            {
+                if (!string.IsNullOrWhiteSpace(diagLocalDb) &&
+                    diagLocalDb.IndexOf("no se encontró", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return "El motor de SQL Server LocalDB no está instalado en esta PC. Instalalo desde:\n" +
+                           "https://aka.ms/sqllocaldb\n\n" +
+                           "Además, LocalDB necesita el 'Visual C++ Redistributable 2015-2022 (x64 y x86)' instalado.\n" +
+                           "Descargalo desde: https://aka.ms/vs/17/release/vc_redist.x64.exe";
+                }
+                if (!string.IsNullOrWhiteSpace(diagLocalDb) &&
+                    (diagLocalDb.IndexOf("process failed to start", StringComparison.OrdinalIgnoreCase) >= 0
+                     || diagLocalDb.IndexOf("Error 50", StringComparison.OrdinalIgnoreCase) >= 0))
+                {
+                    return "El motor de LocalDB está instalado pero el proceso de SQL Server no arranca.\n" +
+                           "Causa más común: falta el 'Visual C++ Redistributable 2015-2022'.\n" +
+                           "Instalá AMBAS versiones y reiniciá la PC:\n" +
+                           "• https://aka.ms/vs/17/release/vc_redist.x64.exe\n" +
+                           "• https://aka.ms/vs/17/release/vc_redist.x86.exe";
+                }
+                return "LocalDB no está instalado o no se puede iniciar.\n" +
+                       "1. Instalá 'Visual C++ Redistributable 2015-2022' (x64 y x86): https://aka.ms/vs/17/release/vc_redist.x64.exe\n" +
+                       "2. Reiniciá la PC y volvé a probar.\n" +
+                       "3. Si persiste, instalá manualmente SQL Server Express LocalDB: https://aka.ms/sqllocaldb";
+            }
 
             if (rbServidor.IsChecked == true)
                 return "Verificá que SQL Server Express esté instalado y en ejecución en esta PC. También podés hacer clic en '🔍 Detectar' para buscar la instancia correcta.";

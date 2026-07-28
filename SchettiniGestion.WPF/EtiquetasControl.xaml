@@ -161,13 +161,65 @@
                             </StackPanel>
                             <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="150">
                                 <TextBlock Text="Modo de impresión:" Style="{StaticResource ModuleLabelStyle}"/>
-                                <ComboBox x:Name="cmbModoImpresion" Style="{StaticResource ModuleComboBoxStyle}"/>
+                                <ComboBox x:Name="cmbModoImpresion" Style="{StaticResource ModuleComboBoxStyle}"
+                                          SelectionChanged="cmbModoImpresion_SelectionChanged"
+                                          ToolTip="Rollo: una etiqueta por vez, directo a la impresora térmica de etiquetas.&#10;A4: varias etiquetas acomodadas en una hoja común.&#10;Cartel / Góndola: cartel grande para exhibidor, con precio destacado."/>
                             </StackPanel>
                             <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="130">
                                 <TextBlock Text="Orientación:" Style="{StaticResource ModuleLabelStyle}"/>
-                                <ComboBox x:Name="cmbOrientacion" Style="{StaticResource ModuleComboBoxStyle}"/>
+                                <ComboBox x:Name="cmbOrientacion" Style="{StaticResource ModuleComboBoxStyle}"
+                                          SelectionChanged="cmbOrientacion_SelectionChanged"
+                                          ToolTip="Vertical: el contenido sale tal cual se ve en la vista previa.&#10;Horizontal: el contenido se gira 90° dentro de la misma etiqueta física (el tamaño de la etiqueta no cambia)."/>
                             </StackPanel>
                         </WrapPanel>
+
+                        <!-- Ayuda visual: muestra cómo queda la etiqueta física según Vertical/Horizontal -->
+                        <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                                BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,4,0,16">
+                            <StackPanel>
+                                <TextBlock Text="🔎 Vista previa de orientación" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
+                                <WrapPanel Orientation="Horizontal">
+                                    <Border x:Name="bdPreviewVertical" Width="150" Height="86" Margin="0,0,14,10"
+                                            Background="White" CornerRadius="6" BorderThickness="2.5"
+                                            BorderBrush="{DynamicResource BorderColor}">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="Producto" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="▮▮▮▮▮▮▮▮▮▮▮▮" FontSize="11" Foreground="Black" HorizontalAlignment="Center" Margin="0,3,0,3"/>
+                                            <TextBlock Text="$ 1.234,50" FontSize="10" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center" Width="190" Margin="0,0,20,10">
+                                        <TextBlock Text="Vertical (por defecto)" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource TextSecondary}"
+                                                   Text="El texto y el código de barras salen leíbles de arriba hacia abajo, tal como se ve al recibir la etiqueta de la impresora."/>
+                                    </StackPanel>
+                                    <Border x:Name="bdPreviewHorizontal" Width="150" Height="86" Margin="0,0,14,10"
+                                            Background="White" CornerRadius="6" BorderThickness="2.5"
+                                            BorderBrush="{DynamicResource BorderColor}">
+                                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   TextAlignment="Center" FontSize="9" Foreground="Black">
+                                            <TextBlock.LayoutTransform>
+                                                <RotateTransform Angle="90"/>
+                                            </TextBlock.LayoutTransform>
+                                            <Run Text="Producto" FontWeight="Bold"/>
+                                            <LineBreak/>
+                                            <Run Text="▮▮▮▮▮▮▮▮▮▮▮▮" FontSize="11"/>
+                                            <LineBreak/>
+                                            <Run Text="$ 1.234,50" FontWeight="Bold" FontSize="10"/>
+                                        </TextBlock>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center" Width="190" Margin="0,0,0,10">
+                                        <TextBlock Text="Horizontal" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource TextSecondary}"
+                                                   Text="El contenido se gira 90° dentro de la misma etiqueta física. Usalo solo si tu impresora lo requiere así."/>
+                                    </StackPanel>
+                                </WrapPanel>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" FontStyle="Italic" Margin="0,4,0,0"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Text="💡 Tip: antes de imprimir muchas etiquetas, probá con una sola desde Configuración → Impresoras → «Probar impresora» para confirmar que la orientación es la correcta."/>
+                            </StackPanel>
+                        </Border>
 
                         <TextBlock Text="Diseño en hoja A4" FontSize="13" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,8"/>

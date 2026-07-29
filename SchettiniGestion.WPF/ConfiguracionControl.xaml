@@ -678,15 +678,74 @@
                             <StackPanel>
                         <TextBlock Text="Generar copia de seguridad" Style="{StaticResource ConfigSectionTitle}" Foreground="{DynamicResource SuccessColor}"/>
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,6"
-                                   Text="Guarda todos los datos (clientes, productos, ventas) en un archivo .bak. Guardalo en un pendrive o en la nube."/>
+                                   Text="Guarda todos los datos (clientes, productos, ventas) en un archivo .bak."/>
                         <TextBlock TextWrapping="Wrap" FontStyle="Italic" Foreground="{DynamicResource TextSecondary}"
-                                   Margin="0,0,0,16"
-                                   Text="⚠ El archivo se genera en el servidor SQL. Elegí una carpeta accesible desde esa PC (ej: C:\Backups o el escritorio del servidor)."/>
+                                   Margin="0,0,0,10"
+                                   Text="⚠ El archivo se genera en la PC donde vive la base de datos (el Servidor, o esta misma PC si trabajás en modo Solo esta PC). Elegí una carpeta accesible desde esa PC."/>
+                        <Border Background="#FFF3E0" CornerRadius="6" Padding="14,10" Margin="0,0,0,14">
+                            <TextBlock TextWrapping="Wrap" FontSize="13">
+                                <Run FontWeight="Bold" Foreground="#E65100">⚠ Muy importante:</Run>
+                                <Run Foreground="#BF360C"> guardar el backup en el mismo disco de esta PC NO alcanza. Si la PC se rompe, se roba o el disco falla, ese backup se pierde junto con los datos. Copialo SIEMPRE también a un pendrive, otra PC o una carpeta de la nube (ver "Backup automático diario" más abajo para hacerlo sin tener que acordarte todos los días).</Run>
+                            </TextBlock>
+                        </Border>
                         <Button x:Name="btnGenerarBackup" Content="💾  Generar copia de seguridad"
                                 Style="{StaticResource ButtonStyle}" Padding="20,12" HorizontalAlignment="Left"
                                 Click="btnGenerarBackup_Click"/>
-                        <TextBlock Text="✔ Recomendado: al menos una vez por semana."
+                        <TextBlock Text="✔ Recomendado: al menos una vez por semana, además del automático."
                                    Foreground="{DynamicResource TextSecondary}" FontStyle="Italic" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource ConfigSectionCard}">
+                            <StackPanel>
+                        <TextBlock Text="Backup automático diario" Style="{StaticResource ConfigSectionTitle}" Foreground="{DynamicResource WarningColor}"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,14"
+                                   Text="Programa un backup diario que se genera solo (sin abrir el sistema) y se copia automáticamente a una carpeta externa: pendrive, PC/disco de red, o una carpeta sincronizada con la nube (OneDrive, Google Drive, etc.)."/>
+
+                        <Border x:Name="pnlBackupAutoNoAplica" Visibility="Collapsed" Background="{DynamicResource SurfaceDark}"
+                                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="6" Padding="14,10" Margin="0,0,0,10">
+                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimary}"
+                                Text="ℹ Esta PC se conecta como Cliente a la base de datos de otro equipo. El backup automático se configura desde la PC que funciona como Servidor, porque es ahí donde vive realmente la información."/>
+                        </Border>
+
+                        <StackPanel x:Name="pnlBackupAutoConfig">
+                            <CheckBox x:Name="chkBackupAutoHabilitado" Content="Activar backup automático diario"
+                                      Foreground="{DynamicResource TextPrimary}" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Hora del backup (formato 24 hs, ej: 02:00 = 2 de la madrugada):" Style="{StaticResource ModuleLabelStyle}"/>
+                            <TextBox x:Name="txtBackupAutoHora" Style="{StaticResource ModuleTextBoxStyle}" Width="120" HorizontalAlignment="Left" Text="02:00"/>
+                            <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,14"
+                                Text="Elegí un horario en que el local esté cerrado y la PC quede encendida."/>
+
+                            <TextBlock Text="Carpeta externa de destino:" Style="{StaticResource ModuleLabelStyle}"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="txtBackupAutoCarpeta" Grid.Column="0" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,10,0"
+                                         ToolTip="Ej: E:\Backups (pendrive) o \\OTRAPC\Backups (red) o C:\Users\TuUsuario\OneDrive\BackupsSCHPOS (nube)"/>
+                                <Button x:Name="btnBuscarCarpetaBackupAuto" Grid.Column="1" Content="📁" MinWidth="48" MinHeight="44" Padding="12,0"
+                                        Click="btnBuscarCarpetaBackupAuto_Click" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Elegir carpeta"/>
+                            </Grid>
+                            <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,14"
+                                Text="Tip: si usás un pendrive, dejalo siempre conectado a esta PC. Si usás una carpeta de la nube (OneDrive, Google Drive, Dropbox), elegí la carpeta local que se sincroniza sola: el archivo va a subirse a internet automáticamente."/>
+
+                            <TextBlock Text="Cantidad de copias a conservar:" Style="{StaticResource ModuleLabelStyle}"/>
+                            <TextBox x:Name="txtBackupAutoRetencion" Style="{StaticResource ModuleTextBoxStyle}" Width="100" HorizontalAlignment="Left" Text="14"/>
+                            <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,14"
+                                Text="Los backups más viejos que esta cantidad se borran solos para no llenar el pendrive o disco."/>
+
+                            <TextBlock x:Name="lblBackupAutoEstado" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}"
+                                       FontStyle="Italic" Margin="0,0,0,14" Text="Nunca se ejecutó."/>
+
+                            <WrapPanel>
+                                <Button x:Name="btnGuardarBackupAuto" Content="💾  Guardar y programar" Style="{StaticResource ButtonStyle}"
+                                        Padding="20,12" Margin="0,0,10,8" Click="btnGuardarBackupAuto_Click"/>
+                                <Button x:Name="btnProbarBackupAuto" Content="▶ Probar ahora" Style="{StaticResource SecondaryButtonStyle}"
+                                        Padding="20,12" Margin="0,0,0,8" Click="btnProbarBackupAuto_Click"/>
+                            </WrapPanel>
+                        </StackPanel>
                             </StackPanel>
                         </Border>
 

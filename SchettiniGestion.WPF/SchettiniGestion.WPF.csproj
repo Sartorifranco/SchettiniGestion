@@ -309,6 +309,7 @@
       <DependentUpon>ActivationWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="BackupService.cs" />
+    <Compile Include="BackupAutoService.cs" />
     <Compile Include="FacturacionPresupuestosTab.cs">
       <DependentUpon>FacturacionPresupuestosTab.xaml</DependentUpon>
     </Compile>

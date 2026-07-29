@@ -39,6 +39,7 @@ namespace SchettiniGestion.WPF
             AplicarVisibilidadCredencialesSQL();
             AplicarVisibilidadSegunLicencia();
             CargarImpresoras();
+            CargarBackupAuto();
         }
 
         private void AplicarVisibilidadSegunLicencia()
@@ -1142,6 +1143,136 @@ namespace SchettiniGestion.WPF
                 dgvMediosPago.ItemsSource = dt.DefaultView;
             }
             catch (Exception ex) { ModernMessageBox.Show(ex.Message); }
+        }
+
+        // --- BACKUP AUTOMÁTICO ---
+        private void CargarBackupAuto()
+        {
+            try
+            {
+                bool esHost = BackupAutoService.EsEstaPCElHostDeLaBaseDeDatos();
+                if (pnlBackupAutoNoAplica != null) pnlBackupAutoNoAplica.Visibility = esHost ? Visibility.Collapsed : Visibility.Visible;
+                if (pnlBackupAutoConfig != null) pnlBackupAutoConfig.Visibility = esHost ? Visibility.Visible : Visibility.Collapsed;
+                if (!esHost) return;
+
+                var cfg = DatabaseService.ObtenerConfigBackupAuto();
+                chkBackupAutoHabilitado.IsChecked = cfg.Habilitado;
+                txtBackupAutoHora.Text = cfg.Hora;
+                txtBackupAutoCarpeta.Text = cfg.CarpetaExterna ?? "";
+                txtBackupAutoRetencion.Text = cfg.RetencionCantidad.ToString();
+                ActualizarEstadoBackupAutoEnUi(cfg);
+            }
+            catch (Exception ex) { ModernMessageBox.Show(ex.Message); }
+        }
+
+        private void ActualizarEstadoBackupAutoEnUi(DatabaseService.BackupAutoConfig cfg)
+        {
+            if (lblBackupAutoEstado == null) return;
+            if (cfg.UltimaFecha == null)
+            {
+                lblBackupAutoEstado.Text = "Nunca se ejecutó.";
+                return;
+            }
+            lblBackupAutoEstado.Text = $"Último intento: {cfg.UltimaFecha:dd/MM/yyyy HH:mm} — {cfg.UltimoResultado}";
+        }
+
+        private void btnBuscarCarpetaBackupAuto_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dlg = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dlg.Description = "Carpeta externa donde copiar el backup automático (pendrive, red o carpeta de la nube)";
+                if (!string.IsNullOrWhiteSpace(txtBackupAutoCarpeta?.Text))
+                    dlg.SelectedPath = txtBackupAutoCarpeta.Text.Trim();
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    txtBackupAutoCarpeta.Text = dlg.SelectedPath;
+            }
+        }
+
+        private void btnGuardarBackupAuto_Click(object sender, RoutedEventArgs e)
+        {
+            bool habilitado = chkBackupAutoHabilitado.IsChecked == true;
+            string hora = txtBackupAutoHora.Text?.Trim();
+            string carpeta = txtBackupAutoCarpeta.Text?.Trim();
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(hora ?? "", @"^([01]?\d|2[0-3]):[0-5]\d$"))
+            {
+                ModernMessageBox.Show("Ingresá la hora en formato HH:mm, por ejemplo 02:00.", "Hora inválida",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (habilitado && string.IsNullOrWhiteSpace(carpeta))
+            {
+                ModernMessageBox.Show(
+                    "Para activar el backup automático elegí una carpeta externa de destino (pendrive, red o carpeta de la nube).\n\n" +
+                    "Guardar solo en esta PC no protege tus datos si el equipo se rompe.",
+                    "Falta la carpeta externa", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (!int.TryParse(txtBackupAutoRetencion.Text?.Trim(), out int retencion) || retencion < 1)
+                retencion = 14;
+
+            this.Cursor = System.Windows.Input.Cursors.Wait;
+            bool guardadoOk = DatabaseService.GuardarConfigBackupAuto(habilitado, hora, carpeta, retencion);
+            string errorTarea = null;
+            if (guardadoOk)
+                errorTarea = habilitado ? BackupAutoService.ProgramarTareaWindows(hora) : BackupAutoService.QuitarTareaWindows();
+            this.Cursor = System.Windows.Input.Cursors.Arrow;
+
+            if (!guardadoOk)
+            {
+                ModernMessageBox.Show("No se pudo guardar la configuración del backup automático.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            if (errorTarea != null)
+            {
+                ModernMessageBox.Show(
+                    "La configuración se guardó, pero no se pudo programar la tarea en Windows:\n\n" + errorTarea +
+                    "\n\nProbá ejecutar el sistema como Administrador la primera vez que actives esta opción.",
+                    "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            ModernMessageBox.Show(
+                habilitado
+                    ? $"✔ Backup automático programado todos los días a las {hora}."
+                    : "Backup automático desactivado.",
+                "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            CargarBackupAuto();
+        }
+
+        private async void btnProbarBackupAuto_Click(object sender, RoutedEventArgs e)
+        {
+            string carpeta = txtBackupAutoCarpeta.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(carpeta))
+            {
+                ModernMessageBox.Show("Elegí primero una carpeta externa de destino para poder probar.", "Falta la carpeta externa",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Guardar temporalmente la carpeta/retención actuales para que la prueba use lo que se ve en pantalla,
+            // aunque todavía no se haya presionado "Guardar y programar".
+            if (!int.TryParse(txtBackupAutoRetencion.Text?.Trim(), out int retencion) || retencion < 1)
+                retencion = 14;
+            DatabaseService.GuardarConfigBackupAuto(true, txtBackupAutoHora.Text?.Trim() ?? "02:00", carpeta, retencion);
+
+            this.Cursor = System.Windows.Input.Cursors.Wait;
+            btnProbarBackupAuto.IsEnabled = false;
+            string resultado = await Task.Run(() => BackupAutoService.EjecutarBackupAutomatico());
+            btnProbarBackupAuto.IsEnabled = true;
+            this.Cursor = System.Windows.Input.Cursors.Arrow;
+
+            // Restaurar el estado "habilitado" real elegido por el usuario (la prueba no debe activar el backup solo por probarlo).
+            bool habilitadoReal = chkBackupAutoHabilitado.IsChecked == true;
+            DatabaseService.GuardarConfigBackupAuto(habilitadoReal, txtBackupAutoHora.Text?.Trim() ?? "02:00", carpeta, retencion);
+
+            bool ok = resultado != null && resultado.StartsWith("✔");
+            ModernMessageBox.Show(resultado ?? "Ocurrió un error desconocido.", ok ? "Prueba exitosa" : "Prueba con problemas",
+                MessageBoxButton.OK, ok ? MessageBoxImage.Information : MessageBoxImage.Warning);
+
+            CargarBackupAuto();
         }
 
         private void btnGenerarBackup_Click(object sender, RoutedEventArgs e)

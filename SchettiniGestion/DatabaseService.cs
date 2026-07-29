@@ -440,6 +440,7 @@ namespace SchettiniGestion
         private static bool _columnasVisorPromoVerificadas;
         private static bool _columnaCondicionTicketFacturasOk;
         private static bool _tablaAperturasCajaOk;
+        private static bool _columnasBackupAutoVerificadas;
 
         /// <summary>Concepto estándar del movimiento de caja al abrir turno.</summary>
         public const string ConceptoFondoFijo = "FONDO FIJO";
@@ -695,6 +696,31 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
             catch { /* BD sin tabla Configuracion o sin permisos ALTER */ }
         }
 
+        private static void AsegurarColumnasBackupAuto(SqlConnection c)
+        {
+            if (_columnasBackupAutoVerificadas) return;
+            try
+            {
+                AsegurarMigracionLite(c);
+                using (var cmd = new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='BackupAutoHabilitado')
+  ALTER TABLE Configuracion ADD BackupAutoHabilitado BIT NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='BackupAutoHora')
+  ALTER TABLE Configuracion ADD BackupAutoHora NVARCHAR(5) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='BackupAutoCarpetaExterna')
+  ALTER TABLE Configuracion ADD BackupAutoCarpetaExterna NVARCHAR(500) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='BackupAutoRetencionCantidad')
+  ALTER TABLE Configuracion ADD BackupAutoRetencionCantidad INT NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='BackupAutoUltimaFecha')
+  ALTER TABLE Configuracion ADD BackupAutoUltimaFecha DATETIME NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='BackupAutoUltimoResultado')
+  ALTER TABLE Configuracion ADD BackupAutoUltimoResultado NVARCHAR(500) NULL;", c))
+                    cmd.ExecuteNonQuery();
+                _columnasBackupAutoVerificadas = true;
+            }
+            catch { /* BD sin tabla Configuracion o sin permisos ALTER */ }
+        }
+
         private static void AsegurarColumnaCondicionTicketFacturas(SqlConnection c)
         {
             if (_columnaCondicionTicketFacturasOk) return;
@@ -782,6 +808,95 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Apertur
             }
             catch { }
             return null;
+        }
+
+        /// <summary>Configuración del backup automático diario (se ejecuta en la PC donde vive la base de datos).</summary>
+        public class BackupAutoConfig
+        {
+            public bool Habilitado { get; set; }
+            public string Hora { get; set; } = "02:00";
+            public string CarpetaExterna { get; set; }
+            public int RetencionCantidad { get; set; } = 14;
+            public DateTime? UltimaFecha { get; set; }
+            public string UltimoResultado { get; set; }
+        }
+
+        public static BackupAutoConfig ObtenerConfigBackupAuto()
+        {
+            var cfg = new BackupAutoConfig();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    ForzarContextoBD(c);
+                    AsegurarColumnasBackupAuto(c);
+                    var dt = new DataTable();
+                    new SqlDataAdapter(@"SELECT TOP 1 BackupAutoHabilitado, BackupAutoHora, BackupAutoCarpetaExterna,
+                        BackupAutoRetencionCantidad, BackupAutoUltimaFecha, BackupAutoUltimoResultado FROM Configuracion", c).Fill(dt);
+                    if (dt.Rows.Count == 0) return cfg;
+                    var r = dt.Rows[0];
+                    cfg.Habilitado = r["BackupAutoHabilitado"] != DBNull.Value && Convert.ToBoolean(r["BackupAutoHabilitado"]);
+                    cfg.Hora = r["BackupAutoHora"] == DBNull.Value ? "02:00" : r["BackupAutoHora"].ToString();
+                    cfg.CarpetaExterna = r["BackupAutoCarpetaExterna"] == DBNull.Value ? null : r["BackupAutoCarpetaExterna"].ToString();
+                    cfg.RetencionCantidad = r["BackupAutoRetencionCantidad"] == DBNull.Value ? 14 : Convert.ToInt32(r["BackupAutoRetencionCantidad"]);
+                    cfg.UltimaFecha = r["BackupAutoUltimaFecha"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(r["BackupAutoUltimaFecha"]);
+                    cfg.UltimoResultado = r["BackupAutoUltimoResultado"] == DBNull.Value ? null : r["BackupAutoUltimoResultado"].ToString();
+                }
+            }
+            catch { }
+            return cfg;
+        }
+
+        public static bool GuardarConfigBackupAuto(bool habilitado, string hora, string carpetaExterna, int retencionCantidad)
+        {
+            if (retencionCantidad < 1) retencionCantidad = 1;
+            if (retencionCantidad > 365) retencionCantidad = 365;
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    ForzarContextoBD(c);
+                    AsegurarColumnasBackupAuto(c);
+                    using (var cmd = new SqlCommand(@"UPDATE Configuracion SET BackupAutoHabilitado=@h, BackupAutoHora=@hr,
+                        BackupAutoCarpetaExterna=@carp, BackupAutoRetencionCantidad=@ret WHERE ID=1", c))
+                    {
+                        cmd.Parameters.AddWithValue("@h", habilitado);
+                        cmd.Parameters.AddWithValue("@hr", string.IsNullOrWhiteSpace(hora) ? "02:00" : hora.Trim());
+                        cmd.Parameters.AddWithValue("@carp", string.IsNullOrWhiteSpace(carpetaExterna) ? (object)DBNull.Value : carpetaExterna.Trim());
+                        cmd.Parameters.AddWithValue("@ret", retencionCantidad);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                NotificarError(ex.Message);
+                return false;
+            }
+        }
+
+        public static bool RegistrarResultadoBackupAuto(DateTime fecha, string resultado)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    ForzarContextoBD(c);
+                    AsegurarColumnasBackupAuto(c);
+                    using (var cmd = new SqlCommand(@"UPDATE Configuracion SET BackupAutoUltimaFecha=@f, BackupAutoUltimoResultado=@r WHERE ID=1", c))
+                    {
+                        cmd.Parameters.AddWithValue("@f", fecha);
+                        cmd.Parameters.AddWithValue("@r", string.IsNullOrWhiteSpace(resultado) ? (object)DBNull.Value : resultado.Trim());
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                return true;
+            }
+            catch { return false; }
         }
 
         /// <summary>Preferencias predeterminadas del POS (lista, comprobante, pago).</summary>

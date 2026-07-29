@@ -34,6 +34,18 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
+            if (EsModoBackupAutomatico(e.Args))
+            {
+                // Invocado en silencio por la tarea programada de Windows (Configuración > Mantenimiento).
+                // No debe mostrar ninguna ventana: solo genera el backup y copia el archivo afuera.
+                ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                AppCulture.Initialize();
+                DespertarLocalDB();
+                try { BackupAutoService.EjecutarBackupAutomatico(); } catch { }
+                Shutdown(0);
+                return;
+            }
+
             AppCulture.Initialize();
             AppIconHelper.ApplyToAllWindows();
             ThemeManager.LoadSavedTheme();
@@ -132,6 +144,18 @@ namespace SchettiniGestion.WPF
             {
                 if (string.Equals(a, "/bootstrap", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(a, "-bootstrap", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool EsModoBackupAutomatico(string[] args)
+        {
+            if (args == null) return false;
+            foreach (string a in args)
+            {
+                if (string.Equals(a, "/autobackup", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(a, "-autobackup", StringComparison.OrdinalIgnoreCase))
                     return true;
             }
             return false;

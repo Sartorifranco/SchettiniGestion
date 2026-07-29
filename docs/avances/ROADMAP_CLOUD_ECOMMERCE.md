@@ -21,6 +21,8 @@ La evolución natural hacia **v3.0** implica tres capas nuevas:
 
 **Recomendación:** no saltar directo a “app 100 % web”. Mantener el POS desktop como fuente de verdad en caja y agregar **cloud como espejo + panel**, luego **un conector** de e-commerce según demanda del mercado.
 
+**Costos de implementación (solo infra y servicios, sin desarrollo):** piloto **USD 80 – 200/mes**; operación con 10–50 comercios **USD 150 – 450/mes**; dominio **USD 10 – 75/año**. Si el comercio vende online, suma su plan de Tienda Nube (~ARS 8.000 – 35.000/mes) o comisión de Mercado Libre. Detalle en §5.
+
 ---
 
 ## 2. Situación actual (inventario honesto)
@@ -90,146 +92,178 @@ La evolución natural hacia **v3.0** implica tres capas nuevas:
 
 ## 4. Fases de implementación
 
-| Fase | Entregable | Dependencias | Duración estimada (1 dev) |
-|------|------------|--------------|---------------------------|
-| **0 — Diseño** | ADR, modelo de datos cloud, contrato API OpenAPI, plan de migración licencias | Ninguna | 2–3 semanas |
-| **1 — API + tenant** | Auth JWT, CRUD productos/clientes/stock read, multi-tenant básico | Fase 0 | 6–10 semanas |
-| **2 — Agente sync** | Servicio Windows: push ventas/stock, pull catálogo y precios | Fase 1 | 8–12 semanas |
-| **3 — Panel web MVP** | Login, dashboard ventas, listado productos/stock, usuarios | Fase 1 | 6–8 semanas |
-| **4 — E-commerce (1 canal)** | Conector Tienda Nube **o** Mercado Libre: stock + importación pedidos | Fases 1–2 | 6–10 semanas |
-| **5 — Pulido comercial** | Licencias cloud, facturación SaaS, monitoreo, documentación cliente | Fases 1–4 | 4–6 semanas |
-
-Las fases 3 y 4 pueden solaparse parcialmente si hay dos desarrolladores.
+| Fase | Entregable | Dependencias |
+|------|------------|--------------|
+| **0 — Diseño** | ADR, modelo de datos cloud, contrato API OpenAPI, plan de migración licencias | Ninguna |
+| **1 — API + tenant** | Auth JWT, CRUD productos/clientes/stock read, multi-tenant básico | Fase 0 |
+| **2 — Agente sync** | Servicio Windows: push ventas/stock, pull catálogo y precios | Fase 1 |
+| **3 — Panel web MVP** | Login, dashboard ventas, listado productos/stock, usuarios | Fase 1 |
+| **4 — E-commerce (1 canal)** | Conector Tienda Nube **o** Mercado Libre: stock + importación pedidos | Fases 1–2 |
+| **5 — Pulido comercial** | Licencias cloud, facturación SaaS, monitoreo, documentación cliente | Fases 1–4 |
 
 **Orden sugerido para MVP comercial:** 0 → 1 → 2 → 3 (panel básico) → 4 (un solo marketplace según encuesta de clientes).
 
 ---
 
-## 5. Costos de desarrollo (rangos aproximados)
+## 5. Costos de implementación y operación
 
-Cifras en **USD**, mercado **Argentina/LATAM** (freelance o equipo chico). Un “mes-persona” ≈ 160 h.
+Solo gastos para **poner en marcha y mantener** la solución cloud/e-commerce: infraestructura, dominios, servicios de terceros y planes de las plataformas de venta online. **No incluye** honorarios de programación ni consultoría.
 
-| Fase | Alcance mínimo | Alcance robusto | Notas |
-|------|----------------|-----------------|-------|
-| **0 — Diseño** | USD 2.000 – 4.000 | USD 5.000 – 8.000 | Incluye prototipo API y diagramas |
-| **1 — API + tenant** | USD 8.000 – 15.000 | USD 20.000 – 35.000 | .NET 8, EF Core, tests |
-| **2 — Agente sync** | USD 12.000 – 22.000 | USD 30.000 – 45.000 | La parte más delicada técnicamente |
-| **3 — Panel web** | USD 6.000 – 12.000 | USD 18.000 – 28.000 | PWA responsive, sin POS web |
-| **4 — E-commerce (1 canal)** | USD 5.000 – 10.000 | USD 15.000 – 25.000 | Por plataforma adicional: +40–60 % |
-| **5 — Pulido** | USD 3.000 – 6.000 | USD 10.000 – 18.000 | DevOps, docs, onboarding |
+Cifras en **USD** salvo donde se indique **ARS**. Revisar calculadoras oficiales antes de comprometer presupuesto.
 
-### Escenarios totales de desarrollo
+### 5.1 Puesta en marcha (pago único o primer año)
 
-| Escenario | Qué incluye | Rango total USD |
-|-----------|-------------|-----------------|
-| **MVP mínimo** | Fases 0–2 + panel muy básico (solo lectura) | **USD 35.000 – 55.000** |
-| **MVP comercial** | Fases 0–3 + un conector e-commerce | **USD 55.000 – 90.000** |
-| **Producto completo v3.0** | Fases 0–5 + 2 conectores (TN + ML) | **USD 90.000 – 150.000** |
+| Concepto | Cuándo aplica | Rango estimado |
+|----------|---------------|----------------|
+| Dominio (`.com` / `.com.ar`) | API + panel web | USD 10 – 25/año |
+| Certificado SSL | Si no usa el managed del hosting | USD 0 – 50/año (Let's Encrypt = gratis) |
+| Cuenta Azure / AWS / GCP | Alta sin costo; facturación por uso | USD 0 |
+| DNS (Cloudflare, etc.) | Opcional | USD 0 – 20/mes |
+| Cuenta desarrollador Tienda Nube / ML | Integración e-commerce | **Gratis** |
+| App de terceros en Tienda Nube | Si se usa un conector ya hecho en lugar de propio | USD 0 – 30/mes según app |
 
-*Comparación:* reescribir todo el POS como app web desde cero suele costar **USD 150.000 – 300.000+** y demora más — por eso se recomienda evolución incremental.
+**Total arranque mínimo (solo cloud, sin e-commerce):** **USD 10 – 75** el primer año (dominio + SSL básico).
 
-### Costo de mantenimiento post-lanzamiento
+### 5.2 Infraestructura cloud (mensual — quien opera SCHPOS)
 
-| Concepto | Mensual USD (estimado) |
-|----------|------------------------|
-| Bugfixes y parches API/sync | USD 1.500 – 4.000 |
-| Soporte N2 cloud (horas incluidas) | USD 500 – 2.000 |
-| Actualizaciones e-commerce (cambios de API TN/ML) | USD 300 – 1.000 |
+Estimaciones para **Azure** (AWS/GCP comparables ±15 %).
 
----
+#### Por escala de comercios con sync activo
 
-## 6. Costos de infraestructura cloud (mensuales)
+| Escenario | Comercios (tenants) | Qué se despliega | USD/mes |
+|-----------|---------------------|------------------|---------|
+| **Piloto** | 1–10 | App Service B1, SQL Basic, storage mínimo | **80 – 150** |
+| **Crecimiento** | 10–50 | App Service S1, SQL Standard S0, App Insights, Blob | **150 – 350** |
+| **Producción media** | 50–200 | App Service S2+, SQL S1–S2, Redis, CDN | **350 – 800** |
+| **Escala** | 200+ | Múltiples instancias, SQL elastic pool, WAF | **800 – 2.500+** |
 
-Estimaciones para **Azure** (AWS/GCP son comparables ±15 %). Tipo de cambio y precios cambian — revisar calculadora oficial antes de comprometer.
-
-### Por escala de clientes activos (tenants con sync)
-
-| Escala | Tenants | Arquitectura | USD/mes infra |
-|--------|---------|--------------|---------------|
-| **Piloto** | 1–10 | App Service B1, SQL Basic, sin CDN | **USD 80 – 150** |
-| **Crecimiento** | 10–50 | App Service S1, SQL Standard S0, Storage, App Insights | **USD 150 – 350** |
-| **Producción media** | 50–200 | App Service S2+, SQL S1–S2, Redis cache, CDN | **USD 350 – 800** |
-| **Escala** | 200+ | Kubernetes o múltiples instancias, SQL elastic pool, WAF | **USD 800 – 2.500+** |
-
-### Desglose típico (escenario “Crecimiento”, ~30 tenants)
+#### Desglose típico — escenario “Crecimiento” (~30 comercios)
 
 | Servicio | Configuración referencia | USD/mes |
 |----------|-------------------------|---------|
-| Azure App Service (API) | S1 Linux, 1 instancia | 55 – 75 |
+| Azure App Service (API + panel) | S1 Linux, 1 instancia | 55 – 75 |
 | Azure SQL Database | S0 (10 DTU) o vCore mínimo | 30 – 90 |
 | Azure Blob Storage | PDF, backups ligeros | 5 – 15 |
 | Application Insights | Logs y métricas | 10 – 40 |
-| Dominio + certificado SSL | Let's Encrypt o App Service managed | 0 – 15 |
 | Azure Functions (webhooks e-commerce) | Consumo bajo | 0 – 20 |
-| **Subtotal infra** | | **~USD 100 – 250** |
+| Dominio + SSL managed | Incluido en App Service o aparte | 0 – 15 |
+| **Subtotal infra producción** | | **~100 – 250** |
 
-### Costos adicionales de operación
+#### Operación adicional (opcional pero recomendable)
 
 | Concepto | USD/mes |
 |----------|---------|
-| Monitoreo/alertas (PagerDuty, etc.) | 0 – 50 |
+| Ambiente de pruebas (staging) | 40 – 100 |
 | Backups geo-redundantes | 10 – 40 |
-| Ambiente staging (réplica chica) | 40 – 100 |
-| Email transaccional (SendGrid, etc.) | 0 – 20 |
+| Monitoreo/alertas (PagerDuty, UptimeRobot Pro, etc.) | 0 – 50 |
+| Email transaccional (SendGrid, Mailgun) | 0 – 20 |
 
-**Regla práctica:** presupuestar **USD 100 – 400/mes** de infra para los primeros 12–24 meses comerciales, más **USD 50 – 150/mes** por ambiente de pruebas si se mantiene staging permanente.
+**Regla práctica para SCHPOS como operador del cloud:**
 
----
+| Alcance | USD/mes total (infra + extras) |
+|---------|--------------------------------|
+| Piloto (1–10 clientes) | **80 – 200** |
+| Operación comercial inicial (10–50 clientes) | **150 – 450** |
+| Con staging permanente | sumar **40 – 150** |
 
-## 7. Costos e-commerce para el comerciante (no desarrollo)
+### 5.3 Costo en el comercio (cliente final — sin cambios de hardware)
 
-Estos costos los paga **cada cliente** que quiera vender online; SCHPOS solo integra vía API.
+El POS desktop y el agente de sync corren en el **mismo PC Windows** que hoy. No hace falta servidor nuevo en el local.
 
-### Tienda Nube (Argentina, referencia 2026)
+| Concepto | Costo adicional para el comercio |
+|----------|-----------------------------------|
+| PC / caja existente | **USD 0** (requisitos actuales de SCHPOS) |
+| Internet estable | Lo que ya paga el comercio |
+| Módulo cloud SCHPOS (si se cobra) | A definir en licencia — ver §5.5 |
+| Tienda Nube / ML / WooCommerce | Ver §5.4 si vende online |
 
-| Plan | Precio aprox. | API / integración |
-|------|---------------|-------------------|
-| Esencial | ~ARS 8.000 – 15.000/mes | API REST disponible en planes superiores |
+### 5.4 Plataformas e-commerce (paga cada comercio que venda online)
+
+SCHPOS no paga royalty por usar las APIs. El costo lo asume el comerciante según el canal.
+
+#### Tienda Nube (Argentina, referencia 2026)
+
+| Plan | Precio aprox. | Integración con SCHPOS |
+|------|---------------|------------------------|
+| Esencial | ~ARS 8.000 – 15.000/mes | API en planes que la incluyan |
 | A medida / Avanzado | ~ARS 15.000 – 35.000/mes | Webhooks, multi-depósito según plan |
-| **Costo desarrollo API TN** | **Gratis** (documentación pública) | OAuth por tienda |
+| Acceso API / OAuth por tienda | — | **Sin costo extra** de licencia API |
 
-*Nota:* verificar precios actuales en [tiendanube.com](https://www.tiendanube.com) — varían por promociones.
+Verificar precios en [tiendanube.com](https://www.tiendanube.com).
 
-### Mercado Libre
+#### Mercado Libre
 
 | Concepto | Costo |
 |----------|-------|
 | Publicar y vender | Comisión por venta (~13–16 % según categoría) |
 | Mercado Envíos / publicidad | Variable |
-| **API Developers** | Sin costo de licencia API |
-| Integración SCHPOS | Desarrollo one-time (Fase 4) |
+| API Developers | **Gratis** |
 
-### WooCommerce (autohospedado)
+#### WooCommerce (autohospedado)
 
 | Concepto | Costo |
 |----------|-------|
 | Plugin WooCommerce | Gratis |
 | Hosting + dominio | USD 10 – 40/mes |
-| SSL, mantenimiento | Variable |
-| Integración | REST API estándar; más trabajo de instalación por cliente |
+| SSL | Gratis (Let's Encrypt) o incluido en hosting |
 
-### Resumen para el socio
+### 5.5 Resumen: cuánto sale implementar esto
 
-- **No hay royalty** a pagar a Tienda Nube o ML por usar su API.
-- El **ingreso recurrente** para SCHPOS sería: **módulo cloud + módulo e-commerce** en la licencia (ej. fee mensual por tenant o % sobre plan cloud propio).
+#### A) Solo cloud (sync + panel) — operado por SCHPOS
+
+| Ítem | Una vez | Mensual |
+|------|---------|---------|
+| Dominio + SSL | USD 10 – 75/año | — |
+| Infra Azure (piloto) | — | **USD 80 – 200** |
+| Infra Azure (10–50 comercios) | — | **USD 150 – 450** |
+| Staging (opcional) | — | **USD 40 – 150** |
+
+**Ejemplo piloto con 5 comercios:** ~**USD 100 – 200/mes** de infra + **USD 10 – 25/año** de dominio.
+
+#### B) Cloud + un canal e-commerce (ej. Tienda Nube)
+
+| Ítem | Quién paga | Mensual |
+|------|------------|---------|
+| Infra SCHPOS (escenario crecimiento) | SCHPOS | **USD 150 – 350** |
+| Plan Tienda Nube | Comercio | **~ARS 8.000 – 35.000** |
+| API Tienda Nube | — | **USD 0** |
+
+#### C) Por comercio con tienda online (vista del cliente)
+
+| Concepto | Rango mensual |
+|----------|---------------|
+| Solo POS + sync cloud (si se cobra módulo) | A definir en licencia |
+| + Tienda Nube | + ~ARS 8.000 – 35.000 |
+| + Mercado Libre | Comisión por venta (sin cuota fija de API) |
+| + WooCommerce | + USD 10 – 40 hosting |
+
+### 5.6 Punto de equilibrio infra (solo gastos, sin desarrollo)
+
+Ejemplo: **30 comercios** con módulo cloud a **USD 25/mes** cada uno → **USD 750/mes** de ingreso recurrente.
+
+| Gasto | USD/mes |
+|-------|---------|
+| Infra Azure (crecimiento) | ~200 – 350 |
+| Staging + backups + email | ~50 – 100 |
+| **Margen bruto antes de soporte humano** | **~300 – 500** |
+
+*El soporte al cliente (llamadas, capacitación) no está cuantificado aquí porque depende de cómo lo organicen ustedes.*
 
 ---
 
-## 8. Modelo de negocio sugerido (SaaS + módulos)
+## 6. Modelo comercial orientativo (ingreso vs gasto infra)
 
-| Producto | Precio sugerido al cliente (orientativo) | Costo nuestro |
-|----------|------------------------------------------|---------------|
-| **SCHPOS desktop** (actual) | Licencia perpetua / anual existente | — |
-| **Módulo Cloud Sync** | USD 15 – 40/mes por sucursal | Infra repartida entre tenants |
-| **Panel web** | Incluido en Cloud o +USD 10/mes | Incluido en API |
-| **Conector Tienda Nube** | USD 20 – 50/mes o pago único USD 200–500 | Mantenimiento API |
-| **Conector Mercado Libre** | Idem | Idem |
+Referencia para decidir cuánto cobrar el módulo cloud; no es un costo de implementación.
 
-**Punto de equilibrio infra (ejemplo):** con 30 clientes a USD 25/mes en Cloud = USD 750/mes ingreso vs ~USD 200–350/mes infra → margen bruto positivo antes de soporte.
+| Producto | Precio sugerido al comercio | Gasto infra asociado (SCHPOS) |
+|----------|----------------------------|-------------------------------|
+| **SCHPOS desktop** (actual) | Licencia existente | — |
+| **Módulo Cloud Sync + panel** | USD 15 – 40/mes por sucursal | Repartido entre todos los tenants (~USD 3 – 15/sucursal según escala) |
+| **Conector e-commerce** | USD 20 – 50/mes o incluido en plan superior | Sin costo API; misma infra que cloud |
 
 ---
 
-## 9. Riesgos y mitigaciones
+## 7. Riesgos y mitigaciones
 
 | Riesgo | Mitigación |
 |--------|------------|
@@ -241,18 +275,18 @@ Estos costos los paga **cada cliente** que quiera vender online; SCHPOS solo int
 
 ---
 
-## 10. Prerrequisitos antes de empezar Fase 0
+## 8. Prerrequisitos antes de empezar Fase 0
 
 - [ ] Merge y release **v2.2** estable en `main` (PR #12)
 - [ ] Pruebas Windows completas (`GUIA_PRUEBAS_AVANCES.md`)
-- [ ] Acuerdo con socio: presupuesto y si el MVP incluye e-commerce o solo cloud
+- [ ] Acuerdo con socio: si el MVP incluye e-commerce o solo cloud
 - [ ] Definir si multi-sucursal es requisito del MVP o fase 2
 - [ ] Elegir stack API: **.NET 8** (alineado al equipo) vs alternativas
 - [ ] Encuesta a 5–10 clientes: ¿Tienda Nube, ML o ninguno?
 
 ---
 
-## 11. Cronograma indicativo (sin fechas de calendario)
+## 9. Cronograma indicativo
 
 ```
 v2.2 merge ──► Fase 0 (diseño) ──► Fase 1 (API)
@@ -272,7 +306,7 @@ v2.2 merge ──► Fase 0 (diseño) ──► Fase 1 (API)
 
 ---
 
-## 12. Decisión recomendada
+## 10. Decisión recomendada
 
 1. **Corto plazo:** cerrar v2.2 en desktop (sin bloquear por cloud).
 2. **Mediano plazo:** invertir en **Fases 0–2** (diseño + API + sync) como **v3.0-alpha** con 3–5 clientes piloto.
@@ -297,4 +331,4 @@ v2.2 merge ──► Fase 0 (diseño) ──► Fase 1 (API)
 
 ---
 
-*Documento preparado para evaluación estratégica. Los rangos de costo son estimaciones; solicitar cotización formal antes de comprometer presupuesto.*
+*Documento preparado para evaluación estratégica. Los rangos de costo son estimaciones de infraestructura y servicios; revisar calculadoras oficiales antes de comprometer.*

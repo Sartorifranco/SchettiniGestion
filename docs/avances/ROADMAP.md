@@ -19,6 +19,12 @@ Plan acordado para completar Compras e Informes sin bloquear el lanzamiento.
 | **4** | Pulido: PDF export, NC/ND impactan saldo, hub Informes unificado | `cursor/sprint4-pulido-d53a` | [#11](https://github.com/Sartorifranco/SchettiniGestion/pull/11) | ✅ Hecho |
 | **Merge → main** | Integración Sprints 1–4 (v2.2 propuesta) | `cursor/avances-v2.2-d53a` | [#12](https://github.com/Sartorifranco/SchettiniGestion/pull/12) | ✅ Listo para merge |
 
+## Siguiente horizonte (v3.0 — no iniciado)
+
+| Tema | Documento | Rama |
+|------|-----------|------|
+| Cloud, sync, e-commerce y costos | [ROADMAP_CLOUD_ECOMMERCE.md](ROADMAP_CLOUD_ECOMMERCE.md) | `cursor/roadmap-cloud-ecommerce-d53a` |
+
 ## Criterio de “listo para merge a main”
 
 - [ ] Guía de pruebas del sprint completada y ejecutada

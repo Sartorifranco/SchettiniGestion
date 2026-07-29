@@ -8,6 +8,7 @@ Trabajo **adelantado** respecto a SCHPOS v2.1.9. No forma parte del lanzamiento 
 | [GUIA_PRUEBAS_AVANCES.md](GUIA_PRUEBAS_AVANCES.md) | Cómo probar cada sprint (se completa al cerrar cada uno) |
 | [INFORME_PARA_SOCIO.md](INFORME_PARA_SOCIO.md) | Resumen ejecutivo para presentar avances (borrador vivo) |
 | [ROADMAP.md](ROADMAP.md) | Plan de sprints acordado |
+| [ROADMAP_CLOUD_ECOMMERCE.md](ROADMAP_CLOUD_ECOMMERCE.md) | Estrategia v3.0: cloud, sync, e-commerce y costos |
 
 ## Regla de oro
 

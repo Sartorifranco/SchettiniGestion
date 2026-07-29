@@ -2,7 +2,7 @@
 ; Requiere Inno Setup 6: https://jrsoftware.org/isdl.php
 
 #define MyAppName "SCHPOS"
-#define MyAppVersion "2.2.1"
+#define MyAppVersion "2.2.5"
 #define MyAppPublisher "Schettini Tec"
 #define MyAppExeName "SCHPOS.exe"
 #define MyAppUrl "https://github.com/Sartorifranco/SchettiniGestion"
@@ -12,6 +12,12 @@
 #endif
 #if FileExists(AddBackslash(SourcePath) + "prerequisites\SqlLocalDB.msi")
   #define LocalDbBundled
+#endif
+#if FileExists(AddBackslash(SourcePath) + "prerequisites\vc_redist.x64.exe")
+  #define VcRedistX64Bundled
+#endif
+#if FileExists(AddBackslash(SourcePath) + "prerequisites\vc_redist.x86.exe")
+  #define VcRedistX86Bundled
 #endif
 
 [Setup]
@@ -49,6 +55,12 @@ Source: "staging\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs creat
 #ifdef Ndp48Bundled
 Source: "prerequisites\ndp48-x86-x64-allos-enu.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not Net48Installed
 #endif
+#ifdef VcRedistX64Bundled
+Source: "prerequisites\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not VcRedistX64Installed
+#endif
+#ifdef VcRedistX86Bundled
+Source: "prerequisites\vc_redist.x86.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not VcRedistX86Installed
+#endif
 #ifdef LocalDbBundled
 Source: "prerequisites\SqlLocalDB.msi"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not LocalDbInstalled
 #endif
@@ -61,6 +73,12 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 [Run]
 #ifdef Ndp48Bundled
 Filename: "{tmp}\ndp48-x86-x64-allos-enu.exe"; Parameters: "/q /norestart"; StatusMsg: "Instalando .NET Framework 4.8..."; Flags: waituntilterminated; Check: not Net48Installed
+#endif
+#ifdef VcRedistX64Bundled
+Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Instalando Visual C++ Redistributable (x64)..."; Flags: waituntilterminated; Check: not VcRedistX64Installed
+#endif
+#ifdef VcRedistX86Bundled
+Filename: "{tmp}\vc_redist.x86.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Instalando Visual C++ Redistributable (x86)..."; Flags: waituntilterminated; Check: not VcRedistX86Installed
 #endif
 #ifdef LocalDbBundled
 Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\SqlLocalDB.msi"" /passive IACCEPTSQLLOCALDBLICENSETERMS=YES /norestart"; StatusMsg: "Instalando SQL Server LocalDB..."; Flags: waituntilterminated; Check: not LocalDbInstalled
@@ -91,6 +109,25 @@ var
 begin
   Result := Exec(ExpandConstant('{sys}\cmd.exe'), '/c sqllocaldb info MSSQLLocalDB >nul 2>&1', '', SW_HIDE, ewWaitUntilTerminated, ResultCode)
     and (ResultCode = 0);
+end;
+
+// SQL Server LocalDB necesita este runtime para que el proceso del motor pueda arrancar.
+// Sin él, SqlLocalDB.msi se instala "bien" pero la instancia nunca inicia (falla silenciosa
+// muy común en PCs limpias que nunca tuvieron Visual Studio ni otro SQL Server instalado).
+function VcRedistX64Installed: Boolean;
+var
+  Installed: Cardinal;
+begin
+  Result := RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X64', 'Installed', Installed)
+    and (Installed = 1);
+end;
+
+function VcRedistX86Installed: Boolean;
+var
+  Installed: Cardinal;
+begin
+  Result := RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X86', 'Installed', Installed)
+    and (Installed = 1);
 end;
 
 function ShouldRunBootstrap: Boolean;

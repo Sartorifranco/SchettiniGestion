@@ -34,6 +34,7 @@ Instalador/staging/
 Instalador/Output/
 Instalador/prerequisites/*.msi
 Instalador/prerequisites/ndp48-*.exe
+Instalador/prerequisites/vc_redist*.exe
 Instalador/prerequisites/licencia.key
 
 # Licencias locales generadas para pruebas

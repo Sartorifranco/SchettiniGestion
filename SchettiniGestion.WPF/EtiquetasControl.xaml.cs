@@ -33,6 +33,7 @@ namespace SchettiniGestion.WPF
             CargarCombosFormato();
             CargarOpcionesEnUi();
             ActualizarLblTamano();
+            ActualizarResaltadoOrientacion();
             Buscar("");
         }
 
@@ -125,6 +126,35 @@ namespace SchettiniGestion.WPF
                 txtAnchoMm.Text = w.ToString();
                 txtAltoMm.Text = h.ToString();
             }
+        }
+
+        private void cmbOrientacion_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ActualizarResaltadoOrientacion();
+        }
+
+        private void cmbModoImpresion_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ActualizarResaltadoOrientacion();
+        }
+
+        /// <summary>
+        /// Resalta en la ayuda visual cuál de las dos tarjetas (Vertical/Horizontal)
+        /// corresponde a la orientación actualmente elegida, para que el usuario
+        /// asocie de un vistazo la opción con el resultado esperado.
+        /// </summary>
+        private void ActualizarResaltadoOrientacion()
+        {
+            if (bdPreviewVertical == null || bdPreviewHorizontal == null) return;
+            bool horizontal = string.Equals(cmbOrientacion?.SelectedItem?.ToString(), "Horizontal", StringComparison.OrdinalIgnoreCase);
+
+            var colorSeleccionado = (System.Windows.Media.Brush)Application.Current.TryFindResource("PrimaryColor")
+                ?? System.Windows.Media.Brushes.DodgerBlue;
+            var colorNormal = (System.Windows.Media.Brush)Application.Current.TryFindResource("BorderColor")
+                ?? System.Windows.Media.Brushes.Gray;
+
+            bdPreviewVertical.BorderBrush = horizontal ? colorNormal : colorSeleccionado;
+            bdPreviewHorizontal.BorderBrush = horizontal ? colorSeleccionado : colorNormal;
         }
 
         private void btnGuardarOpciones_Click(object sender, RoutedEventArgs e)

@@ -437,26 +437,90 @@ namespace SchettiniGestion.WPF
         {
             try
             {
+                int notaId = Convert.ToInt32(cabecera["NotaID"]);
+                DataTable itemsDetalle = DatabaseService.GetNotaVentaDetalle(notaId);
+
                 FlowDocument doc = CrearDocumentoBase();
                 doc.Blocks.Add(CrearEncabezadoDocumento(tituloDocumento, "NotaID", cabecera));
                 doc.Blocks.Add(CrearBloqueCliente(cabecera));
 
-                Paragraph pDetalle = new Paragraph { FontSize = 12, Margin = new Thickness(0, 10, 0, 10) };
-                pDetalle.Inlines.Add(new Run("Descripción: ") { FontWeight = FontWeights.Bold });
-                pDetalle.Inlines.Add(new Run(cabecera["Descripcion"]?.ToString() ?? "—"));
-                if (cabecera["NumeroComprobante"] != DBNull.Value && !string.IsNullOrWhiteSpace(cabecera["NumeroComprobante"].ToString()))
+                doc.Blocks.Add(CrearBloqueReferenciaNota(cabecera));
+
+                if (itemsDetalle.Rows.Count > 0)
                 {
-                    pDetalle.Inlines.Add(new LineBreak());
-                    pDetalle.Inlines.Add(new Run("Comprobante asociado: ") { FontWeight = FontWeights.Bold });
-                    pDetalle.Inlines.Add(new Run(cabecera["NumeroComprobante"].ToString()));
+                    // Documento estructurado por ítems (igual que una factura), no un párrafo con todo junto.
+                    doc.Blocks.Add(CrearTablaItems(itemsDetalle));
                 }
-                doc.Blocks.Add(pDetalle);
+                else
+                {
+                    // Notas anteriores a esta mejora: no tienen detalle estructurado, se
+                    // muestra el texto original guardado en su momento.
+                    Paragraph pDetalle = new Paragraph { FontSize = 12, Margin = new Thickness(0, 4, 0, 14) };
+                    pDetalle.Inlines.Add(new Run("Descripción: ") { FontWeight = FontWeights.Bold });
+                    pDetalle.Inlines.Add(new Run(cabecera["Descripcion"]?.ToString() ?? "—"));
+                    doc.Blocks.Add(pDetalle);
+                }
 
                 doc.Blocks.Add(CrearBloqueTotal(Convert.ToDecimal(cabecera["Monto"])));
                 doc.Blocks.Add(new Paragraph(new Run("Documento no válido como factura fiscal.")) { TextAlignment = TextAlignment.Center, FontSize = 10, Foreground = Brushes.Gray, Margin = new Thickness(0, 40, 0, 0) });
                 MostrarDialogoImpresion(doc, $"{tituloDocumento}_{cabecera["NotaID"]}");
             }
             catch (Exception ex) { MessageBox.Show("Error generando PDF: " + ex.Message); }
+        }
+
+        private static Block CrearBloqueReferenciaNota(DataRow cabecera)
+        {
+            var section = new Section();
+            Paragraph p = new Paragraph { FontSize = 11, Margin = new Thickness(0, 0, 0, 12) };
+
+            bool tieneReferencia = false;
+            if (cabecera.Table.Columns.Contains("FacturaID") && cabecera["FacturaID"] != DBNull.Value)
+            {
+                DataRow factura = DatabaseService.GetFacturaPorID(Convert.ToInt32(cabecera["FacturaID"]));
+                if (factura != null)
+                {
+                    string tipoComp = factura.Table.Columns.Contains("TipoComprobante") ? factura["TipoComprobante"]?.ToString() ?? "Comprobante" : "Comprobante";
+                    int nroComp = factura["NumeroComprobanteAFIP"] != DBNull.Value && factura["NumeroComprobanteAFIP"] != null
+                        ? Convert.ToInt32(factura["NumeroComprobanteAFIP"]) : Convert.ToInt32(cabecera["FacturaID"]);
+                    DateTime fechaComp = Convert.ToDateTime(factura["Fecha"]);
+                    p.Inlines.Add(new Run("Comprobante que modifica: ") { FontWeight = FontWeights.Bold });
+                    p.Inlines.Add(new Run($"{tipoComp} N° {nroComp:D8} del {fechaComp:dd/MM/yyyy}"));
+                    tieneReferencia = true;
+                }
+            }
+
+            if (cabecera.Table.Columns.Contains("NumeroComprobante") && cabecera["NumeroComprobante"] != DBNull.Value
+                && !string.IsNullOrWhiteSpace(cabecera["NumeroComprobante"].ToString()))
+            {
+                if (tieneReferencia) p.Inlines.Add(new LineBreak());
+                p.Inlines.Add(new Run("Comprobante asociado: ") { FontWeight = FontWeights.Bold });
+                p.Inlines.Add(new Run(cabecera["NumeroComprobante"].ToString()));
+                tieneReferencia = true;
+            }
+
+            string motivo = ExtraerMotivo(cabecera["Descripcion"]?.ToString());
+            if (!string.IsNullOrWhiteSpace(motivo))
+            {
+                if (tieneReferencia) p.Inlines.Add(new LineBreak());
+                p.Inlines.Add(new Run("Motivo: ") { FontWeight = FontWeights.Bold });
+                p.Inlines.Add(new Run(motivo));
+                tieneReferencia = true;
+            }
+
+            if (!tieneReferencia)
+                p.Inlines.Add(new Run(cabecera["Descripcion"]?.ToString() ?? ""));
+
+            section.Blocks.Add(p);
+            return section;
+        }
+
+        private static string ExtraerMotivo(string descripcion)
+        {
+            if (string.IsNullOrWhiteSpace(descripcion)) return null;
+            const string marca = "Motivo:";
+            int idx = descripcion.IndexOf(marca, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0) return null;
+            return descripcion.Substring(idx + marca.Length).Trim();
         }
 
         private const double AnchoPaginaA4 = 793;
@@ -652,7 +716,7 @@ namespace SchettiniGestion.WPF
             foreach (DataRow item in items.Rows)
             {
                 TableRow r = new TableRow();
-                r.Cells.Add(CrearCelda(item["Cantidad"].ToString(), TextAlignment.Center));
+                r.Cells.Add(CrearCelda(Convert.ToDecimal(item["Cantidad"]).ToString("0.##"), TextAlignment.Center));
                 if (mostrarCodigo)
                     r.Cells.Add(CrearCelda(item.Table.Columns.Contains("Codigo") ? item["Codigo"]?.ToString() ?? "" : "", TextAlignment.Left));
                 r.Cells.Add(CrearCelda(item["Descripcion"].ToString(), TextAlignment.Left));
@@ -889,19 +953,27 @@ namespace SchettiniGestion.WPF
                 if (string.Equals(tipo, "Etiqueta", StringComparison.OrdinalIgnoreCase))
                 {
                     var opEtiq = DatabaseService.GetOpcionesEtiqueta();
-                    AplicarTamanoEtiqueta(doc, opEtiq.AnchoMm, opEtiq.AltoMm);
+                    bool horizontalPrueba = string.Equals(opEtiq.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
+                    if (horizontalPrueba)
+                        AplicarTamanoEtiqueta(doc, opEtiq.AltoMm, opEtiq.AnchoMm);
+                    else
+                        AplicarTamanoEtiqueta(doc, opEtiq.AnchoMm, opEtiq.AltoMm);
+
+                    var itemPrueba = new EtiquetaPrintItem
+                    {
+                        Descripcion = "Producto de prueba",
+                        Codigo = "PRUEBA",
+                        CodigoBarra = "7790001000019",
+                        PrecioVenta = 1234.50m,
+                        Marca = "SCHPOS",
+                        Cantidad = 1
+                    };
                     doc.PrintPage += (s, e) =>
                     {
-                        DibujarEtiquetaGDI(e.Graphics, opEtiq,
-                            new EtiquetaPrintItem
-                            {
-                                Descripcion = "Producto de prueba",
-                                Codigo = "PRUEBA",
-                                CodigoBarra = "7790001000019",
-                                PrecioVenta = 1234.50m,
-                                Marca = "SCHPOS",
-                                Cantidad = 1
-                            });
+                        if (horizontalPrueba)
+                            DibujarEtiquetaRotadaGDI(e.Graphics, opEtiq, itemPrueba);
+                        else
+                            DibujarEtiquetaGDI(e.Graphics, opEtiq, itemPrueba);
                         e.HasMorePages = false;
                     };
                     doc.Print();
@@ -1278,13 +1350,26 @@ namespace SchettiniGestion.WPF
                 string impresora = DatabaseService.GetImpresoraEtiquetas();
                 var doc = new WinPrinting.PrintDocument();
                 doc.PrintController = new WinPrinting.StandardPrintController();
-                AplicarTamanoEtiqueta(doc, opciones.AnchoMm, opciones.AltoMm);
-                doc.DefaultPageSettings.Landscape = string.Equals(opciones.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
+
+                // La rotación se resuelve por software (nunca con el flag Landscape del
+                // driver): muchas impresoras térmicas de etiquetas no soportan bien la
+                // rotación a nivel de driver y terminan imprimiendo rotado igual, o
+                // directamente en blanco. Acá directamente declaramos el tamaño físico
+                // de página ya intercambiado si corresponde, y giramos el contenido
+                // nosotros mismos al dibujar.
+                bool horizontal = string.Equals(opciones.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
+                if (horizontal)
+                    AplicarTamanoEtiqueta(doc, opciones.AltoMm, opciones.AnchoMm);
+                else
+                    AplicarTamanoEtiqueta(doc, opciones.AnchoMm, opciones.AltoMm);
 
                 int idx = 0;
                 doc.PrintPage += (s, e) =>
                 {
-                    DibujarEtiquetaGDI(e.Graphics, opciones, cola[idx]);
+                    if (horizontal)
+                        DibujarEtiquetaRotadaGDI(e.Graphics, opciones, cola[idx]);
+                    else
+                        DibujarEtiquetaGDI(e.Graphics, opciones, cola[idx]);
                     idx++;
                     e.HasMorePages = idx < cola.Count;
                 };
@@ -1464,6 +1549,38 @@ namespace SchettiniGestion.WPF
                     float py = Math.Max(y, h - margin - sz.Height);
                     g.DrawString(precio, fPrecio, WinDrawing.Brushes.Black, margin + (contentW - sz.Width) / 2f, py);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Dibuja la etiqueta girada 90° para el modo "Horizontal" del impresor directo
+        /// de etiquetas. En vez de girar vía PageSettings.Landscape (poco confiable en
+        /// impresoras térmicas de etiquetas, causa salidas rotadas o en blanco), se
+        /// renderiza la etiqueta a su tamaño natural (Ancho x Alto) en un bitmap interno
+        /// y se rota esa imagen antes de estamparla en la página física ya intercambiada
+        /// (Alto x Ancho).
+        /// </summary>
+        private static void DibujarEtiquetaRotadaGDI(WinDrawing.Graphics gPagina, OpcionesEtiqueta op, EtiquetaPrintItem item)
+        {
+            if (gPagina == null || item == null) return;
+
+            const float dpi = 300f;
+            int wPx = Math.Max(1, (int)Math.Round(Math.Max(10, op.AnchoMm) / 25.4 * dpi));
+            int hPx = Math.Max(1, (int)Math.Round(Math.Max(10, op.AltoMm) / 25.4 * dpi));
+
+            using (var bmp = new WinDrawing.Bitmap(wPx, hPx))
+            {
+                bmp.SetResolution(dpi, dpi);
+                using (var gBmp = WinDrawing.Graphics.FromImage(bmp))
+                {
+                    gBmp.Clear(WinDrawing.Color.White);
+                    DibujarEtiquetaGDI(gBmp, op, item);
+                }
+
+                bmp.RotateFlip(WinDrawing.RotateFlipType.Rotate90FlipNone);
+
+                gPagina.PageUnit = WinDrawing.GraphicsUnit.Millimeter;
+                gPagina.DrawImage(bmp, 0f, 0f, Math.Max(10, op.AltoMm), Math.Max(10, op.AnchoMm));
             }
         }
 

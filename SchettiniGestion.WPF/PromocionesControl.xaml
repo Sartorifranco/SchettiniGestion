@@ -9,218 +9,269 @@
              Background="{DynamicResource ModuleBackgroundBrush}"
              Loaded="UserControl_Loaded">
 
+    <UserControl.Resources>
+        <Style x:Key="PromoSectionCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="18,16"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
+        </Style>
+        <Style x:Key="PromoSectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        </Style>
+    </UserControl.Resources>
+
     <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
             <TextBlock Text="Promociones" FontSize="24" FontWeight="Bold"
                        Foreground="{DynamicResource HeaderForegroundBrush}"/>
             <TextBlock Text="Armá descuentos por producto, categoría, todo el local o combos. La caja aplica la mejor promo automáticamente."
                        Style="{StaticResource FieldHintTextStyle}" Margin="0,6,0,0" TextWrapping="Wrap"/>
         </StackPanel>
 
-        <Border Grid.Row="1" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" Margin="0,0,0,16">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.2*"/>
-                    <ColumnDefinition Width="1.2*"/>
-                    <ColumnDefinition Width="1.2*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
 
-                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,12,12">
-                    <TextBlock Text="Nombre:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <TextBox x:Name="txtNombre" Style="{StaticResource ModuleTextBoxStyle}"/>
-                    <TextBlock Text="Ej: 2x1 remeras o Combo escolar." Style="{StaticResource FieldHintTextStyle}"/>
-                </StackPanel>
+                <!-- Datos generales -->
+                <Border Style="{StaticResource PromoSectionCard}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,14">
+                            <TextBlock Text="Datos generales" Style="{StaticResource PromoSectionTitle}" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button x:Name="btnNuevo" Content="✚ Nuevo" Style="{StaticResource SecondaryButtonStyle}"
+                                        MinWidth="110" Click="btnNuevo_Click" Margin="0,0,10,0"/>
+                                <Button x:Name="btnGuardar" Content="💾 Guardar" Style="{StaticResource SuccessButtonStyle}"
+                                        MinWidth="120" Click="btnGuardar_Click"/>
+                            </StackPanel>
+                        </Grid>
 
-                <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,12,12">
-                    <TextBlock Text="¿A qué aplica?" Style="{StaticResource ModuleLabelStyle}"/>
-                    <ComboBox x:Name="cmbTipo" Style="{StaticResource ModuleComboBoxStyle}"
-                              SelectionChanged="cmbTipo_SelectionChanged">
-                        <ComboBoxItem Content="Un producto" Tag="PCT_PRODUCTO" IsSelected="True"/>
-                        <ComboBoxItem Content="Una categoría" Tag="PCT_CATEGORIA"/>
-                        <ComboBoxItem Content="Todo el local" Tag="PCT_TODOS"/>
-                        <ComboBoxItem Content="Combo de productos" Tag="COMBO_PRODUCTOS"/>
-                    </ComboBox>
-                    <TextBlock Text="Combo: deben estar todos en el carrito." Style="{StaticResource FieldHintTextStyle}"/>
-                </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.3*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="1.2*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,12,12">
-                    <TextBlock Text="Modalidad:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <ComboBox x:Name="cmbModalidad" Style="{StaticResource ModuleComboBoxStyle}"
-                              SelectionChanged="cmbModalidad_SelectionChanged">
-                        <ComboBoxItem Content="% descuento" Tag="PORCENTAJE" IsSelected="True"/>
-                        <ComboBoxItem Content="$ fijo" Tag="MONTO_FIJO"/>
-                        <ComboBoxItem Content="Precio final / combo" Tag="PRECIO_FINAL"/>
-                        <ComboBoxItem Content="2x1" Tag="2X1"/>
-                        <ComboBoxItem Content="3x2" Tag="3X2"/>
-                        <ComboBoxItem Content="Llevá N, bonifica M" Tag="BONIFICAR"/>
-                        <ComboBoxItem Content="Escala por cantidad" Tag="ESCALA_CANTIDAD"/>
-                    </ComboBox>
-                    <TextBlock Text="Elegí cómo se calcula la rebaja." Style="{StaticResource FieldHintTextStyle}"/>
-                </StackPanel>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Nombre:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtNombre" Style="{StaticResource ModuleTextBoxStyle}"/>
+                                <TextBlock Text="Ej: 2x1 remeras o Combo escolar." Style="{StaticResource FieldHintTextStyle}"/>
+                            </StackPanel>
 
-                <StackPanel Grid.Row="0" Grid.Column="3" VerticalAlignment="Bottom" Orientation="Horizontal" Margin="0,0,0,12">
-                    <Button x:Name="btnNuevo" Content="Nuevo" Style="{StaticResource ActionButtonStyle}" Width="90" Click="btnNuevo_Click" Margin="0,0,10,0"/>
-                    <Button x:Name="btnGuardar" Content="Guardar" Style="{StaticResource SuccessButtonStyle}" Width="90" Click="btnGuardar_Click"/>
-                </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="¿A qué aplica?" Style="{StaticResource ModuleLabelStyle}"/>
+                                <ComboBox x:Name="cmbTipo" Style="{StaticResource ModuleComboBoxStyle}"
+                                          SelectionChanged="cmbTipo_SelectionChanged">
+                                    <ComboBoxItem Content="Un producto" Tag="PCT_PRODUCTO" IsSelected="True"/>
+                                    <ComboBoxItem Content="Una categoría" Tag="PCT_CATEGORIA"/>
+                                    <ComboBoxItem Content="Todo el local" Tag="PCT_TODOS"/>
+                                    <ComboBoxItem Content="Combo de productos" Tag="COMBO_PRODUCTOS"/>
+                                </ComboBox>
+                                <TextBlock Text="Combo: deben estar todos en el carrito." Style="{StaticResource FieldHintTextStyle}"/>
+                            </StackPanel>
 
-                <StackPanel x:Name="pnlProducto" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,12,12">
-                    <TextBlock x:Name="lblProductoTitulo" Text="Producto:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="txtBuscarProducto" Style="{StaticResource ModuleTextBoxStyle}"
-                                 Grid.Column="0" Margin="0,0,8,0"
-                                 ToolTip="Código, código de barras o nombre"/>
-                        <Button Grid.Column="1" Content="Buscar" Width="86"
-                                Style="{StaticResource ActionButtonStyle}" Click="btnBuscarProducto_Click"/>
-                    </Grid>
-                    <TextBlock Text="Busca por SKU/código, código de barras o descripción." Style="{StaticResource FieldHintTextStyle}"/>
-                    <ComboBox x:Name="cmbProducto" Style="{StaticResource ModuleComboBoxStyle}" Margin="0,8,0,0"
-                              DisplayMemberPath="Display" SelectedValuePath="ProductoID"/>
-                    <Button x:Name="btnAgregarProductoCombo" Content="Agregar al combo" Style="{StaticResource SecondaryButtonStyle}"
-                            Margin="0,8,0,0" Click="btnAgregarProductoCombo_Click" Visibility="Collapsed"/>
-                    <ListBox x:Name="lstProductosCombo" DisplayMemberPath="Display" MinHeight="82" MaxHeight="120"
-                             Margin="0,8,0,0" Visibility="Collapsed"/>
-                    <Button x:Name="btnQuitarProductoCombo" Content="Quitar seleccionado" Style="{StaticResource DeleteButtonStyle}"
-                            Margin="0,6,0,0" Click="btnQuitarProductoCombo_Click" Visibility="Collapsed"/>
-                    <TextBlock x:Name="lblProductoElegido" Style="{StaticResource FieldHintTextStyle}" Text=""/>
-                </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="Modalidad:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <ComboBox x:Name="cmbModalidad" Style="{StaticResource ModuleComboBoxStyle}"
+                                          SelectionChanged="cmbModalidad_SelectionChanged">
+                                    <ComboBoxItem Content="% descuento" Tag="PORCENTAJE" IsSelected="True"/>
+                                    <ComboBoxItem Content="$ fijo" Tag="MONTO_FIJO"/>
+                                    <ComboBoxItem Content="Precio final / combo" Tag="PRECIO_FINAL"/>
+                                    <ComboBoxItem Content="2x1" Tag="2X1"/>
+                                    <ComboBoxItem Content="3x2" Tag="3X2"/>
+                                    <ComboBoxItem Content="Llevá N, bonifica M" Tag="BONIFICAR"/>
+                                    <ComboBoxItem Content="Escala por cantidad" Tag="ESCALA_CANTIDAD"/>
+                                </ComboBox>
+                                <TextBlock Text="Elegí cómo se calcula la rebaja." Style="{StaticResource FieldHintTextStyle}"/>
+                            </StackPanel>
 
-                <StackPanel x:Name="pnlCategoria" Grid.Row="1" Grid.Column="0" Margin="0,0,12,12" Visibility="Collapsed">
-                    <TextBlock Text="Categoría:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <ComboBox x:Name="cmbCategoria" Style="{StaticResource ModuleComboBoxStyle}"
-                              DisplayMemberPath="Nombre" SelectedValuePath="Nombre"/>
-                    <TextBlock Text="Se aplica a todos los productos de la categoría." Style="{StaticResource FieldHintTextStyle}"/>
-                </StackPanel>
-
-                <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,12,12">
-                    <TextBlock Text="Vigencia (opcional):" Style="{StaticResource ModuleLabelStyle}"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <DatePicker x:Name="dpDesde" Grid.Column="0" Margin="0,0,6,0"/>
-                        <DatePicker x:Name="dpHasta" Grid.Column="1"/>
-                    </Grid>
-                    <TextBlock Text="Sin fechas, queda siempre activa." Style="{StaticResource FieldHintTextStyle}"/>
-                </StackPanel>
-
-                <StackPanel Grid.Row="1" Grid.Column="3" VerticalAlignment="Top" Margin="0,0,0,12">
-                    <TextBlock Text="Estado:" Style="{StaticResource ModuleLabelStyle}"/>
-                    <ToggleButton x:Name="chkActiva" IsChecked="True"
-                                  MinHeight="48" MinWidth="140" Padding="14,8"
-                                  FontSize="15" FontWeight="SemiBold" Cursor="Hand">
-                        <ToggleButton.Style>
-                            <Style TargetType="ToggleButton">
-                                <Setter Property="Background" Value="#27AE60"/>
-                                <Setter Property="Foreground" Value="White"/>
-                                <Setter Property="BorderThickness" Value="0"/>
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="ToggleButton">
-                                            <Border x:Name="bd" Background="{TemplateBinding Background}"
-                                                    CornerRadius="8" Padding="{TemplateBinding Padding}">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
+                            <StackPanel Grid.Column="6" HorizontalAlignment="Right">
+                                <TextBlock Text="Estado:" Style="{StaticResource ModuleLabelStyle}" HorizontalAlignment="Left"/>
+                                <ToggleButton x:Name="chkActiva" IsChecked="True"
+                                              MinHeight="44" MinWidth="140" Padding="14,8"
+                                              FontSize="15" FontWeight="SemiBold" Cursor="Hand">
+                                    <ToggleButton.Style>
+                                        <Style TargetType="ToggleButton">
+                                            <Setter Property="Background" Value="{DynamicResource SuccessColor}"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ToggleButton">
+                                                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsChecked" Value="False">
+                                                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource TextSecondary}"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsPressed" Value="True">
+                                                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Setter Property="Content" Value="● Activa"/>
+                                            <Style.Triggers>
                                                 <Trigger Property="IsChecked" Value="False">
-                                                    <Setter TargetName="bd" Property="Background" Value="#7F8C8D"/>
+                                                    <Setter Property="Content" Value="○ Pausada"/>
                                                 </Trigger>
-                                                <Trigger Property="IsPressed" Value="True">
-                                                    <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                                <Setter Property="Content" Value="● Activa"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsChecked" Value="False">
-                                        <Setter Property="Content" Value="○ Pausada"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ToggleButton.Style>
-                    </ToggleButton>
-                    <TextBlock Text="Tocá para pausar." Style="{StaticResource FieldHintTextStyle}" Margin="0,6,0,0"/>
-                </StackPanel>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ToggleButton.Style>
+                                </ToggleButton>
+                                <TextBlock Text="Tocá para pausar." Style="{StaticResource FieldHintTextStyle}" Margin="0,6,0,0" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
 
-                <UniformGrid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Columns="5" Margin="0,0,0,12">
-                    <StackPanel x:Name="pnlPorcentaje" Margin="0,0,12,0">
-                        <TextBlock Text="% descuento:" Style="{StaticResource ModuleLabelStyle}"/>
-                        <xctk:DecimalUpDown x:Name="numPorcentaje" Style="{StaticResource ModuleNumericUpDownStyle}"
-                                            Value="10" Minimum="0" Maximum="100"/>
-                        <TextBlock Text="Para % y escalas." Style="{StaticResource FieldHintTextStyle}"/>
-                    </StackPanel>
-                    <StackPanel x:Name="pnlMontoFijo" Margin="0,0,12,0" Visibility="Collapsed">
-                        <TextBlock Text="$ fijo:" Style="{StaticResource ModuleLabelStyle}"/>
-                        <xctk:DecimalUpDown x:Name="numMontoFijo" Style="{StaticResource ModuleNumericUpDownStyle}"
-                                            Value="0" Minimum="0"/>
-                        <TextBlock Text="Descuento por unidad." Style="{StaticResource FieldHintTextStyle}"/>
-                    </StackPanel>
-                    <StackPanel x:Name="pnlPrecioCombo" Margin="0,0,12,0" Visibility="Collapsed">
-                        <TextBlock Text="Precio final:" Style="{StaticResource ModuleLabelStyle}"/>
-                        <xctk:DecimalUpDown x:Name="numPrecioCombo" Style="{StaticResource ModuleNumericUpDownStyle}"
-                                            Value="0" Minimum="0"/>
-                        <TextBlock Text="Total del combo o unidad." Style="{StaticResource FieldHintTextStyle}"/>
-                    </StackPanel>
-                    <StackPanel x:Name="pnlCantidadMinima" Margin="0,0,12,0" Visibility="Collapsed">
-                        <TextBlock Text="Cantidad mínima:" Style="{StaticResource ModuleLabelStyle}"/>
-                        <xctk:IntegerUpDown x:Name="numCantidadMinima" Style="{StaticResource ModuleIntegerUpDownStyle}"
-                                            Value="0" Minimum="0"/>
-                        <TextBlock Text="Ej: 3 para llevar 3." Style="{StaticResource FieldHintTextStyle}"/>
-                    </StackPanel>
-                    <StackPanel x:Name="pnlCantidadBonificada" Visibility="Collapsed">
-                        <TextBlock Text="Bonificada:" Style="{StaticResource ModuleLabelStyle}"/>
-                        <xctk:IntegerUpDown x:Name="numCantidadBonificada" Style="{StaticResource ModuleIntegerUpDownStyle}"
-                                            Value="0" Minimum="0"/>
-                        <TextBlock Text="Ej: 1 gratis." Style="{StaticResource FieldHintTextStyle}"/>
-                    </StackPanel>
-                </UniformGrid>
+                <!-- Alcance: producto / categoría / combo -->
+                <Border Style="{StaticResource PromoSectionCard}">
+                    <StackPanel>
+                        <TextBlock Text="Alcance de la promoción" Style="{StaticResource PromoSectionTitle}" Margin="0,0,0,14"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.4*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4">
-                    <TextBlock Text="Nota interna (opcional):" Style="{StaticResource ModuleLabelStyle}"/>
-                    <TextBox x:Name="txtObs" Style="{StaticResource ModuleTextBoxStyle}"/>
-                </StackPanel>
-            </Grid>
-        </Border>
+                            <StackPanel x:Name="pnlProducto" Grid.Column="0">
+                                <TextBlock x:Name="lblProductoTitulo" Text="Producto:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="txtBuscarProducto" Style="{StaticResource ModuleTextBoxStyle}"
+                                             Grid.Column="0" Margin="0,0,8,0"
+                                             ToolTip="Código, código de barras o nombre"/>
+                                    <Button Grid.Column="1" Content="🔍 Buscar" MinWidth="100"
+                                            Style="{StaticResource ActionButtonStyle}" Click="btnBuscarProducto_Click"/>
+                                </Grid>
+                                <TextBlock Text="Busca por SKU/código, código de barras o descripción." Style="{StaticResource FieldHintTextStyle}"/>
+                                <ComboBox x:Name="cmbProducto" Style="{StaticResource ModuleComboBoxStyle}" Margin="0,8,0,0"
+                                          DisplayMemberPath="Display" SelectedValuePath="ProductoID"/>
+                                <Button x:Name="btnAgregarProductoCombo" Content="➕ Agregar al combo" Style="{StaticResource SecondaryButtonStyle}"
+                                        HorizontalAlignment="Left" Margin="0,10,0,0" Click="btnAgregarProductoCombo_Click" Visibility="Collapsed"/>
+                                <ListBox x:Name="lstProductosCombo" DisplayMemberPath="Display" MinHeight="82" MaxHeight="140"
+                                         Margin="0,10,0,0" Background="{DynamicResource SurfaceDark}" Foreground="{DynamicResource TextPrimary}"
+                                         BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" Visibility="Collapsed"/>
+                                <Button x:Name="btnQuitarProductoCombo" Content="🗑 Quitar seleccionado" Style="{StaticResource DeleteButtonStyle}"
+                                        HorizontalAlignment="Left" Margin="0,8,0,0" Click="btnQuitarProductoCombo_Click" Visibility="Collapsed"/>
+                                <TextBlock x:Name="lblProductoElegido" Style="{StaticResource FieldHintTextStyle}" Text=""/>
+                            </StackPanel>
 
-        <DataGrid x:Name="dgvPromos" Grid.Row="2" Style="{StaticResource ModuleDataGridStyle}"
-                  AutoGenerateColumns="False" IsReadOnly="True"
-                  SelectionChanged="dgvPromos_SelectionChanged">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="*" MinWidth="140"/>
-                <DataGridTextColumn Header="Aplica a" Binding="{Binding TipoEtiqueta}" Width="115"/>
-                <DataGridTextColumn Header="Detalle" Binding="{Binding AlcanceDetalle}" Width="180"/>
-                <DataGridTextColumn Header="Modalidad" Binding="{Binding ModalidadEtiqueta}" Width="120"/>
-                <DataGridTextColumn Header="Valor" Binding="{Binding ValorDetalle}" Width="115"/>
-                <DataGridTextColumn Header="Desde" Binding="{Binding FechaDesde, StringFormat=dd/MM/yyyy}" Width="90"/>
-                <DataGridTextColumn Header="Hasta" Binding="{Binding FechaHasta, StringFormat=dd/MM/yyyy}" Width="90"/>
-                <DataGridTextColumn Header="Activa" Binding="{Binding ActivoEtiqueta}" Width="60"/>
-                <DataGridTemplateColumn Width="70">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Button Content="🗑" Style="{StaticResource DeleteButtonStyle}" Padding="5" Click="btnEliminar_Click"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
+                            <StackPanel x:Name="pnlCategoria" Grid.Column="0" Visibility="Collapsed">
+                                <TextBlock Text="Categoría:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <ComboBox x:Name="cmbCategoria" Style="{StaticResource ModuleComboBoxStyle}"
+                                          DisplayMemberPath="Nombre" SelectedValuePath="Nombre"/>
+                                <TextBlock Text="Se aplica a todos los productos de la categoría." Style="{StaticResource FieldHintTextStyle}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Vigencia (opcional):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <DatePicker x:Name="dpDesde" Grid.Column="0"/>
+                                    <DatePicker x:Name="dpHasta" Grid.Column="2"/>
+                                </Grid>
+                                <TextBlock Text="Sin fechas, queda siempre activa." Style="{StaticResource FieldHintTextStyle}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Valores de la promoción -->
+                <Border Style="{StaticResource PromoSectionCard}">
+                    <StackPanel>
+                        <TextBlock Text="Valores de la promoción" Style="{StaticResource PromoSectionTitle}" Margin="0,0,0,14"/>
+                        <UniformGrid Columns="5" Margin="0,0,0,14">
+                            <StackPanel x:Name="pnlPorcentaje" Margin="0,0,12,0">
+                                <TextBlock Text="% descuento:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <xctk:DecimalUpDown x:Name="numPorcentaje" Style="{StaticResource ModuleNumericUpDownStyle}"
+                                                    Value="10" Minimum="0" Maximum="100"/>
+                                <TextBlock Text="Para % y escalas." Style="{StaticResource FieldHintTextStyle}"/>
+                            </StackPanel>
+                            <StackPanel x:Name="pnlMontoFijo" Margin="0,0,12,0" Visibility="Collapsed">
+                                <TextBlock Text="$ fijo:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <xctk:DecimalUpDown x:Name="numMontoFijo" Style="{StaticResource ModuleNumericUpDownStyle}"
+                                                    Value="0" Minimum="0"/>
+                                <TextBlock Text="Descuento por unidad." Style="{StaticResource FieldHintTextStyle}"/>
+                            </StackPanel>
+                            <StackPanel x:Name="pnlPrecioCombo" Margin="0,0,12,0" Visibility="Collapsed">
+                                <TextBlock Text="Precio final:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <xctk:DecimalUpDown x:Name="numPrecioCombo" Style="{StaticResource ModuleNumericUpDownStyle}"
+                                                    Value="0" Minimum="0"/>
+                                <TextBlock Text="Total del combo o unidad." Style="{StaticResource FieldHintTextStyle}"/>
+                            </StackPanel>
+                            <StackPanel x:Name="pnlCantidadMinima" Margin="0,0,12,0" Visibility="Collapsed">
+                                <TextBlock Text="Cantidad mínima:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <xctk:IntegerUpDown x:Name="numCantidadMinima" Style="{StaticResource ModuleIntegerUpDownStyle}"
+                                                    Value="0" Minimum="0"/>
+                                <TextBlock Text="Ej: 3 para llevar 3." Style="{StaticResource FieldHintTextStyle}"/>
+                            </StackPanel>
+                            <StackPanel x:Name="pnlCantidadBonificada" Visibility="Collapsed">
+                                <TextBlock Text="Bonificada:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <xctk:IntegerUpDown x:Name="numCantidadBonificada" Style="{StaticResource ModuleIntegerUpDownStyle}"
+                                                    Value="0" Minimum="0"/>
+                                <TextBlock Text="Ej: 1 gratis." Style="{StaticResource FieldHintTextStyle}"/>
+                            </StackPanel>
+                        </UniformGrid>
+
+                        <TextBlock Text="Nota interna (opcional):" Style="{StaticResource ModuleLabelStyle}"/>
+                        <TextBox x:Name="txtObs" Style="{StaticResource ModuleTextBoxStyle}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Listado de promociones -->
+                <Border Style="{StaticResource PromoSectionCard}" Padding="18,16,18,8">
+                    <StackPanel>
+                        <TextBlock Text="Promociones creadas" Style="{StaticResource PromoSectionTitle}" Margin="0,0,0,12"/>
+                        <DataGrid x:Name="dgvPromos" Style="{StaticResource ModuleDataGridStyle}"
+                                  AutoGenerateColumns="False" IsReadOnly="True" MinHeight="220" MaxHeight="420"
+                                  SelectionChanged="dgvPromos_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="*" MinWidth="140"/>
+                                <DataGridTextColumn Header="Aplica a" Binding="{Binding TipoEtiqueta}" Width="115"/>
+                                <DataGridTextColumn Header="Detalle" Binding="{Binding AlcanceDetalle}" Width="180"/>
+                                <DataGridTextColumn Header="Modalidad" Binding="{Binding ModalidadEtiqueta}" Width="120"/>
+                                <DataGridTextColumn Header="Valor" Binding="{Binding ValorDetalle}" Width="115"/>
+                                <DataGridTextColumn Header="Desde" Binding="{Binding FechaDesde, StringFormat=dd/MM/yyyy}" Width="90"/>
+                                <DataGridTextColumn Header="Hasta" Binding="{Binding FechaHasta, StringFormat=dd/MM/yyyy}" Width="90"/>
+                                <DataGridTextColumn Header="Activa" Binding="{Binding ActivoEtiqueta}" Width="60"/>
+                                <DataGridTemplateColumn Width="70">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="🗑" Style="{StaticResource DeleteButtonStyle}" Padding="5" Click="btnEliminar_Click"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>

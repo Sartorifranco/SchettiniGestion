@@ -13,6 +13,18 @@ if ([string]::IsNullOrWhiteSpace($PrerequisitesDir)) {
 
 $downloads = @(
     @{
+        # SQL Server LocalDB necesita el Visual C++ Redistributable (x64 y x86) para que
+        # el proceso del motor arranque. Sin esto, en una PC "limpia" (sin Visual Studio)
+        # la instalación de SqlLocalDB.msi parece exitosa pero la instancia nunca arranca
+        # y la app termina mostrando "LocalDB no está instalado o no se puede iniciar".
+        Name = "vc_redist.x64.exe"
+        Url  = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+    },
+    @{
+        Name = "vc_redist.x86.exe"
+        Url  = "https://aka.ms/vs/17/release/vc_redist.x86.exe"
+    },
+    @{
         Name = "SqlLocalDB.msi"
         Url  = "https://go.microsoft.com/fwlink/?linkid=2216019"
     },

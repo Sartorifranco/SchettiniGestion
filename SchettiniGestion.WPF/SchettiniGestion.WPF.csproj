@@ -289,7 +289,9 @@
     <Compile Include="DetalleVentaWindow.xaml.cs">
       <DependentUpon>DetalleVentaWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="NotaCreditoVentaWindow.cs" />
+    <Compile Include="NotaCreditoVentaWindow.xaml.cs">
+      <DependentUpon>NotaCreditoVentaWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CobroModalWindow.xaml.cs">
       <DependentUpon>CobroModalWindow.xaml</DependentUpon>
     </Compile>
@@ -307,6 +309,7 @@
       <DependentUpon>ActivationWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="BackupService.cs" />
+    <Compile Include="BackupAutoService.cs" />
     <Compile Include="FacturacionPresupuestosTab.cs">
       <DependentUpon>FacturacionPresupuestosTab.xaml</DependentUpon>
     </Compile>
@@ -539,6 +542,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="RecepcionCompraModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="NotaCreditoVentaWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

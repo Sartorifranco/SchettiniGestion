@@ -155,15 +155,14 @@ namespace SchettiniGestion.WPF
             string ip = txtIPServidor.Text.Trim();
             if (string.IsNullOrEmpty(ip)) return null;
 
-            // Si el usuario ya puso \INSTANCIA en el campo IP, lo usamos directamente
-            bool tieneInstancia = ip.Contains("\\") || ip.Contains("/");
+            // Server={ip}\Instancia,puerto es un formato válido y RECOMENDADO: al incluir el
+            // puerto junto con el nombre de instancia, el driver se conecta directo por TCP y
+            // evita depender del servicio "SQL Server Browser" (UDP 1434) para resolver el
+            // puerto dinámico. Antes acá se descartaba el puerto si había instancia — quedaba
+            // atado a SQL Browser sin que el usuario lo supiera. Ahora siempre lo incluimos si
+            // se cargó un valor.
             string puerto = txtPuertoCliente.Text.Trim();
-            bool puertoPorDefecto = string.IsNullOrEmpty(puerto) || puerto == "1433";
-
-            // Data Source: si tiene instancia, no agregamos puerto (ambos son excluyentes)
-            string dataSource = tieneInstancia
-                ? ip
-                : (puertoPorDefecto ? ip : $"{ip},{puerto}");
+            string dataSource = string.IsNullOrEmpty(puerto) ? ip : $"{ip},{puerto}";
 
             bool integrado = rbWinAuth.IsChecked == true;
             if (integrado)
@@ -187,6 +186,18 @@ namespace SchettiniGestion.WPF
             {
                 SetTestStatus("⚪", "Ingresá la IP del servidor", "El campo de IP no puede estar vacío.", "neutral");
                 return;
+            }
+
+            string diagLocalDb = null;
+            if (rbSoloPC.IsChecked == true)
+            {
+                SetTestStatus("⏳", "Preparando LocalDB...", "Creando/iniciando la instancia de SQL Server LocalDB en esta PC...", "pending");
+                // Forzar un pase de render para que el mensaje de arriba se vea antes
+                // de la llamada bloqueante de abajo (puede tardar unos segundos).
+                Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+                // Reintenta crear/arrancar la instancia acá mismo (no solo al abrir la app),
+                // para que "Probar conexión" siempre tenga el diagnóstico más fresco posible.
+                diagLocalDb = App.PrepararYDiagnosticarLocalDB();
             }
 
             SetTestStatus("⏳", "Probando conexión...", "Conectando al servidor de base de datos...", "pending");
@@ -215,8 +226,11 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                string ayuda = ObtenerAyudaError(ex.Message);
-                SetTestStatus("✖", "No se pudo conectar", $"{ex.Message}\n\n{ayuda}", "error");
+                string ayuda = ObtenerAyudaError(ex.Message, diagLocalDb);
+                string detalleTecnico = !string.IsNullOrWhiteSpace(diagLocalDb)
+                    ? $"{ex.Message}\n\nDetalle técnico de LocalDB:\n{diagLocalDb}"
+                    : ex.Message;
+                SetTestStatus("✖", "No se pudo conectar", $"{detalleTecnico}\n\n{ayuda}", "error");
                 _cadenaTesteada = null;
                 btnContinuar.IsEnabled = false;
 
@@ -225,10 +239,33 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        private string ObtenerAyudaError(string mensaje)
+        private string ObtenerAyudaError(string mensaje, string diagLocalDb = null)
         {
             if (rbSoloPC.IsChecked == true)
-                return "LocalDB no está instalado o no se puede iniciar. Si el problema persiste, reiniciá la PC y volvé a intentarlo.";
+            {
+                if (!string.IsNullOrWhiteSpace(diagLocalDb) &&
+                    diagLocalDb.IndexOf("no se encontró", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return "El motor de SQL Server LocalDB no está instalado en esta PC. Instalalo desde:\n" +
+                           "https://aka.ms/sqllocaldb\n\n" +
+                           "Además, LocalDB necesita el 'Visual C++ Redistributable 2015-2022 (x64 y x86)' instalado.\n" +
+                           "Descargalo desde: https://aka.ms/vs/17/release/vc_redist.x64.exe";
+                }
+                if (!string.IsNullOrWhiteSpace(diagLocalDb) &&
+                    (diagLocalDb.IndexOf("process failed to start", StringComparison.OrdinalIgnoreCase) >= 0
+                     || diagLocalDb.IndexOf("Error 50", StringComparison.OrdinalIgnoreCase) >= 0))
+                {
+                    return "El motor de LocalDB está instalado pero el proceso de SQL Server no arranca.\n" +
+                           "Causa más común: falta el 'Visual C++ Redistributable 2015-2022'.\n" +
+                           "Instalá AMBAS versiones y reiniciá la PC:\n" +
+                           "• https://aka.ms/vs/17/release/vc_redist.x64.exe\n" +
+                           "• https://aka.ms/vs/17/release/vc_redist.x86.exe";
+                }
+                return "LocalDB no está instalado o no se puede iniciar.\n" +
+                       "1. Instalá 'Visual C++ Redistributable 2015-2022' (x64 y x86): https://aka.ms/vs/17/release/vc_redist.x64.exe\n" +
+                       "2. Reiniciá la PC y volvé a probar.\n" +
+                       "3. Si persiste, instalá manualmente SQL Server Express LocalDB: https://aka.ms/sqllocaldb";
+            }
 
             if (rbServidor.IsChecked == true)
                 return "Verificá que SQL Server Express esté instalado y en ejecución en esta PC. También podés hacer clic en '🔍 Detectar' para buscar la instancia correcta.";
@@ -237,15 +274,22 @@ namespace SchettiniGestion.WPF
             if (mensaje.Contains("network") || mensaje.Contains("Error 26") || mensaje.Contains("No se puede"))
             {
                 string ip   = txtIPServidor.Text.Trim();
+                string puertoActual = txtPuertoCliente.Text.Trim();
                 bool usaInst = ip.Contains("\\");
                 string extra = usaInst
-                    ? "\n• SQL Express con instancia nombrada usa puerto DINÁMICO.\n  En el servidor, abrí SQL Server Configuration Manager →\n  Protocolos → TCP/IP → Propiedades → Puertos IP → IPAll → Puerto TCP\n  y anotá ese número. Usalo en el campo 'Puerto' del cliente."
-                    : "\n• El firewall del servidor debe permitir el puerto 1433.\n• Si el servidor usa instancia nombrada (ej. IP\\SQLEXPRESS),\n  ingresá la IP y la instancia juntas en el campo IP del servidor.";
-                return "No se encontró el servidor en la red. Verificá:\n• Que el servidor esté encendido.\n• La IP ingresada sea correcta." + extra;
+                    ? (string.IsNullOrEmpty(puertoActual)
+                        ? "\n• Estás usando instancia nombrada (IP\\Instancia) sin puerto: el servidor debe tener instalado el servicio 'SQL Server Browser' corriendo y el puerto UDP 1434 abierto en el firewall.\n  Si el servidor fue configurado con SCHPOS, en cambio, escribí '1433' en el campo Puerto para conectar directo sin depender de SQL Browser."
+                        : "\n• Verificá que el puerto ingresado sea el correcto (por defecto SCHPOS deja el servidor escuchando en 1433).\n  Podés confirmarlo en el servidor con SQL Server Configuration Manager → Protocolos → TCP/IP → Puertos IP → IPAll.")
+                    : "\n• El firewall del servidor debe permitir el puerto 1433 (TCP).\n• Si el servidor usa instancia nombrada (ej. IP\\SQLEXPRESS), escribí la IP y la instancia juntas en el campo de arriba.";
+                return "No se encontró el servidor en la red. Verificá:\n• Que el servidor esté encendido.\n• Que ambas PCs estén en la misma red (mismo router/switch, sin VPN de por medio).\n• La IP ingresada sea correcta." + extra;
             }
 
             if (mensaje.Contains("Login failed") || mensaje.Contains("login"))
-                return "Las credenciales son incorrectas. Verificá el usuario y contraseña SQL ingresados.";
+            {
+                return rbSqlAuth.IsChecked == true
+                    ? "Las credenciales son incorrectas, o el servidor no tiene habilitado el modo de autenticación mixta (SQL Server y Windows).\nSi el servidor fue configurado con 'Esta PC es el SERVIDOR' de SCHPOS, el modo mixto ya se habilita solo. Si el SQL Server fue instalado/configurado a mano, habilitalo desde SQL Server Management Studio → click derecho en el servidor → Propiedades → Seguridad → 'SQL Server and Windows Authentication mode', y reiniciá el servicio."
+                    : "El usuario de Windows de esta PC no tiene acceso al SQL Server del servidor.\nEn un grupo de trabajo (workgroup, sin dominio), la autenticación Windows requiere que exista el MISMO usuario y contraseña de Windows en ambas PCs. Si no es así, probá con 'Usuario y contraseña SQL' en su lugar.";
+            }
 
             return "Verificá los datos e intentá de nuevo.";
         }
@@ -321,14 +365,33 @@ namespace SchettiniGestion.WPF
 
                 // Habilitar TCP/IP vía registro (no requiere SQLPS ni SMO)
                 // y abrir firewall. Sin SQLPS: usamos sqlservermanager WMI o registro directo.
+                //
+                // Importante: además de habilitar TCP, forzamos un puerto FIJO (1433), incluso
+                // para instancias con nombre (ej. SQLEXPRESS). Por defecto, una instancia con
+                // nombre usa un puerto DINÁMICO que solo se puede resolver vía el servicio
+                // "SQL Server Browser" (UDP 1434) — un requisito extra que no queda garantizado
+                // ni documentado para el cliente. Al fijar el puerto, los clientes se conectan
+                // directo por TCP 1433 sin depender de SQL Browser ni de UDP 1434 en el firewall.
+                // También habilitamos el modo mixto de autenticación (SQL Server y Windows) para
+                // que la opción "Usuario y contraseña SQL" del asistente funcione sin pasos manuales.
                 string script = $@"
-# Habilitar TCP/IP en SQL Server via Registro
+# Habilitar TCP/IP, fijar puerto 1433 y modo de autenticación mixto en SQL Server
 $regBase = 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server'
 $inst = (Get-ItemProperty ""$regBase"" -ErrorAction SilentlyContinue).InstalledInstances
 foreach ($i in $inst) {{
-    $path = ""$regBase\$((Get-ItemProperty ""$regBase\Instance Names\SQL"" -ErrorAction SilentlyContinue).$i)\MSSQLServer\SuperSocketNetLib\Tcp""
-    if (Test-Path $path) {{
-        Set-ItemProperty -Path $path -Name 'Enabled' -Value 1 -ErrorAction SilentlyContinue
+    $keyName = (Get-ItemProperty ""$regBase\Instance Names\SQL"" -ErrorAction SilentlyContinue).$i
+    $tcpPath = ""$regBase\$keyName\MSSQLServer\SuperSocketNetLib\Tcp""
+    if (Test-Path $tcpPath) {{
+        Set-ItemProperty -Path $tcpPath -Name 'Enabled' -Value 1 -ErrorAction SilentlyContinue
+        $ipAllPath = ""$tcpPath\IPAll""
+        if (Test-Path $ipAllPath) {{
+            Set-ItemProperty -Path $ipAllPath -Name 'TcpDynamicPorts' -Value '' -ErrorAction SilentlyContinue
+            Set-ItemProperty -Path $ipAllPath -Name 'TcpPort' -Value '1433' -ErrorAction SilentlyContinue
+        }}
+    }}
+    $loginModePath = ""$regBase\$keyName\MSSQLServer""
+    if (Test-Path $loginModePath) {{
+        Set-ItemProperty -Path $loginModePath -Name 'LoginMode' -Value 2 -ErrorAction SilentlyContinue
     }}
 }}
 
@@ -339,7 +402,7 @@ if ($existe -match 'No rules match') {{
     netsh advfirewall firewall add rule name=$ruleName protocol=TCP dir=in action=allow localport=1433 | Out-Null
 }}
 
-# Reiniciar servicio SQL (nombre detectado desde instancia)
+# Reiniciar servicio SQL (nombre detectado desde instancia) para aplicar todos los cambios
 $svc = Get-Service -Name '{nombreServicio}' -ErrorAction SilentlyContinue
 if ($svc -ne $null) {{
     Restart-Service -Name '{nombreServicio}' -Force -ErrorAction SilentlyContinue
@@ -374,13 +437,17 @@ if ($svc -ne $null) {{
                 if (servidorParaClientes == "." || servidorParaClientes.ToLower() == "localhost")
                     servidorParaClientes = ipServidor;
 
-                // Determinar si es instancia nombrada o IP:puerto
+                // Determinar si es instancia nombrada o IP:puerto.
+                // SCHPOS fija el puerto de SQL Server en 1433 (ver HabilitarTcpSqlServer), así que
+                // los clientes siempre pueden usar ese puerto explícitamente y conectar directo,
+                // sin depender del servicio "SQL Server Browser".
                 bool tieneInstancia = servidorParaClientes.Contains("\\");
-                string connectionString = $"Server={servidorParaClientes};Database=SchPosDB;Integrated Security=True;Encrypt=False;TrustServerCertificate=True;";
+                string dataSourceClientes = $"{servidorParaClientes},1433";
+                string connectionString = $"Server={dataSourceClientes};Database=SchPosDB;Integrated Security=True;Encrypt=False;TrustServerCertificate=True;";
 
                 // Paso 3 varía según instancia nombrada o solo IP
                 string paso3 = tieneInstancia
-                    ? $"   Servidor: {servidorParaClientes}\n   (escribí exactamente eso en el campo IP del servidor)"
+                    ? $"   IP o nombre del servidor: {servidorParaClientes}\n   Puerto: 1433\n   (SCHPOS ya dejó el servidor escuchando en ese puerto fijo)"
                     : $"   IP del servidor: {ipServidor}\n   Puerto: 1433 (por defecto)";
 
                 string contenido = $@"=== SCHPOS — Configuración de conexión para PCs de la red ===
@@ -409,17 +476,25 @@ CADENA DE CONEXIÓN COMPLETA (para usuarios avanzados):
 ------------------------------------------------------------
 REQUISITOS EN EL SERVIDOR ({ipServidor} — ESTA PC):
 ------------------------------------------------------------
-✅ TCP/IP habilitado en SQL Server  (SCHPOS intentó hacerlo automáticamente)
-✅ Puerto 1433 abierto en Firewall  (SCHPOS creó la regla 'SCHPOS-SQL-1433')
-✅ SQL Server Express en ejecución  (servicio Windows activo)
+✅ TCP/IP habilitado en SQL Server        (SCHPOS lo hizo automáticamente)
+✅ Puerto fijo 1433 (sin puerto dinámico) (SCHPOS lo hizo automáticamente)
+✅ Puerto 1433 abierto en Firewall        (SCHPOS creó la regla 'SCHPOS-SQL-1433')
+✅ Modo de autenticación mixto habilitado (SCHPOS lo hizo automáticamente,
+                                            necesario solo si algún cliente usa
+                                            'Usuario y contraseña SQL')
+✅ SQL Server Express en ejecución        (servicio Windows activo)
 
-Si los clientes no pueden conectar, verificá manualmente:
+Si los clientes no pueden conectar, verificá manualmente en ESTA PC:
   • SQL Server Configuration Manager
-    → Configuración de red de SQL Server
-    → Protocolos para {instancia.Replace(".\\","").Replace("localhost\\","")}
-    → TCP/IP: Habilitado
+    → Configuración de red de SQL Server → Protocolos para {instancia.Replace(".\\","").Replace("localhost\\","")}
+    → TCP/IP: Habilitado → Propiedades → pestaña 'Direcciones IP' → IPAll
+    → Puertos TCP dinámicos: (vacío)   Puerto TCP: 1433
   • Panel de control → Firewall de Windows
     → Reglas de entrada → 'SCHPOS-SQL-1433' → Acción: Permitir
+  • Que ambas PCs estén en la MISMA red (mismo router, sin VPN de por medio)
+  • Que esta PC no esté en modo 'suspender' o 'hibernar' (debe estar
+    encendida y con SCHPOS instalado; no hace falta tenerlo abierto,
+    solo que el servicio de SQL Server esté corriendo)
 
 ------------------------------------------------------------
 ¿Problemas?  Soporte: info@schettini.com.ar

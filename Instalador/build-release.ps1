@@ -134,7 +134,7 @@ if ($BuildInstaller) {
     $downloadScript = Join-Path $PSScriptRoot "download-prerequisites.ps1"
     if (Test-Path $downloadScript) {
         Write-Host ""
-        Write-Host "Descargando prerequisitos (LocalDB + .NET 4.8)..." -ForegroundColor Cyan
+        Write-Host "Descargando prerequisitos (VC++ Redist + LocalDB + .NET 4.8)..." -ForegroundColor Cyan
         & $downloadScript
     }
     else {

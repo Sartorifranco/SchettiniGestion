@@ -39,6 +39,7 @@ namespace SchettiniGestion.WPF
             AplicarVisibilidadCredencialesSQL();
             AplicarVisibilidadSegunLicencia();
             CargarImpresoras();
+            CargarBackupAuto();
         }
 
         private void AplicarVisibilidadSegunLicencia()
@@ -217,6 +218,11 @@ namespace SchettiniGestion.WPF
                 else if (txtVisorPromoIntervalo != null)
                     txtVisorPromoIntervalo.Text = "8";
 
+                if (dr.Table.Columns.Contains("VisorBannerIntervaloSeg") && dr["VisorBannerIntervaloSeg"] != DBNull.Value)
+                    txtVisorBannerIntervalo.Text = dr["VisorBannerIntervaloSeg"].ToString();
+                else if (txtVisorBannerIntervalo != null)
+                    txtVisorBannerIntervalo.Text = "8";
+
                 RefrescarListaArchivosVisor();
             }
         }
@@ -303,7 +309,7 @@ namespace SchettiniGestion.WPF
             {
                 var dlg = new OpenFileDialog
                 {
-                    Title = "Elegir publicidad para la pantalla del cliente",
+                    Title = "Elegir imagen o video para el panel IZQUIERDO de la pantalla del cliente",
                     Filter = "Publicidades|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.mp4;*.avi|" +
                                "Imágenes|*.jpg;*.jpeg;*.png;*.gif;*.bmp|" +
                                "Videos|*.mp4;*.avi|" +
@@ -311,6 +317,27 @@ namespace SchettiniGestion.WPF
                 };
                 if (dlg.ShowDialog() == true)
                     txtRutaImagenPromocionImportada.Text = dlg.FileName;
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void btnImportarBannerInferior_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new OpenFileDialog
+                {
+                    Title = "Elegir imagen o video para la franja INFERIOR (abajo) de la pantalla del cliente",
+                    Filter = "Publicidades|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.mp4;*.avi|" +
+                               "Imágenes|*.jpg;*.jpeg;*.png;*.gif;*.bmp|" +
+                               "Videos|*.mp4;*.avi|" +
+                               "Todos|*.*"
+                };
+                if (dlg.ShowDialog() == true)
+                    txtRutaBannerImportado.Text = dlg.FileName;
             }
             catch (Exception ex)
             {
@@ -328,30 +355,42 @@ namespace SchettiniGestion.WPF
             return carpeta;
         }
 
-        private void CopiarArchivoPromoSeleccionado(string carpetaDestino)
+        private static readonly string[] PrefijosPanelIzquierdo = { "promo_", "vertical_", "v_" };
+        private static readonly string[] PrefijosPanelInferior = { "banner_", "horizontal_", "h_" };
+
+        /// <summary>
+        /// Copia el archivo pendiente a la carpeta del visor, forzando el prefijo del panel elegido
+        /// (izquierda o abajo) para que la ubicación sea siempre la que el usuario indicó al subirlo,
+        /// sin depender de una detección automática por proporción de imagen.
+        /// </summary>
+        private string CopiarArchivoPromoConPanel(string origen, string carpetaDestino, string[] prefijosPropios, string prefijoForzado)
         {
-            string origen = txtRutaImagenPromocionImportada?.Text?.Trim();
             if (string.IsNullOrWhiteSpace(origen) || !File.Exists(origen))
-                return;
+                return null;
 
             string ext = Path.GetExtension(origen);
             if (!DatabaseService.EsExtensionPromoImagenCliente(ext) && !DatabaseService.EsExtensionPromoVideoCliente(ext))
             {
                 ModernMessageBox.Show("Formato no soportado. Use JPG, PNG, GIF, BMP, MP4 o AVI.", "Archivo no válido",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                return null;
             }
 
             string nombre = Path.GetFileName(origen);
+            bool yaTienePrefijoPropio = prefijosPropios.Any(p => nombre.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+            if (!yaTienePrefijoPropio)
+                nombre = prefijoForzado + nombre;
+
             string destino = Path.Combine(carpetaDestino, nombre);
-            if (File.Exists(destino))
+            if (File.Exists(destino) && !string.Equals(Path.GetFullPath(destino), Path.GetFullPath(origen), StringComparison.OrdinalIgnoreCase))
             {
                 string baseName = Path.GetFileNameWithoutExtension(nombre);
                 destino = Path.Combine(carpetaDestino, $"{baseName}_{DateTime.Now:yyyyMMdd_HHmmss}{ext}");
             }
 
-            File.Copy(origen, destino, overwrite: false);
-            txtRutaImagenPromocionImportada.Text = destino;
+            if (!string.Equals(Path.GetFullPath(destino), Path.GetFullPath(origen), StringComparison.OrdinalIgnoreCase))
+                File.Copy(origen, destino, overwrite: false);
+            return destino;
         }
 
         private void btnBuscarCarpetaPromo_Click(object sender, RoutedEventArgs e)
@@ -371,19 +410,28 @@ namespace SchettiniGestion.WPF
             try
             {
                 string carpeta = ResolverCarpetaPromoVisor();
-                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int seg))
-                    seg = 8;
+                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int segIzq))
+                    segIzq = 8;
+                if (!int.TryParse(txtVisorBannerIntervalo?.Text?.Trim(), out int segAbajo))
+                    segAbajo = 8;
 
-                var rutasExtra = new List<string>();
-                string pendiente = txtRutaImagenPromocionImportada?.Text?.Trim();
-                if (!string.IsNullOrWhiteSpace(pendiente) && File.Exists(pendiente))
-                    rutasExtra.Add(pendiente);
+                var rutasExtraIzquierda = new List<string>();
+                string pendienteIzquierda = txtRutaImagenPromocionImportada?.Text?.Trim();
+                if (!string.IsNullOrWhiteSpace(pendienteIzquierda) && File.Exists(pendienteIzquierda))
+                    rutasExtraIzquierda.Add(pendienteIzquierda);
+
+                var rutasExtraAbajo = new List<string>();
+                string pendienteAbajo = txtRutaBannerImportado?.Text?.Trim();
+                if (!string.IsNullOrWhiteSpace(pendienteAbajo) && File.Exists(pendienteAbajo))
+                    rutasExtraAbajo.Add(pendienteAbajo);
 
                 var preview = new VisorClienteWindow(
                     modoVistaPrevia: true,
                     carpetaPromoOverride: carpeta,
-                    intervaloSegundosOverride: seg,
-                    rutasPromoExtra: rutasExtra);
+                    intervaloVerticalSegundosOverride: segIzq,
+                    intervaloHorizontalSegundosOverride: segAbajo,
+                    rutasPromoVerticalExtra: rutasExtraIzquierda,
+                    rutasPromoHorizontalExtra: rutasExtraAbajo);
 
                 preview.ShowDialog();
             }
@@ -397,14 +445,25 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int seg))
-                    seg = 8;
+                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int segIzq))
+                    segIzq = 8;
+                if (!int.TryParse(txtVisorBannerIntervalo?.Text?.Trim(), out int segAbajo))
+                    segAbajo = 8;
 
                 string carpeta = ResolverCarpetaPromoVisor();
                 txtVisorPromoCarpeta.Text = carpeta;
-                CopiarArchivoPromoSeleccionado(carpeta);
 
-                if (!DatabaseService.ActualizarVisorPromociones(carpeta, seg))
+                string destinoIzquierda = CopiarArchivoPromoConPanel(
+                    txtRutaImagenPromocionImportada?.Text?.Trim(), carpeta, PrefijosPanelIzquierdo, "promo_");
+                if (destinoIzquierda != null)
+                    txtRutaImagenPromocionImportada.Text = destinoIzquierda;
+
+                string destinoAbajo = CopiarArchivoPromoConPanel(
+                    txtRutaBannerImportado?.Text?.Trim(), carpeta, PrefijosPanelInferior, "banner_");
+                if (destinoAbajo != null)
+                    txtRutaBannerImportado.Text = destinoAbajo;
+
+                if (!DatabaseService.ActualizarVisorPromociones(carpeta, segIzq, segAbajo))
                 {
                     ModernMessageBox.Show("No se pudo guardar la configuración del visor.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
@@ -1084,6 +1143,136 @@ namespace SchettiniGestion.WPF
                 dgvMediosPago.ItemsSource = dt.DefaultView;
             }
             catch (Exception ex) { ModernMessageBox.Show(ex.Message); }
+        }
+
+        // --- BACKUP AUTOMÁTICO ---
+        private void CargarBackupAuto()
+        {
+            try
+            {
+                bool esHost = BackupAutoService.EsEstaPCElHostDeLaBaseDeDatos();
+                if (pnlBackupAutoNoAplica != null) pnlBackupAutoNoAplica.Visibility = esHost ? Visibility.Collapsed : Visibility.Visible;
+                if (pnlBackupAutoConfig != null) pnlBackupAutoConfig.Visibility = esHost ? Visibility.Visible : Visibility.Collapsed;
+                if (!esHost) return;
+
+                var cfg = DatabaseService.ObtenerConfigBackupAuto();
+                chkBackupAutoHabilitado.IsChecked = cfg.Habilitado;
+                txtBackupAutoHora.Text = cfg.Hora;
+                txtBackupAutoCarpeta.Text = cfg.CarpetaExterna ?? "";
+                txtBackupAutoRetencion.Text = cfg.RetencionCantidad.ToString();
+                ActualizarEstadoBackupAutoEnUi(cfg);
+            }
+            catch (Exception ex) { ModernMessageBox.Show(ex.Message); }
+        }
+
+        private void ActualizarEstadoBackupAutoEnUi(DatabaseService.BackupAutoConfig cfg)
+        {
+            if (lblBackupAutoEstado == null) return;
+            if (cfg.UltimaFecha == null)
+            {
+                lblBackupAutoEstado.Text = "Nunca se ejecutó.";
+                return;
+            }
+            lblBackupAutoEstado.Text = $"Último intento: {cfg.UltimaFecha:dd/MM/yyyy HH:mm} — {cfg.UltimoResultado}";
+        }
+
+        private void btnBuscarCarpetaBackupAuto_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dlg = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dlg.Description = "Carpeta externa donde copiar el backup automático (pendrive, red o carpeta de la nube)";
+                if (!string.IsNullOrWhiteSpace(txtBackupAutoCarpeta?.Text))
+                    dlg.SelectedPath = txtBackupAutoCarpeta.Text.Trim();
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    txtBackupAutoCarpeta.Text = dlg.SelectedPath;
+            }
+        }
+
+        private void btnGuardarBackupAuto_Click(object sender, RoutedEventArgs e)
+        {
+            bool habilitado = chkBackupAutoHabilitado.IsChecked == true;
+            string hora = txtBackupAutoHora.Text?.Trim();
+            string carpeta = txtBackupAutoCarpeta.Text?.Trim();
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(hora ?? "", @"^([01]?\d|2[0-3]):[0-5]\d$"))
+            {
+                ModernMessageBox.Show("Ingresá la hora en formato HH:mm, por ejemplo 02:00.", "Hora inválida",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (habilitado && string.IsNullOrWhiteSpace(carpeta))
+            {
+                ModernMessageBox.Show(
+                    "Para activar el backup automático elegí una carpeta externa de destino (pendrive, red o carpeta de la nube).\n\n" +
+                    "Guardar solo en esta PC no protege tus datos si el equipo se rompe.",
+                    "Falta la carpeta externa", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (!int.TryParse(txtBackupAutoRetencion.Text?.Trim(), out int retencion) || retencion < 1)
+                retencion = 14;
+
+            this.Cursor = System.Windows.Input.Cursors.Wait;
+            bool guardadoOk = DatabaseService.GuardarConfigBackupAuto(habilitado, hora, carpeta, retencion);
+            string errorTarea = null;
+            if (guardadoOk)
+                errorTarea = habilitado ? BackupAutoService.ProgramarTareaWindows(hora) : BackupAutoService.QuitarTareaWindows();
+            this.Cursor = System.Windows.Input.Cursors.Arrow;
+
+            if (!guardadoOk)
+            {
+                ModernMessageBox.Show("No se pudo guardar la configuración del backup automático.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            if (errorTarea != null)
+            {
+                ModernMessageBox.Show(
+                    "La configuración se guardó, pero no se pudo programar la tarea en Windows:\n\n" + errorTarea +
+                    "\n\nProbá ejecutar el sistema como Administrador la primera vez que actives esta opción.",
+                    "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            ModernMessageBox.Show(
+                habilitado
+                    ? $"✔ Backup automático programado todos los días a las {hora}."
+                    : "Backup automático desactivado.",
+                "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            CargarBackupAuto();
+        }
+
+        private async void btnProbarBackupAuto_Click(object sender, RoutedEventArgs e)
+        {
+            string carpeta = txtBackupAutoCarpeta.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(carpeta))
+            {
+                ModernMessageBox.Show("Elegí primero una carpeta externa de destino para poder probar.", "Falta la carpeta externa",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Guardar temporalmente la carpeta/retención actuales para que la prueba use lo que se ve en pantalla,
+            // aunque todavía no se haya presionado "Guardar y programar".
+            if (!int.TryParse(txtBackupAutoRetencion.Text?.Trim(), out int retencion) || retencion < 1)
+                retencion = 14;
+            DatabaseService.GuardarConfigBackupAuto(true, txtBackupAutoHora.Text?.Trim() ?? "02:00", carpeta, retencion);
+
+            this.Cursor = System.Windows.Input.Cursors.Wait;
+            btnProbarBackupAuto.IsEnabled = false;
+            string resultado = await Task.Run(() => BackupAutoService.EjecutarBackupAutomatico());
+            btnProbarBackupAuto.IsEnabled = true;
+            this.Cursor = System.Windows.Input.Cursors.Arrow;
+
+            // Restaurar el estado "habilitado" real elegido por el usuario (la prueba no debe activar el backup solo por probarlo).
+            bool habilitadoReal = chkBackupAutoHabilitado.IsChecked == true;
+            DatabaseService.GuardarConfigBackupAuto(habilitadoReal, txtBackupAutoHora.Text?.Trim() ?? "02:00", carpeta, retencion);
+
+            bool ok = resultado != null && resultado.StartsWith("✔");
+            ModernMessageBox.Show(resultado ?? "Ocurrió un error desconocido.", ok ? "Prueba exitosa" : "Prueba con problemas",
+                MessageBoxButton.OK, ok ? MessageBoxImage.Information : MessageBoxImage.Warning);
+
+            CargarBackupAuto();
         }
 
         private void btnGenerarBackup_Click(object sender, RoutedEventArgs e)

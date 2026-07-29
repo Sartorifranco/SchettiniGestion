@@ -440,6 +440,7 @@ namespace SchettiniGestion
         private static bool _columnasVisorPromoVerificadas;
         private static bool _columnaCondicionTicketFacturasOk;
         private static bool _tablaAperturasCajaOk;
+        private static bool _columnasBackupAutoVerificadas;
 
         /// <summary>Concepto estándar del movimiento de caja al abrir turno.</summary>
         public const string ConceptoFondoFijo = "FONDO FIJO";
@@ -686,9 +687,36 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Accione
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='VisorPromoCarpeta')
   ALTER TABLE Configuracion ADD VisorPromoCarpeta NVARCHAR(500) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='VisorPromoIntervaloSeg')
-  ALTER TABLE Configuracion ADD VisorPromoIntervaloSeg INT NULL;", c))
+  ALTER TABLE Configuracion ADD VisorPromoIntervaloSeg INT NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='VisorBannerIntervaloSeg')
+  ALTER TABLE Configuracion ADD VisorBannerIntervaloSeg INT NULL;", c))
                     cmd.ExecuteNonQuery();
                 _columnasVisorPromoVerificadas = true;
+            }
+            catch { /* BD sin tabla Configuracion o sin permisos ALTER */ }
+        }
+
+        private static void AsegurarColumnasBackupAuto(SqlConnection c)
+        {
+            if (_columnasBackupAutoVerificadas) return;
+            try
+            {
+                AsegurarMigracionLite(c);
+                using (var cmd = new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='BackupAutoHabilitado')
+  ALTER TABLE Configuracion ADD BackupAutoHabilitado BIT NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='BackupAutoHora')
+  ALTER TABLE Configuracion ADD BackupAutoHora NVARCHAR(5) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='BackupAutoCarpetaExterna')
+  ALTER TABLE Configuracion ADD BackupAutoCarpetaExterna NVARCHAR(500) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='BackupAutoRetencionCantidad')
+  ALTER TABLE Configuracion ADD BackupAutoRetencionCantidad INT NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='BackupAutoUltimaFecha')
+  ALTER TABLE Configuracion ADD BackupAutoUltimaFecha DATETIME NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='BackupAutoUltimoResultado')
+  ALTER TABLE Configuracion ADD BackupAutoUltimoResultado NVARCHAR(500) NULL;", c))
+                    cmd.ExecuteNonQuery();
+                _columnasBackupAutoVerificadas = true;
             }
             catch { /* BD sin tabla Configuracion o sin permisos ALTER */ }
         }
@@ -730,10 +758,16 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Apertur
         }
 
         /// <summary>Carpeta con archivos de promoción para la pantalla cliente (imágenes, GIF, videos cortos). Solo aplica si UsaVisorCliente está activo.</summary>
-        public static bool ActualizarVisorPromociones(string carpeta, int intervaloSegundos)
+        /// <param name="intervaloSegundos">Segundos entre cambios del panel izquierdo (imagen promocional vertical).</param>
+        /// <param name="intervaloBannerSegundos">Segundos entre cambios del banner inferior. Si es null, usa el mismo valor que <paramref name="intervaloSegundos"/>.</param>
+        public static bool ActualizarVisorPromociones(string carpeta, int intervaloSegundos, int? intervaloBannerSegundos = null)
         {
             if (intervaloSegundos < 3) intervaloSegundos = 3;
             if (intervaloSegundos > 120) intervaloSegundos = 120;
+
+            int intervaloBanner = intervaloBannerSegundos ?? intervaloSegundos;
+            if (intervaloBanner < 3) intervaloBanner = 3;
+            if (intervaloBanner > 120) intervaloBanner = 120;
             try
             {
                 using (var c = new SqlConnection(_connectionString))
@@ -741,10 +775,11 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Apertur
                     c.Open();
                     ForzarContextoBD(c);
                     AsegurarColumnasVisorPromo(c);
-                    using (var cmd = new SqlCommand("UPDATE Configuracion SET VisorPromoCarpeta=@p, VisorPromoIntervaloSeg=@i WHERE ID=1", c))
+                    using (var cmd = new SqlCommand("UPDATE Configuracion SET VisorPromoCarpeta=@p, VisorPromoIntervaloSeg=@i, VisorBannerIntervaloSeg=@ib WHERE ID=1", c))
                     {
                         cmd.Parameters.AddWithValue("@p", string.IsNullOrWhiteSpace(carpeta) ? (object)DBNull.Value : carpeta.Trim());
                         cmd.Parameters.AddWithValue("@i", intervaloSegundos);
+                        cmd.Parameters.AddWithValue("@ib", intervaloBanner);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -773,6 +808,95 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Apertur
             }
             catch { }
             return null;
+        }
+
+        /// <summary>Configuración del backup automático diario (se ejecuta en la PC donde vive la base de datos).</summary>
+        public class BackupAutoConfig
+        {
+            public bool Habilitado { get; set; }
+            public string Hora { get; set; } = "02:00";
+            public string CarpetaExterna { get; set; }
+            public int RetencionCantidad { get; set; } = 14;
+            public DateTime? UltimaFecha { get; set; }
+            public string UltimoResultado { get; set; }
+        }
+
+        public static BackupAutoConfig ObtenerConfigBackupAuto()
+        {
+            var cfg = new BackupAutoConfig();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    ForzarContextoBD(c);
+                    AsegurarColumnasBackupAuto(c);
+                    var dt = new DataTable();
+                    new SqlDataAdapter(@"SELECT TOP 1 BackupAutoHabilitado, BackupAutoHora, BackupAutoCarpetaExterna,
+                        BackupAutoRetencionCantidad, BackupAutoUltimaFecha, BackupAutoUltimoResultado FROM Configuracion", c).Fill(dt);
+                    if (dt.Rows.Count == 0) return cfg;
+                    var r = dt.Rows[0];
+                    cfg.Habilitado = r["BackupAutoHabilitado"] != DBNull.Value && Convert.ToBoolean(r["BackupAutoHabilitado"]);
+                    cfg.Hora = r["BackupAutoHora"] == DBNull.Value ? "02:00" : r["BackupAutoHora"].ToString();
+                    cfg.CarpetaExterna = r["BackupAutoCarpetaExterna"] == DBNull.Value ? null : r["BackupAutoCarpetaExterna"].ToString();
+                    cfg.RetencionCantidad = r["BackupAutoRetencionCantidad"] == DBNull.Value ? 14 : Convert.ToInt32(r["BackupAutoRetencionCantidad"]);
+                    cfg.UltimaFecha = r["BackupAutoUltimaFecha"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(r["BackupAutoUltimaFecha"]);
+                    cfg.UltimoResultado = r["BackupAutoUltimoResultado"] == DBNull.Value ? null : r["BackupAutoUltimoResultado"].ToString();
+                }
+            }
+            catch { }
+            return cfg;
+        }
+
+        public static bool GuardarConfigBackupAuto(bool habilitado, string hora, string carpetaExterna, int retencionCantidad)
+        {
+            if (retencionCantidad < 1) retencionCantidad = 1;
+            if (retencionCantidad > 365) retencionCantidad = 365;
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    ForzarContextoBD(c);
+                    AsegurarColumnasBackupAuto(c);
+                    using (var cmd = new SqlCommand(@"UPDATE Configuracion SET BackupAutoHabilitado=@h, BackupAutoHora=@hr,
+                        BackupAutoCarpetaExterna=@carp, BackupAutoRetencionCantidad=@ret WHERE ID=1", c))
+                    {
+                        cmd.Parameters.AddWithValue("@h", habilitado);
+                        cmd.Parameters.AddWithValue("@hr", string.IsNullOrWhiteSpace(hora) ? "02:00" : hora.Trim());
+                        cmd.Parameters.AddWithValue("@carp", string.IsNullOrWhiteSpace(carpetaExterna) ? (object)DBNull.Value : carpetaExterna.Trim());
+                        cmd.Parameters.AddWithValue("@ret", retencionCantidad);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                NotificarError(ex.Message);
+                return false;
+            }
+        }
+
+        public static bool RegistrarResultadoBackupAuto(DateTime fecha, string resultado)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    ForzarContextoBD(c);
+                    AsegurarColumnasBackupAuto(c);
+                    using (var cmd = new SqlCommand(@"UPDATE Configuracion SET BackupAutoUltimaFecha=@f, BackupAutoUltimoResultado=@r WHERE ID=1", c))
+                    {
+                        cmd.Parameters.AddWithValue("@f", fecha);
+                        cmd.Parameters.AddWithValue("@r", string.IsNullOrWhiteSpace(resultado) ? (object)DBNull.Value : resultado.Trim());
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                return true;
+            }
+            catch { return false; }
         }
 
         /// <summary>Preferencias predeterminadas del POS (lista, comprobante, pago).</summary>
@@ -4211,7 +4335,7 @@ FROM Facturas f JOIN Clientes cl ON f.ClienteID=cl.ClienteID WHERE f.Fecha BETWE
                     c.Open();
                     AsegurarColumnaCondicionTicketFacturas(c);
                     var cmd = new SqlCommand(@"
-SELECT f.FacturaID, f.Fecha, f.TipoComprobante, f.Total, f.CondicionVenta,
+SELECT f.FacturaID, f.ClienteID, f.Fecha, f.TipoComprobante, f.Total, f.CondicionVenta,
        f.NumeroComprobanteAFIP, f.CAE, f.VencimientoCAE, f.CondicionTicket,
        ISNULL(f.NombrePersonal, '') AS NombrePersonal,
        ISNULL(cl.RazonSocial,'Consumidor Final') AS ClienteNombre,
@@ -5422,7 +5546,10 @@ ORDER BY Fecha DESC";
         {
             try
             {
-                string ds = string.IsNullOrWhiteSpace(puerto) || puerto == "1433" ? servidor : $"{servidor},{puerto}";
+                // Siempre incluir el puerto si se especificó (incluso con instancia nombrada,
+                // ej. "192.168.1.5\SQLEXPRESS,1433"): así el driver conecta directo por TCP sin
+                // depender del servicio "SQL Server Browser" (UDP 1434) para resolver el puerto.
+                string ds = string.IsNullOrWhiteSpace(puerto) ? servidor : $"{servidor},{puerto}";
                 string cs = integrado
                     ? $"Server={ds};Database=SchPosDB;Integrated Security=True;Encrypt=False;TrustServerCertificate=True;"
                     : $"Server={ds};Database=SchPosDB;User Id={usuario};Password={password};Encrypt=False;TrustServerCertificate=True;";
@@ -6197,28 +6324,71 @@ WHERE ProductoPadreID={productoId}", c).Fill(dt);
             return dt;
         }
 
-        public static int GuardarNotaCreditoDebitoVenta(int cid, string tipo, decimal monto, string descripcion, int? facturaId = null, string numeroComprobante = null)
+        public static int GuardarNotaCreditoDebitoVenta(int cid, string tipo, decimal monto, string descripcion, int? facturaId = null, string numeroComprobante = null, List<NotaCreditoItemDetalle> items = null)
         {
             try
             {
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
-                    var cmd = new SqlCommand(
-                        "INSERT INTO NotasCreditoDebitoVentas (ClienteID,FacturaID,Tipo,Fecha,Monto,Descripcion,NumeroComprobante) VALUES (@cid,@fid,@t,@f,@m,@d,@nc); SELECT SCOPE_IDENTITY();", c);
-                    cmd.Parameters.AddWithValue("@cid", cid);
-                    cmd.Parameters.AddWithValue("@fid", (object)facturaId ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@t", tipo);
-                    cmd.Parameters.AddWithValue("@f", DateTime.Now);
-                    cmd.Parameters.AddWithValue("@m", monto);
-                    string desc = descripcion ?? "";
-                    if (desc.Length > 500) desc = desc.Substring(0, 500);
-                    cmd.Parameters.AddWithValue("@d", desc);
-                    cmd.Parameters.AddWithValue("@nc", (object)numeroComprobante ?? DBNull.Value);
-                    return Convert.ToInt32(cmd.ExecuteScalar());
+                    AsegurarTablaNotaCreditoDebitoVentaDetalle(c);
+                    using (var tx = c.BeginTransaction())
+                    {
+                        var cmd = new SqlCommand(
+                            "INSERT INTO NotasCreditoDebitoVentas (ClienteID,FacturaID,Tipo,Fecha,Monto,Descripcion,NumeroComprobante) VALUES (@cid,@fid,@t,@f,@m,@d,@nc); SELECT SCOPE_IDENTITY();", c, tx);
+                        cmd.Parameters.AddWithValue("@cid", cid);
+                        cmd.Parameters.AddWithValue("@fid", (object)facturaId ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@t", tipo);
+                        cmd.Parameters.AddWithValue("@f", DateTime.Now);
+                        cmd.Parameters.AddWithValue("@m", monto);
+                        string desc = descripcion ?? "";
+                        if (desc.Length > 500) desc = desc.Substring(0, 500);
+                        cmd.Parameters.AddWithValue("@d", desc);
+                        cmd.Parameters.AddWithValue("@nc", (object)numeroComprobante ?? DBNull.Value);
+                        int notaId = Convert.ToInt32(cmd.ExecuteScalar());
+
+                        if (items != null)
+                        {
+                            foreach (var it in items)
+                            {
+                                if (it == null || it.Cantidad <= 0) continue;
+                                var cmdIt = new SqlCommand(
+                                    "INSERT INTO NotaCreditoDebitoVentaDetalle (NotaID,ProductoID,Codigo,Descripcion,Cantidad,PrecioUnitario) VALUES (@nid,@pid,@cod,@desc,@cant,@pu)", c, tx);
+                                cmdIt.Parameters.AddWithValue("@nid", notaId);
+                                cmdIt.Parameters.AddWithValue("@pid", it.ProductoID > 0 ? (object)it.ProductoID : DBNull.Value);
+                                cmdIt.Parameters.AddWithValue("@cod", (object)it.Codigo ?? DBNull.Value);
+                                cmdIt.Parameters.AddWithValue("@desc", it.Descripcion ?? "");
+                                cmdIt.Parameters.AddWithValue("@cant", it.Cantidad);
+                                cmdIt.Parameters.AddWithValue("@pu", it.PrecioUnitario);
+                                cmdIt.ExecuteNonQuery();
+                            }
+                        }
+
+                        tx.Commit();
+                        return notaId;
+                    }
                 }
             }
             catch { return 0; }
+        }
+
+        private static void AsegurarTablaNotaCreditoDebitoVentaDetalle(SqlConnection c)
+        {
+            try
+            {
+                new SqlCommand(@"
+                    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='NotaCreditoDebitoVentaDetalle')
+                    CREATE TABLE NotaCreditoDebitoVentaDetalle (
+                        DetalleID INT PRIMARY KEY IDENTITY(1,1),
+                        NotaID INT NOT NULL,
+                        ProductoID INT NULL,
+                        Codigo NVARCHAR(50) NULL,
+                        Descripcion NVARCHAR(300) NOT NULL,
+                        Cantidad DECIMAL(18,2) NOT NULL,
+                        PrecioUnitario DECIMAL(18,2) NOT NULL
+                    );", c).ExecuteNonQuery();
+            }
+            catch { }
         }
 
         public static DataRow GetNotaVentaPorID(int id)
@@ -6237,6 +6407,35 @@ WHERE ProductoPadreID={productoId}", c).Fill(dt);
                 }
             }
             catch { return null; }
+        }
+
+        public static DataTable GetNotaVentaDetalle(int notaId)
+        {
+            var dt = new DataTable();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarTablaNotaCreditoDebitoVentaDetalle(c);
+                    var cmd = new SqlCommand(
+                        "SELECT ProductoID, Codigo, Descripcion, Cantidad, PrecioUnitario, (Cantidad*PrecioUnitario) AS Subtotal " +
+                        "FROM NotaCreditoDebitoVentaDetalle WHERE NotaID=@id ORDER BY DetalleID", c);
+                    cmd.Parameters.AddWithValue("@id", notaId);
+                    new SqlDataAdapter(cmd).Fill(dt);
+                }
+            }
+            catch { }
+            return dt;
+        }
+
+        public class NotaCreditoItemDetalle
+        {
+            public int ProductoID { get; set; }
+            public string Codigo { get; set; }
+            public string Descripcion { get; set; }
+            public decimal Cantidad { get; set; }
+            public decimal PrecioUnitario { get; set; }
         }
     }
 }

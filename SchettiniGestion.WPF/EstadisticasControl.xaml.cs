@@ -25,20 +25,21 @@ namespace SchettiniGestion.WPF
 
         private void ConfigurarEjesVacios()
         {
-            Func<double, string> formatoMoneda = v => v.ToString("C0", CulturaAr);
+            Func<double, string> formatoMoneda = FormatearMonedaEje;
+            Brush textoEje = BrushTema("TextPrimary", Brushes.WhiteSmoke);
 
             chartVentasDia.AxisX.Clear();
             chartVentasDia.AxisY.Clear();
             chartVentasDia.AxisX.Add(new Axis
             {
-                Foreground = BrushTema("TextSecondary", Brushes.Gray),
-                FontSize = 11,
+                Foreground = textoEje,
+                FontSize = 12,
                 Labels = new List<string>()
             });
             chartVentasDia.AxisY.Add(new Axis
             {
-                Foreground = BrushTema("TextSecondary", Brushes.Gray),
-                FontSize = 11,
+                Foreground = textoEje,
+                FontSize = 12,
                 LabelFormatter = formatoMoneda
             });
 
@@ -46,14 +47,14 @@ namespace SchettiniGestion.WPF
             chartTopProductos.AxisY.Clear();
             chartTopProductos.AxisX.Add(new Axis
             {
-                Foreground = BrushTema("TextSecondary", Brushes.Gray),
-                FontSize = 11,
+                Foreground = textoEje,
+                FontSize = 12,
                 LabelFormatter = formatoMoneda
             });
             chartTopProductos.AxisY.Add(new Axis
             {
-                Foreground = BrushTema("TextSecondary", Brushes.Gray),
-                FontSize = 11,
+                Foreground = textoEje,
+                FontSize = 12,
                 Labels = new List<string>()
             });
 
@@ -61,14 +62,14 @@ namespace SchettiniGestion.WPF
             chartTopMargen.AxisY.Clear();
             chartTopMargen.AxisX.Add(new Axis
             {
-                Foreground = BrushTema("TextSecondary", Brushes.Gray),
-                FontSize = 11,
+                Foreground = textoEje,
+                FontSize = 12,
                 LabelFormatter = formatoMoneda
             });
             chartTopMargen.AxisY.Add(new Axis
             {
-                Foreground = BrushTema("TextSecondary", Brushes.Gray),
-                FontSize = 11,
+                Foreground = textoEje,
+                FontSize = 12,
                 Labels = new List<string>()
             });
 
@@ -76,16 +77,27 @@ namespace SchettiniGestion.WPF
             chartVentasHora.AxisY.Clear();
             chartVentasHora.AxisX.Add(new Axis
             {
-                Foreground = BrushTema("TextSecondary", Brushes.Gray),
-                FontSize = 10,
+                Foreground = textoEje,
+                FontSize = 11.5,
                 Labels = new List<string>()
             });
             chartVentasHora.AxisY.Add(new Axis
             {
-                Foreground = BrushTema("TextSecondary", Brushes.Gray),
-                FontSize = 11,
+                Foreground = textoEje,
+                FontSize = 12,
                 LabelFormatter = formatoMoneda
             });
+        }
+
+        private static string FormatearMonedaEje(double valor)
+        {
+            double abs = Math.Abs(valor);
+            string signo = valor < 0 ? "-$ " : "$ ";
+            if (abs >= 1000000)
+                return signo + (abs / 1000000d).ToString("N1", CulturaAr) + " M";
+            if (abs >= 1000)
+                return signo + (abs / 1000d).ToString("N0", CulturaAr) + " mil";
+            return signo + abs.ToString("N0", CulturaAr);
         }
 
         private void EstadisticasControl_Loaded(object sender, RoutedEventArgs e)
@@ -270,6 +282,7 @@ namespace SchettiniGestion.WPF
 
             if (chartTopProductos.AxisY.Count > 0)
                 chartTopProductos.AxisY[0].Labels = labels;
+            AjustarRangoHorizontal(chartTopProductos, valores);
 
             chartTopProductos.Series = new SeriesCollection
             {
@@ -279,6 +292,8 @@ namespace SchettiniGestion.WPF
                     Values = valores,
                     DataLabels = true,
                     LabelPoint = p => p.X.ToString("C0", CulturaAr),
+                    Foreground = BrushTema("TextPrimary", Brushes.White),
+                    FontSize = 12,
                     Fill = BrushTema("SuccessColor", new SolidColorBrush(Color.FromRgb(0, 158, 227)))
                 }
             };
@@ -305,6 +320,7 @@ namespace SchettiniGestion.WPF
 
             if (chartTopMargen.AxisY.Count > 0)
                 chartTopMargen.AxisY[0].Labels = labels;
+            AjustarRangoHorizontal(chartTopMargen, valores);
 
             chartTopMargen.Series = new SeriesCollection
             {
@@ -314,9 +330,24 @@ namespace SchettiniGestion.WPF
                     Values = valores,
                     DataLabels = true,
                     LabelPoint = p => p.X.ToString("C0", CulturaAr),
+                    Foreground = BrushTema("TextPrimary", Brushes.White),
+                    FontSize = 12,
                     Fill = new SolidColorBrush(Color.FromRgb(59, 130, 246))
                 }
             };
+        }
+
+        private static void AjustarRangoHorizontal(CartesianChart chart, ChartValues<double> valores)
+        {
+            if (chart.AxisX.Count == 0 || valores == null || valores.Count == 0) return;
+
+            double minimo = Math.Min(0d, valores.Min());
+            double maximo = Math.Max(0d, valores.Max());
+            double rango = maximo - minimo;
+            if (rango <= 0) rango = Math.Max(1d, Math.Abs(maximo));
+
+            chart.AxisX[0].MinValue = minimo < 0 ? minimo - rango * 0.12d : 0d;
+            chart.AxisX[0].MaxValue = maximo + rango * 0.24d;
         }
 
         private void CargarAbc(DateTime desde, DateTime hasta)
@@ -393,6 +424,8 @@ namespace SchettiniGestion.WPF
                     Values = new ChartValues<double> { Convert.ToDouble(total) },
                     DataLabels = true,
                     LabelPoint = p => p.Y.ToString("C0", CulturaAr),
+                    Foreground = Brushes.White,
+                    FontSize = 12,
                     Fill = new SolidColorBrush(colores[i % colores.Length])
                 });
                 i++;

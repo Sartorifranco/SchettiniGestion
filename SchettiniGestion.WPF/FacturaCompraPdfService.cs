@@ -66,25 +66,35 @@ namespace SchettiniGestion.WPF
 
         public static FacturaCompraPdfParseResult ExtraerYParsear(string rutaPdf)
         {
-            var result = new FacturaCompraPdfParseResult();
             string texto = ExtraerTexto(rutaPdf);
-            result.TextoCompleto = texto ?? "";
+            var result = ParsearTexto(texto);
             if (string.IsNullOrWhiteSpace(texto))
-            {
-                result.MensajeAdvertencia = "No se pudo leer texto del PDF. Si es un escaneo (imagen), esta versión no soporta OCR.";
-                return result;
-            }
+                result.MensajeAdvertencia = "No se pudo leer texto del PDF. Si es un escaneo (imagen), use la opción \"Importar Foto\".";
+            return result;
+        }
+
+        /// <summary>Parsea cabecera e ítems a partir de texto ya extraído (PDF con texto u OCR de una foto).</summary>
+        public static FacturaCompraPdfParseResult ParsearTexto(string texto)
+        {
+            var result = new FacturaCompraPdfParseResult { TextoCompleto = texto ?? "" };
+            if (string.IsNullOrWhiteSpace(texto)) return result;
 
             ParsearCabecera(texto, result);
             result.Lineas = ParsearLineas(texto);
             if (result.Lineas.Count == 0)
-                result.MensajeAdvertencia = "Se leyó el PDF pero no se detectaron ítems automáticamente. Revise el archivo o cargue la factura a mano.";
+                result.MensajeAdvertencia = "Se leyó el texto pero no se detectaron ítems automáticamente. Revise el archivo o cargue la factura a mano.";
             return result;
         }
 
         public static FacturaCompraPdfImportResult ImportarConMatching(string rutaPdf)
         {
             var parse = ExtraerYParsear(rutaPdf);
+            return ArmarImportacion(parse);
+        }
+
+        /// <summary>Arma el resultado de importación (búsqueda de proveedor + matching de productos) a partir de una cabecera/líneas ya parseadas.</summary>
+        public static FacturaCompraPdfImportResult ArmarImportacion(FacturaCompraPdfParseResult parse)
+        {
             var import = new FacturaCompraPdfImportResult { Parse = parse };
 
             if (!string.IsNullOrWhiteSpace(parse.CuitEmisor))

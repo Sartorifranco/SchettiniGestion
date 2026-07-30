@@ -444,6 +444,7 @@ namespace SchettiniGestion
         private static bool _columnaCondicionTicketFacturasOk;
         private static bool _tablaAperturasCajaOk;
         private static bool _columnasBackupAutoVerificadas;
+        private static bool _columnasOcrVerificadas;
 
         /// <summary>Concepto estándar del movimiento de caja al abrir turno.</summary>
         public const string ConceptoFondoFijo = "FONDO FIJO";
@@ -748,6 +749,83 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 _columnasBackupAutoVerificadas = true;
             }
             catch { /* BD sin tabla Configuracion o sin permisos ALTER */ }
+        }
+
+        private static void AsegurarColumnasOcr(SqlConnection c)
+        {
+            if (_columnasOcrVerificadas) return;
+            try
+            {
+                AsegurarMigracionLite(c);
+                using (var cmd = new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='OcrMotor')
+  ALTER TABLE Configuracion ADD OcrMotor NVARCHAR(20) NOT NULL DEFAULT 'Ninguno';
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='OcrAzureEndpoint')
+  ALTER TABLE Configuracion ADD OcrAzureEndpoint NVARCHAR(300) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='OcrAzureClave')
+  ALTER TABLE Configuracion ADD OcrAzureClave NVARCHAR(200) NULL;", c))
+                    cmd.ExecuteNonQuery();
+                _columnasOcrVerificadas = true;
+            }
+            catch { /* BD sin tabla Configuracion o sin permisos ALTER */ }
+        }
+
+        /// <summary>Configuración del reconocimiento automático (OCR) de fotos de facturas de compra.</summary>
+        public class OcrConfig
+        {
+            /// <summary>"Ninguno", "Tesseract" (local/offline) o "Azure" (nube, requiere clave propia del cliente).</summary>
+            public string Motor { get; set; } = "Ninguno";
+            public string AzureEndpoint { get; set; }
+            public string AzureClave { get; set; }
+        }
+
+        public static OcrConfig ObtenerConfigOcr()
+        {
+            var cfg = new OcrConfig();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    ForzarContextoBD(c);
+                    AsegurarColumnasOcr(c);
+                    var dt = new DataTable();
+                    new SqlDataAdapter("SELECT TOP 1 OcrMotor, OcrAzureEndpoint, OcrAzureClave FROM Configuracion", c).Fill(dt);
+                    if (dt.Rows.Count == 0) return cfg;
+                    var r = dt.Rows[0];
+                    cfg.Motor = r["OcrMotor"] == DBNull.Value ? "Ninguno" : r["OcrMotor"].ToString();
+                    cfg.AzureEndpoint = r["OcrAzureEndpoint"] == DBNull.Value ? null : r["OcrAzureEndpoint"].ToString();
+                    cfg.AzureClave = r["OcrAzureClave"] == DBNull.Value ? null : r["OcrAzureClave"].ToString();
+                }
+            }
+            catch { }
+            return cfg;
+        }
+
+        public static bool GuardarConfigOcr(string motor, string azureEndpoint, string azureClave)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    ForzarContextoBD(c);
+                    AsegurarColumnasOcr(c);
+                    using (var cmd = new SqlCommand(@"UPDATE Configuracion SET OcrMotor=@m, OcrAzureEndpoint=@ep, OcrAzureClave=@k WHERE ID=1", c))
+                    {
+                        cmd.Parameters.AddWithValue("@m", string.IsNullOrWhiteSpace(motor) ? "Ninguno" : motor.Trim());
+                        cmd.Parameters.AddWithValue("@ep", string.IsNullOrWhiteSpace(azureEndpoint) ? (object)DBNull.Value : azureEndpoint.Trim().TrimEnd('/'));
+                        cmd.Parameters.AddWithValue("@k", string.IsNullOrWhiteSpace(azureClave) ? (object)DBNull.Value : azureClave.Trim());
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                NotificarError(ex.Message);
+                return false;
+            }
         }
 
         private static void AsegurarColumnaCondicionTicketFacturas(SqlConnection c)

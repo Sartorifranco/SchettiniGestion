@@ -35,13 +35,26 @@
 
 
         <Grid Grid.Row="0" Margin="0,0,0,14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
             <TextBlock x:Name="lblTitulo" Text="Nueva Factura de Compra"
                        FontSize="17" FontWeight="Bold" Foreground="{StaticResource PrimaryColor}"
                        VerticalAlignment="Center"/>
-            <Button x:Name="btnImportarPdf" Content="📄 Importar PDF"
-                    Style="{StaticResource SecondaryButtonStyle}"
-                    HorizontalAlignment="Right" Padding="12,6"
-                    Click="btnImportarPdf_Click"/>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnImportarFoto" Content="📷 Importar foto"
+                        Style="{StaticResource SecondaryButtonStyle}" Padding="12,6" Margin="0,0,8,0"
+                        ToolTip="Lee una foto JPG/PNG mediante el motor configurado en Configuración > OCR Compras."
+                        Click="btnImportarFoto_Click"/>
+                <Button x:Name="btnImportarPdf" Content="📄 Importar PDF"
+                        Style="{StaticResource SecondaryButtonStyle}" Padding="12,6"
+                        ToolTip="Lee facturas electrónicas PDF que contienen texto. No tiene costo y no requiere internet."
+                        Click="btnImportarPdf_Click"/>
+            </StackPanel>
+            <TextBlock Grid.Row="1" Margin="0,8,0,0" FontSize="12"
+                       Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap"
+                       Text="Carga manual: completá proveedor e ítems abajo.  ·  PDF: para facturas electrónicas con texto.  ·  Foto: usa Tesseract local o Azure según Configuración > OCR Compras. Siempre podrás revisar y corregir antes de agregar."/>
         </Grid>
 
 

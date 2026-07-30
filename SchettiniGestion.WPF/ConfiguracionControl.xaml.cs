@@ -40,6 +40,7 @@ namespace SchettiniGestion.WPF
             AplicarVisibilidadSegunLicencia();
             CargarImpresoras();
             CargarBackupAuto();
+            CargarOcr();
         }
 
         private void AplicarVisibilidadSegunLicencia()
@@ -1143,6 +1144,99 @@ namespace SchettiniGestion.WPF
                 dgvMediosPago.ItemsSource = dt.DefaultView;
             }
             catch (Exception ex) { ModernMessageBox.Show(ex.Message); }
+        }
+
+        // --- OCR DE FACTURAS DE COMPRA ---
+        private void CargarOcr()
+        {
+            try
+            {
+                var cfg = DatabaseService.ObtenerConfigOcr();
+                string motor = cfg?.Motor ?? "Ninguno";
+                foreach (var item in cmbOcrMotor.Items.OfType<ComboBoxItem>())
+                {
+                    if (string.Equals(item.Tag?.ToString(), motor, StringComparison.OrdinalIgnoreCase))
+                    {
+                        cmbOcrMotor.SelectedItem = item;
+                        break;
+                    }
+                }
+                if (cmbOcrMotor.SelectedIndex < 0) cmbOcrMotor.SelectedIndex = 0;
+                txtOcrAzureEndpoint.Text = cfg?.AzureEndpoint ?? "";
+                txtOcrAzureClave.Password = cfg?.AzureClave ?? "";
+                ActualizarPanelesOcr();
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show("No se pudo cargar la configuración OCR:\n" + ex.Message,
+                    "OCR de compras", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private string ObtenerMotorOcrSeleccionado()
+        {
+            return (cmbOcrMotor.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Ninguno";
+        }
+
+        private void cmbOcrMotor_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ActualizarPanelesOcr();
+        }
+
+        private void ActualizarPanelesOcr()
+        {
+            if (pnlOcrTesseract == null || pnlOcrAzure == null) return;
+            string motor = ObtenerMotorOcrSeleccionado();
+            pnlOcrTesseract.Visibility = motor == "Tesseract" ? Visibility.Visible : Visibility.Collapsed;
+            pnlOcrAzure.Visibility = motor == "Azure" ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void btnGuardarOcr_Click(object sender, RoutedEventArgs e)
+        {
+            string motor = ObtenerMotorOcrSeleccionado();
+            string endpoint = txtOcrAzureEndpoint.Text?.Trim() ?? "";
+            string clave = txtOcrAzureClave.Password?.Trim() ?? "";
+
+            if (motor == "Azure" && (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(clave)))
+            {
+                ModernMessageBox.Show("Para usar Azure ingresá el Endpoint y la Clave del recurso Document Intelligence.",
+                    "Faltan datos de Azure", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            Uri uri = null;
+            if (motor == "Azure" && !Uri.TryCreate(endpoint, UriKind.Absolute, out uri))
+            {
+                ModernMessageBox.Show("El Endpoint de Azure no es una dirección válida.\nEjemplo: https://mi-recurso.cognitiveservices.azure.com",
+                    "Endpoint inválido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (motor == "Azure" && uri.Scheme != Uri.UriSchemeHttps)
+            {
+                ModernMessageBox.Show("El Endpoint de Azure debe comenzar con https://.",
+                    "Endpoint inválido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (motor == "Tesseract" && !TesseractOcrService.EstaDisponible())
+            {
+                ModernMessageBox.Show("No se encontraron los datos de idioma de Tesseract. Reinstalá SCHPOS antes de activar el OCR local.",
+                    "Tesseract no disponible", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (!DatabaseService.GuardarConfigOcr(motor, endpoint, clave))
+            {
+                ModernMessageBox.Show("No se pudo guardar la configuración OCR.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            string mensaje = motor == "Ninguno"
+                ? "Reconocimiento de fotos desactivado."
+                : motor == "Tesseract"
+                    ? "OCR local activado. Las imágenes se procesarán en esta PC, sin internet y sin costo."
+                    : "OCR con Azure activado. Las imágenes se enviarán al recurso de Azure configurado por este comercio.";
+            ModernMessageBox.Show(mensaje, "Configuración guardada",
+                MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         // --- BACKUP AUTOMÁTICO ---

@@ -26,3 +26,10 @@ Plan acordado para completar Compras e Informes sin bloquear el lanzamiento.
 - [ ] Informe para socio actualizado
 - [ ] Versión bump (ej. 2.2.0) y Setup regenerado
 - [ ] Acuerdo explícito con socio antes de publicar
+
+## Pendiente de publicación comercial
+
+- [ ] Actualizar la web de licenciamiento con los módulos **Compras**, **Proveedores** e **Informes**.
+- [ ] Incorporar la importación asistida de facturas de compra: PDF con texto y foto mediante OCR local (Tesseract) o Azure.
+- [ ] Explicar en la web que Azure usa una cuenta/clave propia de cada comercio y que el cupo/costo pertenece a esa cuenta.
+- [ ] Definir si el OCR de compras se incluye en un plan existente o se comercializa como módulo adicional.

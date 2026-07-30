@@ -671,6 +671,62 @@
                 </Border>
             </TabItem>
 
+            <TabItem Header="📷 OCR Compras">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel MaxWidth="680" HorizontalAlignment="Left" Margin="0,4,8,8">
+                        <Border Style="{StaticResource ConfigSectionCard}">
+                            <StackPanel>
+                                <TextBlock Text="Lectura automática de facturas de compra"
+                                           Style="{StaticResource ConfigSectionTitle}"
+                                           Foreground="{DynamicResource PrimaryColor}"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,14"
+                                           Text="Permite subir una foto de la factura y detectar proveedor, tipo de comprobante, productos, cantidades y costos. Siempre se muestra una pantalla de revisión antes de agregar los datos a la compra."/>
+
+                                <TextBlock Text="Motor de reconocimiento:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <ComboBox x:Name="cmbOcrMotor" Style="{StaticResource ModuleComboBoxStyle}"
+                                          Width="330" HorizontalAlignment="Left" Margin="0,0,0,12"
+                                          SelectionChanged="cmbOcrMotor_SelectionChanged">
+                                    <ComboBoxItem Content="Desactivado" Tag="Ninguno"/>
+                                    <ComboBoxItem Content="Tesseract — local, gratis y offline" Tag="Tesseract"/>
+                                    <ComboBoxItem Content="Azure — nube, mayor precisión" Tag="Azure"/>
+                                </ComboBox>
+
+                                <Border x:Name="pnlOcrTesseract" Visibility="Collapsed"
+                                        Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                                        BorderThickness="1" CornerRadius="6" Padding="14,10" Margin="0,0,0,12">
+                                    <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimary}"
+                                               Text="✔ Tesseract funciona sin internet, no envía imágenes fuera de la PC y no tiene costo. Su precisión es menor en fotos inclinadas, con sombras o tablas complejas; por eso puede requerir correcciones manuales."/>
+                                </Border>
+
+                                <StackPanel x:Name="pnlOcrAzure" Visibility="Collapsed">
+                                    <Border Background="#E8F4FD" CornerRadius="6" Padding="14,10" Margin="0,0,0,14">
+                                        <TextBlock TextWrapping="Wrap" Foreground="#0D4775">
+                                            <Run FontWeight="Bold">Costo y privacidad: </Run>
+                                            <Run>cada comercio debe usar su propia cuenta y clave de Azure. El nivel F0 ofrece hasta 500 páginas por mes por cuenta/recurso de Azure; no son 500 por usuario de SCHPOS. Si varios comercios comparten la misma cuenta de Azure, también comparten ese cupo. Al superar el nivel gratuito, Microsoft factura el consumo al titular de esa cuenta. La imagen se envía a Microsoft para analizarla.</Run>
+                                        </TextBlock>
+                                    </Border>
+
+                                    <TextBlock Text="Endpoint de Azure Document Intelligence:" Style="{StaticResource ModuleLabelStyle}"/>
+                                    <TextBox x:Name="txtOcrAzureEndpoint" Style="{StaticResource ModuleTextBoxStyle}"
+                                             ToolTip="Ejemplo: https://mi-recurso.cognitiveservices.azure.com"/>
+                                    <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,12"
+                                               Text="Copialo desde Azure Portal > tu recurso Document Intelligence > Keys and Endpoint."/>
+
+                                    <TextBlock Text="Clave del recurso:" Style="{StaticResource ModuleLabelStyle}"/>
+                                    <PasswordBox x:Name="txtOcrAzureClave" Style="{StaticResource PasswordBoxStyle}" Margin="0,0,0,4"/>
+                                    <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,14"
+                                               Text="La clave queda guardada en la base de datos de este comercio. No se comparte con SCHPOS ni con otros clientes."/>
+                                </StackPanel>
+
+                                <Button x:Name="btnGuardarOcr" Content="💾  Guardar configuración OCR"
+                                        Style="{StaticResource ButtonStyle}" Padding="20,12"
+                                        HorizontalAlignment="Left" Click="btnGuardarOcr_Click"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <TabItem Header="🧰 Mantenimiento">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel MaxWidth="640" HorizontalAlignment="Left" Margin="0,4,8,8">

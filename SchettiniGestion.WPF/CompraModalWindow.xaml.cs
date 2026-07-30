@@ -56,6 +56,7 @@ namespace SchettiniGestion.WPF
                 txtCosto.IsEnabled = false;
                 cmbTipoComprobante.IsEnabled = false;
                 if (btnImportarPdf != null) btnImportarPdf.Visibility = Visibility.Collapsed;
+                if (btnImportarFoto != null) btnImportarFoto.Visibility = Visibility.Collapsed;
                 if (FindName("btnGuardar") is Button btn) btn.IsEnabled = false;
             }
             else
@@ -216,6 +217,46 @@ namespace SchettiniGestion.WPF
             AplicarImportacionPdf(win);
         }
 
+        private async void btnImportarFoto_Click(object sender, RoutedEventArgs e)
+        {
+            if (_compraId > 0) return;
+            if (!FacturaCompraOcrService.HayMotorConfigurado(out string motor))
+            {
+                ModernMessageBox.Show(
+                    "Primero configurá el reconocimiento de imágenes en Configuración > OCR Compras.\n\n" +
+                    "Podés elegir Tesseract (local, gratis y offline) o Azure (nube, mayor precisión).",
+                    "OCR no configurado", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var dlg = new OpenFileDialog
+            {
+                Title = "Seleccionar foto de la factura",
+                Filter = "Imágenes (*.jpg;*.jpeg;*.png;*.bmp;*.tif;*.tiff)|*.jpg;*.jpeg;*.png;*.bmp;*.tif;*.tiff",
+                CheckFileExists = true
+            };
+            if (dlg.ShowDialog(this) != true) return;
+
+            Cursor = System.Windows.Input.Cursors.Wait;
+            btnImportarFoto.IsEnabled = false;
+            var win = new ImportarFacturaCompraWindow(this);
+            bool cargada;
+            try
+            {
+                cargada = await win.CargarDesdeFotoAsync(dlg.FileName);
+            }
+            finally
+            {
+                btnImportarFoto.IsEnabled = true;
+                Cursor = System.Windows.Input.Cursors.Arrow;
+            }
+
+            if (!cargada) return;
+            if (win.ShowDialog() != true || win.LineasConfirmadas == null || win.LineasConfirmadas.Count == 0)
+                return;
+            AplicarImportacionPdf(win);
+        }
+
         private void AplicarImportacionPdf(ImportarFacturaCompraWindow win)
         {
             if (win.ProveedorID > 0)
@@ -237,8 +278,8 @@ namespace SchettiniGestion.WPF
 
             if (_items.Count > 0)
             {
-                if (MessageBox.Show("¿Reemplazar el detalle actual por los ítems del PDF?",
-                    "Importar PDF", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                if (MessageBox.Show("¿Reemplazar el detalle actual por los ítems detectados?",
+                    "Importar factura", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                     return;
             }
 

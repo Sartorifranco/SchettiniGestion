@@ -15,9 +15,14 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Revisar importación de factura"
-                   FontSize="17" FontWeight="Bold"
-                   Foreground="{StaticResource PrimaryColor}" Margin="0,0,0,10"/>
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="Revisar importación de factura"
+                       FontSize="17" FontWeight="Bold"
+                       Foreground="{StaticResource PrimaryColor}"/>
+            <TextBlock Margin="0,5,0,0" FontSize="12" TextWrapping="Wrap"
+                       Foreground="{DynamicResource TextPrimary}"
+                       Text="El reconocimiento es una ayuda: verificá proveedor, tipo, cantidades y costos antes de confirmar. “Sin match” significa que todavía debés elegir el producto del sistema; esos renglones se omiten si no los asignás."/>
+        </StackPanel>
 
         <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="7" Padding="12,10" Margin="0,0,0,10"
                 BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
@@ -57,8 +62,8 @@
                   FontSize="13"
                   Margin="0,0,0,10">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Cód. PDF" Binding="{Binding CodigoPdf}" Width="90"/>
-                <DataGridTextColumn Header="Descripción en factura" Binding="{Binding DescripcionPdf}" Width="*"/>
+                <DataGridTextColumn Header="Cód. origen" Binding="{Binding CodigoPdf}" Width="90"/>
+                <DataGridTextColumn Header="Descripción detectada" Binding="{Binding DescripcionPdf}" Width="*"/>
                 <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" Width="55"/>
                 <DataGridTextColumn Header="Costo" Binding="{Binding CostoFmt}" Width="90"/>
                 <DataGridTextColumn Header="Producto sistema" Binding="{Binding DescripcionProducto}" Width="220"/>

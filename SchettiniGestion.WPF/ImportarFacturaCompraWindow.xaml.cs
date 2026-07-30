@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
@@ -54,7 +55,29 @@ namespace SchettiniGestion.WPF
                 MessageBox.Show("No se pudo leer el PDF:\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
+            AplicarResultadoImportacion();
+            return true;
+        }
 
+        public async Task<bool> CargarDesdeFotoAsync(string rutaImagen)
+        {
+            try
+            {
+                Title = "Importar foto de factura";
+                _import = await Task.Run(() => FacturaCompraOcrService.ImportarDesdeFoto(rutaImagen));
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show("No se pudo analizar la foto:\n" + ex.Message, "Error de OCR",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+            AplicarResultadoImportacion();
+            return true;
+        }
+
+        private void AplicarResultadoImportacion()
+        {
             ProveedorID = _import.ProveedorID;
             ProveedorNombre = _import.ProveedorNombre ?? "";
             if (ProveedorID > 0)
@@ -88,7 +111,6 @@ namespace SchettiniGestion.WPF
                 });
             }
             ActualizarResumen();
-            return true;
         }
 
         private void SeleccionarTipo(string tipo)

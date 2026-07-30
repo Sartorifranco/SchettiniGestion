@@ -206,6 +206,7 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Margin="0,0,12,0">
                                         <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Categoría"/>
@@ -251,7 +252,11 @@
                                                     ToolTip="Nuevo sub-rubro"/>
                                         </Grid>
                                     </StackPanel>
-                                    <StackPanel Grid.Column="2">
+                                    <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                                        <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Marca"/>
+                                        <TextBox x:Name="txtMarca" Style="{StaticResource ProductoTouchTextBox}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3">
                                         <TextBlock Style="{DynamicResource ModalCaptionTextStyle}" Text="Proveedor"/>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -388,6 +393,10 @@
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimary}"
                                        Margin="0,0,0,8"/>
+                            <TextBlock Style="{StaticResource FieldHintTextStyle}"
+                                       Text="En un producto nuevo se marcan todas las listas. Junto a cada una se muestra el precio de venta calculado."
+                                       Margin="0,0,0,8"
+                                       TextWrapping="Wrap"/>
                             <TextBlock x:Name="txtSinListas"
                                        Text="(Sin listas de precio configuradas)"
                                        Style="{DynamicResource ModalCaptionTextStyle}"
@@ -524,7 +533,18 @@
                                               Margin="0,4,16,4"
                                               Checked="chkEsCombo_Changed"
                                               Unchecked="chkEsCombo_Changed"/>
+                                    <CheckBox x:Name="chkActivo"
+                                              Content="Activo / visible en POS"
+                                              Style="{StaticResource ProductoTouchCheckBox}"
+                                              Margin="0,4,16,4"
+                                              IsChecked="True"
+                                              Checked="chkActivo_Changed"
+                                              Unchecked="chkActivo_Changed"/>
                                 </WrapPanel>
+                                <TextBlock Style="{StaticResource FieldHintTextStyle}"
+                                           Text="Si deshabilitás el producto, no se ofrece en el POS pero queda disponible para historial y reactivación."
+                                           Margin="0,2,0,0"
+                                           TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
 

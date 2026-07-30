@@ -18,7 +18,7 @@ SCHPOS **no** habla por Bluetooth ni por cable con el Point. Todo pasa por inter
 3. Mercado Pago empuja el importe a la terminal Point (ya vinculada a esa cuenta).
 4. El cliente paga con tarjeta en el Point.
 5. SCHPOS consulta el estado cada 2 segundos hasta aprobar, rechazar o cancelar.
-6. Si aprueba, registra la cobranza y sigue el flujo normal de la venta (AFIP si aplica, etc.).
+6. Si aprueba, registra la cobranza y sigue el flujo normal de la venta (ARCA si aplica, etc.).
 
 ```
 SCHPOS (PC)  --HTTPS-->  Mercado Pago API  --nube-->  Point Smart (terminal)
@@ -121,7 +121,7 @@ Sin Guardar, el botón de cobro Point no queda habilitado.
 6. Pagar con tarjeta (o cancelar para probar el rechazo/cancelación).
 7. En SCHPOS, al aprobar:
    - Se registra la cobranza como tarjeta / Mercado Pago Point.
-   - Continúa el guardado de la venta (y AFIP si está activo).
+   - Continúa el guardado de la venta (y ARCA si está activo).
 
 Si el botón Point **no aparece**:
 

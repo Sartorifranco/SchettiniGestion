@@ -214,6 +214,12 @@
 
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
 
+            <Button x:Name="btnNotaCredito" Content="Generar Nota de Crédito" Style="{StaticResource SecondaryButtonStyle}"
+
+                    Margin="0,0,8,0" Click="btnNotaCredito_Click" Visibility="Collapsed"
+
+                    ToolTip="Crea una NC total o parcial vinculada a esta factura"/>
+
             <Button x:Name="btnImprimir" Content="🖨 Imprimir" Style="{StaticResource ButtonStyle}"
 
                     Margin="0,0,8,0" Click="btnImprimir_Click"/>

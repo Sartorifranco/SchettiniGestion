@@ -30,6 +30,8 @@ namespace SchettiniGestion.WPF
             public bool SinStock { get; set; }
             public string StockTexto { get; set; }
             public string ImagenPath { get; set; }
+            public bool EnPromo { get; set; }
+            public string PromoTooltip { get; set; }
         }
 
         private ObservableCollection<FacturaItem> CarritoDeVenta;
@@ -59,6 +61,7 @@ namespace SchettiniGestion.WPF
         private bool _guardandoVenta;
         private DispatcherTimer _timerLectorBarras;
         private string _textoPendienteLector;
+        private List<DatabaseService.PromoActivaHoy> _promosVigentesPos = new List<DatabaseService.PromoActivaHoy>();
 
         /// <summary>Si se asigna (ej. "Remito", "Pedido"), preselecciona ese tipo al cargar. Usado cuando se abre desde Nuevo Remito/Pedido.</summary>
         public string TipoComprobanteInicial { get; set; }
@@ -85,7 +88,10 @@ namespace SchettiniGestion.WPF
         private void FacturacionControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (IsVisible)
+            {
                 ActualizarBloqueoAperturaCaja();
+                ActualizarPromosPos();
+            }
         }
 
         private void ActualizarBloqueoAperturaCaja()
@@ -108,6 +114,65 @@ namespace SchettiniGestion.WPF
                 MessageBoxImage.Warning);
             ActualizarBloqueoAperturaCaja();
             return false;
+        }
+
+        private void btnAbrirCajaDesdePos_Click(object sender, RoutedEventArgs e)
+        {
+            if (DatabaseService.TieneAperturaCajaHoy())
+            {
+                CustomMessageBox.Show("La caja ya está abierta para hoy.", "Apertura",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                ActualizarBloqueoAperturaCaja();
+                return;
+            }
+
+            var win = CrearInputModal(
+                "Abrir caja",
+                "Monto del fondo fijo inicial (efectivo con el que arranca el turno):",
+                "0",
+                soloNumeros: true);
+            if (win.ShowDialog() != true)
+                return;
+
+            string texto = win.ResponseText?.Trim().Replace(",", ".") ?? "";
+            if (!decimal.TryParse(texto, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal monto)
+                && !decimal.TryParse(win.ResponseText?.Trim(), NumberStyles.Number, CultureInfo.CurrentCulture, out monto))
+            {
+                CustomMessageBox.Show("Ingresá un monto válido para el fondo fijo.", "Monto inválido",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (monto < 0)
+            {
+                CustomMessageBox.Show("El fondo fijo no puede ser negativo.", "Monto inválido",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (CustomMessageBox.Show(
+                    $"¿Abrir la caja con fondo fijo de {monto:C2}?",
+                    "Confirmar apertura",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            if (DatabaseService.AbrirCaja(monto, null))
+            {
+                CustomMessageBox.Show(
+                    $"Caja abierta.\nFondo fijo: {monto:C2}\nYa podés vender.",
+                    "Apertura registrada",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                ActualizarBloqueoAperturaCaja();
+            }
+            else
+            {
+                string det = !string.IsNullOrEmpty(DatabaseService.UltimoError)
+                    ? "\n\n" + DatabaseService.UltimoError : "";
+                CustomMessageBox.Show("No se pudo abrir la caja." + det, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void FacturacionControl_Loaded(object sender, RoutedEventArgs e)
@@ -185,7 +250,53 @@ namespace SchettiniGestion.WPF
                     _catalogoCompleto.Add(CrearVmCatalogo(r, listaId));
                 }
             }
+            ActualizarPromosPos();
             FiltrarCatalogo();
+        }
+
+        /// <summary>Banner «Promos activas hoy» + badge EN PROMO en el catálogo.</summary>
+        private void ActualizarPromosPos()
+        {
+            var promos = DatabaseService.GetPromocionesVigentesHoy();
+            _promosVigentesPos = promos ?? new List<DatabaseService.PromoActivaHoy>();
+            if (bdrPromosHoy != null && txtPromosHoy != null)
+            {
+                if (promos == null || promos.Count == 0)
+                {
+                    bdrPromosHoy.Visibility = Visibility.Collapsed;
+                    txtPromosHoy.Text = "";
+                }
+                else
+                {
+                    var partes = new List<string>();
+                    foreach (var p in promos)
+                    {
+                        string alcance = string.IsNullOrWhiteSpace(p.AlcanceTexto) ? "" : " (" + p.AlcanceTexto + ")";
+                        string valor = DatabaseService.DescribirValorPromo(p.Modalidad, p.Porcentaje, p.MontoFijo, p.PrecioCombo, p.CantidadMinima, p.CantidadBonificada);
+                        partes.Add($"{p.Nombre} {valor}{alcance}");
+                    }
+                    txtPromosHoy.Text = string.Join(" · ", partes);
+                    bdrPromosHoy.Visibility = Visibility.Visible;
+                }
+            }
+
+            if (_catalogoCompleto == null || _catalogoCompleto.Count == 0)
+                return;
+
+            foreach (var p in _catalogoCompleto)
+            {
+                string cat = p.Row != null && p.Row.Table.Columns.Contains("Categoria")
+                    ? (p.Row["Categoria"]?.ToString() ?? "")
+                    : "";
+                var promo = DatabaseService.ResolverMejorPromo(promos, p.ProductoID, cat);
+                p.EnPromo = promo != null;
+                p.PromoTooltip = p.EnPromo
+                    ? $"🎯 {promo.Nombre} · {DatabaseService.DescribirValorPromo(promo.Modalidad, promo.Porcentaje, promo.MontoFijo, promo.PrecioCombo, promo.CantidadMinima, promo.CantidadBonificada)}"
+                    : null;
+            }
+
+            dgvCatalogo?.Items.Refresh();
+            icCatalogo?.Items.Refresh();
         }
 
         private int? ObtenerListaIdSeleccionada()
@@ -386,7 +497,11 @@ namespace SchettiniGestion.WPF
                 && pct >= 0 && pct <= 100)
             {
                 foreach (var item in CarritoDeVenta)
+                {
                     item.DescuentoPorcentaje = pct;
+                    item.PromoNombre = null;
+                    item.DescuentoPromocionAutomatica = false;
+                }
                 ActualizarTotal();
             }
         }
@@ -531,6 +646,7 @@ namespace SchettiniGestion.WPF
             SincronizarCarritoVisible();
             dgvFactura.Items.Refresh();
             icCardsFactura.Items.Refresh();
+            if (icCarrito != null) icCarrito.Items.Refresh();
         }
 
         private void ExpanderCarrito_Expanded(object sender, RoutedEventArgs e)
@@ -571,8 +687,8 @@ namespace SchettiniGestion.WPF
                     {
                         cmbTipoComprobante.SelectedIndex = i;
                         CustomMessageBox.Show(
-                            "La factura electrónica AFIP no está incluida en su licencia.\n\n" +
-                            "Solicite el extra «AFIP / Factura electrónica» o use «Ticket» para comprobante interno.",
+                            "La factura electrónica ARCA no está incluida en su licencia.\n\n" +
+                            "Solicite el extra «ARCA / Factura electrónica» o use «Ticket» para comprobante interno.",
                             "Extra no habilitado", MessageBoxButton.OK, MessageBoxImage.Information);
                         break;
                     }
@@ -626,6 +742,73 @@ namespace SchettiniGestion.WPF
             else
             {
                 cmbCondicionVenta_SelectionChanged(null, null);
+            }
+
+            ActualizarLetraComprobanteVisible();
+        }
+
+        /// <summary>
+        /// Muestra en vivo la letra A/B/C (o X / —) según tipo de comprobante, condición IVA del emisor y CUIT del cliente.
+        /// </summary>
+        private void ActualizarLetraComprobanteVisible()
+        {
+            if (lblLetraComprobante == null || lblLetraDetalle == null) return;
+
+            string tipo = ObtenerTipoComprobanteSeleccionado();
+            string letra;
+            string detalle;
+            string colorFondo;
+
+            if (tipo == "Ticket")
+            {
+                letra = "X";
+                detalle = "No fiscal";
+                colorFondo = "#7F8C8D";
+            }
+            else if (tipo == "Factura" || tipo == "Nota de Crédito" || tipo == "Nota de Débito")
+            {
+                letra = ResolverLetraComprobanteFiscal();
+                detalle = tipo == "Factura" ? "Factura" : (tipo == "Nota de Crédito" ? "N.Crédito" : "N.Débito");
+                colorFondo = letra == "A" ? "#1A5276" : (letra == "B" ? "#117A65" : "#6C3483");
+            }
+            else
+            {
+                letra = "—";
+                detalle = tipo.Length > 10 ? tipo.Substring(0, 9) + "…" : tipo;
+                colorFondo = "#566573";
+            }
+
+            lblLetraComprobante.Text = letra;
+            lblLetraDetalle.Text = detalle;
+            if (brdLetraComprobante != null)
+            {
+                try
+                {
+                    brdLetraComprobante.Background = new System.Windows.Media.SolidColorBrush(
+                        (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorFondo));
+                }
+                catch { }
+            }
+        }
+
+        private string ResolverLetraComprobanteFiscal()
+        {
+            try
+            {
+                DataRow config = DatabaseService.GetConfiguracion();
+                string condicionEmisor = config != null && config.Table.Columns.Contains("CondicionIVAEmpresa")
+                    ? config["CondicionIVAEmpresa"]?.ToString() ?? ""
+                    : "";
+
+                if (condicionEmisor.IndexOf("monotrib", StringComparison.OrdinalIgnoreCase) >= 0)
+                    return "C";
+
+                string cuit = _clienteSeleccionado?["CUIT"]?.ToString()?.Replace("-", "").Trim() ?? "";
+                return cuit.Length >= 11 && !cuit.Contains("00000000") ? "A" : "B";
+            }
+            catch
+            {
+                return "B";
             }
         }
 
@@ -904,34 +1087,56 @@ namespace SchettiniGestion.WPF
                 : Convert.ToDecimal(_productoSeleccionado["PrecioVenta"]);
             string imgPath = _productoSeleccionado.Table.Columns.Contains("ImagenPath") ? _productoSeleccionado["ImagenPath"].ToString() : null;
 
-            string categoria = _productoSeleccionado.Table.Columns.Contains("Categoria")
-                ? (_productoSeleccionado["Categoria"]?.ToString() ?? "")
-                : "";
-            var promo = DatabaseService.ObtenerPromoVigenteParaProducto(id, categoria);
-
             var item = CarritoDeVenta.FirstOrDefault(x => x.ProductoID == id);
             if (item != null) item.Cantidad += cant;
             else
             {
                 decimal alicuota = DatabaseService.ObtenerAlicuotaIvaVentaProducto(_productoSeleccionado);
-                CarritoDeVenta.Add(new FacturaItem
+                item = new FacturaItem
                 {
                     ProductoID = id,
                     Codigo = _productoSeleccionado["Codigo"].ToString(),
                     Descripcion = _productoSeleccionado["Descripcion"].ToString(),
                     Cantidad = cant,
                     PrecioUnitario = precioFinal,
-                    DescuentoPorcentaje = promo != null && promo.Porcentaje > 0 ? promo.Porcentaje : 0,
+                    DescuentoPorcentaje = 0,
+                    PromoNombre = null,
                     AlicuotaIvaPct = alicuota,
                     ImagenPath = imgPath,
                     PermiteModificarPrecioVenta = LeerPermiteModificarPrecioVenta(_productoSeleccionado)
-                });
+                };
+                CarritoDeVenta.Add(item);
             }
             RefrescarVistaCarrito();
             popupProducto.IsOpen = false;
             LimpiarProducto();
             ActualizarTotal();
             MarcarItemCarrito(CarritoDeVenta.LastOrDefault(i => i.EsValido));
+            if (item != null && item.DescuentoPromocionAutomatica)
+                MostrarAvisoPromo(item.PromoNombre, item.DescuentoPorcentaje);
+        }
+
+        private DispatcherTimer _timerAvisoPromo;
+
+        private void MostrarAvisoPromo(string nombrePromo, decimal porcentaje)
+        {
+            if (bdrAvisoPromo == null || txtAvisoPromo == null) return;
+            string nombre = string.IsNullOrWhiteSpace(nombrePromo) ? "Promoción" : nombrePromo.Trim();
+            txtAvisoPromo.Text = $"🎯 Se aplicó «{nombre}»: -{porcentaje:N0}% efectivo.";
+            bdrAvisoPromo.Visibility = Visibility.Visible;
+
+            if (_timerAvisoPromo == null)
+            {
+                _timerAvisoPromo = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
+                _timerAvisoPromo.Tick += (_, __) =>
+                {
+                    _timerAvisoPromo.Stop();
+                    if (bdrAvisoPromo != null)
+                        bdrAvisoPromo.Visibility = Visibility.Collapsed;
+                };
+            }
+            _timerAvisoPromo.Stop();
+            _timerAvisoPromo.Start();
         }
 
         /// <summary>
@@ -1318,7 +1523,7 @@ namespace SchettiniGestion.WPF
                 if (pvGuardado > 0) puntoVentaConfig = pvGuardado;
             }
 
-            // 2. Determinar Tipo AFIP
+            // 2. Determinar Tipo ARCA
             decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
 
             // Un emisor monotributista siempre emite Factura C (tipo 11), nunca A ni B.
@@ -1361,8 +1566,8 @@ namespace SchettiniGestion.WPF
                 if (tipoCompTexto == "Factura" && !afipLicenciado)
                 {
                     CustomMessageBox.Show(
-                        "La factura electrónica AFIP no está incluida en su licencia.\n\n" +
-                        "Use «Ticket» para comprobante interno o solicite el extra AFIP.",
+                        "La factura electrónica ARCA no está incluida en su licencia.\n\n" +
+                        "Use «Ticket» para comprobante interno o solicite el extra ARCA.",
                         "Extra no habilitado", MessageBoxButton.OK, MessageBoxImage.Warning);
                     btnGuardarFactura.IsEnabled = true;
                     return;
@@ -1370,7 +1575,7 @@ namespace SchettiniGestion.WPF
                 if (tipoAfip > 0 && afipConfigurado && puntoVentaConfig <= 0)
                 {
                     CustomMessageBox.Show(
-                        "No hay un punto de venta AFIP configurado.\n\n" +
+                        "No hay un punto de venta ARCA configurado.\n\n" +
                         "Ingrese el número real asignado por ARCA antes de emitir comprobantes fiscales.",
                         "Punto de venta requerido", MessageBoxButton.OK, MessageBoxImage.Warning);
                     btnGuardarFactura.IsEnabled = true;
@@ -1445,28 +1650,28 @@ namespace SchettiniGestion.WPF
                     cobroConfirmado = cobranzasConfirmadas != null && cobranzasConfirmadas.Count > 0;
                 }
 
-                // Aviso AFIP después del cobro (no interrumpe el flujo antes de cobrar)
+                // Aviso ARCA después del cobro (no interrumpe el flujo antes de cobrar)
                 if (tipoCompTexto == "Factura" && !afipConfigurado)
                 {
                     if (CustomMessageBox.Show(
-                            "AFIP no está configurado (CUIT y certificado).\n\n" +
+                            "ARCA no está configurado (CUIT y certificado).\n\n" +
                             "La venta se guardará sin CAE ni numeración fiscal.\n\n¿Desea continuar?",
-                            "Factura sin AFIP", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                            "Factura sin ARCA", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
                     {
                         btnGuardarFactura.IsEnabled = true;
                         return;
                     }
                 }
 
-                // ── PASO 2: AFIP (solo si el cobro fue confirmado) ──
+                // ── PASO 2: ARCA (solo si el cobro fue confirmado) ──
                 string cae = null;
                 string vtoCae = null;
                 int nroComprobante = 0;
 
-                // Solo llamar AFIP si está configurado (tiene CUIT y certificado)
+                // Solo llamar ARCA si está configurado (tiene CUIT y certificado)
                 if (tipoAfip > 0 && afipConfigurado)
                 {
-                    CustomerScreenService.ActualizarMensajeQR("Facturando AFIP...", Brushes.Orange);
+                    CustomerScreenService.ActualizarMensajeQR("Facturando ARCA...", Brushes.Orange);
                     string cuitLimpio = _clienteSeleccionado["CUIT"].ToString().Replace("-", "").Trim();
                     long cuitCliente = 0;
                     long.TryParse(cuitLimpio, out cuitCliente);
@@ -1481,13 +1686,13 @@ namespace SchettiniGestion.WPF
                     else
                     {
                         CustomMessageBox.Show(
-                            "❌ AFIP rechazó la factura electrónica.\n\n" +
+                            "❌ ARCA rechazó la factura electrónica.\n\n" +
                             "Detalle: " + resultadoAfip.Error + "\n\n" +
                             "⚠️ IMPORTANTE: el cobro fue confirmado pero la venta NO quedó registrada.\n\n" +
                             "Opciones:\n" +
                             "• Intentar de nuevo (el cobro ya fue recibido, NO vuelva a cobrar).\n" +
-                            "• Cambiar el tipo a 'Ticket' para guardar sin código AFIP.",
-                            "Error AFIP — venta no registrada");
+                            "• Cambiar el tipo a 'Ticket' para guardar sin código ARCA.",
+                            "Error ARCA — venta no registrada");
                         btnGuardarFactura.IsEnabled = true;
                         return;
                     }
@@ -1515,7 +1720,7 @@ namespace SchettiniGestion.WPF
                 if (fid > 0)
                 {
                     // El cobro electrónico se consume recién cuando la venta quedó persistida.
-                    // Si AFIP o SQL fallan, el reintento no debe volver a cobrar al cliente.
+                    // Si ARCA o SQL fallan, el reintento no debe volver a cobrar al cliente.
                     _pagoPointAprobado = false;
                     _parcelasPoint = null;
                     _pagoMPAprobado = false;
@@ -1536,10 +1741,10 @@ namespace SchettiniGestion.WPF
 
                     if (!string.IsNullOrEmpty(cae))
                     {
-                        // AFIP aprobó y cobro confirmado, pero el INSERT en BD falló → situación crítica
+                        // ARCA aprobó y cobro confirmado, pero el INSERT en BD falló → situación crítica
                         CustomMessageBox.Show(
                             "⛔ ERROR CRÍTICO: La venta no se guardó en el sistema.\n\n" +
-                            "El cobro fue recibido y AFIP ya emitió el comprobante:\n" +
+                            "El cobro fue recibido y ARCA ya emitió el comprobante:\n" +
                             $"CAE: {cae}  |  Vto: {vtoCae}  |  Nro: {nroComprobante}\n\n" +
                             "⚠️ NO vuelva a cobrar al cliente.\n" +
                             "Anote el CAE y comuníquese con soporte." +
@@ -1631,7 +1836,7 @@ namespace SchettiniGestion.WPF
             decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
             string descripcion = ConstruirDescripcionCarrito();
             GuardarDocumentoSinCobro(
-                () => DatabaseService.GuardarNotaCreditoDebitoVenta(Convert.ToInt32(_clienteSeleccionado["ClienteID"]), tipoCodigo, total, descripcion),
+                () => DatabaseService.GuardarNotaCreditoDebitoVenta(Convert.ToInt32(_clienteSeleccionado["ClienteID"]), tipoCodigo, total, descripcion, facturaId: null),
                 tipoNombre, id => PrintService.ImprimirNotaCreditoDebitoVenta(id));
         }
 
@@ -1694,9 +1899,203 @@ namespace SchettiniGestion.WPF
             txtBuscarProducto.Focus();
         }
 
+        private class PromoLineaCalculada
+        {
+            public decimal Porcentaje { get; set; }
+            public string Nombre { get; set; }
+        }
+
+        private bool PuedeAplicarPromoAutomatica(FacturaItem item)
+        {
+            if (item == null || !item.EsValido) return false;
+            if (item.RecargoPorcentaje > 0m) return false;
+            return item.DescuentoPromocionAutomatica
+                   || item.DescuentoPorcentaje <= 0m
+                   || !string.IsNullOrWhiteSpace(item.PromoNombre);
+        }
+
+        private void AplicarPromocionesCarrito()
+        {
+            if (CarritoDeVenta == null || CarritoDeVenta.Count == 0) return;
+
+            var promos = _promosVigentesPos;
+            if (promos == null || promos.Count == 0)
+            {
+                promos = DatabaseService.GetPromocionesVigentesHoy();
+                _promosVigentesPos = promos ?? new List<DatabaseService.PromoActivaHoy>();
+            }
+
+            foreach (var item in CarritoDeVenta)
+            {
+                if (item == null) continue;
+                if (item.DescuentoPromocionAutomatica || !string.IsNullOrWhiteSpace(item.PromoNombre))
+                {
+                    item.DescuentoPorcentaje = 0m;
+                    item.PromoNombre = null;
+                    item.DescuentoPromocionAutomatica = false;
+                }
+            }
+
+            if (promos == null || promos.Count == 0) return;
+
+            var mejores = new Dictionary<FacturaItem, PromoLineaCalculada>();
+
+            foreach (var item in CarritoDeVenta)
+            {
+                if (!PuedeAplicarPromoAutomatica(item)) continue;
+                string categoria = ObtenerCategoriaProductoCarrito(item.ProductoID);
+                foreach (var promo in promos)
+                {
+                    if (promo.Tipo == DatabaseService.TiposPromo.ComboProductos) continue;
+                    if (!PromoAplicaAItem(promo, item.ProductoID, categoria)) continue;
+                    if (CalcularPorcentajePromoLinea(promo, item.Cantidad, item.PrecioUnitario, out decimal pct)
+                        && pct > 0m)
+                    {
+                        RegistrarMejorPromo(mejores, item, pct, promo.Nombre);
+                    }
+                }
+            }
+
+            foreach (var promo in promos.Where(p => p.Tipo == DatabaseService.TiposPromo.ComboProductos))
+                EvaluarPromoCombo(promo, mejores);
+
+            foreach (var kv in mejores)
+            {
+                var item = kv.Key;
+                if (!PuedeAplicarPromoAutomatica(item)) continue;
+                item.DescuentoPorcentaje = LimitarPorcentaje(Math.Round(kv.Value.Porcentaje, 4));
+                item.PromoNombre = kv.Value.Nombre;
+                item.DescuentoPromocionAutomatica = item.DescuentoPorcentaje > 0m;
+            }
+        }
+
+        private string ObtenerCategoriaProductoCarrito(int productoId)
+        {
+            var vm = _catalogoCompleto?.FirstOrDefault(p => p.ProductoID == productoId);
+            if (vm?.Row != null && vm.Row.Table.Columns.Contains("Categoria"))
+                return vm.Row["Categoria"]?.ToString() ?? "";
+            return "";
+        }
+
+        private bool PromoAplicaAItem(DatabaseService.PromoActivaHoy promo, int productoId, string categoria)
+        {
+            if (promo == null) return false;
+            if (promo.Tipo == DatabaseService.TiposPromo.PctProducto)
+                return promo.ProductoID.HasValue && promo.ProductoID.Value == productoId;
+            if (promo.Tipo == DatabaseService.TiposPromo.PctCategoria)
+                return !string.IsNullOrWhiteSpace(categoria)
+                       && string.Equals((promo.Categoria ?? "").Trim(), categoria.Trim(), StringComparison.OrdinalIgnoreCase);
+            return promo.Tipo == DatabaseService.TiposPromo.PctTodos;
+        }
+
+        private static bool CalcularPorcentajePromoLinea(DatabaseService.PromoActivaHoy promo, int cantidad, decimal precioUnitario, out decimal porcentaje)
+        {
+            porcentaje = 0m;
+            if (promo == null || cantidad <= 0 || precioUnitario <= 0m) return false;
+            decimal bruto = cantidad * precioUnitario;
+            string modalidad = promo.Modalidad ?? DatabaseService.ModalidadesPromo.Porcentaje;
+
+            if (modalidad == DatabaseService.ModalidadesPromo.Porcentaje)
+                porcentaje = promo.Porcentaje;
+            else if (modalidad == DatabaseService.ModalidadesPromo.MontoFijo)
+                porcentaje = (Math.Min(promo.MontoFijo * cantidad, bruto) / bruto) * 100m;
+            else if (modalidad == DatabaseService.ModalidadesPromo.PrecioFinal)
+                porcentaje = promo.PrecioCombo > 0m ? (Math.Max(0m, bruto - (promo.PrecioCombo * cantidad)) / bruto) * 100m : 0m;
+            else if (modalidad == DatabaseService.ModalidadesPromo.DosPorUno)
+                porcentaje = CalcularPorcentajeBonificacion(cantidad, 2, 1);
+            else if (modalidad == DatabaseService.ModalidadesPromo.TresPorDos)
+                porcentaje = CalcularPorcentajeBonificacion(cantidad, 3, 1);
+            else if (modalidad == DatabaseService.ModalidadesPromo.Bonificar)
+                porcentaje = CalcularPorcentajeBonificacion(cantidad, promo.CantidadMinima, promo.CantidadBonificada);
+            else if (modalidad == DatabaseService.ModalidadesPromo.EscalaCantidad)
+                porcentaje = promo.CantidadMinima > 0 && cantidad >= promo.CantidadMinima ? promo.Porcentaje : 0m;
+
+            porcentaje = LimitarPorcentaje(porcentaje);
+            return porcentaje > 0m;
+        }
+
+        private static decimal CalcularPorcentajeBonificacion(int cantidad, int cantidadMinima, int cantidadBonificada)
+        {
+            if (cantidad <= 0 || cantidadMinima <= 0 || cantidadBonificada <= 0) return 0m;
+            int bonificadas = (cantidad / cantidadMinima) * cantidadBonificada;
+            if (bonificadas > cantidad) bonificadas = cantidad;
+            return ((decimal)bonificadas / cantidad) * 100m;
+        }
+
+        private void EvaluarPromoCombo(DatabaseService.PromoActivaHoy promo, Dictionary<FacturaItem, PromoLineaCalculada> mejores)
+        {
+            if (promo?.ProductoIDs == null || promo.ProductoIDs.Count < 2) return;
+            var items = new List<FacturaItem>();
+            foreach (int pid in promo.ProductoIDs)
+            {
+                var item = CarritoDeVenta.FirstOrDefault(x => x.ProductoID == pid && PuedeAplicarPromoAutomatica(x));
+                if (item == null || item.Cantidad <= 0 || item.PrecioUnitario <= 0m)
+                    return;
+                items.Add(item);
+            }
+
+            int combosCompletos = items.Min(i => i.Cantidad);
+            if (combosCompletos <= 0) return;
+
+            decimal brutoComboUnitario = items.Sum(i => i.PrecioUnitario);
+            decimal brutoParticipante = brutoComboUnitario * combosCompletos;
+            if (brutoParticipante <= 0m) return;
+
+            decimal descuentoTotal = CalcularDescuentoTotalCombo(promo, combosCompletos, brutoComboUnitario, brutoParticipante);
+            if (descuentoTotal <= 0m) return;
+            if (descuentoTotal > brutoParticipante) descuentoTotal = brutoParticipante;
+
+            foreach (var item in items)
+            {
+                decimal brutoItemParticipante = item.PrecioUnitario * combosCompletos;
+                decimal proporcion = brutoItemParticipante / brutoParticipante;
+                decimal descuentoItem = descuentoTotal * proporcion;
+                decimal brutoLinea = item.PrecioUnitario * item.Cantidad;
+                if (brutoLinea <= 0m) continue;
+                decimal pctLinea = (descuentoItem / brutoLinea) * 100m;
+                RegistrarMejorPromo(mejores, item, pctLinea, promo.Nombre);
+            }
+        }
+
+        private static decimal CalcularDescuentoTotalCombo(DatabaseService.PromoActivaHoy promo, int combosCompletos, decimal brutoComboUnitario, decimal brutoParticipante)
+        {
+            string modalidad = promo.Modalidad ?? DatabaseService.ModalidadesPromo.Porcentaje;
+            if (modalidad == DatabaseService.ModalidadesPromo.Porcentaje)
+                return brutoParticipante * LimitarPorcentaje(promo.Porcentaje) / 100m;
+            if (modalidad == DatabaseService.ModalidadesPromo.MontoFijo)
+                return promo.MontoFijo * combosCompletos;
+            if (modalidad == DatabaseService.ModalidadesPromo.PrecioFinal)
+                return promo.PrecioCombo > 0m ? Math.Max(0m, brutoParticipante - (promo.PrecioCombo * combosCompletos)) : 0m;
+            if (modalidad == DatabaseService.ModalidadesPromo.DosPorUno)
+                return brutoComboUnitario * ((combosCompletos / 2) * 1);
+            if (modalidad == DatabaseService.ModalidadesPromo.TresPorDos)
+                return brutoComboUnitario * ((combosCompletos / 3) * 1);
+            if (modalidad == DatabaseService.ModalidadesPromo.Bonificar)
+                return brutoComboUnitario * ((combosCompletos / Math.Max(1, promo.CantidadMinima)) * Math.Max(0, promo.CantidadBonificada));
+            if (modalidad == DatabaseService.ModalidadesPromo.EscalaCantidad && promo.CantidadMinima > 0 && combosCompletos >= promo.CantidadMinima)
+                return brutoParticipante * LimitarPorcentaje(promo.Porcentaje) / 100m;
+            return 0m;
+        }
+
+        private static void RegistrarMejorPromo(Dictionary<FacturaItem, PromoLineaCalculada> mejores, FacturaItem item, decimal porcentaje, string nombre)
+        {
+            porcentaje = LimitarPorcentaje(porcentaje);
+            if (porcentaje <= 0m) return;
+            if (!mejores.TryGetValue(item, out var actual) || porcentaje > actual.Porcentaje)
+                mejores[item] = new PromoLineaCalculada { Porcentaje = porcentaje, Nombre = nombre };
+        }
+
+        private static decimal LimitarPorcentaje(decimal porcentaje)
+        {
+            if (porcentaje < 0m) return 0m;
+            if (porcentaje > 100m) return 100m;
+            return porcentaje;
+        }
+
         private void ActualizarTotal()
         {
             PurgeCarritoInvalido();
+            AplicarPromocionesCarrito();
             decimal subtotal = 0m, descuentos = 0m, recargos = 0m;
             foreach (var it in CarritoDeVenta)
             {
@@ -1835,6 +2234,7 @@ namespace SchettiniGestion.WPF
                 lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
                 txtBuscarCliente.Text = "";
             }
+            ActualizarLetraComprobanteVisible();
         }
         private void RecalcularCarritoConNuevaLista()
         {
@@ -1922,6 +2322,7 @@ namespace SchettiniGestion.WPF
             lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
             _ignorarPerdidaFoco = false;
             popupCliente.IsOpen = false;
+            ActualizarLetraComprobanteVisible();
             txtBuscarProducto.Focus();
         }
 
@@ -2069,6 +2470,7 @@ namespace SchettiniGestion.WPF
                     lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
                     txtBuscarCliente.Text = _clienteSeleccionado["RazonSocial"].ToString();
                     popupCliente.IsOpen = false;
+                    ActualizarLetraComprobanteVisible();
                     txtBuscarProducto.Focus();
                 }
             }
@@ -2084,7 +2486,10 @@ namespace SchettiniGestion.WPF
             if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 100)
             {
                 item.DescuentoPorcentaje = pct;
+                item.PromoNombre = null; // descuento manual: ya no es la promo automática
+                item.DescuentoPromocionAutomatica = false;
                 if (pct > 0) item.RecargoPorcentaje = 0;
+                RefrescarVistaCarrito();
                 ActualizarTotal();
             }
         }
@@ -2097,7 +2502,13 @@ namespace SchettiniGestion.WPF
             if (win.ShowDialog() == true && decimal.TryParse(win.ResponseText?.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal pct) && pct >= 0 && pct <= 1000)
             {
                 item.RecargoPorcentaje = pct;
-                if (pct > 0) item.DescuentoPorcentaje = 0;
+                if (pct > 0)
+                {
+                    item.DescuentoPorcentaje = 0;
+                    item.PromoNombre = null;
+                    item.DescuentoPromocionAutomatica = false;
+                }
+                RefrescarVistaCarrito();
                 ActualizarTotal();
             }
         }

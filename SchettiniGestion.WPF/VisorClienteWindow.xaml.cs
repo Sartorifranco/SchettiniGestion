@@ -31,39 +31,42 @@ namespace SchettiniGestion.WPF
 
         private readonly bool _modoVistaPrevia;
         private readonly string _carpetaPromoOverride;
-        private readonly int? _intervaloSegundosOverride;
-        private readonly List<string> _rutasPromoExtra = new List<string>();
+        private readonly int? _intervaloVerticalSegundosOverride;
+        private readonly int? _intervaloHorizontalSegundosOverride;
+        private readonly List<string> _rutasPromoVerticalExtra = new List<string>();
+        private readonly List<string> _rutasPromoHorizontalExtra = new List<string>();
 
         public VisorClienteWindow()
         {
             InitializeComponent();
             _modoVistaPrevia = false;
             _carpetaPromoOverride = null;
-            _intervaloSegundosOverride = null;
-            InicializarVisor(null);
+            _intervaloVerticalSegundosOverride = null;
+            _intervaloHorizontalSegundosOverride = null;
+            InicializarVisor(null, null);
         }
 
-        /// <summary>Vista previa modal desde Configuración (sin segundo monitor).</summary>
-        public VisorClienteWindow(bool modoVistaPrevia, string carpetaPromoOverride, int? intervaloSegundosOverride, IEnumerable<string> rutasPromoExtra)
+        /// <summary>Vista previa modal desde Configuración (sin segundo monitor). Cada lista de rutas extra ya sabe a qué panel pertenece.</summary>
+        public VisorClienteWindow(
+            bool modoVistaPrevia,
+            string carpetaPromoOverride,
+            int? intervaloVerticalSegundosOverride,
+            int? intervaloHorizontalSegundosOverride,
+            IEnumerable<string> rutasPromoVerticalExtra,
+            IEnumerable<string> rutasPromoHorizontalExtra)
         {
             InitializeComponent();
             _modoVistaPrevia = modoVistaPrevia;
             _carpetaPromoOverride = carpetaPromoOverride;
-            _intervaloSegundosOverride = intervaloSegundosOverride;
-            InicializarVisor(rutasPromoExtra);
+            _intervaloVerticalSegundosOverride = intervaloVerticalSegundosOverride;
+            _intervaloHorizontalSegundosOverride = intervaloHorizontalSegundosOverride;
+            InicializarVisor(rutasPromoVerticalExtra, rutasPromoHorizontalExtra);
         }
 
-        private void InicializarVisor(IEnumerable<string> rutasPromoExtra)
+        private void InicializarVisor(IEnumerable<string> rutasPromoVerticalExtra, IEnumerable<string> rutasPromoHorizontalExtra)
         {
-            if (rutasPromoExtra != null)
-            {
-                foreach (string ruta in rutasPromoExtra)
-                {
-                    if (!string.IsNullOrWhiteSpace(ruta) && File.Exists(ruta)
-                        && !_rutasPromoExtra.Contains(ruta, StringComparer.OrdinalIgnoreCase))
-                        _rutasPromoExtra.Add(ruta);
-                }
-            }
+            AgregarRutasExtra(_rutasPromoVerticalExtra, rutasPromoVerticalExtra);
+            AgregarRutasExtra(_rutasPromoHorizontalExtra, rutasPromoHorizontalExtra);
 
             Closed += (_, __) => DetenerTodasPromociones();
             SizeChanged += (_, __) => AjustarLayoutPromociones();
@@ -73,6 +76,17 @@ namespace SchettiniGestion.WPF
 
             CargarLogo();
             IniciarPromociones();
+        }
+
+        private static void AgregarRutasExtra(List<string> destino, IEnumerable<string> rutas)
+        {
+            if (rutas == null) return;
+            foreach (string ruta in rutas)
+            {
+                if (!string.IsNullOrWhiteSpace(ruta) && File.Exists(ruta)
+                    && !destino.Contains(ruta, StringComparer.OrdinalIgnoreCase))
+                    destino.Add(ruta);
+            }
         }
 
         private void AplicarModoVistaPrevia()
@@ -140,13 +154,23 @@ namespace SchettiniGestion.WPF
             _rutasPromoVertical.Clear();
             _rutasPromoHorizontal.Clear();
 
-            foreach (string ruta in ObtenerRutasPromociones())
+            foreach (string ruta in ObtenerRutasCarpetaPromociones())
             {
                 if (EsPromoVertical(ruta))
                     _rutasPromoVertical.Add(ruta);
                 else
                     _rutasPromoHorizontal.Add(ruta);
             }
+
+            // Las rutas "extra" (vista previa de un archivo aún no guardado) ya saben a qué panel
+            // pertenecen porque el usuario las subió desde el botón de ese panel específico.
+            foreach (string ruta in _rutasPromoVerticalExtra)
+                if (!_rutasPromoVertical.Contains(ruta, StringComparer.OrdinalIgnoreCase))
+                    _rutasPromoVertical.Add(ruta);
+
+            foreach (string ruta in _rutasPromoHorizontalExtra)
+                if (!_rutasPromoHorizontal.Contains(ruta, StringComparer.OrdinalIgnoreCase))
+                    _rutasPromoHorizontal.Add(ruta);
 
             AjustarLayoutPromociones();
 
@@ -171,20 +195,11 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        private IEnumerable<string> ObtenerRutasPromociones()
+        private IEnumerable<string> ObtenerRutasCarpetaPromociones()
         {
-            var list = new List<string>();
-            if (!string.IsNullOrWhiteSpace(_carpetaPromoOverride))
-                list.AddRange(DatabaseService.ListarArchivosPromoVisorCliente(_carpetaPromoOverride));
-            else
-                list.AddRange(DatabaseService.ListarArchivosPromoVisorCliente());
-
-            foreach (string extra in _rutasPromoExtra)
-            {
-                if (!list.Contains(extra, StringComparer.OrdinalIgnoreCase))
-                    list.Add(extra);
-            }
-
+            var list = !string.IsNullOrWhiteSpace(_carpetaPromoOverride)
+                ? DatabaseService.ListarArchivosPromoVisorCliente(_carpetaPromoOverride)
+                : DatabaseService.ListarArchivosPromoVisorCliente();
             list.Sort(StringComparer.OrdinalIgnoreCase);
             return list;
         }
@@ -193,10 +208,11 @@ namespace SchettiniGestion.WPF
         {
             if (_rutasPromoVertical.Count > 0)
             {
-                double h = ActualHeight > 100 ? ActualHeight : 768;
-                double anchoIdeal = h * (1080.0 / 1440.0);
-                double maxAncho = ActualWidth > 100 ? ActualWidth * 0.42 : 480;
-                double ancho = Math.Min(Math.Max(anchoIdeal, 260), maxAncho);
+                // Imagen promo: proporción 1080×1920 (9:16) o 1080×1080
+                double h = ActualHeight > 100 ? ActualHeight : 1080;
+                double anchoIdeal = h * (1080.0 / 1920.0);
+                double maxAncho = ActualWidth > 100 ? ActualWidth * 0.48 : 540;
+                double ancho = Math.Min(Math.Max(anchoIdeal, 280), maxAncho);
                 colPromoLateral.Width = new GridLength(ancho);
                 panelPromoLateral.Visibility = Visibility.Visible;
             }
@@ -208,8 +224,10 @@ namespace SchettiniGestion.WPF
 
             if (_rutasPromoHorizontal.Count > 0)
             {
-                double alto = ActualHeight > 100 ? Math.Min(ActualHeight * 0.22, 220) : 160;
-                alto = Math.Max(alto, 110);
+                // Banner inferior: proporción recomendada 1200×300
+                double w = ActualWidth > 100 ? ActualWidth : 1200;
+                double altoIdeal = w * (300.0 / 1200.0);
+                double alto = Math.Min(Math.Max(altoIdeal, 90), Math.Min(ActualHeight * 0.28, 300));
                 rowPromoInferior.Height = new GridLength(alto);
                 panelPromoInferior.Visibility = Visibility.Visible;
             }
@@ -222,9 +240,23 @@ namespace SchettiniGestion.WPF
 
         private static bool EsPromoVertical(string path)
         {
+            string fileName = Path.GetFileName(path) ?? "";
+            // Prefijos opcionales para forzar ubicación: banner_ / horizontal_ → franja; promo_ / vertical_ → lateral
+            if (fileName.StartsWith("banner_", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("horizontal_", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("h_", StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (fileName.StartsWith("promo_", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("vertical_", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("v_", StringComparison.OrdinalIgnoreCase))
+                return true;
+
             string ext = Path.GetExtension(path);
             if (DatabaseService.EsExtensionPromoVideoCliente(ext))
+            {
+                // Videos: si el nombre no indica banner, van al panel vertical (1080×1920)
                 return true;
+            }
 
             if (!DatabaseService.EsExtensionPromoImagenCliente(ext))
                 return true;
@@ -237,7 +269,8 @@ namespace SchettiniGestion.WPF
                 bi.CacheOption = BitmapCacheOption.OnLoad;
                 bi.EndInit();
                 bi.Freeze();
-                return bi.PixelHeight >= bi.PixelWidth;
+                // Banner típico 1200×300 (ancho > alto * 1.6); promo 1080×1920 o cuadrado
+                return bi.PixelWidth <= bi.PixelHeight * 1.6;
             }
             catch
             {
@@ -245,16 +278,34 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        private int LeerIntervaloPromoSeg()
+        /// <summary>Segundos entre cambios del panel izquierdo (imagen promocional vertical).</summary>
+        private int LeerIntervaloPromoVerticalSeg()
         {
-            if (_intervaloSegundosOverride.HasValue)
-                return Math.Min(Math.Max(_intervaloSegundosOverride.Value, 3), 120);
+            if (_intervaloVerticalSegundosOverride.HasValue)
+                return Math.Min(Math.Max(_intervaloVerticalSegundosOverride.Value, 3), 120);
 
             try
             {
                 var cfg = DatabaseService.GetConfiguracion();
                 if (cfg != null && cfg.Table.Columns.Contains("VisorPromoIntervaloSeg") && cfg["VisorPromoIntervaloSeg"] != DBNull.Value
                     && int.TryParse(cfg["VisorPromoIntervaloSeg"].ToString(), out int s) && s >= 3)
+                    return Math.Min(s, 120);
+            }
+            catch { }
+            return 8;
+        }
+
+        /// <summary>Segundos entre cambios de la franja inferior (banner). Configurable de forma independiente al panel izquierdo.</summary>
+        private int LeerIntervaloPromoHorizontalSeg()
+        {
+            if (_intervaloHorizontalSegundosOverride.HasValue)
+                return Math.Min(Math.Max(_intervaloHorizontalSegundosOverride.Value, 3), 120);
+
+            try
+            {
+                var cfg = DatabaseService.GetConfiguracion();
+                if (cfg != null && cfg.Table.Columns.Contains("VisorBannerIntervaloSeg") && cfg["VisorBannerIntervaloSeg"] != DBNull.Value
+                    && int.TryParse(cfg["VisorBannerIntervaloSeg"].ToString(), out int s) && s >= 3)
                     return Math.Min(s, 120);
             }
             catch { }
@@ -367,7 +418,7 @@ namespace SchettiniGestion.WPF
         private void ReiniciarTimerPromoVertical()
         {
             DetenerTimerPromoVertical();
-            int seg = LeerIntervaloPromoSeg();
+            int seg = LeerIntervaloPromoVerticalSeg();
             _timerPromoVertical = new DispatcherTimer { Interval = TimeSpan.FromSeconds(seg) };
             _timerPromoVertical.Tick += (_, __) =>
             {
@@ -380,7 +431,7 @@ namespace SchettiniGestion.WPF
         private void ReiniciarTimerPromoHorizontal()
         {
             DetenerTimerPromoHorizontal();
-            int seg = LeerIntervaloPromoSeg();
+            int seg = LeerIntervaloPromoHorizontalSeg();
             _timerPromoHorizontal = new DispatcherTimer { Interval = TimeSpan.FromSeconds(seg) };
             _timerPromoHorizontal.Tick += (_, __) =>
             {

@@ -193,7 +193,7 @@
                                            Text="Ejemplo: 192.168.1.100  •  192.168.1.100\SQLEXPRESS  •  SERVIDOR"/>
                                 <TextBlock Margin="0,3,0,0" FontSize="10" Foreground="{DynamicResource TextSecondary}" FontStyle="Italic"
                                            TextWrapping="Wrap"
-                                           Text="💡 Si usás instancia nombrada (ej. IP\SQLEXPRESS), el puerto puede ser dinámico. Dejá el campo Puerto vacío para que SQL Browser lo resuelva, o ingresá el puerto exacto desde SQL Server Configuration Manager."/>
+                                           Text="💡 Si el servidor fue configurado con SCHPOS (opción 'Esta PC es el SERVIDOR'), dejá el puerto en 1433: el asistente ya lo fija fijo en el servidor. Si es un SQL Server configurado a mano con puerto dinámico, ingresá acá el puerto exacto (SQL Server Configuration Manager → Protocolos → TCP/IP → Puertos IP → IPAll)."/>
 
                                 <!-- Auth -->
                                 <Separator Margin="0,10,0,10" Background="{DynamicResource BorderColor}"/>
@@ -202,6 +202,9 @@
                                 <RadioButton x:Name="rbWinAuth" Content="Windows (sin contraseña)" IsChecked="True"
                                              Foreground="{DynamicResource TextPrimary}" FontSize="12"
                                              Checked="rbAuth_Checked" Margin="0,0,0,6"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="10" FontStyle="Italic" Margin="20,0,0,6"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Text="Requiere que esta PC y el servidor compartan dominio, o el mismo usuario/contraseña de Windows si están en grupo de trabajo (workgroup). Si no estás seguro, usá 'Usuario y contraseña SQL'."/>
                                 <RadioButton x:Name="rbSqlAuth" Content="Usuario y contraseña SQL"
                                              Foreground="{DynamicResource TextPrimary}" FontSize="12"
                                              Checked="rbAuth_Checked"/>

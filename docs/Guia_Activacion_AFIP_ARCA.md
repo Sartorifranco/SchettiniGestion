@@ -1,4 +1,4 @@
-# Guía de activación de Facturación Electrónica (AFIP / ARCA) en SCHPOS
+# Guía de activación de Facturación Electrónica (ARCA) en SCHPOS
 
 Esta guía explica, paso a paso, cómo dejar habilitado un cliente para emitir facturas
 electrónicas desde SCHPOS. Está pensada para que la persona encargada del trámite pueda
@@ -22,14 +22,14 @@ hacerlo sola, sin conocimientos técnicos previos.
 
 ## PARTE 1 — En SCHPOS: generar el pedido de certificado (CSR)
 
-1. Abrí SCHPOS y andá a **Configuración → Negocio y AFIP**.
+1. Abrí SCHPOS y andá a **Configuración → Negocio y ARCA**.
 2. En **Datos de la Empresa**, completá y verificá:
    - **CUIT** (11 dígitos).
    - **Razón Social**.
    - **Nombre de Fantasía**.
    - **Condición IVA** (Monotributo o Responsable Inscripto).
 3. Presioná **Guardar** (importante: guardá antes de continuar).
-4. En la sección **Activación Fiscal AFIP/ARCA**, presioná **Generar Pedido de Certificado (CSR)**.
+4. En la sección **Activación Fiscal ARCA**, presioná **Generar Pedido de Certificado (CSR)**.
 5. El sistema te va a pedir dónde guardar un archivo que termina en **`.csr`**.
    Guardalo en un lugar fácil de encontrar (por ejemplo, el Escritorio).
    - La **clave privada (.key) queda guardada de forma segura en la PC.** No se toca ni se comparte.
@@ -62,7 +62,7 @@ Este paso le da permiso al certificado para poder facturar. **Es obligatorio.**
 2. Entrá a **"Administrador de Relaciones de Clave Fiscal"**.
 3. Presioná **"Nueva Relación"**.
 4. En **"Servicio"**, presioná **Buscar** y navegá:
-   **AFIP → WebServices → Facturación Electrónica**
+   **ARCA → WebServices → Facturación Electrónica**
    (elegí exactamente la que dice **"Facturación Electrónica"**; NO la de MTXCA ni la de Exportación).
 5. En **"Representante"**, presioná **Buscar** y seleccioná el **Computador Fiscal**:
    es el **alias** que creaste en la Parte 2.
@@ -95,14 +95,14 @@ Este paso le da permiso al certificado para poder facturar. **Es obligatorio.**
 
 ## PARTE 5 — En SCHPOS: importar el certificado y configurar
 
-1. Volvé a SCHPOS → **Configuración → Negocio y AFIP**.
-2. En **Activación Fiscal AFIP/ARCA**, presioná **Subir Certificado AFIP (.crt)** y elegí
+1. Volvé a SCHPOS → **Configuración → Negocio y ARCA**.
+2. En **Activación Fiscal ARCA**, presioná **Subir Certificado ARCA (.crt)** y elegí
    el archivo `.crt` que descargaste de ARCA en la Parte 2.
 3. Cargá el **Punto de Venta** que anotaste en la Parte 4 (por ejemplo `2`).
-4. Dejá tildado **"Ambiente AFIP: producción (no homologación)"** para facturar de verdad.
+4. Dejá tildado **"Ambiente ARCA: producción (no homologación)"** para facturar de verdad.
    - *Homologación* es solo para pruebas y requiere un certificado distinto; para uso real, siempre **producción**.
 5. Presioná **Guardar**.
-6. Presioná **Probar conexión AFIP**.
+6. Presioná **Probar conexión ARCA**.
    - Si dice **"Conexión exitosa con WSAA en producción"** → ¡listo!
    - Si dice que el certificado no está autorizado → falta que impacte la Parte 3, esperá
      unos minutos y volvé a probar.
@@ -113,7 +113,7 @@ Este paso le da permiso al certificado para poder facturar. **Es obligatorio.**
 
 1. Hacé una venta de prueba con un **monto chico** y tipo **Factura**.
    - Recordá: en producción, esa factura es **válida fiscalmente**.
-2. Si aparece un **CAE** al pie del comprobante, la factura fue autorizada por AFIP.
+2. Si aparece un **CAE** al pie del comprobante, la factura fue autorizada por ARCA.
 3. Para confirmarla en ARCA: entrá a **"Mis Comprobantes" → "Comprobantes emitidos"**,
    filtrá por la fecha, el punto de venta y el tipo de factura.
    - Puede tardar unos minutos en aparecer.
@@ -128,7 +128,7 @@ Este paso le da permiso al certificado para poder facturar. **Es obligatorio.**
 - [ ] ARCA: Administrador de Relaciones → **Nueva Relación** → Facturación Electrónica → representante = alias
 - [ ] ARCA: Puntos de venta → **Agregar** punto de venta **Web Services** → anotar número
 - [ ] SCHPOS: **Subir .crt** + cargar punto de venta + producción tildado + **Guardar**
-- [ ] SCHPOS: **Probar conexión AFIP** → éxito
+- [ ] SCHPOS: **Probar conexión ARCA** → éxito
 - [ ] Venta de prueba con CAE
 
 ---
@@ -139,8 +139,8 @@ Este paso le da permiso al certificado para poder facturar. **Es obligatorio.**
 |---|---|---|
 | "Configure un CUIT válido antes de subir el certificado" | El CUIT no está guardado | Completar CUIT y presionar **Guardar** antes de subir el `.crt` |
 | "Punto de venta requerido" al facturar | Falta el punto de venta | Cargar el número de la Parte 4 y **Guardar** |
-| "AFIP no pudo validar la firma del certificado" | Ambiente equivocado | Tildar **producción** y **Guardar** (el `.crt` de ARCA es de producción) |
-| "AFIP rechazó la autorización del certificado" | Falta la Parte 3 o no impactó aún | Verificar la relación del servicio y esperar unos minutos |
+| "ARCA no pudo validar la firma del certificado" | Ambiente equivocado | Tildar **producción** y **Guardar** (el `.crt` de ARCA es de producción) |
+| "ARCA rechazó la autorización del certificado" | Falta la Parte 3 o no impactó aún | Verificar la relación del servicio y esperar unos minutos |
 | El comprobante no aparece en "Mis Comprobantes" | Demora de ARCA | Esperar; suele tardar algunos minutos |
 
 ---

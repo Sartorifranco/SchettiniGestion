@@ -12,7 +12,7 @@ namespace SchettiniGestion
         public bool MostrarFormaPago { get; set; } = true;
         public bool MostrarGracias { get; set; } = true;
         public bool MostrarPieFiscal { get; set; } = true;
-        /// <summary>Número de punto de venta (valor en Negocio y AFIP).</summary>
+        /// <summary>Número de punto de venta (valor en Negocio y ARCA).</summary>
         public bool MostrarPuntoVenta { get; set; } = true;
         /// <summary>Nombre del personal que cobró / emitió la venta.</summary>
         public bool MostrarVendedor { get; set; }

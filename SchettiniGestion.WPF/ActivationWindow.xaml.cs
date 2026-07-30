@@ -102,7 +102,7 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
-            if (!LicenseManager.ValidarLicencia())
+            if (!LicenseManager.ValidarLicencia(key))
             {
                 MostrarError(LicenseManager.UltimoMensajeError ?? "Clave de licencia no válida o expirada.");
                 return;

@@ -157,9 +157,22 @@
                         <Grid Grid.Row="2">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+
+                            <Border x:Name="bdrPromosHoy" Grid.Row="0" Visibility="Collapsed"
+                                    Background="#1A27AE60" BorderBrush="#27AE60" BorderThickness="1"
+                                    CornerRadius="6" Padding="10,8" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <TextBlock Text="Promos activas hoy" FontSize="11" FontWeight="Bold"
+                                               Foreground="#2ECC71" Margin="0,0,0,2"/>
+                                    <TextBlock x:Name="txtPromosHoy" TextWrapping="Wrap" FontSize="12"
+                                               Foreground="{DynamicResource TextPrimary}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
                                 <Button x:Name="btnVistaCatalogoLista" Content="Lista" Click="btnVistaCatalogoLista_Click"
                                         Style="{StaticResource ButtonStyle}" Padding="14,6" Margin="0,0,6,0"/>
                                 <Button x:Name="btnVistaCatalogoCards" Content="Cards" Click="btnVistaCatalogoCards_Click"
@@ -167,7 +180,7 @@
                                 <TextBlock x:Name="lblCantidadCatalogo" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}" FontSize="13"/>
                             </StackPanel>
 
-                            <DataGrid x:Name="dgvCatalogo" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                            <DataGrid x:Name="dgvCatalogo" Grid.Row="2" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                                       HeadersVisibility="Column" GridLinesVisibility="Horizontal" BorderThickness="0"
                                       RowHeight="48" FontSize="14" SelectionMode="Single" HorizontalScrollBarVisibility="Auto"
                                       MouseLeftButtonUp="dgvCatalogo_MouseLeftButtonUp">
@@ -190,6 +203,27 @@
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
+                                    <DataGridTemplateColumn Header="" Width="78" MinWidth="72">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#27AE60" CornerRadius="4" Padding="6,3"
+                                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                        ToolTip="{Binding PromoTooltip}">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding EnPromo}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="EN PROMO" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" MinWidth="140" Width="*">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
@@ -238,7 +272,7 @@
                                 </DataGrid.RowStyle>
                             </DataGrid>
 
-                            <ScrollViewer x:Name="svCatalogoCards" Grid.Row="1" Visibility="Collapsed"
+                            <ScrollViewer x:Name="svCatalogoCards" Grid.Row="2" Visibility="Collapsed"
                                           VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                 <ItemsControl x:Name="icCatalogo">
                                     <ItemsControl.ItemsPanel>
@@ -250,7 +284,8 @@
                                         <DataTemplate>
                                             <Border Margin="6" Width="168" Padding="10" CornerRadius="8" Cursor="Hand"
                                                     MouseLeftButtonUp="CatalogoCard_Click"
-                                                    BorderThickness="2">
+                                                    BorderThickness="2"
+                                                    ToolTip="{Binding PromoTooltip}">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
                                                         <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
@@ -260,6 +295,9 @@
                                                                 <Setter Property="BorderBrush" Value="#C0392B"/>
                                                                 <Setter Property="Background" Value="#33C0392B"/>
                                                             </DataTrigger>
+                                                            <DataTrigger Binding="{Binding EnPromo}" Value="True">
+                                                                <Setter Property="BorderBrush" Value="#27AE60"/>
+                                                            </DataTrigger>
                                                             <Trigger Property="IsMouseOver" Value="True">
                                                                 <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
                                                             </Trigger>
@@ -267,11 +305,28 @@
                                                     </Style>
                                                 </Border.Style>
                                                 <StackPanel>
-                                                    <Border Height="72" CornerRadius="6" Background="{DynamicResource ModuleBackgroundBrush}" Margin="0,0,0,8">
-                                                        <Image Source="{Binding ImagenPath, Converter={StaticResource PathToImageConverter}}" Stretch="Uniform" Margin="4"/>
-                                                    </Border>
+                                                    <Grid Height="72" Margin="0,0,0,8">
+                                                        <Border CornerRadius="6" Background="{DynamicResource ModuleBackgroundBrush}">
+                                                            <Image Source="{Binding ImagenPath, Converter={StaticResource PathToImageConverter}}" Stretch="Uniform" Margin="4"/>
+                                                        </Border>
+                                                        <Border HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                                Background="#27AE60" CornerRadius="4" Padding="5,2" Margin="0,2,2,0"
+                                                                ToolTip="{Binding PromoTooltip}">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding EnPromo}" Value="True">
+                                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <TextBlock Text="EN PROMO" FontSize="9" FontWeight="Bold" Foreground="White"/>
+                                                        </Border>
+                                                    </Grid>
                                                     <TextBlock Text="{Binding Codigo}" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
-                                                    <TextBlock Text="{Binding Descripcion}" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="40" Margin="0,2,0,4"/>
+                                                    <TextBlock Text="{Binding Descripcion}" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="40" Margin="0,2,0,4"/>
                                                     <TextBlock Text="{Binding PrecioLista, StringFormat=C2}" Foreground="{StaticResource SuccessColor}" FontWeight="Bold" FontSize="16"/>
                                                     <TextBlock Text="{Binding StockTexto}" FontSize="12" Margin="0,4,0,0">
                                                         <TextBlock.Style>
@@ -313,6 +368,7 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Row="0" Text="Resumen de la venta"
@@ -332,94 +388,121 @@
 
                                 <TextBlock Grid.Row="2" x:Name="txtAyudaResumen" Text="% Total = descuento a toda la venta · Tocá un producto abajo = editar solo ese ítem"
                                            FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,4"/>
+                                <Border Grid.Row="3" x:Name="bdrAvisoPromo" Visibility="Collapsed" Background="#1A27AE60"
+                                        BorderBrush="#27AE60" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,4,0,0">
+                                    <TextBlock x:Name="txtAvisoPromo" TextWrapping="Wrap" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="#2ECC71"/>
+                                </Border>
                             </Grid>
 
-                            <Expander x:Name="expConfigVenta" Grid.Row="1" Header="Configuración" IsExpanded="False" Margin="0,0,0,6"
-                                      Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold">
-                                <StackPanel Margin="0,8,0,0">
-                                    <TextBlock Text="Lista de precios" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2"/>
-                                    <ComboBox x:Name="cmbListaPrecios" DisplayMemberPath="Nombre" SelectedValuePath="ListaID"
-                                              SelectionChanged="cmbListaPrecios_SelectionChanged"
-                                              Style="{StaticResource WhiteTouchCombo}" Margin="0,0,0,10"/>
+                            <!-- Cliente y comprobante siempre visibles (no dentro de Config) -->
+                            <StackPanel Grid.Row="1" Margin="0,0,0,6">
+                                <TextBlock Text="Cliente" Foreground="{DynamicResource TextSecondary}" FontSize="11" Margin="0,0,0,2"/>
+                                <Grid Margin="0,0,0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="txtBuscarCliente" Grid.Column="0" Style="{StaticResource ModuleTextBoxStyle}" Height="40" FontSize="15"
+                                             TextChanged="txtBuscarCliente_TextChanged"
+                                             LostFocus="txtBuscar_LostFocus" PreviewKeyDown="txtBuscar_PreviewKeyDown"
+                                             ToolTip="Buscá por nombre, CUIT o código. Enter selecciona."/>
+                                    <Button x:Name="btnCrearCliente" Grid.Column="1" Content="➕" Click="btnCrearCliente_Click"
+                                            Background="#27AE60" Foreground="White" FontWeight="Bold" Height="40" Width="40" Margin="6,0,0,0" ToolTip="Crear cliente rápido"/>
+                                    <Popup x:Name="popupCliente" PlacementTarget="{Binding ElementName=txtBuscarCliente}" StaysOpen="False">
+                                        <Border Background="{DynamicResource ComboBoxDropDownBackground}"
+                                                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="6" Padding="2">
+                                            <StackPanel>
+                                                <ListBox x:Name="lstSugerenciasCliente" Width="360" MaxHeight="220" FontSize="15"
+                                                         Style="{StaticResource TouchSuggestionListBoxStyle}"
+                                                         MouseUp="lstSugerenciasCliente_MouseUp" PreviewKeyDown="lstSugerencias_PreviewKeyDown">
+                                                    <ListBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding RazonSocial}" Padding="5"
+                                                                       Foreground="{DynamicResource ComboBoxDropDownForeground}"/>
+                                                        </DataTemplate>
+                                                    </ListBox.ItemTemplate>
+                                                </ListBox>
+                                                <Button x:Name="btnCrearClientePopup" Content="➕ Crear cliente nuevo" Click="btnCrearCliente_Click"
+                                                        Background="#27AE60" Foreground="White" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Stretch"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Popup>
+                                </Grid>
+                                <TextBlock x:Name="lblClienteSeleccionado" Text="Consumidor Final" Foreground="{DynamicResource SuccessColor}" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8"/>
 
-                                    <TextBlock Text="Cliente" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2"/>
-                                    <Grid Margin="0,0,0,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBox x:Name="txtBuscarCliente" Grid.Column="0" Style="{StaticResource ModuleTextBoxStyle}" Height="40" FontSize="15"
-                                                 TextChanged="txtBuscarCliente_TextChanged"
-                                                 LostFocus="txtBuscar_LostFocus" PreviewKeyDown="txtBuscar_PreviewKeyDown"/>
-                                        <Button x:Name="btnCrearCliente" Grid.Column="1" Content="➕" Click="btnCrearCliente_Click"
-                                                Background="#27AE60" Foreground="White" FontWeight="Bold" Height="40" Width="40" Margin="6,0,0,0" ToolTip="Crear cliente"/>
-                                        <Popup x:Name="popupCliente" PlacementTarget="{Binding ElementName=txtBuscarCliente}" StaysOpen="False">
-                                            <Border Background="{DynamicResource ComboBoxDropDownBackground}"
-                                                    BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="6" Padding="2">
-                                                <StackPanel>
-                                                    <ListBox x:Name="lstSugerenciasCliente" Width="360" MaxHeight="220" FontSize="15"
-                                                             Style="{StaticResource TouchSuggestionListBoxStyle}"
-                                                             MouseUp="lstSugerenciasCliente_MouseUp" PreviewKeyDown="lstSugerencias_PreviewKeyDown">
-                                                        <ListBox.ItemTemplate>
-                                                            <DataTemplate>
-                                                                <TextBlock Text="{Binding RazonSocial}" Padding="5"
-                                                                           Foreground="{DynamicResource ComboBoxDropDownForeground}"/>
-                                                            </DataTemplate>
-                                                        </ListBox.ItemTemplate>
-                                                    </ListBox>
-                                                    <Button x:Name="btnCrearClientePopup" Content="➕ Crear cliente nuevo" Click="btnCrearCliente_Click"
-                                                            Background="#27AE60" Foreground="White" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Stretch"/>
-                                                </StackPanel>
-                                            </Border>
-                                        </Popup>
-                                    </Grid>
-                                    <TextBlock x:Name="lblClienteSeleccionado" Text="Consumidor Final" Foreground="{DynamicResource SuccessColor}" FontWeight="Bold" Margin="0,0,0,10"/>
-
-                                    <Grid Margin="0,0,0,10">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="Comprobante" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2"/>
-                                            <ComboBox x:Name="cmbTipoComprobante" SelectedIndex="0" Style="{StaticResource WhiteTouchCombo}"
-                                                      SelectionChanged="cmbTipoComprobante_SelectionChanged">
-                                                <ComboBoxItem Content="Factura"/>
-                                                <ComboBoxItem Content="Ticket"/>
-                                                <ComboBoxItem Content="Remito"/>
-                                                <ComboBoxItem Content="Pedido"/>
-                                                <ComboBoxItem Content="Presupuesto"/>
-                                                <ComboBoxItem Content="Nota de Crédito"/>
-                                                <ComboBoxItem Content="Nota de Débito"/>
-                                            </ComboBox>
-                                        </StackPanel>
-                                        <StackPanel x:Name="pnlCondicionPago" Grid.Column="2">
-                                            <TextBlock Text="Pago" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2"/>
-                                            <ComboBox x:Name="cmbCondicionVenta" SelectedIndex="0" SelectionChanged="cmbCondicionVenta_SelectionChanged" Style="{StaticResource WhiteTouchCombo}">
-                                                <ComboBoxItem Content="Contado"/>
-                                                <ComboBoxItem Content="Tarjeta"/>
-                                                <ComboBoxItem Content="Cta. Cte."/>
-                                                <ComboBoxItem Content="Mercado Pago"/>
-                                            </ComboBox>
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <StackPanel x:Name="pnlCalculoEfectivo">
-                                        <TextBlock Text="Abonado ($)" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2"/>
-                                        <TextBox x:Name="txtMontoPagado" Style="{StaticResource WhiteTouchText}"
-                                                 TextChanged="txtMontoPagado_TextChanged" PreviewTextInput="NumberValidationTextBox" Tag="numeric"/>
-                                        <Grid Margin="0,6,0,0">
-                                            <TextBlock Text="Vuelto:" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="lblVuelto" Text="$ 0,00" Foreground="{DynamicResource WarningColor}" FontWeight="Bold" FontSize="20" HorizontalAlignment="Right"/>
-                                        </Grid>
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Comprobante" Foreground="{DynamicResource TextSecondary}" FontSize="11" Margin="0,0,0,2"/>
+                                        <ComboBox x:Name="cmbTipoComprobante" SelectedIndex="0" Style="{StaticResource WhiteTouchCombo}"
+                                                  SelectionChanged="cmbTipoComprobante_SelectionChanged"
+                                                  ToolTip="Factura A/B/C según cliente y condición IVA. Ticket = no fiscal.">
+                                            <ComboBoxItem Content="Factura"/>
+                                            <ComboBoxItem Content="Ticket"/>
+                                            <ComboBoxItem Content="Remito"/>
+                                            <ComboBoxItem Content="Pedido"/>
+                                            <ComboBoxItem Content="Presupuesto"/>
+                                            <ComboBoxItem Content="Nota de Crédito"/>
+                                            <ComboBoxItem Content="Nota de Débito"/>
+                                        </ComboBox>
                                     </StackPanel>
-                                    <Button Content="💾 Guardar como predeterminado" Click="btnGuardarConfigPredeterminada_Click"
-                                            Style="{StaticResource SecondaryButtonStyle}" FontSize="11" Padding="10,6"
-                                            HorizontalAlignment="Left" Margin="0,8,0,0"
-                                            ToolTip="Guarda lista, comprobante y forma de pago para próximas ventas"/>
-                                </StackPanel>
-                            </Expander>
+                                    <Border Grid.Column="2" x:Name="brdLetraComprobante"
+                                            Width="56" Height="56" CornerRadius="8" VerticalAlignment="Bottom"
+                                            Background="#1A5276" BorderBrush="#154360" BorderThickness="1"
+                                            ToolTip="Letra del comprobante según emisor y cliente (se actualiza al cambiar cliente o tipo).">
+                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <TextBlock x:Name="lblLetraComprobante" Text="B" FontSize="26" FontWeight="Bold"
+                                                       Foreground="White" HorizontalAlignment="Center" LineHeight="28"/>
+                                            <TextBlock x:Name="lblLetraDetalle" Text="Factura" FontSize="9"
+                                                       Foreground="#D6EAF8" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <StackPanel x:Name="pnlCondicionPago" Grid.Column="4">
+                                        <TextBlock Text="Pago" Foreground="{DynamicResource TextSecondary}" FontSize="11" Margin="0,0,0,2"/>
+                                        <ComboBox x:Name="cmbCondicionVenta" SelectedIndex="0" SelectionChanged="cmbCondicionVenta_SelectionChanged" Style="{StaticResource WhiteTouchCombo}">
+                                            <ComboBoxItem Content="Contado"/>
+                                            <ComboBoxItem Content="Tarjeta"/>
+                                            <ComboBoxItem Content="Cta. Cte."/>
+                                            <ComboBoxItem Content="Mercado Pago"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock Text="La letra A/B/C se actualiza al elegir cliente o tipo de comprobante."
+                                           FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,4"/>
+
+                                <Expander x:Name="expConfigVenta" Header="Más opciones (lista, efectivo…)" IsExpanded="False" Margin="0,2,0,0"
+                                          Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold">
+                                    <StackPanel Margin="0,8,0,0">
+                                        <TextBlock Text="Lista de precios" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2"/>
+                                        <ComboBox x:Name="cmbListaPrecios" DisplayMemberPath="Nombre" SelectedValuePath="ListaID"
+                                                  SelectionChanged="cmbListaPrecios_SelectionChanged"
+                                                  Style="{StaticResource WhiteTouchCombo}" Margin="0,0,0,6"/>
+                                        <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,10"
+                                                   Text="La lista define el precio de venta del catálogo. Cambiala solo si el cliente usa otra tarifa."/>
+
+                                        <StackPanel x:Name="pnlCalculoEfectivo">
+                                            <TextBlock Text="Abonado ($)" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2"/>
+                                            <TextBox x:Name="txtMontoPagado" Style="{StaticResource WhiteTouchText}"
+                                                     TextChanged="txtMontoPagado_TextChanged" PreviewTextInput="NumberValidationTextBox" Tag="numeric"/>
+                                            <Grid Margin="0,6,0,0">
+                                                <TextBlock Text="Vuelto:" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="lblVuelto" Text="$ 0,00" Foreground="{DynamicResource WarningColor}" FontWeight="Bold" FontSize="20" HorizontalAlignment="Right"/>
+                                            </Grid>
+                                        </StackPanel>
+                                        <Button Content="💾 Guardar como predeterminado" Click="btnGuardarConfigPredeterminada_Click"
+                                                Style="{StaticResource SecondaryButtonStyle}" FontSize="11" Padding="10,6"
+                                                HorizontalAlignment="Left" Margin="0,8,0,0"
+                                                ToolTip="Guarda lista, comprobante y forma de pago para próximas ventas"/>
+                                    </StackPanel>
+                                </Expander>
+                            </StackPanel>
 
                             <TextBlock x:Name="lblCantidadItems" Grid.Row="2" Text="0 productos en el pedido"
                                        Foreground="{DynamicResource TextSecondary}" FontSize="11" Margin="0,0,0,4"/>
@@ -459,7 +542,8 @@
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,10">
                                                         <Button Content="−" Width="48" Height="48" Click="btnCarritoRestar_Click" Tag="{Binding}"
                                                                 Background="{DynamicResource BorderColor}" Foreground="{DynamicResource TextPrimary}" BorderThickness="0" FontSize="22" FontWeight="Bold" Margin="0,0,12,0"/>
-                                                        <TextBlock Text="{Binding Cantidad}" VerticalAlignment="Center" FontSize="20" FontWeight="Bold" MinWidth="32" TextAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Cantidad}" Foreground="{DynamicResource TextPrimary}"
+                                                                   VerticalAlignment="Center" FontSize="20" FontWeight="Bold" MinWidth="32" TextAlignment="Center"/>
                                                         <Button Content="+" Width="48" Height="48" Click="btnCarritoSumar_Click" Tag="{Binding}"
                                                                 Background="{DynamicResource BorderColor}" Foreground="{DynamicResource TextPrimary}" BorderThickness="0" FontSize="22" FontWeight="Bold" Margin="12,0,0,0"/>
                                                     </StackPanel>
@@ -574,11 +658,24 @@
 
                     <Border x:Name="bdrBloqueoApertura" Grid.ColumnSpan="2" Visibility="Collapsed"
                             Background="#CC0D1117" Panel.ZIndex="20">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="440" Margin="24">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="480" Margin="24">
                             <TextBlock Text="🔒 Ventas bloqueadas" FontSize="22" FontWeight="Bold"
                                        Foreground="#F59E0B" HorizontalAlignment="Center" Margin="0,0,0,12"/>
                             <TextBlock x:Name="txtBloqueoApertura" TextWrapping="Wrap" TextAlignment="Center"
-                                       Foreground="{DynamicResource TextPrimary}" FontSize="15" LineHeight="22"/>
+                                       Foreground="{DynamicResource TextPrimary}" FontSize="15" LineHeight="22"
+                                       Margin="0,0,0,20"/>
+                            <Button x:Name="btnAbrirCajaDesdePos"
+                                    Content="🔓  ABRIR CAJA"
+                                    Style="{StaticResource SuccessButtonStyle}"
+                                    FontSize="18" FontWeight="Bold"
+                                    MinHeight="56" MinWidth="260" Padding="24,14"
+                                    HorizontalAlignment="Center"
+                                    Click="btnAbrirCajaDesdePos_Click"
+                                    ToolTip="Registrar el fondo fijo e iniciar el turno"/>
+                            <TextBlock Text="También podés hacerlo desde Caja → Apertura de caja."
+                                       FontSize="12" Foreground="{DynamicResource TextSecondary}"
+                                       HorizontalAlignment="Center" Margin="0,14,0,0" TextWrapping="Wrap"
+                                       TextAlignment="Center"/>
                         </StackPanel>
                     </Border>
                 </Grid>

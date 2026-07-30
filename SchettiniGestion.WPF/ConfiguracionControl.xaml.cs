@@ -39,6 +39,7 @@ namespace SchettiniGestion.WPF
             AplicarVisibilidadCredencialesSQL();
             AplicarVisibilidadSegunLicencia();
             CargarImpresoras();
+            CargarBackupAuto();
         }
 
         private void AplicarVisibilidadSegunLicencia()
@@ -216,6 +217,89 @@ namespace SchettiniGestion.WPF
                     txtVisorPromoIntervalo.Text = dr["VisorPromoIntervaloSeg"].ToString();
                 else if (txtVisorPromoIntervalo != null)
                     txtVisorPromoIntervalo.Text = "8";
+
+                if (dr.Table.Columns.Contains("VisorBannerIntervaloSeg") && dr["VisorBannerIntervaloSeg"] != DBNull.Value)
+                    txtVisorBannerIntervalo.Text = dr["VisorBannerIntervaloSeg"].ToString();
+                else if (txtVisorBannerIntervalo != null)
+                    txtVisorBannerIntervalo.Text = "8";
+
+                RefrescarListaArchivosVisor();
+            }
+        }
+
+        private void RefrescarListaArchivosVisor()
+        {
+            if (lstArchivosVisorPromo == null) return;
+            try
+            {
+                string carpeta = txtVisorPromoCarpeta?.Text?.Trim();
+                var archivos = DatabaseService.ListarArchivosPromoVisorCliente(
+                    string.IsNullOrWhiteSpace(carpeta) ? null : carpeta);
+                lstArchivosVisorPromo.Items.Clear();
+                foreach (string ruta in archivos)
+                {
+                    string nombre = Path.GetFileName(ruta);
+                    string tipo = EsBannerPorNombre(nombre) ? "Banner" : "Promo";
+                    lstArchivosVisorPromo.Items.Add(new VisorArchivoItem
+                    {
+                        RutaCompleta = ruta,
+                        Display = $"{tipo}: {nombre}"
+                    });
+                }
+                lstArchivosVisorPromo.DisplayMemberPath = "Display";
+            }
+            catch { /* lista vacía si la carpeta no existe */ }
+        }
+
+        private static bool EsBannerPorNombre(string nombre)
+        {
+            if (string.IsNullOrEmpty(nombre)) return false;
+            return nombre.StartsWith("banner_", StringComparison.OrdinalIgnoreCase)
+                || nombre.StartsWith("horizontal_", StringComparison.OrdinalIgnoreCase)
+                || nombre.StartsWith("h_", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private sealed class VisorArchivoItem
+        {
+            public string RutaCompleta { get; set; }
+            public string Display { get; set; }
+        }
+
+        private void btnRefrescarArchivosVisor_Click(object sender, RoutedEventArgs e)
+        {
+            RefrescarListaArchivosVisor();
+        }
+
+        private void btnEliminarArchivoVisor_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var item = lstArchivosVisorPromo?.SelectedItem as VisorArchivoItem;
+                if (item == null || string.IsNullOrWhiteSpace(item.RutaCompleta))
+                {
+                    ModernMessageBox.Show("Seleccioná un archivo de la lista para eliminarlo.", "Aviso",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                if (ModernMessageBox.Show(
+                        $"¿Eliminar «{Path.GetFileName(item.RutaCompleta)}» de la carpeta del visor?\nEsta acción no se puede deshacer.",
+                        "Confirmar eliminación",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return;
+
+                if (File.Exists(item.RutaCompleta))
+                    File.Delete(item.RutaCompleta);
+
+                RefrescarListaArchivosVisor();
+                try { CustomerScreenService.RecargarPublicidades(); } catch { }
+                ModernMessageBox.Show("Archivo eliminado.", "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show("No se pudo eliminar: " + ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -225,7 +309,7 @@ namespace SchettiniGestion.WPF
             {
                 var dlg = new OpenFileDialog
                 {
-                    Title = "Elegir publicidad para la pantalla del cliente",
+                    Title = "Elegir imagen o video para el panel IZQUIERDO de la pantalla del cliente",
                     Filter = "Publicidades|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.mp4;*.avi|" +
                                "Imágenes|*.jpg;*.jpeg;*.png;*.gif;*.bmp|" +
                                "Videos|*.mp4;*.avi|" +
@@ -233,6 +317,27 @@ namespace SchettiniGestion.WPF
                 };
                 if (dlg.ShowDialog() == true)
                     txtRutaImagenPromocionImportada.Text = dlg.FileName;
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void btnImportarBannerInferior_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new OpenFileDialog
+                {
+                    Title = "Elegir imagen o video para la franja INFERIOR (abajo) de la pantalla del cliente",
+                    Filter = "Publicidades|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.mp4;*.avi|" +
+                               "Imágenes|*.jpg;*.jpeg;*.png;*.gif;*.bmp|" +
+                               "Videos|*.mp4;*.avi|" +
+                               "Todos|*.*"
+                };
+                if (dlg.ShowDialog() == true)
+                    txtRutaBannerImportado.Text = dlg.FileName;
             }
             catch (Exception ex)
             {
@@ -250,30 +355,42 @@ namespace SchettiniGestion.WPF
             return carpeta;
         }
 
-        private void CopiarArchivoPromoSeleccionado(string carpetaDestino)
+        private static readonly string[] PrefijosPanelIzquierdo = { "promo_", "vertical_", "v_" };
+        private static readonly string[] PrefijosPanelInferior = { "banner_", "horizontal_", "h_" };
+
+        /// <summary>
+        /// Copia el archivo pendiente a la carpeta del visor, forzando el prefijo del panel elegido
+        /// (izquierda o abajo) para que la ubicación sea siempre la que el usuario indicó al subirlo,
+        /// sin depender de una detección automática por proporción de imagen.
+        /// </summary>
+        private string CopiarArchivoPromoConPanel(string origen, string carpetaDestino, string[] prefijosPropios, string prefijoForzado)
         {
-            string origen = txtRutaImagenPromocionImportada?.Text?.Trim();
             if (string.IsNullOrWhiteSpace(origen) || !File.Exists(origen))
-                return;
+                return null;
 
             string ext = Path.GetExtension(origen);
             if (!DatabaseService.EsExtensionPromoImagenCliente(ext) && !DatabaseService.EsExtensionPromoVideoCliente(ext))
             {
                 ModernMessageBox.Show("Formato no soportado. Use JPG, PNG, GIF, BMP, MP4 o AVI.", "Archivo no válido",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                return null;
             }
 
             string nombre = Path.GetFileName(origen);
+            bool yaTienePrefijoPropio = prefijosPropios.Any(p => nombre.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+            if (!yaTienePrefijoPropio)
+                nombre = prefijoForzado + nombre;
+
             string destino = Path.Combine(carpetaDestino, nombre);
-            if (File.Exists(destino))
+            if (File.Exists(destino) && !string.Equals(Path.GetFullPath(destino), Path.GetFullPath(origen), StringComparison.OrdinalIgnoreCase))
             {
                 string baseName = Path.GetFileNameWithoutExtension(nombre);
                 destino = Path.Combine(carpetaDestino, $"{baseName}_{DateTime.Now:yyyyMMdd_HHmmss}{ext}");
             }
 
-            File.Copy(origen, destino, overwrite: false);
-            txtRutaImagenPromocionImportada.Text = destino;
+            if (!string.Equals(Path.GetFullPath(destino), Path.GetFullPath(origen), StringComparison.OrdinalIgnoreCase))
+                File.Copy(origen, destino, overwrite: false);
+            return destino;
         }
 
         private void btnBuscarCarpetaPromo_Click(object sender, RoutedEventArgs e)
@@ -293,19 +410,28 @@ namespace SchettiniGestion.WPF
             try
             {
                 string carpeta = ResolverCarpetaPromoVisor();
-                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int seg))
-                    seg = 8;
+                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int segIzq))
+                    segIzq = 8;
+                if (!int.TryParse(txtVisorBannerIntervalo?.Text?.Trim(), out int segAbajo))
+                    segAbajo = 8;
 
-                var rutasExtra = new List<string>();
-                string pendiente = txtRutaImagenPromocionImportada?.Text?.Trim();
-                if (!string.IsNullOrWhiteSpace(pendiente) && File.Exists(pendiente))
-                    rutasExtra.Add(pendiente);
+                var rutasExtraIzquierda = new List<string>();
+                string pendienteIzquierda = txtRutaImagenPromocionImportada?.Text?.Trim();
+                if (!string.IsNullOrWhiteSpace(pendienteIzquierda) && File.Exists(pendienteIzquierda))
+                    rutasExtraIzquierda.Add(pendienteIzquierda);
+
+                var rutasExtraAbajo = new List<string>();
+                string pendienteAbajo = txtRutaBannerImportado?.Text?.Trim();
+                if (!string.IsNullOrWhiteSpace(pendienteAbajo) && File.Exists(pendienteAbajo))
+                    rutasExtraAbajo.Add(pendienteAbajo);
 
                 var preview = new VisorClienteWindow(
                     modoVistaPrevia: true,
                     carpetaPromoOverride: carpeta,
-                    intervaloSegundosOverride: seg,
-                    rutasPromoExtra: rutasExtra);
+                    intervaloVerticalSegundosOverride: segIzq,
+                    intervaloHorizontalSegundosOverride: segAbajo,
+                    rutasPromoVerticalExtra: rutasExtraIzquierda,
+                    rutasPromoHorizontalExtra: rutasExtraAbajo);
 
                 preview.ShowDialog();
             }
@@ -319,14 +445,25 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int seg))
-                    seg = 8;
+                if (!int.TryParse(txtVisorPromoIntervalo?.Text?.Trim(), out int segIzq))
+                    segIzq = 8;
+                if (!int.TryParse(txtVisorBannerIntervalo?.Text?.Trim(), out int segAbajo))
+                    segAbajo = 8;
 
                 string carpeta = ResolverCarpetaPromoVisor();
                 txtVisorPromoCarpeta.Text = carpeta;
-                CopiarArchivoPromoSeleccionado(carpeta);
 
-                if (!DatabaseService.ActualizarVisorPromociones(carpeta, seg))
+                string destinoIzquierda = CopiarArchivoPromoConPanel(
+                    txtRutaImagenPromocionImportada?.Text?.Trim(), carpeta, PrefijosPanelIzquierdo, "promo_");
+                if (destinoIzquierda != null)
+                    txtRutaImagenPromocionImportada.Text = destinoIzquierda;
+
+                string destinoAbajo = CopiarArchivoPromoConPanel(
+                    txtRutaBannerImportado?.Text?.Trim(), carpeta, PrefijosPanelInferior, "banner_");
+                if (destinoAbajo != null)
+                    txtRutaBannerImportado.Text = destinoAbajo;
+
+                if (!DatabaseService.ActualizarVisorPromociones(carpeta, segIzq, segAbajo))
                 {
                     ModernMessageBox.Show("No se pudo guardar la configuración del visor.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
@@ -336,6 +473,7 @@ namespace SchettiniGestion.WPF
                     "Promociones del visor guardadas. Si la pantalla del cliente está abierta, el carrusel se actualizará al instante.",
                     "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
 
+                RefrescarListaArchivosVisor();
                 try { CustomerScreenService.RecargarPublicidades(); } catch { }
             }
             catch (Exception ex)
@@ -392,7 +530,7 @@ namespace SchettiniGestion.WPF
             if (btnSubirCertificadoAfip != null) btnSubirCertificadoAfip.IsEnabled = false;
             if (pbProbarConexionAfip != null) pbProbarConexionAfip.Visibility = Visibility.Visible;
 
-            EstablecerEstadoActivacionAfip("Probando conexión con WSAA de AFIP…", true);
+            EstablecerEstadoActivacionAfip("Probando conexión con WSAA de ARCA…", true);
             if (lblEstadoActivacionAfip != null)
                 lblEstadoActivacionAfip.Foreground = (Brush)FindResource("TextSecondary");
 
@@ -405,7 +543,7 @@ namespace SchettiniGestion.WPF
                 {
                     ModernMessageBox.Show(
                         resultado.Mensaje,
-                        "Conexión AFIP",
+                        "Conexión ARCA",
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);
                 }
@@ -413,7 +551,7 @@ namespace SchettiniGestion.WPF
                 {
                     ModernMessageBox.Show(
                         resultado.Mensaje,
-                        "Error de conexión AFIP",
+                        "Error de conexión ARCA",
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);
                 }
@@ -442,8 +580,8 @@ namespace SchettiniGestion.WPF
                 string nombreFantasia = txtNombreFantasia.Text?.Trim() ?? "";
 
                 if (ModernMessageBox.Show(
-                    "Se generará una nueva clave privada RSA y un CSR. Si ya tiene un certificado activo, deberá solicitar uno nuevo en AFIP/ARCA.\n\n¿Continuar?",
-                    "Generar CSR AFIP",
+                    "Se generará una nueva clave privada RSA y un CSR. Si ya tiene un certificado activo, deberá solicitar uno nuevo en ARCA.\n\n¿Continuar?",
+                    "Generar CSR ARCA",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question) != MessageBoxResult.Yes)
                     return;
@@ -470,7 +608,7 @@ namespace SchettiniGestion.WPF
 
                 ModernMessageBox.Show(
                     "CSR generado correctamente.\n\n" +
-                    "1. Suba el archivo .csr en AFIP/ARCA (Administrador de Relaciones de Clave Fiscal).\n" +
+                    "1. Suba el archivo .csr en ARCA (Administrador de Relaciones de Clave Fiscal).\n" +
                     "2. Cuando reciba el certificado .crt, impórtelo con el botón «Subir .crt».\n\n" +
                     "La clave privada quedó guardada en:\n" + resultado.RutaClavePrivada,
                     "CSR listo",
@@ -489,8 +627,8 @@ namespace SchettiniGestion.WPF
             {
                 var ofd = new OpenFileDialog
                 {
-                    Title = "Seleccionar certificado AFIP",
-                    Filter = "Certificado AFIP (*.crt;*.cer)|*.crt;*.cer"
+                    Title = "Seleccionar certificado ARCA",
+                    Filter = "Certificado ARCA (*.crt;*.cer)|*.crt;*.cer"
                 };
                 if (ofd.ShowDialog() != true) return;
 
@@ -506,7 +644,7 @@ namespace SchettiniGestion.WPF
                 ActualizarEstadoActivacionAfip();
 
                 ModernMessageBox.Show(
-                    "Certificado AFIP importado correctamente.\n\nEl sistema ya puede conectarse al WebService de Facturación Electrónica usando el par .key + .crt.\n\nRecuerde autorizar el servicio wsfe en AFIP/ARCA y registrar la IP si corresponde.",
+                    "Certificado ARCA importado correctamente.\n\nEl sistema ya puede conectarse al WebService de Facturación Electrónica usando el par .key + .crt.\n\nRecuerde autorizar el servicio wsfe en ARCA y registrar la IP si corresponde.",
                     "Certificado listo",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
@@ -707,7 +845,7 @@ namespace SchettiniGestion.WPF
                 {
                     if (!int.TryParse(ptoTexto, out pto) || pto <= 0 || pto > 99999)
                     {
-                        ModernMessageBox.Show("Punto de venta AFIP inválido. Debe ser un número entre 1 y 99999, o dejar el campo vacío si todavía no tiene uno asignado en ARCA.");
+                        ModernMessageBox.Show("Punto de venta ARCA inválido. Debe ser un número entre 1 y 99999, o dejar el campo vacío si todavía no tiene uno asignado en ARCA.");
                         return;
                     }
                 }
@@ -918,14 +1056,17 @@ namespace SchettiniGestion.WPF
 
             if (DatabaseService.GuardarNuevaLicencia(nuevaKey))
             {
-                if (LicenseManager.ValidarLicencia())
+                if (LicenseManager.ValidarLicencia(nuevaKey))
                 {
                     ModernMessageBox.Show("¡Licencia activada correctamente!\n\nPor favor, reinicie el sistema para aplicar los cambios en los módulos.", "Activación Exitosa", MessageBoxButton.OK, MessageBoxImage.Information);
                     Application.Current.Shutdown();
                 }
                 else
                 {
-                    ModernMessageBox.Show("La licencia se guardó pero parece ser INVÁLIDA o está vencida.", "Advertencia", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    string detalle = string.IsNullOrWhiteSpace(LicenseManager.UltimoMensajeError)
+                        ? "La licencia se guardó pero parece ser INVÁLIDA o está vencida."
+                        : "La licencia se guardó pero no es válida:\n\n" + LicenseManager.UltimoMensajeError;
+                    ModernMessageBox.Show(detalle, "Advertencia", MessageBoxButton.OK, MessageBoxImage.Warning);
                     CargarDatosLicencia();
                 }
             }
@@ -1002,6 +1143,136 @@ namespace SchettiniGestion.WPF
                 dgvMediosPago.ItemsSource = dt.DefaultView;
             }
             catch (Exception ex) { ModernMessageBox.Show(ex.Message); }
+        }
+
+        // --- BACKUP AUTOMÁTICO ---
+        private void CargarBackupAuto()
+        {
+            try
+            {
+                bool esHost = BackupAutoService.EsEstaPCElHostDeLaBaseDeDatos();
+                if (pnlBackupAutoNoAplica != null) pnlBackupAutoNoAplica.Visibility = esHost ? Visibility.Collapsed : Visibility.Visible;
+                if (pnlBackupAutoConfig != null) pnlBackupAutoConfig.Visibility = esHost ? Visibility.Visible : Visibility.Collapsed;
+                if (!esHost) return;
+
+                var cfg = DatabaseService.ObtenerConfigBackupAuto();
+                chkBackupAutoHabilitado.IsChecked = cfg.Habilitado;
+                txtBackupAutoHora.Text = cfg.Hora;
+                txtBackupAutoCarpeta.Text = cfg.CarpetaExterna ?? "";
+                txtBackupAutoRetencion.Text = cfg.RetencionCantidad.ToString();
+                ActualizarEstadoBackupAutoEnUi(cfg);
+            }
+            catch (Exception ex) { ModernMessageBox.Show(ex.Message); }
+        }
+
+        private void ActualizarEstadoBackupAutoEnUi(DatabaseService.BackupAutoConfig cfg)
+        {
+            if (lblBackupAutoEstado == null) return;
+            if (cfg.UltimaFecha == null)
+            {
+                lblBackupAutoEstado.Text = "Nunca se ejecutó.";
+                return;
+            }
+            lblBackupAutoEstado.Text = $"Último intento: {cfg.UltimaFecha:dd/MM/yyyy HH:mm} — {cfg.UltimoResultado}";
+        }
+
+        private void btnBuscarCarpetaBackupAuto_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dlg = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dlg.Description = "Carpeta externa donde copiar el backup automático (pendrive, red o carpeta de la nube)";
+                if (!string.IsNullOrWhiteSpace(txtBackupAutoCarpeta?.Text))
+                    dlg.SelectedPath = txtBackupAutoCarpeta.Text.Trim();
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    txtBackupAutoCarpeta.Text = dlg.SelectedPath;
+            }
+        }
+
+        private void btnGuardarBackupAuto_Click(object sender, RoutedEventArgs e)
+        {
+            bool habilitado = chkBackupAutoHabilitado.IsChecked == true;
+            string hora = txtBackupAutoHora.Text?.Trim();
+            string carpeta = txtBackupAutoCarpeta.Text?.Trim();
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(hora ?? "", @"^([01]?\d|2[0-3]):[0-5]\d$"))
+            {
+                ModernMessageBox.Show("Ingresá la hora en formato HH:mm, por ejemplo 02:00.", "Hora inválida",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (habilitado && string.IsNullOrWhiteSpace(carpeta))
+            {
+                ModernMessageBox.Show(
+                    "Para activar el backup automático elegí una carpeta externa de destino (pendrive, red o carpeta de la nube).\n\n" +
+                    "Guardar solo en esta PC no protege tus datos si el equipo se rompe.",
+                    "Falta la carpeta externa", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (!int.TryParse(txtBackupAutoRetencion.Text?.Trim(), out int retencion) || retencion < 1)
+                retencion = 14;
+
+            this.Cursor = System.Windows.Input.Cursors.Wait;
+            bool guardadoOk = DatabaseService.GuardarConfigBackupAuto(habilitado, hora, carpeta, retencion);
+            string errorTarea = null;
+            if (guardadoOk)
+                errorTarea = habilitado ? BackupAutoService.ProgramarTareaWindows(hora) : BackupAutoService.QuitarTareaWindows();
+            this.Cursor = System.Windows.Input.Cursors.Arrow;
+
+            if (!guardadoOk)
+            {
+                ModernMessageBox.Show("No se pudo guardar la configuración del backup automático.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            if (errorTarea != null)
+            {
+                ModernMessageBox.Show(
+                    "La configuración se guardó, pero no se pudo programar la tarea en Windows:\n\n" + errorTarea +
+                    "\n\nProbá ejecutar el sistema como Administrador la primera vez que actives esta opción.",
+                    "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            ModernMessageBox.Show(
+                habilitado
+                    ? $"✔ Backup automático programado todos los días a las {hora}."
+                    : "Backup automático desactivado.",
+                "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            CargarBackupAuto();
+        }
+
+        private async void btnProbarBackupAuto_Click(object sender, RoutedEventArgs e)
+        {
+            string carpeta = txtBackupAutoCarpeta.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(carpeta))
+            {
+                ModernMessageBox.Show("Elegí primero una carpeta externa de destino para poder probar.", "Falta la carpeta externa",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Guardar temporalmente la carpeta/retención actuales para que la prueba use lo que se ve en pantalla,
+            // aunque todavía no se haya presionado "Guardar y programar".
+            if (!int.TryParse(txtBackupAutoRetencion.Text?.Trim(), out int retencion) || retencion < 1)
+                retencion = 14;
+            DatabaseService.GuardarConfigBackupAuto(true, txtBackupAutoHora.Text?.Trim() ?? "02:00", carpeta, retencion);
+
+            this.Cursor = System.Windows.Input.Cursors.Wait;
+            btnProbarBackupAuto.IsEnabled = false;
+            string resultado = await Task.Run(() => BackupAutoService.EjecutarBackupAutomatico());
+            btnProbarBackupAuto.IsEnabled = true;
+            this.Cursor = System.Windows.Input.Cursors.Arrow;
+
+            // Restaurar el estado "habilitado" real elegido por el usuario (la prueba no debe activar el backup solo por probarlo).
+            bool habilitadoReal = chkBackupAutoHabilitado.IsChecked == true;
+            DatabaseService.GuardarConfigBackupAuto(habilitadoReal, txtBackupAutoHora.Text?.Trim() ?? "02:00", carpeta, retencion);
+
+            bool ok = resultado != null && resultado.StartsWith("✔");
+            ModernMessageBox.Show(resultado ?? "Ocurrió un error desconocido.", ok ? "Prueba exitosa" : "Prueba con problemas",
+                MessageBoxButton.OK, ok ? MessageBoxImage.Information : MessageBoxImage.Warning);
+
+            CargarBackupAuto();
         }
 
         private void btnGenerarBackup_Click(object sender, RoutedEventArgs e)
@@ -1124,10 +1395,18 @@ namespace SchettiniGestion.WPF
 
                 cmbImpresoraTicket.ItemsSource = impresoras;
                 cmbImpresoraA4.ItemsSource = new System.Collections.Generic.List<string>(impresoras);
+                if (cmbImpresoraEtiquetas != null)
+                    cmbImpresoraEtiquetas.ItemsSource = new System.Collections.Generic.List<string>(impresoras);
 
                 var (ticket, a4) = DatabaseService.GetImpresoras();
                 cmbImpresoraTicket.SelectedItem = string.IsNullOrWhiteSpace(ticket) ? "(Preguntar cada vez)" : ticket;
                 cmbImpresoraA4.SelectedItem     = string.IsNullOrWhiteSpace(a4)     ? "(Preguntar cada vez)" : a4;
+
+                string etiquetas = DatabaseService.GetImpresoraEtiquetas();
+                if (cmbImpresoraEtiquetas != null)
+                    cmbImpresoraEtiquetas.SelectedItem = string.IsNullOrWhiteSpace(etiquetas) ? "(Preguntar cada vez)" : etiquetas;
+
+                CargarMedidaEtiquetaEnUi();
 
                 if (chkPreguntarAntesImprimir != null)
                     chkPreguntarAntesImprimir.IsChecked = DatabaseService.GetPreguntarAntesImprimir();
@@ -1174,31 +1453,29 @@ namespace SchettiniGestion.WPF
             if (chkTicketLogo != null) chkTicketLogo.IsChecked = op.MostrarLogo;
             if (chkTicketDireccion != null) chkTicketDireccion.IsChecked = op.MostrarDireccion;
             if (chkTicketTelefono != null) chkTicketTelefono.IsChecked = op.MostrarTelefono;
-            if (chkTicketCuit != null) chkTicketCuit.IsChecked = op.MostrarCuit;
             if (chkTicketCliente != null) chkTicketCliente.IsChecked = op.MostrarCliente;
             if (chkTicketCodigo != null) chkTicketCodigo.IsChecked = op.MostrarCodigo;
             if (chkTicketFormaPago != null) chkTicketFormaPago.IsChecked = op.MostrarFormaPago;
-            if (chkTicketPieFiscal != null) chkTicketPieFiscal.IsChecked = op.MostrarPieFiscal;
             if (chkTicketGracias != null) chkTicketGracias.IsChecked = op.MostrarGracias;
-            if (chkTicketPuntoVenta != null) chkTicketPuntoVenta.IsChecked = op.MostrarPuntoVenta;
             if (chkTicketVendedor != null) chkTicketVendedor.IsChecked = op.MostrarVendedor;
         }
 
         private OpcionesImpresionTicket LeerOpcionesTicketDesdeUi()
         {
+            // CUIT, CAE, Punto de venta y QR ARCA son obligatorios: siempre se imprimen.
             return new OpcionesImpresionTicket
             {
                 AnchoMm = cmbAnchoTicketMm?.SelectedItem?.ToString()?.StartsWith("58") == true ? 58 : 80,
                 MostrarLogo = chkTicketLogo?.IsChecked != false,
                 MostrarDireccion = chkTicketDireccion?.IsChecked != false,
                 MostrarTelefono = chkTicketTelefono?.IsChecked != false,
-                MostrarCuit = chkTicketCuit?.IsChecked != false,
+                MostrarCuit = true,
                 MostrarCliente = chkTicketCliente?.IsChecked != false,
                 MostrarCodigo = chkTicketCodigo?.IsChecked == true,
                 MostrarFormaPago = chkTicketFormaPago?.IsChecked != false,
-                MostrarPieFiscal = chkTicketPieFiscal?.IsChecked != false,
+                MostrarPieFiscal = true,
                 MostrarGracias = chkTicketGracias?.IsChecked != false,
-                MostrarPuntoVenta = chkTicketPuntoVenta?.IsChecked != false,
+                MostrarPuntoVenta = true,
                 MostrarVendedor = chkTicketVendedor?.IsChecked == true
             };
         }
@@ -1215,23 +1492,110 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        private void CargarMedidaEtiquetaEnUi()
+        {
+            if (cmbMedidaEtiqueta == null) return;
+            var op = DatabaseService.GetOpcionesEtiqueta();
+            cmbMedidaEtiqueta.ItemsSource = new[]
+            {
+                "30 × 20 mm",
+                "50 × 25 mm",
+                "50 × 30 mm",
+                "55 × 44 mm",
+                "64 × 32 mm",
+                "80 × 40 mm",
+                "100 × 80 mm",
+                "100 × 100 mm",
+                "100 × 150 mm",
+                "Personalizado…"
+            };
+
+            string match = null;
+            foreach (string item in cmbMedidaEtiqueta.Items)
+            {
+                if (item.StartsWith("Personalizado")) continue;
+                var parts = item.Replace("mm", "").Split('×');
+                if (parts.Length != 2) continue;
+                if (int.TryParse(parts[0].Trim(), out int w) && int.TryParse(parts[1].Trim(), out int h)
+                    && w == op.AnchoMm && h == op.AltoMm)
+                {
+                    match = item;
+                    break;
+                }
+            }
+
+            if (match != null)
+                cmbMedidaEtiqueta.SelectedItem = match;
+            else
+            {
+                cmbMedidaEtiqueta.SelectedItem = "Personalizado…";
+                if (txtEtiquetaAnchoMm != null) txtEtiquetaAnchoMm.Text = op.AnchoMm.ToString();
+                if (txtEtiquetaAltoMm != null) txtEtiquetaAltoMm.Text = op.AltoMm.ToString();
+            }
+            ActualizarVisibilidadMedidaCustom();
+        }
+
+        private void cmbMedidaEtiqueta_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ActualizarVisibilidadMedidaCustom();
+        }
+
+        private void ActualizarVisibilidadMedidaCustom()
+        {
+            if (pnlMedidaEtiquetaCustom == null) return;
+            bool custom = cmbMedidaEtiqueta?.SelectedItem?.ToString()?.StartsWith("Personalizado") == true;
+            pnlMedidaEtiquetaCustom.Visibility = custom ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private OpcionesEtiqueta LeerOpcionesEtiquetaDesdeUi()
+        {
+            var op = DatabaseService.GetOpcionesEtiqueta();
+            string sel = cmbMedidaEtiqueta?.SelectedItem?.ToString() ?? "50 × 25 mm";
+            if (sel.StartsWith("Personalizado"))
+            {
+                int.TryParse(txtEtiquetaAnchoMm?.Text?.Trim(), out int w);
+                int.TryParse(txtEtiquetaAltoMm?.Text?.Trim(), out int h);
+                op.AnchoMm = w > 0 ? w : 50;
+                op.AltoMm = h > 0 ? h : 25;
+            }
+            else
+            {
+                var parts = sel.Replace("mm", "").Split('×');
+                if (parts.Length == 2
+                    && int.TryParse(parts[0].Trim(), out int w)
+                    && int.TryParse(parts[1].Trim(), out int h))
+                {
+                    op.AnchoMm = w;
+                    op.AltoMm = h;
+                }
+            }
+            return op;
+        }
+
         private void btnGuardarImpresoras_Click(object sender, RoutedEventArgs e)
         {
             string ticket = cmbImpresoraTicket.SelectedItem?.ToString();
             string a4     = cmbImpresoraA4.SelectedItem?.ToString();
+            string etiquetas = cmbImpresoraEtiquetas?.SelectedItem?.ToString();
 
             if (ticket == "(Preguntar cada vez)") ticket = null;
             if (a4     == "(Preguntar cada vez)") a4     = null;
+            if (etiquetas == "(Preguntar cada vez)") etiquetas = null;
 
             string destino = cmbDestinoImpresionVenta?.SelectedValue?.ToString() ?? "Ticket";
             var opciones = LeerOpcionesTicketDesdeUi();
+            var opEtiq = LeerOpcionesEtiquetaDesdeUi();
 
-            if (DatabaseService.GuardarConfiguracionImpresoras(
+            bool ok = DatabaseService.GuardarConfiguracionImpresoras(
                 ticket, a4, chkPreguntarAntesImprimir?.IsChecked != false, opciones,
                 destinoImpresionVenta: destino,
                 carpetaArchivos: txtCarpetaArchivosComprobantes?.Text?.Trim(),
                 anchoTicketMm: opciones.AnchoMm,
-                logoEnTicket: opciones.MostrarLogo))
+                logoEnTicket: opciones.MostrarLogo);
+
+            ok = DatabaseService.GuardarConfigEtiquetas(etiquetas, opEtiq) && ok;
+
+            if (ok)
                 ModernMessageBox.Show("Configuración de impresoras guardada correctamente.", "Guardado", MessageBoxButton.OK, MessageBoxImage.Information);
             else
                 ModernMessageBox.Show("No se pudo guardar la configuración.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -1257,6 +1621,20 @@ namespace SchettiniGestion.WPF
                 return;
             }
             PrintService.ImprimirPaginaDePrueba(nombre, "A4");
+        }
+
+        private void btnTestEtiquetas_Click(object sender, RoutedEventArgs e)
+        {
+            string nombre = cmbImpresoraEtiquetas?.SelectedItem?.ToString();
+            if (nombre == "(Preguntar cada vez)" || string.IsNullOrWhiteSpace(nombre))
+            {
+                ModernMessageBox.Show("Seleccioná una impresora de etiquetas primero.");
+                return;
+            }
+            // Guardar medida actual en memoria de impresión vía opciones leídas de UI
+            var op = LeerOpcionesEtiquetaDesdeUi();
+            DatabaseService.GuardarConfigEtiquetas(nombre, op);
+            PrintService.ImprimirPaginaDePrueba(nombre, "Etiqueta");
         }
     }
 }

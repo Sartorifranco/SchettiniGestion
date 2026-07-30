@@ -23,8 +23,26 @@ namespace SchettiniGestion.WPF
                 ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 AppCulture.Initialize();
                 AsegurarArchivoConexionPorDefecto();
+                // Antes de este fix, el bootstrap silencioso del instalador nunca
+                // intentaba crear/arrancar la instancia de LocalDB: si la conexión
+                // configurada usa (LocalDB)\MSSQLLocalDB, el primer intento de
+                // conexión (justo después de instalar el motor) podía fallar sin
+                // haber dado tiempo/orden a que la instancia quede lista.
+                DespertarLocalDB();
                 bool ok = IntentarInicializarConexion();
                 Shutdown(ok ? 0 : 1);
+                return;
+            }
+
+            if (EsModoBackupAutomatico(e.Args))
+            {
+                // Invocado en silencio por la tarea programada de Windows (Configuración > Mantenimiento).
+                // No debe mostrar ninguna ventana: solo genera el backup y copia el archivo afuera.
+                ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                AppCulture.Initialize();
+                DespertarLocalDB();
+                try { BackupAutoService.EjecutarBackupAutomatico(); } catch { }
+                Shutdown(0);
                 return;
             }
 
@@ -36,6 +54,7 @@ namespace SchettiniGestion.WPF
 
             // Registrar teclado virtual inteligente (responde a cualquier TextBox/PasswordBox).
             KeyboardService.Initialize();
+            KeyboardService.LoadSavedPreference();
             WindowEscapeService.Initialize();
 
             this.DispatcherUnhandledException += App_DispatcherUnhandledException;
@@ -125,6 +144,18 @@ namespace SchettiniGestion.WPF
             {
                 if (string.Equals(a, "/bootstrap", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(a, "-bootstrap", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool EsModoBackupAutomatico(string[] args)
+        {
+            if (args == null) return false;
+            foreach (string a in args)
+            {
+                if (string.Equals(a, "/autobackup", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(a, "-autobackup", StringComparison.OrdinalIgnoreCase))
                     return true;
             }
             return false;
@@ -346,6 +377,13 @@ namespace SchettiniGestion.WPF
                         @"CREATE TABLE Permisos (PermisoID INT PRIMARY KEY IDENTITY(1,1), NombrePermiso NVARCHAR(100))",
                         @"CREATE TABLE Roles_Permisos (RolID INT, PermisoID INT, PRIMARY KEY (RolID, PermisoID))",
                         @"CREATE TABLE Usuarios (UsuarioID INT PRIMARY KEY IDENTITY(1,1), NombreUsuario NVARCHAR(50), PasswordHash NVARCHAR(MAX), RolID INT, Rol NVARCHAR(50))",
+                        @"CREATE TABLE AccionesTecnicas (
+                            AccionTecnicaID INT PRIMARY KEY IDENTITY(1,1),
+                            Fecha DATETIME NOT NULL DEFAULT GETDATE(),
+                            Usuario NVARCHAR(50) NOT NULL,
+                            Accion NVARCHAR(100) NOT NULL,
+                            Detalle NVARCHAR(MAX) NULL
+                        )",
                         "INSERT INTO Roles   (NombreRol)     VALUES ('Administrador')",
                         "INSERT INTO Permisos(NombrePermiso) VALUES ('ACCESO_TOTAL')",
                         @"CREATE TABLE Clientes (
@@ -357,7 +395,7 @@ namespace SchettiniGestion.WPF
                             ProductoID INT PRIMARY KEY IDENTITY(1,1), Codigo NVARCHAR(50), CodigoBarra NVARCHAR(50),
                             Descripcion NVARCHAR(200), Categoria NVARCHAR(50), SubRubro NVARCHAR(100), Marca NVARCHAR(100), Proveedor NVARCHAR(100),
                             TipoIVA NVARCHAR(20), PrecioCosto DECIMAL(18,2), Ganancia DECIMAL(18,2), ImpuestoInterno DECIMAL(18,2),
-                            PrecioVenta DECIMAL(18,2), StockActual INT, ImagenPath NVARCHAR(MAX)
+                            PrecioVenta DECIMAL(18,2), StockActual INT, ImagenPath NVARCHAR(MAX), Activo BIT NOT NULL DEFAULT 1
                         )",
                         @"CREATE TABLE Proveedores (
                             ProveedorID INT PRIMARY KEY IDENTITY(1,1), CUIT NVARCHAR(50), RazonSocial NVARCHAR(200),
@@ -614,6 +652,26 @@ namespace SchettiniGestion.WPF
                           NumeroComprobante NVARCHAR(50)
                       );",
 
+                    @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='NotaCreditoDebitoVentaDetalle')
+                      CREATE TABLE NotaCreditoDebitoVentaDetalle (
+                          DetalleID INT PRIMARY KEY IDENTITY(1,1),
+                          NotaID INT NOT NULL,
+                          ProductoID INT NULL,
+                          Codigo NVARCHAR(50) NULL,
+                          Descripcion NVARCHAR(300) NOT NULL,
+                          Cantidad DECIMAL(18,2) NOT NULL,
+                          PrecioUnitario DECIMAL(18,2) NOT NULL
+                      );",
+
+                    @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='AccionesTecnicas')
+                      CREATE TABLE AccionesTecnicas (
+                          AccionTecnicaID INT PRIMARY KEY IDENTITY(1,1),
+                          Fecha DATETIME NOT NULL DEFAULT GETDATE(),
+                          Usuario NVARCHAR(50) NOT NULL,
+                          Accion NVARCHAR(100) NOT NULL,
+                          Detalle NVARCHAR(MAX) NULL
+                      );",
+
                     // Columnas que pueden faltar en tablas existentes
                     @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Clientes' AND COLUMN_NAME='SaldoDeuda')
                       ALTER TABLE Clientes ADD SaldoDeuda DECIMAL(18,2) NOT NULL DEFAULT 0;",
@@ -781,21 +839,39 @@ namespace SchettiniGestion.WPF
         /// Defensa 1: busca sqllocaldb.exe por ruta absoluta en versiones conocidas de SQL Server.
         /// Defensa 2: espera 3 segundos tras WaitForExit para que Windows levante los servicios internos.
         /// </summary>
+        /// <summary>Último diagnóstico (stderr/stdout de sqllocaldb.exe) producido al intentar
+        /// crear/arrancar la instancia. Null si la última vez salió todo bien.</summary>
+        public static string UltimoDiagnosticoLocalDB { get; private set; }
+
         private static void DespertarLocalDB()
         {
+            PrepararYDiagnosticarLocalDB();
+        }
+
+        /// <summary>
+        /// Intenta crear y arrancar la instancia automática "MSSQLLocalDB", capturando la
+        /// salida real de sqllocaldb.exe (en vez de tragarse el error). Se puede volver a
+        /// invocar manualmente (ej. desde el asistente de primer uso) para reintentar y
+        /// obtener un diagnóstico fresco antes de mostrarle un mensaje genérico al usuario.
+        /// Devuelve null si todo salió bien, o un texto con el detalle del error si no.
+        /// </summary>
+        public static string PrepararYDiagnosticarLocalDB()
+        {
+            UltimoDiagnosticoLocalDB = null;
             try
             {
-                // Defensa 1: buscar sqllocaldb.exe por ruta absoluta en versiones 160→120.
+                // Defensa 1: buscar sqllocaldb.exe por ruta absoluta en versiones 170→110.
                 string sqlLocalDbExe = null;
-                string[] versions = { "160", "150", "140", "130", "120" };
+                string[] versions = { "170", "160", "150", "140", "130", "120", "110" };
                 string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
                 string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
                 foreach (string ver in versions)
                 {
                     foreach (string root in new[] { programFiles, programFilesX86 })
                     {
+                        if (string.IsNullOrWhiteSpace(root)) continue;
                         string candidate = System.IO.Path.Combine(
-                            root, "Microsoft SQL Server", ver, "Tools", "Binn", "sqllocaldb.exe");
+                            root, "Microsoft SQL Server", ver, "Tools", "Binn", "SqlLocalDB.exe");
                         if (System.IO.File.Exists(candidate))
                         {
                             sqlLocalDbExe = candidate;
@@ -807,29 +883,72 @@ namespace SchettiniGestion.WPF
 
                 // Si no se encontró por ruta absoluta, confiar en el PATH del sistema.
                 if (sqlLocalDbExe == null)
-                    sqlLocalDbExe = "sqllocaldb";
-
-                // Crear la instancia (sin efecto si ya existe) y luego arrancarla.
-                foreach (string args in new[] { "create MSSQLLocalDB", "start MSSQLLocalDB" })
                 {
-                    using (var p = new Process())
-                    {
-                        p.StartInfo = new ProcessStartInfo
-                        {
-                            FileName        = sqlLocalDbExe,
-                            Arguments       = args,
-                            CreateNoWindow  = true,
-                            UseShellExecute = false,
-                        };
-                        p.Start();
-                        p.WaitForExit();
-                    }
+                    UltimoDiagnosticoLocalDB =
+                        "No se encontró SqlLocalDB.exe en Archivos de programa ni en el PATH. " +
+                        "El motor de SQL Server LocalDB no parece estar instalado en esta PC.";
+                    sqlLocalDbExe = "sqllocaldb";
                 }
 
+                // Crear la instancia (sin efecto si ya existe) y luego arrancarla.
+                string ultimoError = null;
+                foreach (string args in new[] { "create MSSQLLocalDB", "start MSSQLLocalDB" })
+                {
+                    string error = EjecutarComandoLocalDb(sqlLocalDbExe, args);
+                    if (!string.IsNullOrWhiteSpace(error)) ultimoError = error;
+                }
+                if (!string.IsNullOrWhiteSpace(ultimoError))
+                    UltimoDiagnosticoLocalDB = ultimoError;
+
                 // Defensa 2: tiempo de gracia para que Windows levante los servicios internos de SQL.
-                System.Threading.Thread.Sleep(3000);
+                System.Threading.Thread.Sleep(1500);
             }
-            catch { /* Si LocalDB no está instalado el error se surfaceará al conectar */ }
+            catch (Exception ex)
+            {
+                UltimoDiagnosticoLocalDB = ex.Message;
+            }
+            return UltimoDiagnosticoLocalDB;
+        }
+
+        /// <summary>Ejecuta sqllocaldb.exe con los argumentos dados y devuelve el texto de
+        /// error (stderr, o stdout si no hay stderr) solo si el comando falló. Null si ok.</summary>
+        private static string EjecutarComandoLocalDb(string exe, string args)
+        {
+            try
+            {
+                using (var p = new Process())
+                {
+                    p.StartInfo = new ProcessStartInfo
+                    {
+                        FileName               = exe,
+                        Arguments              = args,
+                        CreateNoWindow         = true,
+                        UseShellExecute        = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError  = true,
+                        StandardOutputEncoding = System.Text.Encoding.UTF8,
+                        StandardErrorEncoding  = System.Text.Encoding.UTF8,
+                    };
+                    p.Start();
+                    string salida = p.StandardOutput.ReadToEnd();
+                    string error  = p.StandardError.ReadToEnd();
+                    if (!p.WaitForExit(15000))
+                    {
+                        try { p.Kill(); } catch { }
+                        return $"[sqllocaldb {args}] La orden no respondió a tiempo (timeout).";
+                    }
+                    if (p.ExitCode != 0)
+                    {
+                        string detalle = !string.IsNullOrWhiteSpace(error) ? error : salida;
+                        return $"[sqllocaldb {args}] {detalle.Trim()}";
+                    }
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                return $"[sqllocaldb {args}] {ex.Message}";
+            }
         }
     }
 }

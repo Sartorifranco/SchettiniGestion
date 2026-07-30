@@ -1,7 +1,8 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using QRCoder;
 using SchettiniGestion;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,8 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
+using ZXing;
+using ZXing.Common;
 using WinDrawing = System.Drawing;
 using WinPrinting = System.Drawing.Printing;
 
@@ -79,13 +82,13 @@ namespace SchettiniGestion.WPF
             catch (Exception ex) { MessageBox.Show("Error crítico al imprimir: " + ex.Message); }
         }
 
-        public static void ImprimirTicketVenta(string tipo, int nro, string cli, DateTime fec, DataTable items, decimal tot, string cond, string cae = "", string vtoCae = "", string nombreVendedor = null)
+        public static void ImprimirTicketVenta(string tipo, int nro, string cli, DateTime fec, DataTable items, decimal tot, string cond, string cae = "", string vtoCae = "", string nombreVendedor = null, string clienteCuit = null, string urlQrFiscal = null)
         {
             string letra = "B";
             if (tipo != null)
             {
                 if (tipo.IndexOf("Factura", StringComparison.OrdinalIgnoreCase) >= 0)
-                    letra = ObtenerLetraFactura(cli);
+                    letra = ObtenerLetraFactura(!string.IsNullOrWhiteSpace(clienteCuit) ? clienteCuit : cli);
                 else if (tipo.IndexOf("Ticket", StringComparison.OrdinalIgnoreCase) >= 0)
                     letra = "X";
                 else if (tipo.Contains("A")) letra = "A";
@@ -110,8 +113,20 @@ namespace SchettiniGestion.WPF
                 pie = $"CAE: {cae}\nVto CAE: {vtoCae}";
             }
 
+            // QR fiscal ARCA obligatorio cuando hay CAE
+            if (string.IsNullOrWhiteSpace(urlQrFiscal) && !string.IsNullOrWhiteSpace(cae))
+            {
+                DataRow conf = DatabaseService.GetConfiguracion();
+                string cuitEmisor = conf?["CUIT"]?.ToString() ?? "";
+                string condicionIva = conf != null && conf.Table.Columns.Contains("CondicionIVAEmpresa")
+                    ? conf["CondicionIVAEmpresa"]?.ToString() ?? "" : "";
+                int.TryParse(conf?["PuntoVenta"]?.ToString()?.Trim(), out int ptoVta);
+                int tipoAfip = ArcaQrHelper.ResolverTipoComprobanteAfip(tipo, letra, clienteCuit, condicionIva);
+                urlQrFiscal = ArcaQrHelper.ConstruirUrl(fec, cuitEmisor, ptoVta, tipoAfip, nro, tot, cae, clienteCuit);
+            }
+
             if (USAR_MOTOR_GRAFICO_PARA_TICKETS)
-                ImprimirTicketGrafico(tit, nroStr, cli, fec, items, tot, cond, letra, pie, nombreVendedor);
+                ImprimirTicketGrafico(tit, nroStr, cli, fec, items, tot, cond, letra, pie, nombreVendedor, urlQrFiscal);
             else
                 MessageBox.Show("Motor A4 no activo.");
         }
@@ -149,11 +164,16 @@ namespace SchettiniGestion.WPF
                 string vto = cab["VencimientoCAE"]?.ToString() ?? "";
                 string nombreVendedor = cab.Table.Columns.Contains("NombrePersonal")
                     ? cab["NombrePersonal"]?.ToString()?.Trim() ?? "" : "";
+                string clienteCuit = cab.Table.Columns.Contains("ClienteCUIT")
+                    ? cab["ClienteCUIT"]?.ToString()?.Trim() ?? "" : "";
+                string letraTmp = tipo.Equals("Factura", StringComparison.OrdinalIgnoreCase)
+                    ? ObtenerLetraFactura(clienteCuit) : "X";
+                string urlQr = ArcaQrHelper.ConstruirUrlDesdeFactura(cab, letraTmp);
 
                 switch (destino)
                 {
                     case "Archivo":
-                        GuardarComprobanteArchivo(facturaId, cab, items, tipo, nro, cli, fec, tot, cond, cae, vto);
+                        GuardarComprobanteArchivo(facturaId, cab, items, tipo, nro, cli, fec, tot, cond, cae, vto, urlQr);
                         break;
                     case "A4":
                         string tituloA4 = tipo.Equals("Factura", StringComparison.OrdinalIgnoreCase) ? "FACTURA" : "TICKET";
@@ -161,10 +181,10 @@ namespace SchettiniGestion.WPF
                         string pieA4 = tipo.Equals("Factura", StringComparison.OrdinalIgnoreCase)
                             ? "Comprobante fiscal."
                             : "Comprobante no válido como factura fiscal.";
-                        GenerarDocumentoA4ConItems(tituloA4, "FacturaID", cab, items, tot, pieA4, extraA4);
+                        GenerarDocumentoA4ConItems(tituloA4, "FacturaID", cab, items, tot, pieA4, extraA4, urlQr);
                         break;
                     default:
-                        ImprimirTicketVenta(tipo, nro, cli, fec, items, tot, cond, cae, vto, nombreVendedor);
+                        ImprimirTicketVenta(tipo, nro, cli, fec, items, tot, cond, cae, vto, nombreVendedor, clienteCuit, urlQr);
                         break;
                 }
             }
@@ -365,7 +385,7 @@ namespace SchettiniGestion.WPF
         // ------------------------------------------
         #endregion
 
-        private static void GenerarDocumentoA4ConItems(string tituloDocumento, string idColumn, DataRow cabecera, DataTable items, decimal total, string pieLegal, string lineaExtra = null)
+        private static void GenerarDocumentoA4ConItems(string tituloDocumento, string idColumn, DataRow cabecera, DataTable items, decimal total, string pieLegal, string lineaExtra = null, string urlQrFiscal = null)
         {
             try
             {
@@ -374,36 +394,133 @@ namespace SchettiniGestion.WPF
                 doc.Blocks.Add(CrearBloqueCliente(cabecera));
                 doc.Blocks.Add(CrearTablaItems(items));
                 doc.Blocks.Add(CrearBloqueTotal(total));
+                if (!string.IsNullOrWhiteSpace(urlQrFiscal))
+                {
+                    var bloqueQr = CrearBloqueQrFiscal(urlQrFiscal);
+                    if (bloqueQr != null) doc.Blocks.Add(bloqueQr);
+                }
                 doc.Blocks.Add(new Paragraph(new Run(pieLegal)) { TextAlignment = TextAlignment.Center, FontSize = 10, Foreground = Brushes.Gray, Margin = new Thickness(0, 40, 0, 0) });
                 MostrarDialogoImpresion(doc, $"{tituloDocumento}_{cabecera[idColumn]}");
             }
             catch (Exception ex) { MessageBox.Show("Error generando PDF: " + ex.Message); }
         }
 
+        private static Block CrearBloqueQrFiscal(string urlQr)
+        {
+            try
+            {
+                byte[] png = ArcaQrHelper.GenerarPngBytes(urlQr, 5);
+                if (png == null || png.Length == 0) return null;
+                var bi = new BitmapImage();
+                using (var ms = new MemoryStream(png))
+                {
+                    bi.BeginInit();
+                    bi.CacheOption = BitmapCacheOption.OnLoad;
+                    bi.StreamSource = ms;
+                    bi.EndInit();
+                    bi.Freeze();
+                }
+                var img = new System.Windows.Controls.Image
+                {
+                    Source = bi,
+                    Width = 140,
+                    Height = 140,
+                    Stretch = Stretch.Uniform
+                };
+                var container = new BlockUIContainer(img) { Margin = new Thickness(0, 16, 0, 4) };
+                return container;
+            }
+            catch { return null; }
+        }
+
         private static void GenerarDocumentoA4Nota(string tituloDocumento, DataRow cabecera)
         {
             try
             {
+                int notaId = Convert.ToInt32(cabecera["NotaID"]);
+                DataTable itemsDetalle = DatabaseService.GetNotaVentaDetalle(notaId);
+
                 FlowDocument doc = CrearDocumentoBase();
                 doc.Blocks.Add(CrearEncabezadoDocumento(tituloDocumento, "NotaID", cabecera));
                 doc.Blocks.Add(CrearBloqueCliente(cabecera));
 
-                Paragraph pDetalle = new Paragraph { FontSize = 12, Margin = new Thickness(0, 10, 0, 10) };
-                pDetalle.Inlines.Add(new Run("Descripción: ") { FontWeight = FontWeights.Bold });
-                pDetalle.Inlines.Add(new Run(cabecera["Descripcion"]?.ToString() ?? "—"));
-                if (cabecera["NumeroComprobante"] != DBNull.Value && !string.IsNullOrWhiteSpace(cabecera["NumeroComprobante"].ToString()))
+                doc.Blocks.Add(CrearBloqueReferenciaNota(cabecera));
+
+                if (itemsDetalle.Rows.Count > 0)
                 {
-                    pDetalle.Inlines.Add(new LineBreak());
-                    pDetalle.Inlines.Add(new Run("Comprobante asociado: ") { FontWeight = FontWeights.Bold });
-                    pDetalle.Inlines.Add(new Run(cabecera["NumeroComprobante"].ToString()));
+                    // Documento estructurado por ítems (igual que una factura), no un párrafo con todo junto.
+                    doc.Blocks.Add(CrearTablaItems(itemsDetalle));
                 }
-                doc.Blocks.Add(pDetalle);
+                else
+                {
+                    // Notas anteriores a esta mejora: no tienen detalle estructurado, se
+                    // muestra el texto original guardado en su momento.
+                    Paragraph pDetalle = new Paragraph { FontSize = 12, Margin = new Thickness(0, 4, 0, 14) };
+                    pDetalle.Inlines.Add(new Run("Descripción: ") { FontWeight = FontWeights.Bold });
+                    pDetalle.Inlines.Add(new Run(cabecera["Descripcion"]?.ToString() ?? "—"));
+                    doc.Blocks.Add(pDetalle);
+                }
 
                 doc.Blocks.Add(CrearBloqueTotal(Convert.ToDecimal(cabecera["Monto"])));
                 doc.Blocks.Add(new Paragraph(new Run("Documento no válido como factura fiscal.")) { TextAlignment = TextAlignment.Center, FontSize = 10, Foreground = Brushes.Gray, Margin = new Thickness(0, 40, 0, 0) });
                 MostrarDialogoImpresion(doc, $"{tituloDocumento}_{cabecera["NotaID"]}");
             }
             catch (Exception ex) { MessageBox.Show("Error generando PDF: " + ex.Message); }
+        }
+
+        private static Block CrearBloqueReferenciaNota(DataRow cabecera)
+        {
+            var section = new Section();
+            Paragraph p = new Paragraph { FontSize = 11, Margin = new Thickness(0, 0, 0, 12) };
+
+            bool tieneReferencia = false;
+            if (cabecera.Table.Columns.Contains("FacturaID") && cabecera["FacturaID"] != DBNull.Value)
+            {
+                DataRow factura = DatabaseService.GetFacturaPorID(Convert.ToInt32(cabecera["FacturaID"]));
+                if (factura != null)
+                {
+                    string tipoComp = factura.Table.Columns.Contains("TipoComprobante") ? factura["TipoComprobante"]?.ToString() ?? "Comprobante" : "Comprobante";
+                    int nroComp = factura["NumeroComprobanteAFIP"] != DBNull.Value && factura["NumeroComprobanteAFIP"] != null
+                        ? Convert.ToInt32(factura["NumeroComprobanteAFIP"]) : Convert.ToInt32(cabecera["FacturaID"]);
+                    DateTime fechaComp = Convert.ToDateTime(factura["Fecha"]);
+                    p.Inlines.Add(new Run("Comprobante que modifica: ") { FontWeight = FontWeights.Bold });
+                    p.Inlines.Add(new Run($"{tipoComp} N° {nroComp:D8} del {fechaComp:dd/MM/yyyy}"));
+                    tieneReferencia = true;
+                }
+            }
+
+            if (cabecera.Table.Columns.Contains("NumeroComprobante") && cabecera["NumeroComprobante"] != DBNull.Value
+                && !string.IsNullOrWhiteSpace(cabecera["NumeroComprobante"].ToString()))
+            {
+                if (tieneReferencia) p.Inlines.Add(new LineBreak());
+                p.Inlines.Add(new Run("Comprobante asociado: ") { FontWeight = FontWeights.Bold });
+                p.Inlines.Add(new Run(cabecera["NumeroComprobante"].ToString()));
+                tieneReferencia = true;
+            }
+
+            string motivo = ExtraerMotivo(cabecera["Descripcion"]?.ToString());
+            if (!string.IsNullOrWhiteSpace(motivo))
+            {
+                if (tieneReferencia) p.Inlines.Add(new LineBreak());
+                p.Inlines.Add(new Run("Motivo: ") { FontWeight = FontWeights.Bold });
+                p.Inlines.Add(new Run(motivo));
+                tieneReferencia = true;
+            }
+
+            if (!tieneReferencia)
+                p.Inlines.Add(new Run(cabecera["Descripcion"]?.ToString() ?? ""));
+
+            section.Blocks.Add(p);
+            return section;
+        }
+
+        private static string ExtraerMotivo(string descripcion)
+        {
+            if (string.IsNullOrWhiteSpace(descripcion)) return null;
+            const string marca = "Motivo:";
+            int idx = descripcion.IndexOf(marca, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0) return null;
+            return descripcion.Substring(idx + marca.Length).Trim();
         }
 
         private const double AnchoPaginaA4 = 793;
@@ -599,7 +716,7 @@ namespace SchettiniGestion.WPF
             foreach (DataRow item in items.Rows)
             {
                 TableRow r = new TableRow();
-                r.Cells.Add(CrearCelda(item["Cantidad"].ToString(), TextAlignment.Center));
+                r.Cells.Add(CrearCelda(Convert.ToDecimal(item["Cantidad"]).ToString("0.##"), TextAlignment.Center));
                 if (mostrarCodigo)
                     r.Cells.Add(CrearCelda(item.Table.Columns.Contains("Codigo") ? item["Codigo"]?.ToString() ?? "" : "", TextAlignment.Left));
                 r.Cells.Add(CrearCelda(item["Descripcion"].ToString(), TextAlignment.Left));
@@ -685,7 +802,7 @@ namespace SchettiniGestion.WPF
             };
         }
 
-        private static void ImprimirTicketGrafico(string t, string n, string c, DateTime f, DataTable i, decimal tot, string extra, string l, string pie, string nombreVendedor = null)
+        private static void ImprimirTicketGrafico(string t, string n, string c, DateTime f, DataTable i, decimal tot, string extra, string l, string pie, string nombreVendedor = null, string urlQrFiscal = null)
         {
             try
             {
@@ -697,7 +814,7 @@ namespace SchettiniGestion.WPF
                 {
                     var g = e.Graphics;
                     float y = 10f;
-                    DibujarTicketGDI(g, t, n, c ?? "", f, i, tot, extra, l, pie, ref y, nombreVendedor);
+                    DibujarTicketGDI(g, t, n, c ?? "", f, i, tot, extra, l, pie, ref y, nombreVendedor, urlQrFiscal);
                 };
 
                 ImprimirDocumentoTicket(doc, impresoraTicket);
@@ -705,7 +822,7 @@ namespace SchettiniGestion.WPF
             catch (Exception x) { MessageBox.Show("Error Ticket: " + x.Message); }
         }
 
-        private static void GuardarComprobanteArchivo(int facturaId, DataRow cab, DataTable items, string tipo, int nro, string cli, DateTime fec, decimal tot, string cond, string cae, string vto)
+        private static void GuardarComprobanteArchivo(int facturaId, DataRow cab, DataTable items, string tipo, int nro, string cli, DateTime fec, decimal tot, string cond, string cae, string vto, string urlQrFiscal = null)
         {
             string letra = "X";
             if (tipo != null && tipo.IndexOf("Factura", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -723,7 +840,7 @@ namespace SchettiniGestion.WPF
                 pieFiscal = $"CAE: {cae}    Vto CAE: {vto}";
 
             string pieLegal = tipo.Equals("Factura", StringComparison.OrdinalIgnoreCase)
-                ? "Comprobante fiscal autorizado por AFIP."
+                ? "Comprobante fiscal autorizado por ARCA."
                 : "Documento no válido como factura fiscal.";
 
             var opciones = DatabaseService.GetOpcionesImpresionTicket();
@@ -745,12 +862,17 @@ namespace SchettiniGestion.WPF
                 ruta = dlg.FileName;
             }
 
+            // CUIT/CAE/Punto de venta/QR son obligatorios en comprobantes con CAE.
+            if (string.IsNullOrWhiteSpace(urlQrFiscal) && !string.IsNullOrWhiteSpace(cae))
+                urlQrFiscal = ArcaQrHelper.ConstruirUrlDesdeFactura(cab, letra);
+
             PdfComprobanteGenerator.GenerarComprobanteVenta(
                 ruta, cab, items, tit, letra, nro > 0 ? nro : facturaId, tot,
                 opciones.MostrarFormaPago ? cond : null,
-                opciones.MostrarPieFiscal ? pieFiscal : null,
+                pieFiscal, // pie fiscal siempre (CAE)
                 pieLegal,
-                opciones.MostrarCodigo);
+                opciones.MostrarCodigo,
+                urlQrFiscal);
 
             MessageBox.Show(
                 $"Comprobante PDF guardado en:\n{ruta}\n\nPodés enviarlo por WhatsApp o correo.",
@@ -827,12 +949,42 @@ namespace SchettiniGestion.WPF
                 WinPrinting.PrintDocument doc = new WinPrinting.PrintDocument();
                 doc.PrinterSettings.PrinterName = nombreImpresora;
                 doc.PrintController = new WinPrinting.StandardPrintController();
+
+                if (string.Equals(tipo, "Etiqueta", StringComparison.OrdinalIgnoreCase))
+                {
+                    var opEtiq = DatabaseService.GetOpcionesEtiqueta();
+                    bool horizontalPrueba = string.Equals(opEtiq.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
+                    if (horizontalPrueba)
+                        AplicarTamanoEtiqueta(doc, opEtiq.AltoMm, opEtiq.AnchoMm);
+                    else
+                        AplicarTamanoEtiqueta(doc, opEtiq.AnchoMm, opEtiq.AltoMm);
+
+                    var itemPrueba = new EtiquetaPrintItem
+                    {
+                        Descripcion = "Producto de prueba",
+                        Codigo = "PRUEBA",
+                        CodigoBarra = "7790001000019",
+                        PrecioVenta = 1234.50m,
+                        Marca = "SCHPOS",
+                        Cantidad = 1
+                    };
+                    doc.PrintPage += (s, e) =>
+                    {
+                        if (horizontalPrueba)
+                            DibujarEtiquetaRotadaGDI(e.Graphics, opEtiq, itemPrueba);
+                        else
+                            DibujarEtiquetaGDI(e.Graphics, opEtiq, itemPrueba);
+                        e.HasMorePages = false;
+                    };
+                    doc.Print();
+                    MessageBox.Show($"Etiqueta de prueba ({opEtiq.AnchoMm}×{opEtiq.AltoMm} mm) enviada a:\n{nombreImpresora}",
+                        "Prueba de impresión", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
                 doc.PrintPage += (s, e) =>
                 {
                     var g = e.Graphics;
-                    g.SmoothingMode = WinDrawing.Drawing2D.SmoothingMode.HighQuality;
-                    g.InterpolationMode = WinDrawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-
                     string razonSocial = conf?["RazonSocial"]?.ToString()?.Trim() ?? "";
                     if (string.IsNullOrWhiteSpace(razonSocial))
                         razonSocial = fan;
@@ -841,11 +993,12 @@ namespace SchettiniGestion.WPF
 
                     if (tipo == "Ticket")
                     {
+                        ConfigurarGraphicsTicketTermico(g);
                         float w = ObtenerAnchoTicketPixels(DatabaseService.GetOpcionesImpresionTicket().AnchoMm);
                         float y = 14;
-                        var fT = new WinDrawing.Font("Arial", 10, WinDrawing.FontStyle.Bold);
-                        var fN = new WinDrawing.Font("Arial", 8);
-                        var fS = new WinDrawing.Font("Arial", 7);
+                        var fT = new WinDrawing.Font("Lucida Console", 10f, WinDrawing.FontStyle.Bold);
+                        var fN = new WinDrawing.Font("Lucida Console", 9f, WinDrawing.FontStyle.Regular);
+                        var fS = new WinDrawing.Font("Lucida Console", 8f, WinDrawing.FontStyle.Regular);
 
                         if (mostrarLog && !string.IsNullOrWhiteSpace(logoPath) && System.IO.File.Exists(logoPath))
                         {
@@ -960,20 +1113,38 @@ namespace SchettiniGestion.WPF
             catch (Exception ex) { MessageBox.Show("Error al imprimir prueba: " + ex.Message); }
         }
 
-        private static void DibujarTicketGDI(WinDrawing.Graphics g, string tit, string nro, string cli, DateTime fec, DataTable its, decimal tot, string extra, string let, string pie, ref float y, string nombreVendedor = null)
+        /// <summary>
+        /// Configura el render GDI para tickets térmicos: texto nítido (sin antialias borroso).
+        /// </summary>
+        private static void ConfigurarGraphicsTicketTermico(WinDrawing.Graphics g)
         {
-            g.SmoothingMode         = WinDrawing.Drawing2D.SmoothingMode.HighQuality;
-            g.InterpolationMode     = WinDrawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            g.SmoothingMode = WinDrawing.Drawing2D.SmoothingMode.None;
+            g.InterpolationMode = WinDrawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            g.PixelOffsetMode = WinDrawing.Drawing2D.PixelOffsetMode.Half;
+            g.CompositingQuality = WinDrawing.Drawing2D.CompositingQuality.HighSpeed;
+            g.TextRenderingHint = WinDrawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
+            try { g.TextContrast = 0; } catch { /* no disponible en algunos drivers */ }
+        }
+
+        private static void DibujarTicketGDI(WinDrawing.Graphics g, string tit, string nro, string cli, DateTime fec, DataTable its, decimal tot, string extra, string let, string pie, ref float y, string nombreVendedor = null, string urlQrFiscal = null)
+        {
+            ConfigurarGraphicsTicketTermico(g);
 
             var opciones = DatabaseService.GetOpcionesImpresionTicket();
+            // Datos fiscales obligatorios: siempre se imprimen (no dependen de checkboxes).
+            opciones.MostrarCuit = true;
+            opciones.MostrarPieFiscal = true;
+            opciones.MostrarPuntoVenta = true;
+
             float w = ObtenerAnchoTicketPixels(opciones.AnchoMm);
             bool angosto = opciones.AnchoMm <= 58;
 
-            WinDrawing.Font fT  = new WinDrawing.Font("Arial", angosto ? 9 : 10, WinDrawing.FontStyle.Bold);
-            WinDrawing.Font fN  = new WinDrawing.Font("Consolas", angosto ? 7 : 8);
-            WinDrawing.Font fC  = new WinDrawing.Font("Consolas", angosto ? 6 : 7);
-            WinDrawing.Font fB  = new WinDrawing.Font("Arial", angosto ? 12 : 14, WinDrawing.FontStyle.Bold);
-            WinDrawing.Font fSub = new WinDrawing.Font("Arial", angosto ? 6 : 7);
+            // Fuentes monoespaciadas + bold para mejor nitidez en térmica
+            WinDrawing.Font fT  = new WinDrawing.Font("Lucida Console", angosto ? 9f : 10f, WinDrawing.FontStyle.Bold);
+            WinDrawing.Font fN  = new WinDrawing.Font("Lucida Console", angosto ? 8f : 9f, WinDrawing.FontStyle.Regular);
+            WinDrawing.Font fC  = new WinDrawing.Font("Lucida Console", angosto ? 7f : 8f, WinDrawing.FontStyle.Regular);
+            WinDrawing.Font fB  = new WinDrawing.Font("Lucida Console", angosto ? 12f : 14f, WinDrawing.FontStyle.Bold);
+            WinDrawing.Font fSub = new WinDrawing.Font("Lucida Console", angosto ? 7f : 8f, WinDrawing.FontStyle.Regular);
 
             DataRow conf = DatabaseService.GetConfiguracion();
             string fan   = conf?["NombreFantasia"]?.ToString() ?? "Mi Negocio";
@@ -1090,7 +1261,33 @@ namespace SchettiniGestion.WPF
             if (opciones.MostrarPieFiscal && !string.IsNullOrEmpty(pie))
             {
                 DibujarLinea(g, ref y, w);
-                DibujarTextoCentrado(g, pie, fC, w, ref y);
+                foreach (string lineaPie in pie.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries))
+                    DibujarTextoCentrado(g, lineaPie.Trim(), fC, w, ref y);
+            }
+
+            // QR fiscal ARCA obligatorio cuando el comprobante tiene CAE.
+            if (!string.IsNullOrWhiteSpace(urlQrFiscal))
+            {
+                try
+                {
+                    using (var qrBmp = ArcaQrHelper.GenerarBitmap(urlQrFiscal, angosto ? 3 : 4))
+                    {
+                        if (qrBmp != null)
+                        {
+                            y += 6;
+                            float side = Math.Min(w - 8f, angosto ? 110f : 140f);
+                            float xQr = (w - side) / 2f;
+                            // NearestNeighbor mantiene módulos nítidos en térmica
+                            var oldInterp = g.InterpolationMode;
+                            g.InterpolationMode = WinDrawing.Drawing2D.InterpolationMode.NearestNeighbor;
+                            g.DrawImage(qrBmp, xQr, y, side, side);
+                            g.InterpolationMode = oldInterp;
+                            y += side + 4f;
+                            DibujarTextoCentrado(g, "Escaneá el QR para verificar en ARCA", fC, w, ref y);
+                        }
+                    }
+                }
+                catch { /* no bloquear la impresión si falla el QR */ }
             }
 
             if (opciones.MostrarGracias)
@@ -1110,6 +1307,406 @@ namespace SchettiniGestion.WPF
 
         private static void DibujarLinea(WinDrawing.Graphics g, ref float y, float w) { y += 3; g.DrawLine(new WinDrawing.Pen(WinDrawing.Color.Black) { DashStyle = WinDrawing.Drawing2D.DashStyle.Dash }, 2, y, w - 2, y); y += 5; }
         private static void DibujarTextoCentrado(WinDrawing.Graphics g, string t, WinDrawing.Font f, float w, ref float y) { WinDrawing.SizeF s = g.MeasureString(t, f); g.DrawString(t, f, WinDrawing.Brushes.Black, (w - s.Width) / 2, y); y += s.Height; }
+
+        #region ETIQUETAS
+
+        public static void ImprimirEtiquetas(IList<EtiquetaPrintItem> items, OpcionesEtiqueta opciones = null)
+        {
+            if (items == null || items.Count == 0)
+            {
+                MessageBox.Show("No hay productos para imprimir.");
+                return;
+            }
+
+            opciones = opciones ?? DatabaseService.GetOpcionesEtiqueta();
+            var cola = new List<EtiquetaPrintItem>();
+            foreach (var it in items)
+            {
+                if (it == null) continue;
+                int n = Math.Max(1, it.Cantidad);
+                for (int i = 0; i < n; i++)
+                    cola.Add(it);
+            }
+            if (cola.Count == 0)
+            {
+                MessageBox.Show("Indicá al menos 1 etiqueta.");
+                return;
+            }
+
+            try
+            {
+                if (string.Equals(opciones.ModoImpresion, "A4", StringComparison.OrdinalIgnoreCase))
+                {
+                    ImprimirEtiquetasA4(cola, opciones);
+                    return;
+                }
+                if (string.Equals(opciones.ModoImpresion, "Cartel", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(opciones.ModoImpresion, "Gondola", StringComparison.OrdinalIgnoreCase))
+                {
+                    ImprimirCartelesYGondolas(cola, opciones);
+                    return;
+                }
+
+                string impresora = DatabaseService.GetImpresoraEtiquetas();
+                var doc = new WinPrinting.PrintDocument();
+                doc.PrintController = new WinPrinting.StandardPrintController();
+
+                // La rotación se resuelve por software (nunca con el flag Landscape del
+                // driver): muchas impresoras térmicas de etiquetas no soportan bien la
+                // rotación a nivel de driver y terminan imprimiendo rotado igual, o
+                // directamente en blanco. Acá directamente declaramos el tamaño físico
+                // de página ya intercambiado si corresponde, y giramos el contenido
+                // nosotros mismos al dibujar.
+                bool horizontal = string.Equals(opciones.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
+                if (horizontal)
+                    AplicarTamanoEtiqueta(doc, opciones.AltoMm, opciones.AnchoMm);
+                else
+                    AplicarTamanoEtiqueta(doc, opciones.AnchoMm, opciones.AltoMm);
+
+                int idx = 0;
+                doc.PrintPage += (s, e) =>
+                {
+                    if (horizontal)
+                        DibujarEtiquetaRotadaGDI(e.Graphics, opciones, cola[idx]);
+                    else
+                        DibujarEtiquetaGDI(e.Graphics, opciones, cola[idx]);
+                    idx++;
+                    e.HasMorePages = idx < cola.Count;
+                };
+
+                ImprimirDocumentoTicket(doc, impresora);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al imprimir etiquetas: " + ex.Message);
+            }
+        }
+
+        private static void ImprimirEtiquetasA4(IList<EtiquetaPrintItem> cola, OpcionesEtiqueta op)
+        {
+            string impresora = DatabaseService.GetImpresoraEtiquetas();
+            var doc = new WinPrinting.PrintDocument();
+            doc.PrintController = new WinPrinting.StandardPrintController();
+            doc.DefaultPageSettings.PaperSize = new WinPrinting.PaperSize("A4", 827, 1169);
+            doc.DefaultPageSettings.Landscape = string.Equals(op.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
+            doc.DefaultPageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 0);
+
+            int idx = 0;
+            doc.PrintPage += (s, e) =>
+            {
+                var g = e.Graphics;
+                g.PageUnit = WinDrawing.GraphicsUnit.Millimeter;
+                float pageW = doc.DefaultPageSettings.Landscape ? 297f : 210f;
+                float pageH = doc.DefaultPageSettings.Landscape ? 210f : 297f;
+                float x0 = Math.Max(0, op.MargenIzquierdoMm);
+                float y = Math.Max(0, op.MargenSuperiorMm);
+                float x = x0;
+                float labelW = Math.Max(10, op.AnchoMm);
+                float labelH = Math.Max(10, op.AltoMm);
+                float gapH = Math.Max(0, op.GapHorizontalMm);
+                float gapV = Math.Max(0, op.GapVerticalMm);
+                int col = 0;
+                int maxCols = Math.Max(1, op.Columnas);
+
+                while (idx < cola.Count)
+                {
+                    if (col >= maxCols || x + labelW > pageW - op.MargenDerechoMm + 0.1f)
+                    {
+                        col = 0;
+                        x = x0;
+                        y += labelH + gapV;
+                    }
+                    if (y + labelH > pageH - op.MargenInferiorMm + 0.1f)
+                        break;
+
+                    var state = g.Save();
+                    g.TranslateTransform(x, y);
+                    DibujarEtiquetaGDI(g, op, cola[idx]);
+                    g.Restore(state);
+                    using (var pen = new WinDrawing.Pen(WinDrawing.Color.LightGray, 0.1f))
+                        g.DrawRectangle(pen, x, y, labelW, labelH);
+
+                    idx++;
+                    col++;
+                    x += labelW + gapH;
+                }
+                e.HasMorePages = idx < cola.Count;
+            };
+
+            ImprimirDocumentoTicket(doc, impresora);
+        }
+
+        private static void ImprimirCartelesYGondolas(IList<EtiquetaPrintItem> cola, OpcionesEtiqueta op)
+        {
+            string impresora = DatabaseService.GetImpresoraEtiquetas();
+            var doc = new WinPrinting.PrintDocument();
+            doc.PrintController = new WinPrinting.StandardPrintController();
+            doc.DefaultPageSettings.PaperSize = new WinPrinting.PaperSize("A4", 827, 1169);
+            doc.DefaultPageSettings.Landscape = string.Equals(op.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(op.ModoImpresion, "Gondola", StringComparison.OrdinalIgnoreCase);
+            doc.DefaultPageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 0);
+
+            int idx = 0;
+            doc.PrintPage += (s, e) =>
+            {
+                DibujarCartelGDI(e.Graphics, op, cola[idx]);
+                idx++;
+                e.HasMorePages = idx < cola.Count;
+            };
+
+            ImprimirDocumentoTicket(doc, impresora);
+        }
+
+        private static void AplicarTamanoEtiqueta(WinPrinting.PrintDocument doc, int anchoMm, int altoMm)
+        {
+            anchoMm = Math.Max(10, Math.Min(300, anchoMm));
+            altoMm = Math.Max(10, Math.Min(300, altoMm));
+            // PaperSize usa centésimas de pulgada
+            int w = (int)Math.Round(anchoMm / 25.4 * 100.0);
+            int h = (int)Math.Round(altoMm / 25.4 * 100.0);
+            var paper = new WinPrinting.PaperSize($"Etiqueta{anchoMm}x{altoMm}", w, h);
+            doc.DefaultPageSettings.PaperSize = paper;
+            doc.DefaultPageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 0);
+            doc.PrinterSettings.DefaultPageSettings.PaperSize = paper;
+            doc.PrinterSettings.DefaultPageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 0);
+        }
+
+        private static void DibujarEtiquetaGDI(WinDrawing.Graphics g, OpcionesEtiqueta op, EtiquetaPrintItem item)
+        {
+            if (g == null || item == null) return;
+            g.PageUnit = WinDrawing.GraphicsUnit.Millimeter;
+            g.SmoothingMode = WinDrawing.Drawing2D.SmoothingMode.None;
+            g.InterpolationMode = WinDrawing.Drawing2D.InterpolationMode.NearestNeighbor;
+
+            float w = Math.Max(10, op.AnchoMm);
+            float h = Math.Max(10, op.AltoMm);
+            float margin = Math.Max(0.8f, Math.Min(w, h) * 0.04f);
+            float y = margin;
+            float contentW = w - margin * 2;
+
+            float fontDesc = h <= 28 ? 2.2f : (h <= 40 ? 2.6f : 3.2f);
+            float fontSec = h <= 28 ? 1.8f : 2.2f;
+            float fontPrecio = h <= 28 ? 2.8f : 3.4f;
+
+            using (var fDesc = new WinDrawing.Font("Arial", fontDesc, WinDrawing.FontStyle.Bold, WinDrawing.GraphicsUnit.Millimeter))
+            using (var fSec = new WinDrawing.Font("Arial", fontSec, WinDrawing.FontStyle.Regular, WinDrawing.GraphicsUnit.Millimeter))
+            using (var fPrecio = new WinDrawing.Font("Arial", fontPrecio, WinDrawing.FontStyle.Bold, WinDrawing.GraphicsUnit.Millimeter))
+            {
+                if (op.MostrarDescripcion && !string.IsNullOrWhiteSpace(item.Descripcion))
+                {
+                    string desc = TruncarTextoEtiqueta(g, item.Descripcion.Trim(), fDesc, contentW);
+                    g.DrawString(desc, fDesc, WinDrawing.Brushes.Black, margin, y);
+                    y += g.MeasureString(desc, fDesc).Height + 0.3f;
+                }
+
+                if (op.MostrarDescripcionExtra && !string.IsNullOrWhiteSpace(item.DescripcionExtra))
+                {
+                    string descExtra = TruncarTextoEtiqueta(g, item.DescripcionExtra.Trim(), fSec, contentW);
+                    g.DrawString(descExtra, fSec, WinDrawing.Brushes.Black, margin, y);
+                    y += g.MeasureString(descExtra, fSec).Height + 0.2f;
+                }
+
+                if (op.MostrarMarca && !string.IsNullOrWhiteSpace(item.Marca))
+                {
+                    string marca = TruncarTextoEtiqueta(g, item.Marca.Trim(), fSec, contentW);
+                    g.DrawString(marca, fSec, WinDrawing.Brushes.Black, margin, y);
+                    y += g.MeasureString(marca, fSec).Height + 0.2f;
+                }
+
+                if (op.MostrarCodigo && !string.IsNullOrWhiteSpace(item.Codigo))
+                {
+                    string cod = "Cod: " + item.Codigo.Trim();
+                    g.DrawString(TruncarTextoEtiqueta(g, cod, fSec, contentW), fSec, WinDrawing.Brushes.Black, margin, y);
+                    y += g.MeasureString("X", fSec).Height + 0.2f;
+                }
+
+                if (op.MostrarCodigoBarras)
+                {
+                    string data = !string.IsNullOrWhiteSpace(item.CodigoBarra) ? item.CodigoBarra.Trim()
+                        : (!string.IsNullOrWhiteSpace(item.Codigo) ? item.Codigo.Trim() : "");
+                    if (!string.IsNullOrWhiteSpace(data))
+                    {
+                        float barH = Math.Max(6f, h - y - (op.MostrarPrecio ? fontPrecio + 1.5f : margin) - margin);
+                        barH = Math.Min(barH, h * 0.45f);
+                        using (var bmp = GenerarBitmapCodigoBarras(data, (int)(contentW * 12), (int)(barH * 12)))
+                        {
+                            if (bmp != null)
+                                g.DrawImage(bmp, margin, y, contentW, barH);
+                        }
+                        y += barH + 0.4f;
+                        // Texto humano debajo del código
+                        string human = TruncarTextoEtiqueta(g, data, fSec, contentW);
+                        var sz = g.MeasureString(human, fSec);
+                        g.DrawString(human, fSec, WinDrawing.Brushes.Black, margin + (contentW - sz.Width) / 2f, y);
+                        y += sz.Height + 0.2f;
+                    }
+                }
+
+                if (op.MostrarPrecio)
+                {
+                    string precio = item.PrecioVenta.ToString("C2");
+                    var sz = g.MeasureString(precio, fPrecio);
+                    float py = Math.Max(y, h - margin - sz.Height);
+                    g.DrawString(precio, fPrecio, WinDrawing.Brushes.Black, margin + (contentW - sz.Width) / 2f, py);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Dibuja la etiqueta girada 90° para el modo "Horizontal" del impresor directo
+        /// de etiquetas. En vez de girar vía PageSettings.Landscape (poco confiable en
+        /// impresoras térmicas de etiquetas, causa salidas rotadas o en blanco), se
+        /// renderiza la etiqueta a su tamaño natural (Ancho x Alto) en un bitmap interno
+        /// y se rota esa imagen antes de estamparla en la página física ya intercambiada
+        /// (Alto x Ancho).
+        /// </summary>
+        private static void DibujarEtiquetaRotadaGDI(WinDrawing.Graphics gPagina, OpcionesEtiqueta op, EtiquetaPrintItem item)
+        {
+            if (gPagina == null || item == null) return;
+
+            const float dpi = 300f;
+            int wPx = Math.Max(1, (int)Math.Round(Math.Max(10, op.AnchoMm) / 25.4 * dpi));
+            int hPx = Math.Max(1, (int)Math.Round(Math.Max(10, op.AltoMm) / 25.4 * dpi));
+
+            using (var bmp = new WinDrawing.Bitmap(wPx, hPx))
+            {
+                bmp.SetResolution(dpi, dpi);
+                using (var gBmp = WinDrawing.Graphics.FromImage(bmp))
+                {
+                    gBmp.Clear(WinDrawing.Color.White);
+                    DibujarEtiquetaGDI(gBmp, op, item);
+                }
+
+                bmp.RotateFlip(WinDrawing.RotateFlipType.Rotate90FlipNone);
+
+                gPagina.PageUnit = WinDrawing.GraphicsUnit.Millimeter;
+                gPagina.DrawImage(bmp, 0f, 0f, Math.Max(10, op.AltoMm), Math.Max(10, op.AnchoMm));
+            }
+        }
+
+        private static void DibujarCartelGDI(WinDrawing.Graphics g, OpcionesEtiqueta op, EtiquetaPrintItem item)
+        {
+            if (g == null || item == null) return;
+            g.PageUnit = WinDrawing.GraphicsUnit.Millimeter;
+            g.SmoothingMode = WinDrawing.Drawing2D.SmoothingMode.AntiAlias;
+            float pageW = string.Equals(op.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(op.ModoImpresion, "Gondola", StringComparison.OrdinalIgnoreCase) ? 297f : 210f;
+            float pageH = pageW > 210f ? 210f : 297f;
+            float margin = Math.Max(8, op.MargenIzquierdoMm);
+            float contentW = pageW - margin * 2;
+            float y = margin;
+
+            using (var fMarca = new WinDrawing.Font("Arial", 16, WinDrawing.FontStyle.Bold, WinDrawing.GraphicsUnit.Millimeter))
+            using (var fNombre = new WinDrawing.Font("Arial", 9, WinDrawing.FontStyle.Bold, WinDrawing.GraphicsUnit.Millimeter))
+            using (var fDesc = new WinDrawing.Font("Arial", 5, WinDrawing.FontStyle.Regular, WinDrawing.GraphicsUnit.Millimeter))
+            using (var fPrecio = new WinDrawing.Font("Arial", pageW > 210f ? 30 : 26, WinDrawing.FontStyle.Bold, WinDrawing.GraphicsUnit.Millimeter))
+            using (var fCodigo = new WinDrawing.Font("Arial", 4, WinDrawing.FontStyle.Regular, WinDrawing.GraphicsUnit.Millimeter))
+            {
+                if (op.MostrarMarca && !string.IsNullOrWhiteSpace(item.Marca))
+                    DibujarTextoCartelCentrado(g, item.Marca.ToUpperInvariant(), fMarca, margin, contentW, ref y);
+
+                if (op.MostrarDescripcion && !string.IsNullOrWhiteSpace(item.Descripcion))
+                    DibujarTextoCartelCentrado(g, item.Descripcion, fNombre, margin, contentW, ref y);
+
+                if (op.MostrarDescripcionExtra && !string.IsNullOrWhiteSpace(item.DescripcionExtra))
+                    DibujarTextoCartelCentrado(g, item.DescripcionExtra, fDesc, margin, contentW, ref y);
+
+                if (op.MostrarPrecio)
+                {
+                    string precio = item.PrecioVenta.ToString("C2");
+                    var sz = g.MeasureString(precio, fPrecio);
+                    g.DrawString(precio, fPrecio, WinDrawing.Brushes.Black, margin + (contentW - sz.Width) / 2f, y + 8);
+                    y += sz.Height + 12;
+                }
+
+                if (op.MostrarCodigoBarras)
+                {
+                    string data = !string.IsNullOrWhiteSpace(item.CodigoBarra) ? item.CodigoBarra.Trim() : item.Codigo?.Trim();
+                    if (!string.IsNullOrWhiteSpace(data))
+                    {
+                        float barW = Math.Min(contentW, 120f);
+                        float barH = 22f;
+                        using (var bmp = GenerarBitmapCodigoBarras(data, (int)(barW * 10), (int)(barH * 10)))
+                        {
+                            if (bmp != null)
+                                g.DrawImage(bmp, margin + (contentW - barW) / 2f, Math.Min(y, pageH - margin - barH - 8), barW, barH);
+                        }
+                        y += barH + 2;
+                        DibujarTextoCartelCentrado(g, data, fCodigo, margin, contentW, ref y);
+                    }
+                }
+
+                if (op.MostrarCodigo && !string.IsNullOrWhiteSpace(item.Codigo))
+                    g.DrawString("Cod: " + item.Codigo, fCodigo, WinDrawing.Brushes.Black, margin, pageH - margin - 6);
+            }
+        }
+
+        private static void DibujarTextoCartelCentrado(WinDrawing.Graphics g, string texto, WinDrawing.Font font, float x, float w, ref float y)
+        {
+            if (string.IsNullOrWhiteSpace(texto)) return;
+            var rect = new WinDrawing.RectangleF(x, y, w, g.MeasureString(texto, font, (int)w).Height + 6);
+            using (var sf = new WinDrawing.StringFormat { Alignment = WinDrawing.StringAlignment.Center, LineAlignment = WinDrawing.StringAlignment.Center })
+                g.DrawString(texto, font, WinDrawing.Brushes.Black, rect, sf);
+            y += rect.Height;
+        }
+
+        private static string TruncarTextoEtiqueta(WinDrawing.Graphics g, string texto, WinDrawing.Font f, float maxW)
+        {
+            if (string.IsNullOrEmpty(texto)) return "";
+            if (g.MeasureString(texto, f).Width <= maxW) return texto;
+            string t = texto;
+            while (t.Length > 1 && g.MeasureString(t + "…", f).Width > maxW)
+                t = t.Substring(0, t.Length - 1);
+            return t + "…";
+        }
+
+        private static WinDrawing.Bitmap GenerarBitmapCodigoBarras(string data, int widthPx, int heightPx)
+        {
+            try
+            {
+                widthPx = Math.Max(80, widthPx);
+                heightPx = Math.Max(40, heightPx);
+                var writer = new BarcodeWriter
+                {
+                    Format = BarcodeFormat.CODE_128,
+                    Options = new EncodingOptions
+                    {
+                        Width = widthPx,
+                        Height = heightPx,
+                        Margin = 0,
+                        PureBarcode = true
+                    }
+                };
+                // EAN-13 si aplica
+                string digits = new string(data.Where(char.IsDigit).ToArray());
+                if (digits.Length == 13)
+                {
+                    writer.Format = BarcodeFormat.EAN_13;
+                    data = digits;
+                }
+                else if (digits.Length == 8)
+                {
+                    writer.Format = BarcodeFormat.EAN_8;
+                    data = digits;
+                }
+                return writer.Write(data);
+            }
+            catch
+            {
+                try
+                {
+                    var writer = new BarcodeWriter
+                    {
+                        Format = BarcodeFormat.CODE_128,
+                        Options = new EncodingOptions { Width = widthPx, Height = heightPx, Margin = 0, PureBarcode = true }
+                    };
+                    return writer.Write(data);
+                }
+                catch { return null; }
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// Carga una imagen desde disco usando MemoryStream y aplica Freeze().

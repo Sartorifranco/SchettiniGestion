@@ -1,0 +1,359 @@
+<UserControl x:Class="SchettiniGestion.WPF.EtiquetasControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="1100"
+             Background="{DynamicResource ModuleBackgroundBrush}"
+             Loaded="UserControl_Loaded">
+
+    <UserControl.Resources>
+        <Style x:Key="EtiquetaSectionCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="18,16"/>
+        </Style>
+        <Style x:Key="EtiquetaSectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <!-- Campo numérico chico con etiqueta arriba, para grillas de formato/márgenes -->
+        <Style x:Key="EtiquetaMiniFieldStyle" TargetType="StackPanel">
+            <Setter Property="Margin" Value="0,0,14,10"/>
+        </Style>
+        <!-- Chips táctiles para opciones de etiqueta (área de toque ~48px) -->
+        <Style x:Key="TouchOptionToggleStyle" TargetType="ToggleButton">
+            <Setter Property="MinHeight" Value="48"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Margin" Value="0,0,10,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}"
+                                MinHeight="{TemplateBinding MinHeight}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border x:Name="box" Width="22" Height="22" CornerRadius="4"
+                                        BorderBrush="{DynamicResource BorderColor}" BorderThickness="1.5"
+                                        Background="Transparent" Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <TextBlock x:Name="tick" Text="✓" FontSize="14" FontWeight="Bold"
+                                               Foreground="White" HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" Visibility="Collapsed"/>
+                                </Border>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#1B4F72"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#3498DB"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="box" Property="Background" Value="#3498DB"/>
+                                <Setter TargetName="box" Property="BorderBrush" Value="#3498DB"/>
+                                <Setter TargetName="tick" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.92"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="Impresión de etiquetas" FontSize="24" FontWeight="Bold"
+                       Foreground="{DynamicResource HeaderForegroundBrush}"/>
+            <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"
+                       Foreground="{DynamicResource TextSecondary}"
+                       Text="Buscá productos, indicá cuántas etiquetas de cada uno y qué datos mostrar. La impresora y la medida se configuran en Configuración → Impresoras. El rollo debe coincidir con esa medida (ej. 50×25)."/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12" MaxHeight="480">
+            <StackPanel>
+
+                <Border Style="{StaticResource EtiquetaSectionCard}" Margin="0,0,0,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Buscar producto:" Style="{StaticResource ModuleLabelStyle}"/>
+                            <DockPanel LastChildFill="True">
+                                <Button DockPanel.Dock="Right" Content="🔍 Buscar" MinWidth="110" MinHeight="44"
+                                        Style="{StaticResource ActionButtonStyle}" Margin="8,0,0,0"
+                                        Click="btnBuscar_Click"/>
+                                <TextBox x:Name="txtBuscar" Style="{StaticResource ModuleTextBoxStyle}"
+                                         KeyDown="txtBuscar_KeyDown"
+                                         ToolTip="Código, barras o nombre"/>
+                            </DockPanel>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                            <TextBlock x:Name="lblTamano" VerticalAlignment="Center" Margin="0,0,0,8"
+                                       Foreground="{DynamicResource TextSecondary}" FontSize="12" HorizontalAlignment="Right"/>
+                            <Button Content="🖨️ Imprimir seleccionados" Style="{StaticResource SuccessButtonStyle}"
+                                    Padding="16,10" MinHeight="44" Click="btnImprimir_Click"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource EtiquetaSectionCard}" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="Formato de salida" Style="{StaticResource EtiquetaSectionTitle}"/>
+                        <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,14"
+                                   Text="Rollo imprime una etiqueta por página. A4 acomoda etiquetas en hoja. Cartel/Góndola arma piezas grandes con precio destacado."/>
+
+                        <WrapPanel Orientation="Horizontal">
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="190">
+                                <TextBlock Text="Tipo de etiqueta:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <ComboBox x:Name="cmbPresetEtiqueta" Style="{StaticResource ModuleComboBoxStyle}"
+                                          SelectionChanged="cmbPresetEtiqueta_SelectionChanged"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="150">
+                                <TextBlock Text="Medida (ancho x alto, mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="18"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="txtAnchoMm" Grid.Column="0" Style="{StaticResource ModuleTextBoxStyle}" Text="50"
+                                             ToolTip="Ancho en mm"/>
+                                    <TextBlock Grid.Column="1" Text="x" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource TextSecondary}"/>
+                                    <TextBox x:Name="txtAltoMm" Grid.Column="2" Style="{StaticResource ModuleTextBoxStyle}" Text="25"
+                                             ToolTip="Alto en mm"/>
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="150">
+                                <TextBlock Text="Modo de impresión:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <ComboBox x:Name="cmbModoImpresion" Style="{StaticResource ModuleComboBoxStyle}"
+                                          SelectionChanged="cmbModoImpresion_SelectionChanged"
+                                          ToolTip="Rollo: una etiqueta por vez, directo a la impresora térmica de etiquetas.&#10;A4: varias etiquetas acomodadas en una hoja común.&#10;Cartel / Góndola: cartel grande para exhibidor, con precio destacado."/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="130">
+                                <TextBlock Text="Orientación:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <ComboBox x:Name="cmbOrientacion" Style="{StaticResource ModuleComboBoxStyle}"
+                                          SelectionChanged="cmbOrientacion_SelectionChanged"
+                                          ToolTip="Vertical: el contenido sale tal cual se ve en la vista previa.&#10;Horizontal: el contenido se gira 90° dentro de la misma etiqueta física (el tamaño de la etiqueta no cambia)."/>
+                            </StackPanel>
+                        </WrapPanel>
+
+                        <!-- Ayuda visual: muestra cómo queda la etiqueta física según Vertical/Horizontal -->
+                        <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                                BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,4,0,16">
+                            <StackPanel>
+                                <TextBlock Text="🔎 Vista previa de orientación" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
+                                <WrapPanel Orientation="Horizontal">
+                                    <Border x:Name="bdPreviewVertical" Width="150" Height="86" Margin="0,0,14,10"
+                                            Background="White" CornerRadius="6" BorderThickness="2.5"
+                                            BorderBrush="{DynamicResource BorderColor}">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="Producto" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="▮▮▮▮▮▮▮▮▮▮▮▮" FontSize="11" Foreground="Black" HorizontalAlignment="Center" Margin="0,3,0,3"/>
+                                            <TextBlock Text="$ 1.234,50" FontSize="10" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center" Width="190" Margin="0,0,20,10">
+                                        <TextBlock Text="Vertical (por defecto)" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource TextSecondary}"
+                                                   Text="El texto y el código de barras salen leíbles de arriba hacia abajo, tal como se ve al recibir la etiqueta de la impresora."/>
+                                    </StackPanel>
+                                    <Border x:Name="bdPreviewHorizontal" Width="150" Height="86" Margin="0,0,14,10"
+                                            Background="White" CornerRadius="6" BorderThickness="2.5"
+                                            BorderBrush="{DynamicResource BorderColor}">
+                                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   TextAlignment="Center" FontSize="9" Foreground="Black">
+                                            <TextBlock.LayoutTransform>
+                                                <RotateTransform Angle="90"/>
+                                            </TextBlock.LayoutTransform>
+                                            <Run Text="Producto" FontWeight="Bold"/>
+                                            <LineBreak/>
+                                            <Run Text="▮▮▮▮▮▮▮▮▮▮▮▮" FontSize="11"/>
+                                            <LineBreak/>
+                                            <Run Text="$ 1.234,50" FontWeight="Bold" FontSize="10"/>
+                                        </TextBlock>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center" Width="190" Margin="0,0,0,10">
+                                        <TextBlock Text="Horizontal" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource TextSecondary}"
+                                                   Text="El contenido se gira 90° dentro de la misma etiqueta física. Usalo solo si tu impresora lo requiere así."/>
+                                    </StackPanel>
+                                </WrapPanel>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" FontStyle="Italic" Margin="0,4,0,0"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Text="💡 Tip: antes de imprimir muchas etiquetas, probá con una sola desde Configuración → Impresoras → «Probar impresora» para confirmar que la orientación es la correcta."/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="Diseño en hoja A4" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,8"/>
+                        <WrapPanel Orientation="Horizontal">
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Columnas:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtColumnas" Style="{StaticResource ModuleTextBoxStyle}" Text="3"
+                                         ToolTip="Columnas en hoja A4"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Sep. horiz. (mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtGapH" Style="{StaticResource ModuleTextBoxStyle}" Text="2"
+                                         ToolTip="Separación horizontal mm"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Sep. vert. (mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtGapV" Style="{StaticResource ModuleTextBoxStyle}" Text="2"
+                                         ToolTip="Separación vertical mm"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Margen izq. (mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtMargenIzq" Style="{StaticResource ModuleTextBoxStyle}" Text="5"
+                                         ToolTip="Margen izquierdo mm"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Margen sup. (mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtMargenSup" Style="{StaticResource ModuleTextBoxStyle}" Text="5"
+                                         ToolTip="Margen superior mm"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Margen der. (mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtMargenDer" Style="{StaticResource ModuleTextBoxStyle}" Text="5"
+                                         ToolTip="Margen derecho mm"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="90">
+                                <TextBlock Text="Margen inf. (mm):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtMargenInf" Style="{StaticResource ModuleTextBoxStyle}" Text="5"
+                                         ToolTip="Margen inferior mm"/>
+                            </StackPanel>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource EtiquetaSectionCard}">
+                    <StackPanel>
+                        <TextBlock Text="Qué mostrar en la etiqueta/cartel" Style="{StaticResource EtiquetaSectionTitle}" Margin="0,0,0,12"/>
+                        <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ToggleButton x:Name="chkDesc" Content="Nombre" IsChecked="True"
+                                          Style="{StaticResource TouchOptionToggleStyle}"/>
+                            <ToggleButton x:Name="chkDescExtra" Content="Descripción"
+                                          Style="{StaticResource TouchOptionToggleStyle}"/>
+                            <ToggleButton x:Name="chkPrecio" Content="Precio" IsChecked="True"
+                                          Style="{StaticResource TouchOptionToggleStyle}"/>
+                            <ToggleButton x:Name="chkCodigo" Content="Código interno"
+                                          Style="{StaticResource TouchOptionToggleStyle}"/>
+                            <ToggleButton x:Name="chkBarras" Content="Código de barras" IsChecked="True"
+                                          Style="{StaticResource TouchOptionToggleStyle}"/>
+                            <ToggleButton x:Name="chkMarca" Content="Marca"
+                                          Style="{StaticResource TouchOptionToggleStyle}"/>
+                            <Button Content="💾 Guardar opciones"
+                                    Style="{StaticResource ActionButtonStyle}"
+                                    MinHeight="48" MinWidth="150" Padding="16,10"
+                                    FontSize="14" FontWeight="SemiBold"
+                                    Margin="4,0,0,8" VerticalAlignment="Center"
+                                    Click="btnGuardarOpciones_Click"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <DataGrid x:Name="dgvProductos" Grid.Row="2"
+                  Style="{StaticResource ModuleDataGridStyle}"
+                  AutoGenerateColumns="False" IsReadOnly="False"
+                  CanUserAddRows="False" SelectionMode="Extended"
+                  HeadersVisibility="Column"
+                  RowHeight="56">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Sel." Width="72" CanUserResize="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ToggleButton IsChecked="{Binding Seleccionado, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Width="44" Height="44" Cursor="Hand"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          ToolTip="Seleccionar para imprimir">
+                                <ToggleButton.Style>
+                                    <Style TargetType="ToggleButton">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border x:Name="bd" Width="44" Height="44" CornerRadius="8"
+                                                            Background="{DynamicResource SurfaceDark}"
+                                                            BorderBrush="{DynamicResource BorderColor}"
+                                                            BorderThickness="1.5">
+                                                        <TextBlock x:Name="tick" Text="✓" FontSize="22" FontWeight="Bold"
+                                                                   Foreground="White"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                   Visibility="Collapsed"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsChecked" Value="True">
+                                                            <Setter TargetName="bd" Property="Background" Value="#3498DB"/>
+                                                            <Setter TargetName="bd" Property="BorderBrush" Value="#3498DB"/>
+                                                            <Setter TargetName="tick" Property="Visibility" Value="Visible"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ToggleButton.Style>
+                            </ToggleButton>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="100" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Barras" Binding="{Binding CodigoBarra}" Width="120" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Producto" Binding="{Binding Descripcion}" Width="*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Marca" Binding="{Binding Marca}" Width="100" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Precio" Binding="{Binding PrecioVenta, StringFormat=C2}" Width="90" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad, UpdateSourceTrigger=PropertyChanged}" Width="70"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,12,0,0">
+            <Button Content="Seleccionar visibles" Style="{StaticResource ActionButtonStyle}"
+                    Padding="12,8" Margin="0,0,8,0" Click="btnSelTodos_Click"/>
+            <Button Content="Quitar selección" Style="{StaticResource SecondaryButtonStyle}"
+                    Padding="12,8" Margin="0,0,8,0" Click="btnSelNinguno_Click"/>
+            <TextBlock x:Name="lblResumen" VerticalAlignment="Center" Margin="12,0,0,0"
+                       Foreground="{DynamicResource TextSecondary}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

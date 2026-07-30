@@ -65,7 +65,7 @@ def main():
     pdf.set_font("Arial", "", 12)
     pdf.set_text_color(80, 80, 80)
     pdf.set_x(pdf.l_margin)
-    pdf.multi_cell(pdf.epw, 7, "Documento para el cliente\nDesde integración ARCA/AFIP hasta últimas actualizaciones", align="C")
+    pdf.multi_cell(pdf.epw, 7, "Documento para el cliente\nDesde integración ARCA hasta últimas actualizaciones", align="C")
     pdf.set_text_color(0, 0, 0)
     pdf.ln(20)
     pdf.set_x(pdf.l_margin)
@@ -79,8 +79,8 @@ def main():
     pdf.multi_cell(pdf.epw, 10, "Parte 1 — Trabajos realizados en el sistema")
     pdf.ln(4)
 
-    section_title(pdf, "1. Facturación electrónica con ARCA / AFIP")
-    body(pdf, "Se incorporó en Configuración → Negocio y AFIP una sección llamada «Activación Fiscal AFIP/ARCA», para preparar el comercio para facturar legalmente.")
+    section_title(pdf, "1. Facturación electrónica con ARCA")
+    body(pdf, "Se incorporó en Configuración → Negocio y ARCA una sección llamada «Activación Fiscal ARCA», para preparar el comercio para facturar legalmente.")
     body(pdf, "Qué puede hacer el usuario desde el sistema:")
     bullet(pdf, "Completar datos del negocio (CUIT, razón social, nombre de fantasía).")
     bullet(pdf, "Generar el pedido de certificado (CSR) con un botón, usando esos datos.")
@@ -142,7 +142,7 @@ def main():
     bullet(pdf, "Servicios habilitados en ARCA: Facturación electrónica y Administración de certificados digitales.")
 
     subsection(pdf, "Paso 1 — Completar datos en SCHPOS")
-    body(pdf, "Configuración → Negocio y AFIP. Completar CUIT (11 dígitos), razón social, nombre de fantasía, dirección y punto de venta. Guardar.")
+    body(pdf, "Configuración → Negocio y ARCA. Completar CUIT (11 dígitos), razón social, nombre de fantasía, dirección y punto de venta. Guardar.")
 
     subsection(pdf, "Paso 2 — Generar el pedido de certificado")
     body(pdf, "Pulsar «Generar Pedido de Certificado (CSR)». Guardar el archivo .csr. Hacerlo en la misma PC que usarán para facturar.")
@@ -154,10 +154,10 @@ def main():
     body(pdf, "Configuración → Subir .crt → elegir archivo de ARCA → Guardar.")
 
     subsection(pdf, "Paso 5 — Probar en modo PRUEBA")
-    body(pdf, "Dejar desmarcado «Ambiente AFIP: producción». Probar conexión. Emitir facturas de prueba (sin validez fiscal real).")
+    body(pdf, "Dejar desmarcado «Ambiente ARCA: producción». Probar conexión. Emitir facturas de prueba (sin validez fiscal real).")
 
     subsection(pdf, "Paso 6 — Pasar a facturación REAL")
-    body(pdf, "Marcar «Ambiente AFIP: producción». Guardar. Probar conexión. Emitir factura real de monto bajo. Conviene hacerlo con el contador la primera vez.")
+    body(pdf, "Marcar «Ambiente ARCA: producción». Guardar. Probar conexión. Emitir factura real de monto bajo. Conviene hacerlo con el contador la primera vez.")
 
     subsection(pdf, "Alternativa: certificado .pfx")
     body(pdf, "Si el contador entrega un .pfx con contraseña, cargarlo en la sección correspondiente y seguir pasos 5 y 6.")

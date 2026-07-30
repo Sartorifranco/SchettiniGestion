@@ -21,7 +21,7 @@ using Org.BouncyCastle.X509;
 namespace SchettiniGestion
 {
     /// <summary>
-    /// Generación de CSR y gestión de certificados AFIP/ARCA (.key + .crt).
+    /// Generación de CSR y gestión de certificados ARCA (.key + .crt).
     /// </summary>
     public static class AfipActivacionFiscalService
     {
@@ -45,7 +45,7 @@ namespace SchettiniGestion
         }
 
         /// <summary>
-        /// Genera par RSA 2048, CSR PKCS#10 con subject AFIP y persiste la clave privada.
+        /// Genera par RSA 2048, CSR PKCS#10 con subject ARCA y persiste la clave privada.
         /// </summary>
         public static ResultadoCsr GenerarCsr(string cuit, string razonSocial, string nombreFantasia)
         {
@@ -105,7 +105,7 @@ namespace SchettiniGestion
         }
 
         /// <summary>
-        /// Copia el certificado .crt emitido por AFIP/ARCA junto a la clave privada del sistema.
+        /// Copia el certificado .crt emitido por ARCA junto a la clave privada del sistema.
         /// </summary>
         public static ResultadoCertificado GuardarCertificadoAfip(string rutaArchivoOrigen, string cuitPantalla = null)
         {
@@ -182,9 +182,9 @@ namespace SchettiniGestion
         public static byte[] FirmarTraCms(byte[] contenidoTra, string rutaCertificado, string rutaClavePrivada)
         {
             if (string.IsNullOrWhiteSpace(rutaCertificado) || !File.Exists(rutaCertificado))
-                throw new FileNotFoundException("Certificado AFIP no encontrado.", rutaCertificado ?? "");
+                throw new FileNotFoundException("Certificado ARCA no encontrado.", rutaCertificado ?? "");
             if (string.IsNullOrWhiteSpace(rutaClavePrivada) || !File.Exists(rutaClavePrivada))
-                throw new FileNotFoundException("Clave privada AFIP no encontrada.", rutaClavePrivada ?? "");
+                throw new FileNotFoundException("Clave privada ARCA no encontrada.", rutaClavePrivada ?? "");
 
             var certParser = new X509CertificateParser();
             Org.BouncyCastle.X509.X509Certificate bcCert = certParser.ReadCertificate(File.ReadAllBytes(rutaCertificado));
@@ -204,9 +204,9 @@ namespace SchettiniGestion
         public static X509Certificate2 CargarCertificadoConClave(string rutaCertificado, string rutaClavePrivada)
         {
             if (string.IsNullOrWhiteSpace(rutaCertificado) || !File.Exists(rutaCertificado))
-                throw new FileNotFoundException("Certificado AFIP no encontrado.", rutaCertificado ?? "");
+                throw new FileNotFoundException("Certificado ARCA no encontrado.", rutaCertificado ?? "");
             if (string.IsNullOrWhiteSpace(rutaClavePrivada) || !File.Exists(rutaClavePrivada))
-                throw new FileNotFoundException("Clave privada AFIP no encontrada.", rutaClavePrivada ?? "");
+                throw new FileNotFoundException("Clave privada ARCA no encontrada.", rutaClavePrivada ?? "");
 
             var certParser = new X509CertificateParser();
             Org.BouncyCastle.X509.X509Certificate bcCert = certParser.ReadCertificate(File.ReadAllBytes(rutaCertificado));
@@ -239,8 +239,8 @@ namespace SchettiniGestion
             bool tieneKey = !string.IsNullOrWhiteSpace(keyPath) && File.Exists(keyPath);
             bool tieneCert = !string.IsNullOrWhiteSpace(certPath) && File.Exists(certPath);
 
-            if (tieneKey && tieneCert) return "Certificado AFIP listo (.key + .crt)";
-            if (tieneKey) return "CSR generado — falta subir el certificado .crt de AFIP/ARCA";
+            if (tieneKey && tieneCert) return "Certificado ARCA listo (.key + .crt)";
+            if (tieneKey) return "CSR generado — falta subir el certificado .crt de ARCA";
             if (!string.IsNullOrWhiteSpace(certPath) && certPath.EndsWith(".pfx", StringComparison.OrdinalIgnoreCase))
                 return "Certificado .pfx configurado";
 
@@ -323,7 +323,7 @@ namespace SchettiniGestion
             {
                 throw new InvalidOperationException(
                     "El certificado .crt no corresponde a la clave privada generada en este sistema. " +
-                    "Use el certificado emitido por AFIP/ARCA para el CSR que descargó aquí.", ex);
+                    "Use el certificado emitido por ARCA para el CSR que descargó aquí.", ex);
             }
         }
 

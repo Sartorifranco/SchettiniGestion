@@ -109,5 +109,26 @@ namespace SchettiniGestion.WPF
                 }
             }
         }
+
+        private void btnGenerarNotaCredito_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.DataContext is DataRowView row)
+            {
+                int idFactura = Convert.ToInt32(row["FacturaID"]);
+                try
+                {
+                    var win = new NotaCreditoVentaWindow(idFactura)
+                    {
+                        Owner = Window.GetWindow(this)
+                    };
+                    if (win.ShowDialog() == true)
+                        CargarVentas();
+                }
+                catch (Exception ex)
+                {
+                    ModernMessageBox.Show("No se pudo generar la nota de crédito: " + ex.Message, "Nota de Crédito", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
     }
 }

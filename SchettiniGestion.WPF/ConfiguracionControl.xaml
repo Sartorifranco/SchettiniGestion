@@ -103,7 +103,7 @@
                 <Style TargetType="TabItem" BasedOn="{StaticResource ConfigTabItemStyle}"/>
             </TabControl.Resources>
 
-            <TabItem Header="🏢 Negocio y AFIP">
+            <TabItem Header="🏢 Negocio y ARCA">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="0,4,8,8">
 
@@ -147,6 +147,8 @@
                                 <TextBox x:Name="txtEmail" Style="{StaticResource ModuleTextBoxStyle}"/>
                             </StackPanel>
                         </Grid>
+                                <Button Content="💾 Guardar cambios de esta sección" Style="{StaticResource SecondaryButtonStyle}"
+                                        HorizontalAlignment="Right" Margin="0,14,0,0" Click="btnGuardar_Click"/>
                             </StackPanel>
                         </Border>
 
@@ -203,6 +205,8 @@
                                            TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
                             </StackPanel>
                         </Grid>
+                                <Button Content="💾 Guardar cambios de esta sección" Style="{StaticResource SecondaryButtonStyle}"
+                                        HorizontalAlignment="Right" Margin="0,14,0,0" Click="btnGuardar_Click"/>
                             </StackPanel>
                         </Border>
 
@@ -214,21 +218,23 @@
                                   Foreground="{DynamicResource TextPrimary}" FontSize="13" Margin="0,0,0,6"/>
                         <TextBlock Text="Si está activo, el sistema exige abrir la caja con el fondo fijo antes de vender. Si está inactivo, puede ir directo a la venta POS."
                                    Foreground="{DynamicResource TextSecondary}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                <Button Content="💾 Guardar cambios de esta sección" Style="{StaticResource SecondaryButtonStyle}"
+                                        HorizontalAlignment="Right" Margin="0,14,0,0" Click="btnGuardar_Click"/>
                             </StackPanel>
                         </Border>
 
                         <Border Style="{StaticResource ConfigSectionCard}">
                         <StackPanel x:Name="panelSeccionAfip">
-                        <TextBlock Text="Facturación Electrónica (AFIP)" Style="{StaticResource ConfigSectionTitle}"/>
+                        <TextBlock Text="Facturación Electrónica (ARCA)" Style="{StaticResource ConfigSectionTitle}"/>
 
-                        <!-- Activación Fiscal AFIP/ARCA (CSR + certificado) -->
+                        <!-- Activación Fiscal ARCA (CSR + certificado) -->
                         <Border Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="16" Margin="0,0,0,16"
                                 BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="Activación Fiscal AFIP/ARCA" FontWeight="SemiBold" FontSize="15"
+                                <TextBlock Text="Activación Fiscal ARCA" FontWeight="SemiBold" FontSize="15"
                                            Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
                                 <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"
-                                           Text="Genere el pedido de certificado (CSR) desde el sistema, súbalo en AFIP/ARCA con su Clave Fiscal y luego importe aquí el .crt emitido. Usa los datos de empresa de arriba (CUIT, Razón Social, Nombre de Fantasía)."/>
+                                           Text="Genere el pedido de certificado (CSR) desde el sistema, súbalo en ARCA con su Clave Fiscal y luego importe aquí el .crt emitido. Usa los datos de empresa de arriba (CUIT, Razón Social, Nombre de Fantasía)."/>
                                 <TextBlock x:Name="lblEstadoActivacionAfip" Foreground="{DynamicResource SuccessColor}"
                                            FontSize="12" FontWeight="SemiBold" Margin="0,0,0,12"/>
 
@@ -237,13 +243,13 @@
                                         Style="{StaticResource ButtonStyle}" Padding="16,10"
                                         HorizontalAlignment="Left" Margin="0,0,0,16"/>
 
-                                <TextBlock Text="Subir Certificado AFIP (.crt):" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBlock Text="Subir Certificado ARCA (.crt):" Style="{StaticResource ModuleLabelStyle}"/>
                                 <DockPanel LastChildFill="True" Margin="0,0,0,4">
                                     <Button x:Name="btnSubirCertificadoAfip" DockPanel.Dock="Right" Content="📂 Subir .crt"
                                             MinWidth="120" MinHeight="44" Margin="8,0,0,0"
                                             Click="btnSubirCertificadoAfip_Click"
                                             Style="{StaticResource SecondaryButtonStyle}"
-                                            ToolTip="Importar certificado emitido por AFIP/ARCA"/>
+                                            ToolTip="Importar certificado emitido por ARCA"/>
                                     <TextBox x:Name="txtCertificadoCrtPath" Style="{StaticResource ModuleTextBoxStyle}"
                                              IsReadOnly="True" VerticalAlignment="Center"
                                              ToolTip="Ruta del certificado .crt guardado en el sistema"/>
@@ -252,7 +258,7 @@
                                            Text="El certificado debe corresponder al CSR generado en esta misma PC. La clave privada (.key) queda guardada de forma segura en el servidor."/>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <Button x:Name="btnProbarConexionAfip" Content="🔌  Probar conexión AFIP"
+                                    <Button x:Name="btnProbarConexionAfip" Content="🔌  Probar conexión ARCA"
                                             Click="btnProbarConexionAfip_Click"
                                             Style="{StaticResource SecondaryButtonStyle}" Padding="16,10"
                                             MinHeight="44" VerticalAlignment="Center"/>
@@ -296,10 +302,12 @@
                                 <TextBox x:Name="txtTipoCambioUSD" Style="{StaticResource ModuleTextBoxStyle}"/>
                                 <TextBlock Style="{StaticResource FieldHintTextStyle}" Text="Ej: 1050 para $1050 por 1 USD"/>
 
-                                <CheckBox x:Name="chkAfipProduccion" Content="Ambiente AFIP: producción (no homologación)"
+                                <CheckBox x:Name="chkAfipProduccion" Content="Ambiente ARCA: producción (no homologación)"
                                           Foreground="{DynamicResource TextPrimary}" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Grid>
+                        <Button Content="💾 Guardar cambios de esta sección" Style="{StaticResource SecondaryButtonStyle}"
+                                HorizontalAlignment="Right" Margin="0,14,0,0" Click="btnGuardar_Click"/>
                         </StackPanel>
                         </Border>
 
@@ -314,6 +322,8 @@
                         <TextBox x:Name="txtMPToken" Style="{StaticResource ModuleTextBoxStyle}"/>
                         <TextBlock Style="{StaticResource FieldHintTextStyle}"
                                    Text="Debe ser 'Production Access Token' (empieza con APP_USR-)."/>
+                        <Button Content="💾 Guardar cambios de esta sección" Style="{StaticResource SecondaryButtonStyle}"
+                                HorizontalAlignment="Right" Margin="0,10,0,0" Click="btnGuardar_Click"/>
                         </StackPanel>
                         </Border>
 
@@ -374,6 +384,8 @@
                                            Text="Use 'Crear' para generar una caja compatible (SCH01)."/>
                             </StackPanel>
                         </Grid>
+                        <Button Content="💾 Guardar cambios de esta sección" Style="{StaticResource SecondaryButtonStyle}"
+                                HorizontalAlignment="Right" Margin="0,14,0,0" Click="btnGuardar_Click"/>
                         </StackPanel>
                         </Border>
 
@@ -411,6 +423,8 @@
                             <CheckBox x:Name="chkMPPointAutomatico"
                                       Content="Ofrecer cobro automático con Point en la ventana de cobro"
                                       IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,0"/>
+                            <Button Content="💾 Guardar cambios de esta sección" Style="{StaticResource SecondaryButtonStyle}"
+                                    HorizontalAlignment="Right" Margin="0,14,0,0" Click="btnGuardar_Click"/>
                         </StackPanel>
                         </Border>
 
@@ -418,17 +432,83 @@
                         <StackPanel x:Name="panelSeccionVisorCliente">
                         <TextBlock Text="Pantalla cliente (segundo monitor)" Style="{StaticResource ConfigSectionTitle}"/>
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" LineHeight="18"
-                                   Margin="0,0,0,8" MaxWidth="900" HorizontalAlignment="Left"
-                                   Text="Si usa dos monitores y activó el modo en la barra principal, las publicidades rotan en el panel izquierdo (vertical) o en la franja inferior (horizontal) mientras no hay venta en curso."/>
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" LineHeight="18"
-                                   Margin="0,0,0,16" MaxWidth="900" HorizontalAlignment="Left" FontStyle="Italic"
-                                   ToolTip="Recomendaciones de diseño para publicidades del visor cliente">
-                            <Run Text="Recomendación: "/>
-                            <Run Text="utilice imágenes o videos en formato vertical u horizontal (ej.: 1080×1080 px o 1080×1920 px). Formatos soportados: JPG, PNG, GIF, MP4 y AVI."/>
-                        </TextBlock>
+                                   Margin="0,0,0,12" MaxWidth="900" HorizontalAlignment="Left"
+                                   Text="Activá el modo en la barra principal. Hay dos espacios independientes: imagen promocional (izquierda) y banner (abajo), cada uno con su propio archivo y su propio tiempo entre cambios. El logo del negocio no se muestra en el visor para aprovechar toda el área."/>
 
-                        <TextBlock Text="Carpeta de promociones:" Style="{StaticResource ModuleLabelStyle}"/>
-                        <Grid Margin="0,0,0,10">
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Columna IZQUIERDA: imagen promocional vertical -->
+                            <Border Grid.Column="0" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1" CornerRadius="8" Padding="14">
+                                <StackPanel>
+                                    <TextBlock Text="⬅ Imagen promocional — IZQUIERDA" FontWeight="Bold" FontSize="14"
+                                               Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4"/>
+                                    <Border Background="#1E3A5F" CornerRadius="5" Padding="8,6" Margin="0,0,0,8">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12" FontWeight="SemiBold" Foreground="#7FC4FF"
+                                                   Text="📍 Lo que subas acá se mostrará del lado IZQUIERDO de la pantalla del cliente."/>
+                                    </Border>
+                                    <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,10"
+                                               Text="Ideal 1080×1920 px (vertical) o 1080×1080. Acepta imagen y video."/>
+
+                                    <TextBlock Text="Subir imagen o video para la izquierda:" Style="{StaticResource ModuleLabelStyle}"/>
+                                    <DockPanel LastChildFill="True" Margin="0,0,0,10">
+                                        <Button x:Name="btnImportarImagen" DockPanel.Dock="Left" Content="Subir a IZQUIERDA"
+                                                Click="btnImportarImagen_Click"
+                                                Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Padding="14,0"
+                                                MinHeight="44" MinWidth="150"
+                                                ToolTip="Copia JPG, PNG, GIF, MP4 o AVI a la carpeta y lo asigna al panel izquierdo"/>
+                                        <TextBox x:Name="txtRutaImagenPromocionImportada"
+                                                 Style="{StaticResource ModuleTextBoxStyle}"
+                                                 VerticalContentAlignment="Center"
+                                                 IsReadOnly="True"
+                                                 ToolTip="Archivo seleccionado para copiar al guardar (panel izquierdo)"/>
+                                    </DockPanel>
+
+                                    <TextBlock Text="Segundos entre cambios — izquierda (3–120):" Style="{StaticResource ModuleLabelStyle}"/>
+                                    <TextBox x:Name="txtVisorPromoIntervalo" Style="{StaticResource ModuleTextBoxStyle}" Width="100" HorizontalAlignment="Left" Text="8"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Columna DERECHA/ABAJO: banner horizontal -->
+                            <Border Grid.Column="2" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1" CornerRadius="8" Padding="14">
+                                <StackPanel>
+                                    <TextBlock Text="⬇ Banner — ABAJO" FontWeight="Bold" FontSize="14"
+                                               Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4"/>
+                                    <Border Background="#3A2E1E" CornerRadius="5" Padding="8,6" Margin="0,0,0,8">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12" FontWeight="SemiBold" Foreground="#FFC876"
+                                                   Text="📍 Lo que subas acá se mostrará en la franja INFERIOR (abajo) de la pantalla del cliente."/>
+                                    </Border>
+                                    <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,10"
+                                               Text="Ideal 1200×300 px (horizontal). Acepta imagen y video."/>
+
+                                    <TextBlock Text="Subir imagen o video para abajo:" Style="{StaticResource ModuleLabelStyle}"/>
+                                    <DockPanel LastChildFill="True" Margin="0,0,0,10">
+                                        <Button x:Name="btnImportarBannerInferior" DockPanel.Dock="Left" Content="Subir a ABAJO"
+                                                Click="btnImportarBannerInferior_Click"
+                                                Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Padding="14,0"
+                                                MinHeight="44" MinWidth="150"
+                                                ToolTip="Copia JPG, PNG, GIF, MP4 o AVI a la carpeta y lo asigna a la franja inferior"/>
+                                        <TextBox x:Name="txtRutaBannerImportado"
+                                                 Style="{StaticResource ModuleTextBoxStyle}"
+                                                 VerticalContentAlignment="Center"
+                                                 IsReadOnly="True"
+                                                 ToolTip="Archivo seleccionado para copiar al guardar (franja inferior)"/>
+                                    </DockPanel>
+
+                                    <TextBlock Text="Segundos entre cambios — abajo (3–120):" Style="{StaticResource ModuleLabelStyle}"/>
+                                    <TextBox x:Name="txtVisorBannerIntervalo" Style="{StaticResource ModuleTextBoxStyle}" Width="100" HorizontalAlignment="Left" Text="8"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <TextBlock Text="Carpeta de medios:" Style="{StaticResource ModuleLabelStyle}"/>
+                        <Grid Margin="0,0,0,6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -442,23 +522,31 @@
                                     Click="btnBuscarCarpetaPromo_Click"
                                     Style="{StaticResource SecondaryButtonStyle}" ToolTip="Elegir carpeta"/>
                         </Grid>
+                        <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,14"
+                                   Text="Todos los archivos de esta carpeta rotan en el visor, cada uno en el panel que se eligió al subirlo."/>
 
-                        <TextBlock Text="Agregar archivo de promoción:" Style="{StaticResource ModuleLabelStyle}"/>
-                        <DockPanel LastChildFill="True" Margin="0,0,0,12">
-                            <Button x:Name="btnImportarImagen" DockPanel.Dock="Left" Content="Subir archivo"
-                                    Click="btnImportarImagen_Click"
-                                    Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Padding="14,0"
-                                    MinHeight="44" MinWidth="120"
-                                    ToolTip="Copia imágenes (JPG, PNG, GIF) o videos (MP4, AVI) a la carpeta de publicidades"/>
-                            <TextBox x:Name="txtRutaImagenPromocionImportada"
-                                     Style="{StaticResource ModuleTextBoxStyle}"
-                                     VerticalContentAlignment="Center"
-                                     IsReadOnly="True"
-                                     ToolTip="Archivo seleccionado para copiar al guardar"/>
-                        </DockPanel>
-
-                        <TextBlock Text="Segundos entre cambios (imágenes estáticas, 3–120):" Style="{StaticResource ModuleLabelStyle}"/>
-                        <TextBox x:Name="txtVisorPromoIntervalo" Style="{StaticResource ModuleTextBoxStyle}" Width="100" HorizontalAlignment="Left" Text="8" Margin="0,0,0,12"/>
+                        <TextBlock Text="Archivos cargados" Style="{StaticResource ModuleLabelStyle}"/>
+                        <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,6"
+                                   Text="Seleccioná un archivo y tocá Eliminar para quitarlo de la carpeta del visor. La etiqueta indica en qué panel se muestra."/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ListBox x:Name="lstArchivosVisorPromo" Grid.Column="0" Height="120" Margin="0,0,10,0"
+                                     Background="{DynamicResource SurfaceDark}" Foreground="{DynamicResource TextPrimary}"
+                                     BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"/>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                                <Button x:Name="btnEliminarArchivoVisor" Content="🗑 Eliminar"
+                                        Click="btnEliminarArchivoVisor_Click"
+                                        Background="#C0392B" Foreground="White" FontWeight="SemiBold"
+                                        Padding="14,10" MinHeight="44" Margin="0,0,0,8"
+                                        ToolTip="Elimina el archivo seleccionado de la carpeta"/>
+                                <Button x:Name="btnRefrescarArchivosVisor" Content="↻ Actualizar"
+                                        Click="btnRefrescarArchivosVisor_Click"
+                                        Style="{StaticResource SecondaryButtonStyle}" Padding="14,10" MinHeight="44"/>
+                            </StackPanel>
+                        </Grid>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Button x:Name="btnGuardarPromoVisor" Content="💾 Guardar promociones del visor"
@@ -590,15 +678,74 @@
                             <StackPanel>
                         <TextBlock Text="Generar copia de seguridad" Style="{StaticResource ConfigSectionTitle}" Foreground="{DynamicResource SuccessColor}"/>
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,6"
-                                   Text="Guarda todos los datos (clientes, productos, ventas) en un archivo .bak. Guardalo en un pendrive o en la nube."/>
+                                   Text="Guarda todos los datos (clientes, productos, ventas) en un archivo .bak."/>
                         <TextBlock TextWrapping="Wrap" FontStyle="Italic" Foreground="{DynamicResource TextSecondary}"
-                                   Margin="0,0,0,16"
-                                   Text="⚠ El archivo se genera en el servidor SQL. Elegí una carpeta accesible desde esa PC (ej: C:\Backups o el escritorio del servidor)."/>
+                                   Margin="0,0,0,10"
+                                   Text="⚠ El archivo se genera en la PC donde vive la base de datos (el Servidor, o esta misma PC si trabajás en modo Solo esta PC). Elegí una carpeta accesible desde esa PC."/>
+                        <Border Background="#FFF3E0" CornerRadius="6" Padding="14,10" Margin="0,0,0,14">
+                            <TextBlock TextWrapping="Wrap" FontSize="13">
+                                <Run FontWeight="Bold" Foreground="#E65100">⚠ Muy importante:</Run>
+                                <Run Foreground="#BF360C"> guardar el backup en el mismo disco de esta PC NO alcanza. Si la PC se rompe, se roba o el disco falla, ese backup se pierde junto con los datos. Copialo SIEMPRE también a un pendrive, otra PC o una carpeta de la nube (ver "Backup automático diario" más abajo para hacerlo sin tener que acordarte todos los días).</Run>
+                            </TextBlock>
+                        </Border>
                         <Button x:Name="btnGenerarBackup" Content="💾  Generar copia de seguridad"
                                 Style="{StaticResource ButtonStyle}" Padding="20,12" HorizontalAlignment="Left"
                                 Click="btnGenerarBackup_Click"/>
-                        <TextBlock Text="✔ Recomendado: al menos una vez por semana."
+                        <TextBlock Text="✔ Recomendado: al menos una vez por semana, además del automático."
                                    Foreground="{DynamicResource TextSecondary}" FontStyle="Italic" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource ConfigSectionCard}">
+                            <StackPanel>
+                        <TextBlock Text="Backup automático diario" Style="{StaticResource ConfigSectionTitle}" Foreground="{DynamicResource WarningColor}"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,14"
+                                   Text="Programa un backup diario que se genera solo (sin abrir el sistema) y se copia automáticamente a una carpeta externa: pendrive, PC/disco de red, o una carpeta sincronizada con la nube (OneDrive, Google Drive, etc.)."/>
+
+                        <Border x:Name="pnlBackupAutoNoAplica" Visibility="Collapsed" Background="{DynamicResource SurfaceDark}"
+                                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="6" Padding="14,10" Margin="0,0,0,10">
+                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimary}"
+                                Text="ℹ Esta PC se conecta como Cliente a la base de datos de otro equipo. El backup automático se configura desde la PC que funciona como Servidor, porque es ahí donde vive realmente la información."/>
+                        </Border>
+
+                        <StackPanel x:Name="pnlBackupAutoConfig">
+                            <CheckBox x:Name="chkBackupAutoHabilitado" Content="Activar backup automático diario"
+                                      Foreground="{DynamicResource TextPrimary}" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Hora del backup (formato 24 hs, ej: 02:00 = 2 de la madrugada):" Style="{StaticResource ModuleLabelStyle}"/>
+                            <TextBox x:Name="txtBackupAutoHora" Style="{StaticResource ModuleTextBoxStyle}" Width="120" HorizontalAlignment="Left" Text="02:00"/>
+                            <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,14"
+                                Text="Elegí un horario en que el local esté cerrado y la PC quede encendida."/>
+
+                            <TextBlock Text="Carpeta externa de destino:" Style="{StaticResource ModuleLabelStyle}"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="txtBackupAutoCarpeta" Grid.Column="0" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,10,0"
+                                         ToolTip="Ej: E:\Backups (pendrive) o \\OTRAPC\Backups (red) o C:\Users\TuUsuario\OneDrive\BackupsSCHPOS (nube)"/>
+                                <Button x:Name="btnBuscarCarpetaBackupAuto" Grid.Column="1" Content="📁" MinWidth="48" MinHeight="44" Padding="12,0"
+                                        Click="btnBuscarCarpetaBackupAuto_Click" Style="{StaticResource SecondaryButtonStyle}" ToolTip="Elegir carpeta"/>
+                            </Grid>
+                            <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,14"
+                                Text="Tip: si usás un pendrive, dejalo siempre conectado a esta PC. Si usás una carpeta de la nube (OneDrive, Google Drive, Dropbox), elegí la carpeta local que se sincroniza sola: el archivo va a subirse a internet automáticamente."/>
+
+                            <TextBlock Text="Cantidad de copias a conservar:" Style="{StaticResource ModuleLabelStyle}"/>
+                            <TextBox x:Name="txtBackupAutoRetencion" Style="{StaticResource ModuleTextBoxStyle}" Width="100" HorizontalAlignment="Left" Text="14"/>
+                            <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,14"
+                                Text="Los backups más viejos que esta cantidad se borran solos para no llenar el pendrive o disco."/>
+
+                            <TextBlock x:Name="lblBackupAutoEstado" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}"
+                                       FontStyle="Italic" Margin="0,0,0,14" Text="Nunca se ejecutó."/>
+
+                            <WrapPanel>
+                                <Button x:Name="btnGuardarBackupAuto" Content="💾  Guardar y programar" Style="{StaticResource ButtonStyle}"
+                                        Padding="20,12" Margin="0,0,10,8" Click="btnGuardarBackupAuto_Click"/>
+                                <Button x:Name="btnProbarBackupAuto" Content="▶ Probar ahora" Style="{StaticResource SecondaryButtonStyle}"
+                                        Padding="20,12" Margin="0,0,0,8" Click="btnProbarBackupAuto_Click"/>
+                            </WrapPanel>
+                        </StackPanel>
                             </StackPanel>
                         </Border>
 
@@ -667,6 +814,41 @@
                                     Style="{StaticResource SecondaryButtonStyle}"
                                     Click="btnTestA4_Click"/>
                         </Grid>
+
+                        <TextBlock Text="Impresora de etiquetas" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,20,0,6"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,8"
+                                   Text="Usada en el módulo Etiquetas. Instalá el driver Windows de la impresora (igual que una A4) y elegila acá. La medida del rollo debe coincidir con la configurada abajo."/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="cmbImpresoraEtiquetas" Grid.Column="0"
+                                      Style="{StaticResource TouchComboBoxStyle}"
+                                      Height="44" FontSize="14" Margin="0,0,8,0"/>
+                            <Button x:Name="btnTestEtiquetas" Grid.Column="1"
+                                    Content="🖨️ Probar" Padding="14,10"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Click="btnTestEtiquetas_Click"/>
+                        </Grid>
+                        <TextBlock Text="Medida de la etiqueta" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
+                        <ComboBox x:Name="cmbMedidaEtiqueta" Style="{StaticResource TouchComboBoxStyle}"
+                                  Height="44" FontSize="14" Margin="0,0,0,8"
+                                  SelectionChanged="cmbMedidaEtiqueta_SelectionChanged"/>
+                        <StackPanel x:Name="pnlMedidaEtiquetaCustom" Orientation="Horizontal" Visibility="Collapsed" Margin="0,0,0,4">
+                            <TextBlock Text="Ancho (mm):" VerticalAlignment="Center" Margin="0,0,8,0"
+                                       Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBox x:Name="txtEtiquetaAnchoMm" Width="70" Height="40" FontSize="14"
+                                     VerticalContentAlignment="Center" Margin="0,0,16,0" Text="50"/>
+                            <TextBlock Text="Alto (mm):" VerticalAlignment="Center" Margin="0,0,8,0"
+                                       Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBox x:Name="txtEtiquetaAltoMm" Width="70" Height="40" FontSize="14"
+                                     VerticalContentAlignment="Center" Text="25"/>
+                        </StackPanel>
+                                <Button Content="💾 Guardar cambios de esta sección" Style="{StaticResource SecondaryButtonStyle}"
+                                        HorizontalAlignment="Right" Margin="0,14,0,0" Click="btnGuardarImpresoras_Click"/>
                             </StackPanel>
                         </Border>
 
@@ -713,29 +895,35 @@
                                     Style="{StaticResource SecondaryButtonStyle}"
                                     Click="btnElegirCarpetaComprobantes_Click"/>
                         </Grid>
+                                <Button Content="💾 Guardar cambios de esta sección" Style="{StaticResource SecondaryButtonStyle}"
+                                        HorizontalAlignment="Right" Margin="0,4,0,0" Click="btnGuardarImpresoras_Click"/>
                             </StackPanel>
                         </Border>
 
                         <Border Style="{StaticResource ConfigSectionCard}">
                             <StackPanel>
                         <TextBlock Text="Contenido del ticket térmico" Style="{StaticResource ConfigSectionTitle}"/>
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"
-                                   Text="Marcá qué datos querés que aparezcan en el ticket. El logo se configura en la pestaña Negocio y AFIP."/>
-                        <WrapPanel Margin="0,0,0,20">
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,8"
+                                   Text="Marcá solo datos opcionales del ticket. Los datos fiscales obligatorios siempre se imprimen."/>
+                        <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
+                                CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
+                            <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource TextPrimary}">
+                                <Run FontWeight="SemiBold" Text="Siempre en el ticket fiscal: "/>
+                                <Run Text="CUIT, condición IVA, Punto de venta, pie fiscal (CAE) y el QR de verificación ARCA. No se pueden desactivar."/>
+                            </TextBlock>
+                        </Border>
+                        <WrapPanel Margin="0,0,0,12">
                             <CheckBox x:Name="chkTicketLogo" Content="Logo" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketDireccion" Content="Dirección" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketTelefono" Content="Teléfono" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
-                            <CheckBox x:Name="chkTicketCuit" Content="CUIT" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketCliente" Content="Cliente" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketCodigo" Content="Código de producto" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketFormaPago" Content="Forma de pago" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
-                            <CheckBox x:Name="chkTicketPieFiscal" Content="Pie fiscal (CAE)" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketGracias" Content="Mensaje de cierre" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
-                            <CheckBox x:Name="chkTicketPuntoVenta" Content="Punto de venta" IsChecked="True" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                             <CheckBox x:Name="chkTicketVendedor" Content="Vendedor / cajero que cobró" Margin="0,0,20,8" Foreground="{DynamicResource TextPrimary}"/>
                         </WrapPanel>
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,0"
-                                   Text="El número de punto de venta se configura en la pestaña «Negocio y AFIP». El vendedor/cajero es el «Nombre del personal» del usuario que inició sesión (Usuarios)."/>
+                        <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,0"
+                                   Text="El punto de venta se configura en «Negocio y ARCA». El vendedor es el «Nombre del personal» del usuario logueado."/>
                             </StackPanel>
                         </Border>
 

@@ -80,6 +80,15 @@ dl dd {
   color: #fff;
 }
 
+.update-card {
+  border-left: 3px solid #238636;
+}
+
+.update-card .badge-version {
+  background: #238636;
+  font-weight: 600;
+}
+
 .table-dark {
   --bs-table-color: var(--text-primary);
   --bs-table-bg: transparent;

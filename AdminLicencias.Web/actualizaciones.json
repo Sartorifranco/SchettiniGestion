@@ -1,0 +1,51 @@
+{
+  "versionActual": "2.2.1",
+  "instalador": "SCHPOS-Setup-2.2.1.exe",
+  "notas": [
+    {
+      "version": "2.2.1",
+      "fecha": "2026-07-27",
+      "titulo": "POS: letra A/B/C en vivo",
+      "items": [
+        "Panel de ventas: letra A/B/C (o X) visible y actualizada al cambiar cliente o tipo de comprobante.",
+        "Instalador SCHPOS-Setup-2.2.1.exe."
+      ]
+    },
+    {
+      "version": "2.2.0",
+      "fecha": "2026-07-27",
+      "titulo": "Modificaciones SCH POS + QR fiscal ARCA",
+      "items": [
+        "Teclado ON/OFF en Login con preferencia persistente.",
+        "Visor cliente: promo vs banner, eliminar medios, sin logo en área promocional.",
+        "Ticket fiscal: CUIT, CAE, Punto de venta y QR ARCA siempre obligatorios.",
+        "Promociones ampliadas: SKU, combos, monto fijo, 2x1/3x2, bonificar y escala.",
+        "Excel de productos completo + control de duplicados + deshabilitar productos.",
+        "Notas de crédito total/parcial desde historial vinculadas a la factura.",
+        "Etiquetas ampliadas: presets, A4, carteles/góndola.",
+        "Usuario técnico oculto 9999 + auditoría AccionesTecnicas.",
+        "Instalador SCHPOS-Setup-2.2.0.exe (.NET 4.8 y LocalDB opcionales)."
+      ]
+    },
+    {
+      "version": "2.1.9",
+      "fecha": "2026-07-22",
+      "titulo": "Etiquetas, ARCA y POS",
+      "items": [
+        "Módulo Impresión de etiquetas (ACCESO_ETIQUETAS).",
+        "Renombre AFIP → ARCA en la interfaz.",
+        "Botón ABRIR CAJA desde el POS cuando hay fondo fijo."
+      ]
+    },
+    {
+      "version": "2.1.8+",
+      "fecha": "2026-07",
+      "titulo": "Módulos y cobros",
+      "items": [
+        "Módulo licenciable Gráficos y Estadísticas (ACCESO_ESTADISTICAS).",
+        "Mercado Pago QR y Point Smart como servicios separados en el licenciador y en Configuración.",
+        "Módulo Promociones con descuento automático en el POS (producto / categoría / todo el local)."
+      ]
+    }
+  ]
+}

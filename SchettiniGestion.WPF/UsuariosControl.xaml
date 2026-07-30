@@ -343,6 +343,83 @@
                             Margin="0,12,0,0"/>
                 </Grid>
             </TabItem>
+
+            <TabItem x:Name="tabTecnico" Header="🛠  Soporte técnico" Visibility="Collapsed">
+                <Grid Margin="0,16,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel>
+                        <TextBlock Text="Herramientas técnicas" FontSize="20" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
+                        <TextBlock Style="{StaticResource FieldHintTextStyle}" TextWrapping="Wrap" Margin="0,0,0,12"
+                                   Text="Visible solo para usuario técnico. Cada acción queda registrada en AccionesTecnicas con fecha, usuario, acción y detalle."/>
+                    </StackPanel>
+
+                    <Border Grid.Row="1" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+                        <WrapPanel>
+                            <StackPanel Width="280" Margin="0,0,24,12">
+                                <TextBlock Text="Reset de contraseña" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
+                                <PasswordBox x:Name="txtTechNuevaClave" Height="44" FontSize="14" Style="{StaticResource PasswordBoxStyle}"/>
+                                <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,4,0,8"
+                                           Text="Seleccioná un usuario de la grilla y definí una nueva clave."/>
+                                <Button Content="Resetear clave del usuario seleccionado" Style="{StaticResource SecondaryButtonStyle}"
+                                        MinHeight="44" Click="btnTechResetPassword_Click"/>
+                            </StackPanel>
+
+                            <StackPanel Width="360" Margin="0,0,24,12">
+                                <TextBlock Text="Borrado duro de registros" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <ComboBox x:Name="cmbTechTabla" Width="210" Height="44" Margin="0,0,8,0"/>
+                                    <TextBox x:Name="txtTechId" Width="110" Height="44" FontSize="14" VerticalContentAlignment="Center"
+                                             ToolTip="ID del registro"/>
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,4,0,8"
+                                           Text="Elimina definitivamente por tabla permitida. Usar solo para mantenimiento o reparación de datos."/>
+                                <Button Content="Hard delete auditado" Style="{StaticResource DeleteButtonStyle}"
+                                        MinHeight="44" Click="btnTechHardDelete_Click"/>
+                            </StackPanel>
+
+                            <StackPanel Width="320" Margin="0,0,24,12">
+                                <TextBlock Text="Funciones especiales" Style="{StaticResource LabelStyle}" Margin="0,0,0,6"/>
+                                <TextBox x:Name="txtTechFuncion" Height="44" FontSize="14" VerticalContentAlignment="Center"
+                                         ToolTip="Nombre o detalle de la función"/>
+                                <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,4,0,8"
+                                           Text="Registra activaciones o hooks especiales de soporte para seguimiento."/>
+                                <Button Content="Registrar activación técnica" Style="{StaticResource ButtonStyle}"
+                                        MinHeight="44" Click="btnTechActivarFuncion_Click"/>
+                            </StackPanel>
+                        </WrapPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="8" Padding="8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <DockPanel Margin="0,0,0,8">
+                                <Button DockPanel.Dock="Right" Content="Actualizar auditoría" Style="{StaticResource SecondaryButtonStyle}"
+                                        MinHeight="40" Padding="12,6" Click="btnTechRefrescarAuditoria_Click"/>
+                                <TextBlock Text="Auditoría técnica" FontSize="16" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <DataGrid x:Name="dgvAccionesTecnicas" Grid.Row="1" AutoGenerateColumns="False"
+                                      IsReadOnly="True" RowHeight="38" Style="{StaticResource {x:Type DataGrid}}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy HH:mm}" Width="150"/>
+                                    <DataGridTextColumn Header="Usuario" Binding="{Binding Usuario}" Width="90"/>
+                                    <DataGridTextColumn Header="Acción" Binding="{Binding Accion}" Width="180"/>
+                                    <DataGridTextColumn Header="Detalle" Binding="{Binding Detalle}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
         </TabControl>
     </Grid>
 </UserControl>

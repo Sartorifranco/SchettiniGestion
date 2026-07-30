@@ -2,10 +2,23 @@
 ; Requiere Inno Setup 6: https://jrsoftware.org/isdl.php
 
 #define MyAppName "SCHPOS"
-#define MyAppVersion "2.1.9"
+#define MyAppVersion "2.2.5"
 #define MyAppPublisher "Schettini Tec"
 #define MyAppExeName "SCHPOS.exe"
 #define MyAppUrl "https://github.com/Sartorifranco/SchettiniGestion"
+
+#if FileExists(AddBackslash(SourcePath) + "prerequisites\ndp48-x86-x64-allos-enu.exe")
+  #define Ndp48Bundled
+#endif
+#if FileExists(AddBackslash(SourcePath) + "prerequisites\SqlLocalDB.msi")
+  #define LocalDbBundled
+#endif
+#if FileExists(AddBackslash(SourcePath) + "prerequisites\vc_redist.x64.exe")
+  #define VcRedistX64Bundled
+#endif
+#if FileExists(AddBackslash(SourcePath) + "prerequisites\vc_redist.x86.exe")
+  #define VcRedistX86Bundled
+#endif
 
 [Setup]
 AppId={{A7B3C9D1-4E2F-5A6B-8C9D-0E1F2A3B4C5D}
@@ -39,8 +52,18 @@ Name: "desktopicon"; Description: "Crear acceso directo en el escritorio"; Group
 [Files]
 ; Generado por build-release.ps1 en la carpeta staging\
 Source: "staging\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; SQL LocalDB — SqlLocalDB.msi debe estar en la misma carpeta que este script
-Source: "prerequisites\SqlLocalDB.msi"; DestDir: "{tmp}"; Flags: deleteafterinstall
+#ifdef Ndp48Bundled
+Source: "prerequisites\ndp48-x86-x64-allos-enu.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not Net48Installed
+#endif
+#ifdef VcRedistX64Bundled
+Source: "prerequisites\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not VcRedistX64Installed
+#endif
+#ifdef VcRedistX86Bundled
+Source: "prerequisites\vc_redist.x86.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not VcRedistX86Installed
+#endif
+#ifdef LocalDbBundled
+Source: "prerequisites\SqlLocalDB.msi"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not LocalDbInstalled
+#endif
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -48,10 +71,30 @@ Name: "{group}\Desinstalar {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\SqlLocalDB.msi"" /passive IACCEPTSQLLOCALDBLICENSETERMS=YES /norestart"; StatusMsg: "Instalando motor de base de datos (LocalDB)..."; Flags: waituntilterminated
+#ifdef Ndp48Bundled
+Filename: "{tmp}\ndp48-x86-x64-allos-enu.exe"; Parameters: "/q /norestart"; StatusMsg: "Instalando .NET Framework 4.8..."; Flags: waituntilterminated; Check: not Net48Installed
+#endif
+#ifdef VcRedistX64Bundled
+Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Instalando Visual C++ Redistributable (x64)..."; Flags: waituntilterminated; Check: not VcRedistX64Installed
+#endif
+#ifdef VcRedistX86Bundled
+Filename: "{tmp}\vc_redist.x86.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Instalando Visual C++ Redistributable (x86)..."; Flags: waituntilterminated; Check: not VcRedistX86Installed
+#endif
+#ifdef LocalDbBundled
+Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\SqlLocalDB.msi"" /passive IACCEPTSQLLOCALDBLICENSETERMS=YES /norestart"; StatusMsg: "Instalando SQL Server LocalDB..."; Flags: waituntilterminated; Check: not LocalDbInstalled
+#endif
+Filename: "{app}\{#MyAppExeName}"; Parameters: "/bootstrap"; StatusMsg: "Preparando base de datos..."; Flags: waituntilterminated runhidden; Check: ShouldRunBootstrap
 Filename: "{app}\{#MyAppExeName}"; Description: "Iniciar {#MyAppName} ahora"; Flags: nowait postinstall skipifsilent runasoriginaluser
 
 [Code]
+function Net48Installed: Boolean;
+var
+  Release: Cardinal;
+begin
+  Result := RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full', 'Release', Release)
+    and (Release >= 528040);
+end;
+
 function Net472OrHigherInstalled: Boolean;
 var
   Release: Cardinal;
@@ -68,21 +111,47 @@ begin
     and (ResultCode = 0);
 end;
 
+// SQL Server LocalDB necesita este runtime para que el proceso del motor pueda arrancar.
+// Sin él, SqlLocalDB.msi se instala "bien" pero la instancia nunca inicia (falla silenciosa
+// muy común en PCs limpias que nunca tuvieron Visual Studio ni otro SQL Server instalado).
+function VcRedistX64Installed: Boolean;
+var
+  Installed: Cardinal;
+begin
+  Result := RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X64', 'Installed', Installed)
+    and (Installed = 1);
+end;
+
+function VcRedistX86Installed: Boolean;
+var
+  Installed: Cardinal;
+begin
+  Result := RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X86', 'Installed', Installed)
+    and (Installed = 1);
+end;
+
+function ShouldRunBootstrap: Boolean;
+begin
+  Result := Net472OrHigherInstalled;
+end;
+
 function InitializeSetup: Boolean;
 begin
   Result := True;
-  if not Net472OrHigherInstalled then
-  begin
-    if MsgBox('No se detectó .NET Framework 4.7.2 o superior.' + #13#10 +
-      'Instale .NET Framework 4.8 desde Microsoft y vuelva a ejecutar el instalador.' + #13#10#13#10 +
-      '¿Desea continuar de todos modos?', mbConfirmation, MB_YESNO) = IDNO then
-      Result := False;
-  end;
+  if Net48Installed or Net472OrHigherInstalled then
+    Exit;
+#ifdef Ndp48Bundled
+  Exit;
+#endif
+  if MsgBox('No se detecto .NET Framework 4.7.2 o superior.' + #13#10 +
+    'Instale .NET Framework 4.8 desde Microsoft y vuelva a ejecutar el instalador.' + #13#10#13#10 +
+    'Desea continuar de todos modos?', mbConfirmation, MB_YESNO) = IDNO then
+    Result := False;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  CfgDir, CfgPath, CfgContent: String;
+  CfgDir, CfgPath, CfgContent, LicSrc, LicDst: String;
 begin
   if CurStep = ssPostInstall then
   begin
@@ -93,6 +162,11 @@ begin
       CreateDir(CfgDir);
     if not FileExists(CfgPath) then
       SaveStringToFile(CfgPath, CfgContent, False);
+
+    LicSrc := ExpandConstant('{app}\licencia.key');
+    LicDst := CfgDir + '\licencia.key';
+    if FileExists(LicSrc) and not FileExists(LicDst) then
+      FileCopy(LicSrc, LicDst, False);
   end;
 end;
 

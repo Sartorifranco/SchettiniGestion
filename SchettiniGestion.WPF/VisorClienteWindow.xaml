@@ -20,32 +20,21 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Publicidades verticales (izquierda) -->
+            <!-- Imagen promocional vertical (lado izquierdo, ideal 1080×1920 o 1080×1080) -->
             <Border x:Name="panelPromoLateral" Grid.Column="0" Visibility="Collapsed"
                     Background="#0A0A0A" BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,0,1,0">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <Border Grid.Row="0" ClipToBounds="True" Background="#0A0A0A">
-                        <Grid>
-                            <Image x:Name="imgPromo" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
-                            <MediaElement x:Name="mediaPromo" LoadedBehavior="Manual" UnloadedBehavior="Close" IsMuted="True"
-                                          Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"
-                                          MediaEnded="MediaPromo_MediaEnded" MediaFailed="MediaPromo_MediaFailed"/>
-                        </Grid>
-                    </Border>
-
-                    <Border x:Name="borderMarcaPromo" Grid.Row="1" Background="#CC141414" Padding="12,10">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image x:Name="imgLogo" Height="56" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,0,6"/>
-                            <TextBlock x:Name="txtMarcaPromo" Text="" Foreground="{DynamicResource TextPrimary}"
-                                       FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
-                </Grid>
+                <Border ClipToBounds="True" Background="#0A0A0A">
+                    <Grid>
+                        <Image x:Name="imgPromo" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                        <MediaElement x:Name="mediaPromo" LoadedBehavior="Manual" UnloadedBehavior="Close" IsMuted="True"
+                                      Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"
+                                      MediaEnded="MediaPromo_MediaEnded" MediaFailed="MediaPromo_MediaFailed"/>
+                        <!-- Controles ocultos: el logo se eliminó del visor para maximizar el área promocional -->
+                        <Image x:Name="imgLogo" Height="1" Width="1" Visibility="Collapsed"/>
+                        <TextBlock x:Name="txtMarcaPromo" Visibility="Collapsed"/>
+                        <Border x:Name="borderMarcaPromo" Visibility="Collapsed" Height="0"/>
+                    </Grid>
+                </Border>
             </Border>
 
             <!-- Detalle de venta (derecha) -->

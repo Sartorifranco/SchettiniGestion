@@ -20,12 +20,46 @@ namespace SchettiniGestion.WPF
             Loaded   += (s, e) =>
             {
                 KeyboardService.VisibilityChanged += OnKeyboardVisibilityChanged;
+                KeyboardService.EnabledChanged += ActualizarBtnTecladoLogin;
+                ActualizarBtnTecladoLogin();
                 // Si el teclado ya está visible cuando se abre la ventana
                 if (KeyboardService.IsEnabled && KeyboardService.KeyboardTop < double.MaxValue)
                     OnKeyboardVisibilityChanged(true);
-                txtUsuario.Focus();
+                // Solo enfocar si el teclado está ON; si está OFF, evita abrirlo al iniciar
+                if (KeyboardService.IsEnabled)
+                    txtUsuario.Focus();
             };
-            Unloaded += (s, e) => KeyboardService.VisibilityChanged -= OnKeyboardVisibilityChanged;
+            Unloaded += (s, e) =>
+            {
+                KeyboardService.VisibilityChanged -= OnKeyboardVisibilityChanged;
+                KeyboardService.EnabledChanged -= ActualizarBtnTecladoLogin;
+            };
+        }
+
+        private void btnTecladoLogin_Click(object sender, RoutedEventArgs e)
+        {
+            KeyboardService.Toggle();
+            ActualizarBtnTecladoLogin();
+            if (KeyboardService.IsEnabled)
+                txtUsuario.Focus();
+        }
+
+        private void ActualizarBtnTecladoLogin()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                bool on = KeyboardService.IsEnabled;
+                if (txtLabelTecladoLogin != null)
+                    txtLabelTecladoLogin.Text = on ? "Teclado ON" : "Teclado OFF";
+                if (btnTecladoLogin == null) return;
+                btnTecladoLogin.Opacity = on ? 1.0 : 0.7;
+                btnTecladoLogin.BorderBrush = on
+                    ? (System.Windows.Media.Brush)FindResource("PrimaryColor")
+                    : (System.Windows.Media.Brush)FindResource("BorderColor");
+                btnTecladoLogin.Foreground = on
+                    ? (System.Windows.Media.Brush)FindResource("TextPrimary")
+                    : (System.Windows.Media.Brush)FindResource("TextSecondary");
+            });
         }
 
         private void OnKeyboardVisibilityChanged(bool visible)

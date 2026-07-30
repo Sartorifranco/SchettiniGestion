@@ -17,6 +17,7 @@ Plan acordado para completar Compras e Informes sin bloquear el lanzamiento.
 | **2** | Flujo compras: checkbox recepcionar + selector OC en factura | `cursor/sprint2-flujo-compras-d53a` | [#9](https://github.com/Sartorifranco/SchettiniGestion/pull/9) | ✅ Hecho |
 | **3** | Informes faltantes: valorización, vendedor, faltantes pedidos, cta.cte. proveedor | `cursor/sprint3-informes-d53a` | [#10](https://github.com/Sartorifranco/SchettiniGestion/pull/10) | ✅ Hecho |
 | **4** | Pulido: PDF export, NC/ND impactan saldo, hub Informes unificado | `cursor/sprint4-pulido-d53a` | [#11](https://github.com/Sartorifranco/SchettiniGestion/pull/11) | ✅ Hecho |
+| **Merge → main** | Integración Sprints 1–4 (v2.2 propuesta) | `cursor/avances-v2.2-d53a` | [#12](https://github.com/Sartorifranco/SchettiniGestion/pull/12) | ✅ Listo para merge |
 
 ## Criterio de “listo para merge a main”
 

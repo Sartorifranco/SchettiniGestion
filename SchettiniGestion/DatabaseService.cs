@@ -688,6 +688,16 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Accione
     Usuario NVARCHAR(50) NOT NULL,
     Accion NVARCHAR(100) NOT NULL,
     Detalle NVARCHAR(MAX) NULL
+  );
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='ProductoAliasProveedor')
+  CREATE TABLE dbo.ProductoAliasProveedor (
+    AliasID INT IDENTITY(1,1) PRIMARY KEY,
+    ProveedorID INT NOT NULL,
+    DescripcionProveedor NVARCHAR(300) NOT NULL,
+    ProductoID INT NOT NULL,
+    CodigoProveedor NVARCHAR(100) NULL,
+    UltimoUso DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT UQ_ProductoAliasProveedor UNIQUE (ProveedorID, DescripcionProveedor)
   );", c))
                         cmd.ExecuteNonQuery();
                     _columnasMigracionLiteOk = true;

@@ -1,14 +1,15 @@
-using SchettiniGestion; // ¡Importante!
+using SchettiniGestion;
 using System;
-using System.Data; // ¡Importante!
+using System.Data;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace SchettiniGestion.WPF
 {
     public partial class ProveedoresControl : UserControl
     {
-        private int _proveedorIDSeleccionado = 0;
+        private DataTable _proveedoresTodos;
 
         public ProveedoresControl()
         {
@@ -18,16 +19,14 @@ namespace SchettiniGestion.WPF
         private void ProveedoresControl_Loaded(object sender, RoutedEventArgs e)
         {
             CargarProveedores();
-            LimpiarCampos();
         }
 
         private void CargarProveedores()
         {
             try
             {
-                // Llamamos al nuevo método del DatabaseService
-                DataTable dt = DatabaseService.GetProveedores();
-                dgvProveedores.ItemsSource = dt.DefaultView;
+                _proveedoresTodos = DatabaseService.GetProveedores();
+                AplicarFiltro();
             }
             catch (Exception ex)
             {
@@ -35,100 +34,67 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        private void LimpiarCampos()
+        private void AplicarFiltro()
         {
-            _proveedorIDSeleccionado = 0; // Indica "Nuevo"
-            txtCuit.Text = "";
-            txtRazonSocial.Text = "";
-            txtTelefono.Text = "";
-            txtEmail.Text = "";
-            txtDireccion.Text = "";
+            if (_proveedoresTodos == null) { dgvProveedores.ItemsSource = null; return; }
 
-            btnGuardar.Content = "💾 Guardar";
-            btnEliminar.IsEnabled = false;
-            dgvProveedores.UnselectAll();
-            txtCuit.Focus();
+            string t = (txtFiltroProveedores?.Text ?? "").Trim();
+            if (string.IsNullOrEmpty(t))
+            {
+                dgvProveedores.ItemsSource = _proveedoresTodos.DefaultView;
+                return;
+            }
+
+            string filtro = t.Replace("'", "''");
+            try
+            {
+                _proveedoresTodos.DefaultView.RowFilter = $"CUIT LIKE '%{filtro}%' OR RazonSocial LIKE '%{filtro}%'";
+                dgvProveedores.ItemsSource = _proveedoresTodos.DefaultView;
+            }
+            catch
+            {
+                dgvProveedores.ItemsSource = _proveedoresTodos.DefaultView;
+            }
         }
 
-        private void dgvProveedores_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void txtFiltroProveedores_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (dgvProveedores.SelectedItem is DataRowView filaSeleccionada)
-            {
-                // Guardamos el ID
-                _proveedorIDSeleccionado = Convert.ToInt32(filaSeleccionada["ProveedorID"]);
-
-                // Cargamos los datos en los campos
-                txtCuit.Text = filaSeleccionada["CUIT"].ToString();
-                txtRazonSocial.Text = filaSeleccionada["RazonSocial"].ToString();
-                txtTelefono.Text = filaSeleccionada["Telefono"].ToString();
-                txtEmail.Text = filaSeleccionada["Email"].ToString();
-                txtDireccion.Text = filaSeleccionada["Direccion"].ToString();
-
-                // Actualizamos botones
-                btnGuardar.Content = "Modificar";
-                btnEliminar.IsEnabled = true;
-            }
+            AplicarFiltro();
         }
 
         private void btnNuevo_Click(object sender, RoutedEventArgs e)
         {
-            LimpiarCampos();
+            var modal = new ProveedorModalWindow(0, CargarProveedores) { Owner = Window.GetWindow(this) };
+            modal.ShowDialog();
         }
 
-        private void btnGuardar_Click(object sender, RoutedEventArgs e)
+        private void dgvProveedores_MouseDoubleClick(object sender, MouseButtonEventArgs e) => AbrirEditar();
+
+        private void MenuItemEditar_Click(object sender, RoutedEventArgs e) => AbrirEditar();
+
+        private void MenuItemEliminar_Click(object sender, RoutedEventArgs e)
         {
-            // Validaciones básicas
-            if (string.IsNullOrWhiteSpace(txtCuit.Text) || string.IsNullOrWhiteSpace(txtRazonSocial.Text))
-            {
-                CustomMessageBox.Show("El CUIT y la Razón Social son obligatorios.", "Datos Incompletos", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            if (!(dgvProveedores.SelectedItem is DataRowView row)) return;
 
-            // Llamamos al método GuardarProveedor de la base de datos
-            bool exito = DatabaseService.GuardarProveedor(
-                _proveedorIDSeleccionado,
-                txtCuit.Text,
-                txtRazonSocial.Text,
-                txtTelefono.Text,
-                txtEmail.Text,
-                txtDireccion.Text
-            );
+            int id = Convert.ToInt32(row["ProveedorID"]);
+            string nombre = row["RazonSocial"]?.ToString() ?? "";
 
-            if (exito)
-            {
-                CustomMessageBox.Show("Proveedor guardado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+            var confirmacion = CustomMessageBox.Show($"¿Está seguro de que desea eliminar al proveedor '{nombre}'?",
+                "Confirmar eliminación", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (confirmacion != MessageBoxResult.Yes) return;
+
+            if (DatabaseService.EliminarProveedor(id))
                 CargarProveedores();
-                LimpiarCampos();
-            }
+            else
+                CustomMessageBox.Show("No se pudo eliminar el proveedor. Puede tener compras o pagos asociados.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
-        private void btnEliminar_Click(object sender, RoutedEventArgs e)
+        private void AbrirEditar()
         {
-            if (_proveedorIDSeleccionado == 0) return;
-
-            // Confirmación
-            MessageBoxResult confirmacion = CustomMessageBox.Show($"¿Está seguro de que desea eliminar al proveedor '{txtRazonSocial.Text}'?",
-                                                  "Confirmar eliminación",
-                                                  MessageBoxButton.YesNo,
-                                                  MessageBoxImage.Warning);
-
-            if (confirmacion == MessageBoxResult.Yes)
-            {
-                // Llamamos al método EliminarProveedor
-                bool exito = DatabaseService.EliminarProveedor(_proveedorIDSeleccionado);
-
-                if (exito)
-                {
-                    CustomMessageBox.Show("Proveedor eliminado exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                    CargarProveedores();
-                    LimpiarCampos();
-                }
-            }
-        }
-
-        private void txtFiltroProveedores_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        {
-            CargarProveedores();
+            if (!(dgvProveedores.SelectedItem is DataRowView row)) return;
+            int id = Convert.ToInt32(row["ProveedorID"]);
+            var modal = new ProveedorModalWindow(id, CargarProveedores) { Owner = Window.GetWindow(this) };
+            modal.ShowDialog();
         }
     }
 }

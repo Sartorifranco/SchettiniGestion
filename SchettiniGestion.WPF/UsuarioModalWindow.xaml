@@ -1,0 +1,49 @@
+<Window x:Class="SchettiniGestion.WPF.UsuarioModalWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Usuario" Width="480" SizeToContent="Height" MinHeight="0"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="{DynamicResource ModuleBackgroundBrush}">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" x:Name="lblTitulo" Text="Nuevo Usuario" FontSize="18" FontWeight="Bold"
+                   Foreground="{StaticResource PrimaryColor}" Margin="0,0,0,18"/>
+
+        <StackPanel Grid.Row="1">
+            <TextBlock Text="Nombre de Usuario (login) *" Style="{StaticResource ModalCaptionTextStyle}"/>
+            <TextBox x:Name="txtNombreUsuario" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,12"/>
+
+            <TextBlock Text="Nombre del Personal *" Style="{StaticResource ModalCaptionTextStyle}"/>
+            <TextBox x:Name="txtNombrePersonal" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,4"/>
+            <TextBlock Text="Nombre real del vendedor/cajero. Se usa en reportes de ventas."
+                       Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+            <TextBlock x:Name="lblPassword" Text="Contraseña *" Style="{StaticResource ModalCaptionTextStyle}"/>
+            <PasswordBox x:Name="txtPassword" Style="{StaticResource PasswordBoxStyle}" Margin="0,0,0,4"/>
+            <TextBlock x:Name="lblPasswordHint" Text="Dejar en blanco para conservar la contraseña actual."
+                       Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,12" Visibility="Collapsed"/>
+
+            <TextBlock Text="Rol *" Style="{StaticResource ModalCaptionTextStyle}"/>
+            <ComboBox x:Name="cmbRol" Style="{StaticResource ModuleComboBoxStyle}"
+                      DisplayMemberPath="Nombre" SelectedValuePath="RolId" Margin="0,0,0,4"/>
+        </StackPanel>
+
+        <Border Grid.Row="2" Background="{DynamicResource SurfaceDark}" CornerRadius="8"
+                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
+                Padding="14,12" Margin="0,18,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btnEliminar" Content="Eliminar" Style="{StaticResource DeleteButtonStyle}"
+                        MinHeight="44" Padding="16,8" Margin="0,0,10,0" Visibility="Collapsed" Click="btnEliminar_Click"/>
+                <Button Content="Cancelar" Style="{StaticResource SecondaryButtonStyle}"
+                        MinHeight="44" Padding="16,8" Margin="0,0,10,0" Click="btnCancelar_Click"/>
+                <Button x:Name="btnGuardar" Content="✔ Guardar" Style="{StaticResource ButtonStyle}"
+                        MinHeight="44" Padding="18,8" Click="btnGuardar_Click"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

@@ -9,129 +9,214 @@
              Background="{DynamicResource BackgroundDark}"
              Loaded="EstadisticasControl_Loaded">
 
+    <UserControl.Resources>
+        <!-- Botón de filtro rápido tipo "pastilla" -->
+        <Style x:Key="PillFilterButton" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <!-- Encabezado de sección con acento de color e ícono -->
+        <Style x:Key="SectionHeaderText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        </Style>
+        <Style x:Key="SectionSubtitleText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <!-- Tarjeta base para KPIs y gráficos -->
+        <Style x:Key="StatCardBorder" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SurfaceDark}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
+    </UserControl.Resources>
+
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="20">
-        <StackPanel>
-            <TextBlock Text="Gráficos y Estadísticas"
-                       FontSize="24" FontWeight="Bold"
-                       Foreground="{DynamicResource TextPrimary}"
-                       Margin="0,0,0,16"/>
+        <StackPanel MaxWidth="1500">
 
-            <UniformGrid Columns="4" Margin="0,0,0,14">
-                <Button Content="Hoy" Tag="Hoy" Click="btnFiltroRapido_Click"
-                        Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" MinHeight="44"/>
-                <Button Content="7 días" Tag="Semana" Click="btnFiltroRapido_Click"
-                        Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" MinHeight="44"/>
-                <Button Content="Este mes" Tag="Mes" Click="btnFiltroRapido_Click"
-                        Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" MinHeight="44"/>
-                <Button Content="Este año" Tag="Anio" Click="btnFiltroRapido_Click"
-                        Style="{StaticResource SecondaryButtonStyle}" MinHeight="44"/>
-            </UniformGrid>
-
-            <Grid Margin="0,0,0,18">
+            <!-- ═══════════════ ENCABEZADO ═══════════════ -->
+            <Grid Margin="0,0,0,16">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="16"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="16"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="DESDE" Style="{StaticResource LabelStyle}"/>
-                    <DatePicker x:Name="dtpDesde" MinWidth="170" MinHeight="48"/>
+                <Border Background="{DynamicResource PrimaryColor}" Width="4" CornerRadius="2" Margin="0,2,14,2"/>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="📊 Panel de Estadísticas" FontSize="24" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimary}"/>
+                    <TextBlock Text="El pulso de tu negocio: ventas, rentabilidad y oportunidades, todo en un solo lugar."
+                               FontSize="12.5" Foreground="{DynamicResource TextSecondary}" Margin="0,3,0,0"/>
                 </StackPanel>
-                <StackPanel Grid.Column="2">
-                    <TextBlock Text="HASTA" Style="{StaticResource LabelStyle}"/>
-                    <DatePicker x:Name="dtpHasta" MinWidth="170" MinHeight="48"/>
-                </StackPanel>
-                <Button Grid.Column="4" Content="Generar" Style="{StaticResource ButtonStyle}"
-                        MinWidth="120" MinHeight="44" VerticalAlignment="Bottom"
-                        Click="btnGenerar_Click"/>
             </Grid>
 
-            <UniformGrid Columns="3" Margin="0,0,0,10">
-                <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,10,10">
-                    <StackPanel>
-                        <TextBlock Text="Total vendido" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
-                        <TextBlock x:Name="lblTotalVendido" Text="$ 0,00"
-                                   Foreground="{StaticResource SuccessColor}"
-                                   FontSize="24" FontWeight="Bold" Margin="0,4,0,0"/>
-                        <TextBlock x:Name="lblVsPeriodo" Text="vs período anterior: —" FontSize="11"
-                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
+            <!-- ═══════════════ BARRA DE PERÍODO ═══════════════ -->
+            <Border Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderColor}"
+                    BorderThickness="1" CornerRadius="10" Padding="16,14" Margin="0,0,0,18">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="Hoy" Tag="Hoy" Click="btnFiltroRapido_Click" Style="{StaticResource PillFilterButton}"/>
+                        <Button Content="7 días" Tag="Semana" Click="btnFiltroRapido_Click" Style="{StaticResource PillFilterButton}"/>
+                        <Button Content="Este mes" Tag="Mes" Click="btnFiltroRapido_Click" Style="{StaticResource PillFilterButton}"/>
+                        <Button Content="Este año" Tag="Anio" Click="btnFiltroRapido_Click" Style="{StaticResource PillFilterButton}" Margin="0"/>
                     </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="DESDE" Style="{StaticResource LabelStyle}"/>
+                        <DatePicker x:Name="dtpDesde" MinWidth="150" MinHeight="44"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="HASTA" Style="{StaticResource LabelStyle}"/>
+                        <DatePicker x:Name="dtpHasta" MinWidth="150" MinHeight="44"/>
+                    </StackPanel>
+                    <Button Grid.Column="6" Content="📊 Generar" Style="{StaticResource ButtonStyle}"
+                            MinWidth="120" MinHeight="44" VerticalAlignment="Bottom"
+                            Click="btnGenerar_Click"/>
+                </Grid>
+            </Border>
+
+            <!-- ═══════════════ KPIs PRINCIPALES ═══════════════ -->
+            <UniformGrid Columns="3" Margin="0,0,0,18">
+                <Border Style="{StaticResource StatCardBorder}" Margin="0,0,12,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Background="{StaticResource SuccessColor}" Width="4" CornerRadius="2" Margin="0,0,12,0"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="💰 TOTAL VENDIDO" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="lblTotalVendido" Text="$ 0,00"
+                                       Foreground="{StaticResource SuccessColor}"
+                                       FontSize="26" FontWeight="Bold" Margin="0,6,0,0"/>
+                            <TextBlock x:Name="lblVsPeriodo" Text="vs período anterior: —" FontSize="11.5" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Grid>
                 </Border>
-                <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,10,10">
-                    <StackPanel>
-                        <TextBlock Text="Comprobantes" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
-                        <TextBlock x:Name="lblCantidad" Text="0"
-                                   Foreground="{DynamicResource TextPrimary}"
-                                   FontSize="24" FontWeight="Bold" Margin="0,4,0,0"/>
-                        <TextBlock Text="Cantidad de tickets/facturas" FontSize="11"
-                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
-                    </StackPanel>
+                <Border Style="{StaticResource StatCardBorder}" Margin="0,0,12,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Background="{StaticResource PrimaryColor}" Width="4" CornerRadius="2" Margin="0,0,12,0"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="🧾 COMPROBANTES" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="lblCantidad" Text="0"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       FontSize="26" FontWeight="Bold" Margin="0,6,0,0"/>
+                            <TextBlock Text="Cantidad de tickets/facturas" FontSize="11.5"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Grid>
                 </Border>
-                <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,10">
-                    <StackPanel>
-                        <TextBlock Text="Ticket promedio" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
-                        <TextBlock x:Name="lblTicketPromedio" Text="$ 0,00"
-                                   Foreground="{DynamicResource TextPrimary}"
-                                   FontSize="24" FontWeight="Bold" Margin="0,4,0,0"/>
-                        <TextBlock Text="Clave para subir el ticket" FontSize="11"
-                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
-                    </StackPanel>
+                <Border Style="{StaticResource StatCardBorder}" Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Background="{StaticResource PrimaryColor}" Width="4" CornerRadius="2" Margin="0,0,12,0"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="🎟️ TICKET PROMEDIO" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="lblTicketPromedio" Text="$ 0,00"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       FontSize="26" FontWeight="Bold" Margin="0,6,0,0"/>
+                            <TextBlock Text="Clave para subir el ticket" FontSize="11.5"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Grid>
                 </Border>
-                <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,10,10">
-                    <StackPanel>
-                        <TextBlock Text="Ganancia estimada" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
-                        <TextBlock x:Name="lblMargen" Text="$ 0,00"
-                                   Foreground="#3B82F6"
-                                   FontSize="24" FontWeight="Bold" Margin="0,4,0,0"/>
-                        <TextBlock x:Name="lblMargenPct" Text="Margen —%" FontSize="11"
-                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
-                    </StackPanel>
+                <Border Style="{StaticResource StatCardBorder}" Margin="0,0,12,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Background="#3B82F6" Width="4" CornerRadius="2" Margin="0,0,12,0"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="📈 GANANCIA ESTIMADA" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="lblMargen" Text="$ 0,00"
+                                       Foreground="#3B82F6"
+                                       FontSize="26" FontWeight="Bold" Margin="0,6,0,0"/>
+                            <TextBlock x:Name="lblMargenPct" Text="Margen —%" FontSize="11.5"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Grid>
                 </Border>
-                <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,10,10">
-                    <StackPanel>
-                        <TextBlock Text="Stock en alerta" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
-                        <TextBlock x:Name="lblStockBajo" Text="0"
-                                   Foreground="{StaticResource DangerColor}"
-                                   FontSize="24" FontWeight="Bold" Margin="0,4,0,0"/>
-                        <TextBlock Text="Productos en/bajo mínimo" FontSize="11"
-                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
-                    </StackPanel>
+                <Border Style="{StaticResource StatCardBorder}" Margin="0,0,12,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Background="{StaticResource DangerColor}" Width="4" CornerRadius="2" Margin="0,0,12,0"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="⚠️ STOCK EN ALERTA" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="lblStockBajo" Text="0"
+                                       Foreground="{StaticResource DangerColor}"
+                                       FontSize="26" FontWeight="Bold" Margin="0,6,0,0"/>
+                            <TextBlock Text="Productos en/bajo mínimo" FontSize="11.5"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Grid>
                 </Border>
-                <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,10">
-                    <StackPanel>
-                        <TextBlock Text="Período anterior" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
-                        <TextBlock x:Name="lblPeriodoAnterior" Text="$ 0,00"
-                                   Foreground="{DynamicResource TextPrimary}"
-                                   FontSize="24" FontWeight="Bold" Margin="0,4,0,0"/>
-                        <TextBlock Text="Misma duración hacia atrás" FontSize="11"
-                                   Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0"/>
-                    </StackPanel>
+                <Border Style="{StaticResource StatCardBorder}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Background="{DynamicResource BorderColor}" Width="4" CornerRadius="2" Margin="0,0,12,0"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="🕓 PERÍODO ANTERIOR" Foreground="{DynamicResource TextSecondary}" FontSize="11.5" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="lblPeriodoAnterior" Text="$ 0,00"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       FontSize="26" FontWeight="Bold" Margin="0,6,0,0"/>
+                            <TextBlock Text="Misma duración hacia atrás" FontSize="11.5"
+                                       Foreground="{DynamicResource TextSecondary}" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Grid>
                 </Border>
             </UniformGrid>
 
-            <Grid Margin="0,0,0,14">
+            <!-- ═══════════════ SECCIÓN: TENDENCIAS ═══════════════ -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <Border Background="{StaticResource PrimaryColor}" Width="4" CornerRadius="2" Margin="0,0,10,0"/>
+                <TextBlock Text="📈 Tendencias de venta" Style="{StaticResource SectionHeaderText}"/>
+            </StackPanel>
+            <Grid Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1.4*"/>
                     <ColumnDefinition Width="14"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="8" Padding="16" MinHeight="280">
+                <Border Grid.Column="0" Style="{StaticResource StatCardBorder}" MinHeight="290">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Ventas por día (tendencia)" FontSize="16" FontWeight="SemiBold"
+                        <TextBlock Text="Ventas por día (tendencia)" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                         <lvc:CartesianChart x:Name="chartVentasDia" Grid.Row="1" LegendLocation="None" Hoverable="True"/>
                         <TextBlock x:Name="lblSinVentasDia" Grid.Row="1" Text="Sin ventas en el período"
@@ -139,14 +224,13 @@
                                    Foreground="{DynamicResource TextSecondary}" Visibility="Collapsed"/>
                     </Grid>
                 </Border>
-                <Border Grid.Column="2" Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="8" Padding="16" MinHeight="280">
+                <Border Grid.Column="2" Style="{StaticResource StatCardBorder}" MinHeight="290">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Horarios pico" FontSize="16" FontWeight="SemiBold"
+                        <TextBlock Text="Horarios pico" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                         <lvc:CartesianChart x:Name="chartVentasHora" Grid.Row="1" LegendLocation="None" Hoverable="True"/>
                         <TextBlock x:Name="lblSinHoras" Grid.Row="1" Text="Sin datos por hora"
@@ -156,22 +240,25 @@
                 </Border>
             </Grid>
 
-            <Grid>
+            <!-- ═══════════════ SECCIÓN: RENTABILIDAD ═══════════════ -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <Border Background="#3B82F6" Width="4" CornerRadius="2" Margin="0,0,10,0"/>
+                <TextBlock Text="🏆 Ranking de productos" Style="{StaticResource SectionHeaderText}"/>
+            </StackPanel>
+            <Grid Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="14"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Background="{DynamicResource SurfaceDark}"
-                        BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
-                        CornerRadius="8" Padding="16" MinHeight="320">
+                <Border Grid.Column="0" Style="{StaticResource StatCardBorder}" MinHeight="320">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Top 10 por facturación ($)" FontSize="16" FontWeight="SemiBold"
+                        <TextBlock Text="Top 10 por facturación ($)" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                         <lvc:CartesianChart x:Name="chartTopProductos" Grid.Row="1" LegendLocation="None" Hoverable="True"/>
                         <TextBlock x:Name="lblSinTop" Grid.Row="1" Text="Sin productos vendidos"
@@ -180,15 +267,13 @@
                     </Grid>
                 </Border>
 
-                <Border Grid.Column="2" Background="{DynamicResource SurfaceDark}"
-                        BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
-                        CornerRadius="8" Padding="16" MinHeight="320">
+                <Border Grid.Column="2" Style="{StaticResource StatCardBorder}" MinHeight="320">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Top 10 por ganancia ($)" FontSize="16" FontWeight="SemiBold"
+                        <TextBlock Text="Top 10 por ganancia ($)" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                         <lvc:CartesianChart x:Name="chartTopMargen" Grid.Row="1" LegendLocation="None" Hoverable="True"/>
                         <TextBlock x:Name="lblSinMargen" Grid.Row="1" Text="Sin datos de margen"
@@ -198,23 +283,26 @@
                 </Border>
             </Grid>
 
-            <Grid Margin="0,14,0,0">
+            <!-- ═══════════════ SECCIÓN: QUÉ CONVIENE VENDER ═══════════════ -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <Border Background="{StaticResource SuccessColor}" Width="4" CornerRadius="2" Margin="0,0,10,0"/>
+                <TextBlock Text="🎯 ¿Qué te conviene vender?" Style="{StaticResource SectionHeaderText}"/>
+            </StackPanel>
+            <Grid Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="14"/>
-                    <ColumnDefinition Width="280"/>
+                    <ColumnDefinition Width="300"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Background="{DynamicResource SurfaceDark}"
-                        BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
-                        CornerRadius="8" Padding="16" MinHeight="300">
+                <Border Grid.Column="0" Style="{StaticResource StatCardBorder}" MinHeight="300">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="¿Qué productos te dejan la plata?" FontSize="16" FontWeight="SemiBold"
+                        <TextBlock Text="Análisis ABC de productos" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}"/>
                         <TextBlock Grid.Row="1" x:Name="lblAbcResumen" Margin="0,6,0,10" FontSize="12"
                                    TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}"
@@ -234,11 +322,9 @@
                     </Grid>
                 </Border>
 
-                <Border Grid.Column="2" Background="{DynamicResource SurfaceDark}"
-                        BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
-                        CornerRadius="8" Padding="16" MinHeight="300">
+                <Border Grid.Column="2" Style="{StaticResource StatCardBorder}" MinHeight="300">
                     <StackPanel>
-                        <TextBlock Text="Por medio de pago" FontSize="16" FontWeight="SemiBold"
+                        <TextBlock Text="Por medio de pago" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                         <lvc:PieChart x:Name="chartMediosPago" Height="240"
                                       LegendLocation="Bottom" InnerRadius="45" Hoverable="True"/>
@@ -249,9 +335,13 @@
                 </Border>
             </Grid>
 
-            <!-- Productos muertos -->
-            <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                    BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,14,0,0" MinHeight="280">
+            <!-- ═══════════════ SECCIÓN: OPORTUNIDADES DE STOCK ═══════════════ -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <Border Background="{StaticResource WarningColor}" Width="4" CornerRadius="2" Margin="0,0,10,0"/>
+                <TextBlock Text="⚠️ Oportunidades: productos sin movimiento" Style="{StaticResource SectionHeaderText}"/>
+            </StackPanel>
+            <Border Style="{StaticResource StatCardBorder}" MinHeight="280"
+                    BorderBrush="{StaticResource WarningColor}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -259,15 +349,15 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Grid>
-                        <TextBlock Text="Productos sin movimiento (con stock)" FontSize="16" FontWeight="SemiBold"
+                        <TextBlock Text="Productos sin movimiento (con stock)" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="30 días" Tag="30" Click="btnMuertos_Click"
-                                    Style="{StaticResource SecondaryButtonStyle}" MinHeight="36" Margin="0,0,6,0" Padding="12,0"/>
+                                    Style="{StaticResource PillFilterButton}" MinHeight="36" Padding="12,0"/>
                             <Button Content="60 días" Tag="60" Click="btnMuertos_Click"
-                                    Style="{StaticResource SecondaryButtonStyle}" MinHeight="36" Margin="0,0,6,0" Padding="12,0"/>
+                                    Style="{StaticResource PillFilterButton}" MinHeight="36" Padding="12,0"/>
                             <Button Content="90 días" Tag="90" Click="btnMuertos_Click"
-                                    Style="{StaticResource SecondaryButtonStyle}" MinHeight="36" Padding="12,0"/>
+                                    Style="{StaticResource PillFilterButton}" MinHeight="36" Padding="12,0" Margin="0"/>
                         </StackPanel>
                     </Grid>
                     <TextBlock Grid.Row="1" x:Name="lblMuertosResumen" Margin="0,8,0,10" FontSize="12"

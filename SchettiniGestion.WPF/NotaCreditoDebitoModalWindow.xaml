@@ -4,7 +4,7 @@
 
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 
-        Title="Nota de Crédito / Débito" Width="460" Height="380"
+        Title="Nota de Crédito / Débito" Width="460" SizeToContent="Height" MinHeight="0"
 
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
 
@@ -16,7 +16,7 @@
 
             <RowDefinition Height="Auto"/>
 
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
 
             <RowDefinition Height="Auto"/>
 

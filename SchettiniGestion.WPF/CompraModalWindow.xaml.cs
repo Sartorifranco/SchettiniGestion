@@ -134,6 +134,7 @@ namespace SchettiniGestion.WPF
         private void txtBuscarProveedor_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (_ignorarTextChanged) return;
+            if (popupProveedores == null || txtBuscarProveedor == null) return;
             string q = txtBuscarProveedor.Text.Trim();
             if (q.Length < 2) { popupProveedores.IsOpen = false; return; }
             var dt = DatabaseService.BuscarProveedoresMultiples(q);
@@ -194,6 +195,7 @@ namespace SchettiniGestion.WPF
 
         private void txtBuscarProducto_TextChanged(object sender, TextChangedEventArgs e)
         {
+            if (popupProductos == null || txtBuscarProducto == null) return;
             string q = txtBuscarProducto.Text.Trim();
             if (q.Length < 2) { popupProductos.IsOpen = false; return; }
             var dt = DatabaseService.BuscarProductosMultiples_ParaCompra(q);

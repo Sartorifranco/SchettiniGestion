@@ -4,82 +4,54 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="700" d:DesignWidth="1000"
+             d:DesignHeight="700" d:DesignWidth="1100"
              Loaded="ClientesControl_Loaded">
 
     <Grid Margin="20">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="3.5*" MinWidth="220" MaxWidth="420"/>
-            <ColumnDefinition Width="20"/>
-            <ColumnDefinition Width="6.5*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <Border Grid.Column="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="20">
+        <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                <TextBlock Text="Gestión Clientes" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,20"/>
-
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <TextBlock Text="CUIT / CUIL (Enter para buscar ARCA)" Style="{DynamicResource LabelStyle}"/>
-                        <TextBox x:Name="txtCuit" Style="{DynamicResource ModernTextBox}" MaxLength="13" KeyDown="txtCuit_KeyDown" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="RAZÓN SOCIAL / NOMBRE" Style="{DynamicResource LabelStyle}"/>
-                        <TextBox x:Name="txtRazonSocial" Style="{DynamicResource ModernTextBox}" MaxLength="200" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="CATEGORÍA FISCAL" Style="{DynamicResource LabelStyle}"/>
-                        <ComboBox x:Name="cmbCondicionIVA" Style="{DynamicResource ModuleComboBoxStyle}" Margin="0,0,0,15">
-                            <ComboBoxItem Content=""/>
-                            <ComboBoxItem Content="Consumidor Final"/>
-                            <ComboBoxItem Content="Responsable Inscripto"/>
-                            <ComboBoxItem Content="Monotributo"/>
-                            <ComboBoxItem Content="Exento"/>
-                        </ComboBox>
-
-                        <TextBlock Text="TELÉFONO" Style="{DynamicResource LabelStyle}"/>
-                        <TextBox x:Name="txtTelefono" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="DOMICILIO" Style="{DynamicResource LabelStyle}"/>
-                        <TextBox x:Name="txtDireccion" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="EMAIL" Style="{DynamicResource LabelStyle}"/>
-                        <TextBox x:Name="txtEmail" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,15"/>
-
-                        <CheckBox x:Name="chkPermiteCtaCte" Content="Permite cuenta corriente" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10" Checked="chkPermiteCtaCte_Changed" Unchecked="chkPermiteCtaCte_Changed"/>
-                        <TextBlock Text="MONTO LÍMITE CTA. CTE." Style="{DynamicResource LabelStyle}"/>
-                        <TextBox x:Name="txtMontoLimiteCtaCte" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,15"/>
-                    </StackPanel>
-                </ScrollViewer>
-
-                <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,20,0,0">
-                    <Button x:Name="btnNuevo" Content="✨ NUEVO" Style="{DynamicResource SecondaryButtonStyle}" Click="btnNuevo_Click" Margin="0,0,0,10"/>
-                    <Button x:Name="btnGuardar" Content="💾 GUARDAR" Style="{DynamicResource ButtonStyle}" Click="btnGuardar_Click" Margin="0,0,0,10" Height="45"/>
-                    <Button x:Name="btnEliminar" Content="🗑️ ELIMINAR" Style="{DynamicResource DeleteButtonStyle}" Click="btnEliminar_Click"/>
+                <StackPanel>
+                    <TextBlock Text="Gestión de Clientes" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
+                    <TextBlock Text="Buscar por CUIT o Razón Social" Style="{DynamicResource LabelStyle}"/>
+                    <TextBox x:Name="txtFiltroClientes" Style="{DynamicResource ModernTextBox}" TextChanged="txtFiltroClientes_TextChanged"/>
                 </StackPanel>
+
+                <Button Grid.Column="1" x:Name="btnNuevo" Content="➕ Nuevo Cliente" Style="{StaticResource ButtonStyle}"
+                        Padding="15,10" VerticalAlignment="Bottom" Margin="15,0,0,0" Click="btnNuevo_Click"/>
             </Grid>
         </Border>
 
-        <Border Grid.Column="2" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <TextBlock Text="Buscar por CUIT o Razón Social" Style="{DynamicResource LabelStyle}"/>
-                <TextBox x:Name="txtFiltroClientes" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,10" TextChanged="txtFiltroClientes_TextChanged"/>
-                <DataGrid x:Name="dgvClientes" Grid.Row="1" Style="{DynamicResource {x:Type DataGrid}}" SelectionChanged="dgvClientes_SelectionChanged" AutoGenerateColumns="False" IsReadOnly="True">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="CUIT" Binding="{Binding CUIT}" Width="Auto" MinWidth="100"/>
-                        <DataGridTextColumn Header="RAZÓN SOCIAL" Binding="{Binding RazonSocial}" Width="*"/>
-                        <DataGridTextColumn Header="CONDICIÓN" Binding="{Binding CondicionIVA}" Width="Auto"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </Grid>
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="1">
+            <DataGrid x:Name="dgvClientes" Style="{DynamicResource {x:Type DataGrid}}" AutoGenerateColumns="False"
+                      HorizontalScrollBarVisibility="Auto" IsReadOnly="True"
+                      MouseDoubleClick="dgvClientes_MouseDoubleClick">
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="✏️ Editar" Click="MenuItemEditar_Click"/>
+                        <MenuItem Header="🗑️ Eliminar" Click="MenuItemEliminar_Click"/>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="CUIT" Binding="{Binding CUIT}" Width="Auto" MinWidth="110"/>
+                    <DataGridTextColumn Header="RAZÓN SOCIAL" Binding="{Binding RazonSocial}" Width="2*" MinWidth="160"/>
+                    <DataGridTextColumn Header="CONDICIÓN" Binding="{Binding CondicionIVA}" Width="Auto" MinWidth="140"/>
+                    <DataGridTextColumn Header="TELÉFONO" Binding="{Binding Telefono}" Width="Auto" MinWidth="110"/>
+                    <DataGridTextColumn Header="DOMICILIO" Binding="{Binding Direccion}" Width="1.5*" MinWidth="140"/>
+                    <DataGridTextColumn Header="EMAIL" Binding="{Binding Email}" Width="1.3*" MinWidth="140"/>
+                    <DataGridCheckBoxColumn Header="CTA. CTE." Binding="{Binding PermiteCuentaCorriente}" Width="Auto" MinWidth="80"/>
+                    <DataGridTextColumn Header="SALDO" Binding="{Binding SaldoDeuda, StringFormat=C2}" Width="Auto" MinWidth="100"/>
+                </DataGrid.Columns>
+            </DataGrid>
         </Border>
     </Grid>
 </UserControl>

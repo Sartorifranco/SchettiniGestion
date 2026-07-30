@@ -268,6 +268,15 @@
     <Compile Include="CompraModalWindow.xaml.cs">
       <DependentUpon>CompraModalWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ProveedorModalWindow.xaml.cs">
+      <DependentUpon>ProveedorModalWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ClienteModalWindow.xaml.cs">
+      <DependentUpon>ClienteModalWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UsuarioModalWindow.xaml.cs">
+      <DependentUpon>UsuarioModalWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="RecepcionCompraModalWindow.xaml.cs">
       <DependentUpon>RecepcionCompraModalWindow.xaml</DependentUpon>
     </Compile>
@@ -539,6 +548,18 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CompraModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ProveedorModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ClienteModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UsuarioModalWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

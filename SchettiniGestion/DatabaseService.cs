@@ -202,6 +202,9 @@ namespace SchettiniGestion
         public string CondicionIVA { get; set; }
         public string Telefono { get; set; }
         public string Email { get; set; }
+        public string Direccion { get; set; }
+        public bool PermiteCuentaCorriente { get; set; }
+        public decimal SaldoDeuda { get; set; }
     }
 
     /// <summary>Elemento de ComboBox con id (tabla catálogo o 0 = vacío).</summary>
@@ -646,6 +649,12 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Promoci
     Activo BIT NOT NULL DEFAULT 1,
     Observaciones NVARCHAR(250) NULL
   );
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Proveedores' AND COLUMN_NAME='CategoriaFiscal')
+  ALTER TABLE Proveedores ADD CategoriaFiscal NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Proveedores' AND COLUMN_NAME='PersonaContacto')
+  ALTER TABLE Proveedores ADD PersonaContacto NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Proveedores' AND COLUMN_NAME='PaginaWeb')
+  ALTER TABLE Proveedores ADD PaginaWeb NVARCHAR(300) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Compras' AND COLUMN_NAME='OrdenCompraID')
   ALTER TABLE Compras ADD OrdenCompraID INT NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Compras' AND COLUMN_NAME='StockRecibido')
@@ -1645,7 +1654,10 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Accione
   ISNULL(RazonSocial, N'') AS RazonSocial,
   ISNULL(CondicionIVA, N'') AS CondicionIVA,
   ISNULL(Telefono, N'') AS Telefono,
-  ISNULL(Email, N'') AS Email
+  ISNULL(Email, N'') AS Email,
+  ISNULL(Direccion, N'') AS Direccion,
+  ISNULL(PermiteCuentaCorriente, 0) AS PermiteCuentaCorriente,
+  ISNULL(SaldoDeuda, 0) AS SaldoDeuda
 FROM Clientes
 ORDER BY RazonSocial";
                     using (var cmd = new SqlCommand(sql, c))
@@ -1660,7 +1672,10 @@ ORDER BY RazonSocial";
                                 RazonSocial = rd["RazonSocial"]?.ToString() ?? "",
                                 CondicionIVA = rd["CondicionIVA"]?.ToString() ?? "",
                                 Telefono = rd["Telefono"]?.ToString() ?? "",
-                                Email = rd["Email"]?.ToString() ?? ""
+                                Email = rd["Email"]?.ToString() ?? "",
+                                Direccion = rd["Direccion"]?.ToString() ?? "",
+                                PermiteCuentaCorriente = Convert.ToBoolean(rd["PermiteCuentaCorriente"]),
+                                SaldoDeuda = Convert.ToDecimal(rd["SaldoDeuda"])
                             });
                         }
                     }
@@ -2016,14 +2031,17 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Clientes WHERE CUIT='00-00000000-0')
             return dt;
         }
 
-        public static bool GuardarProveedor(int id, string c, string r, string t, string e, string d)
+        public static bool GuardarProveedor(int id, string c, string r, string t, string e, string d,
+            string categoriaFiscal = "", string personaContacto = "", string paginaWeb = "")
         {
             try
             {
                 using (var conn = new SqlConnection(_connectionString))
                 {
                     conn.Open();
-                    string sql = id == 0 ? "INSERT INTO Proveedores (CUIT,RazonSocial,Telefono,Email,Direccion) VALUES (@c,@r,@t,@e,@d)" : "UPDATE Proveedores SET CUIT=@c,RazonSocial=@r,Telefono=@t,Email=@e,Direccion=@d WHERE ProveedorID=@id";
+                    string sql = id == 0
+                        ? "INSERT INTO Proveedores (CUIT,RazonSocial,Telefono,Email,Direccion,CategoriaFiscal,PersonaContacto,PaginaWeb) VALUES (@c,@r,@t,@e,@d,@cf,@pc,@pw)"
+                        : "UPDATE Proveedores SET CUIT=@c,RazonSocial=@r,Telefono=@t,Email=@e,Direccion=@d,CategoriaFiscal=@cf,PersonaContacto=@pc,PaginaWeb=@pw WHERE ProveedorID=@id";
                     using (var cmd = new SqlCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@c", c);
@@ -2031,6 +2049,9 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Clientes WHERE CUIT='00-00000000-0')
                         cmd.Parameters.AddWithValue("@t", t);
                         cmd.Parameters.AddWithValue("@e", e);
                         cmd.Parameters.AddWithValue("@d", d);
+                        cmd.Parameters.AddWithValue("@cf", (object)categoriaFiscal ?? "");
+                        cmd.Parameters.AddWithValue("@pc", (object)personaContacto ?? "");
+                        cmd.Parameters.AddWithValue("@pw", (object)paginaWeb ?? "");
                         cmd.Parameters.AddWithValue("@id", id);
                         cmd.ExecuteNonQuery();
                         return true;

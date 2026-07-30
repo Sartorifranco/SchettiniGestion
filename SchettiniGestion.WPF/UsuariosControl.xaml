@@ -108,103 +108,39 @@
             <!-- ==================== TAB USUARIOS ==================== -->
             <TabItem Header="👤  Usuarios">
                 <Grid Margin="0,16,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="3.5*" MinWidth="220" MaxWidth="420"/>
-                        <ColumnDefinition Width="20"/>
-                        <ColumnDefinition Width="6.5*"/>
-                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                    <!-- Panel formulario izquierdo -->
-                    <Border Grid.Column="0"
+                    <Border Grid.Row="0"
                             Background="{DynamicResource PanelBackgroundBrush}"
                             CornerRadius="10"
-                            Padding="20">
+                            Padding="16"
+                            Margin="0,0,0,12">
                         <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Text="Gestión de Usuarios"
                                        FontSize="20"
                                        FontWeight="Bold"
                                        Foreground="{DynamicResource TextPrimary}"
-                                       Margin="0,0,0,20"/>
-
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                <StackPanel>
-                                    <TextBlock Text="NOMBRE DE USUARIO (LOGIN)"
-                                               Style="{StaticResource LabelStyle}"
-                                               Margin="0,0,0,6"/>
-                                    <TextBox x:Name="txtNombreUsuario"
-                                             Style="{StaticResource ModernTextBox}"
-                                             Height="52"
-                                             FontSize="16"
-                                             Margin="0,0,0,16"/>
-
-                                    <TextBlock Text="NOMBRE DEL PERSONAL"
-                                               Style="{StaticResource LabelStyle}"
-                                               Margin="0,0,0,6"/>
-                                    <TextBox x:Name="txtNombrePersonal"
-                                             Style="{StaticResource ModernTextBox}"
-                                             Height="52"
-                                             FontSize="16"
-                                             Margin="0,0,0,16"/>
-                                    <TextBlock Text="Nombre real del vendedor/cajero. Se usa en reportes de ventas."
-                                               Foreground="{DynamicResource TextSecondary}" FontSize="11"
-                                               TextWrapping="Wrap" Margin="0,0,0,16"/>
-
-                                    <TextBlock Text="CONTRASEÑA"
-                                               Style="{StaticResource LabelStyle}"
-                                               Margin="0,0,0,6"/>
-                                    <PasswordBox x:Name="txtPassword"
-                                                 Style="{StaticResource PasswordBoxStyle}"
-                                                 Height="52"
-                                                 FontSize="16"
-                                                 Margin="0,0,0,16"/>
-
-                                    <TextBlock Text="ROL"
-                                               Style="{StaticResource LabelStyle}"
-                                               Margin="0,0,0,6"/>
-                                    <ComboBox x:Name="cmbRolesUsuario"
-                                              Style="{StaticResource ModuleComboBoxStyle}"
-                                              Height="52"
-                                              FontSize="16"
-                                              DisplayMemberPath="Nombre"
-                                              SelectedValuePath="RolId"
-                                              Margin="0,0,0,8"/>
-                                </StackPanel>
-                            </ScrollViewer>
-
-                            <!-- Botones acción -->
-                            <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,20,0,0">
-                                <Button x:Name="btnNuevo"
-                                        Content="✨  NUEVO USUARIO"
-                                        Style="{StaticResource SecondaryButtonStyle}"
-                                        Height="52"
-                                        FontSize="15"
-                                        Click="btnNuevo_Click"
-                                        Margin="0,0,0,10"/>
-                                <Button x:Name="btnGuardarUsuario"
-                                        Content="💾  GUARDAR USUARIO"
-                                        Style="{StaticResource ButtonStyle}"
-                                        Height="56"
-                                        FontSize="15"
-                                        Click="btnGuardarUsuario_Click"
-                                        Margin="0,0,0,10"/>
-                                <Button x:Name="btnEliminar"
-                                        Content="🗑️  ELIMINAR"
-                                        Style="{StaticResource DeleteButtonStyle}"
-                                        Height="52"
-                                        FontSize="15"
-                                        Click="btnEliminar_Click"/>
-                            </StackPanel>
+                                       VerticalAlignment="Center"/>
+                            <Button Grid.Column="1"
+                                    x:Name="btnNuevo"
+                                    Content="✨  Nuevo Usuario"
+                                    Style="{StaticResource ButtonStyle}"
+                                    MinHeight="48"
+                                    Padding="18,10"
+                                    FontSize="15"
+                                    Click="btnNuevo_Click"/>
                         </Grid>
                     </Border>
 
-                    <!-- DataGrid usuarios -->
-                    <Border Grid.Column="2"
+                    <!-- DataGrid usuarios (ancho completo) -->
+                    <Border Grid.Row="1"
                             Background="{DynamicResource PanelBackgroundBrush}"
                             CornerRadius="10"
                             Padding="2">
@@ -214,7 +150,14 @@
                                   IsReadOnly="True"
                                   RowHeight="52"
                                   FontSize="15"
-                                  SelectionChanged="dgvUsuarios_SelectionChanged">
+                                  SelectionChanged="dgvUsuarios_SelectionChanged"
+                                  MouseDoubleClick="dgvUsuarios_MouseDoubleClick">
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="✏️ Editar" Click="MenuItemEditar_Click"/>
+                                    <MenuItem Header="🗑️ Eliminar" Click="MenuItemEliminar_Click"/>
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="ID"
                                                     Binding="{Binding UsuarioID}"

@@ -142,7 +142,7 @@
       <HintPath>..\packages\PdfPig.0.1.9\lib\net471\UglyToad.PdfPig.DocumentLayoutAnalysis.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="UglyToad.PdfPig.Package, Version=0.1.9.0, Culture=neutral, PublicKeyToken=605d367334e74123, processorArchitecture=MSIL">
+    <Reference Include="UglyToad.PdfPig.Package, Version=0.1.8.0, Culture=neutral, PublicKeyToken=null, processorArchitecture=MSIL">
       <HintPath>..\packages\PdfPig.0.1.9\lib\net471\UglyToad.PdfPig.Package.dll</HintPath>
       <Private>True</Private>
     </Reference>

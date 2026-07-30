@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json;
@@ -22,6 +23,12 @@ namespace GeneradorLicencias
 
         static void Main(string[] args)
         {
+            if (args != null && args.Length > 0 && args.Any(a => a.Equals("--auto", StringComparison.OrdinalIgnoreCase)))
+            {
+                GenerarAutomatica(args);
+                return;
+            }
+
             Console.Title = "Generador de Licencias Soctech";
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("========================================");
@@ -94,6 +101,110 @@ namespace GeneradorLicencias
 
             Console.WriteLine("Presione ENTER para salir...");
             Console.ReadLine();
+        }
+
+        /// <summary>
+        /// Modo no interactivo para generar licencias de prueba/soporte por script.
+        /// Uso:
+        ///   GeneradorLicencias.exe --auto [--cuit "TEXTO"] [--hardware "ID" | --hardware-local]
+        ///                            [--dias N] [--modulos "TODOS"|"COD1,COD2,..."] [--out "ruta.key"]
+        /// Sin --hardware ni --hardware-local, la licencia queda sin atar a un equipo (HardwareID vacío).
+        /// </summary>
+        static void GenerarAutomatica(string[] args)
+        {
+            string ObtenerValor(string nombre, string porDefecto = "")
+            {
+                for (int i = 0; i < args.Length - 1; i++)
+                    if (args[i].Equals(nombre, StringComparison.OrdinalIgnoreCase))
+                        return args[i + 1];
+                return porDefecto;
+            }
+
+            var licencia = new LicenseData
+            {
+                CuitCliente = ObtenerValor("--cuit", "PRUEBA-INTERNA")
+            };
+
+            if (args.Any(a => a.Equals("--hardware-local", StringComparison.OrdinalIgnoreCase)))
+                licencia.HardwareID = ObtenerHardwareIdLocal();
+            else
+                licencia.HardwareID = ObtenerValor("--hardware", "");
+
+            int dias = int.TryParse(ObtenerValor("--dias", "90"), out int d) ? d : 90;
+            licencia.FechaExpiracion = DateTime.Now.AddDays(dias);
+
+            string modulosArg = ObtenerValor("--modulos", "TODOS");
+            List<string> seleccionados = modulosArg.Equals("TODOS", StringComparison.OrdinalIgnoreCase)
+                ? ModulosCatalog.ObtenerTodosCodigos()
+                : modulosArg.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0).ToList();
+
+            licencia.ModulosPermitidos = ModulosCatalog.ResolverLicencia(seleccionados);
+
+            string json = JsonConvert.SerializeObject(licencia);
+            string claveFinal = Encriptar(json);
+
+            Console.WriteLine(claveFinal);
+
+            string outPath = ObtenerValor("--out", "");
+            if (!string.IsNullOrWhiteSpace(outPath))
+            {
+                File.WriteAllText(outPath, claveFinal);
+                Console.Error.WriteLine($"[OK] Licencia guardada en: {outPath}");
+            }
+
+            Console.Error.WriteLine($"[INFO] CUIT/Cliente: {licencia.CuitCliente}");
+            Console.Error.WriteLine($"[INFO] Vence: {licencia.FechaExpiracion:dd/MM/yyyy}");
+            Console.Error.WriteLine($"[INFO] HardwareID: {(string.IsNullOrWhiteSpace(licencia.HardwareID) ? "(sin atar a equipo)" : licencia.HardwareID)}");
+            Console.Error.WriteLine($"[INFO] Módulos: {ModulosCatalog.ObtenerResumenModulos(licencia.ModulosPermitidos)}");
+        }
+
+        /// <summary>
+        /// Réplica exacta del algoritmo de SchettiniGestion.LicenseManager.ObtenerHardwareId(),
+        /// para poder calcular el Hardware ID de la PC donde corre este generador sin
+        /// depender de LicenseManager.cs (que no se compila en este proyecto net8.0).
+        /// </summary>
+        static string ObtenerHardwareIdLocal()
+        {
+            string cpuId = "";
+            string boardSerial = "";
+
+            try
+            {
+                using (var mc = new System.Management.ManagementClass("Win32_Processor"))
+                using (var instances = mc.GetInstances())
+                    foreach (System.Management.ManagementObject obj in instances)
+                    {
+                        cpuId = obj["ProcessorId"]?.ToString()?.Trim() ?? "";
+                        break;
+                    }
+            }
+            catch { }
+
+            try
+            {
+                using (var mc = new System.Management.ManagementClass("Win32_BaseBoard"))
+                using (var instances = mc.GetInstances())
+                    foreach (System.Management.ManagementObject obj in instances)
+                    {
+                        boardSerial = obj["SerialNumber"]?.ToString()?.Trim() ?? "";
+                        break;
+                    }
+            }
+            catch { }
+
+            try
+            {
+                string raw = $"{cpuId}|{boardSerial}";
+                using (var sha = SHA256.Create())
+                {
+                    byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(raw));
+                    return BitConverter.ToString(hash, 0, 8).Replace("-", "").ToUpperInvariant();
+                }
+            }
+            catch
+            {
+                return Environment.MachineName.ToUpperInvariant();
+            }
         }
 
         static bool Ask(string preg, bool defaultSi = false)

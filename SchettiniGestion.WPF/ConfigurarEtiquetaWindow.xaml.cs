@@ -22,10 +22,16 @@ namespace SchettiniGestion.WPF
         {
             InitializeComponent();
             Loaded += Window_Loaded;
+            MouseLeftButtonDown += (_, e) =>
+            {
+                if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
+                    DragMove();
+            };
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            UiScaleHelper.FitWindowToWorkArea(this, 920, 640, 720, 500);
             _cargando = true;
             try
             {

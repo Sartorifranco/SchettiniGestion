@@ -17,15 +17,13 @@ namespace SchettiniGestion.WPF
             AutomationProperties.SetAutomationId(txtPassword, "UITest_Password");
             AutomationProperties.SetAutomationId(btnIngresar, "UITest_Ingresar");
 
-            Loaded   += (s, e) =>
+            Loaded += (s, e) =>
             {
                 KeyboardService.VisibilityChanged += OnKeyboardVisibilityChanged;
                 KeyboardService.EnabledChanged += ActualizarBtnTecladoLogin;
                 ActualizarBtnTecladoLogin();
-                // Si el teclado ya está visible cuando se abre la ventana
-                if (KeyboardService.IsEnabled && KeyboardService.KeyboardTop < double.MaxValue)
+                if (KeyboardService.IsEnabled && KeyboardService.IsVisible)
                     OnKeyboardVisibilityChanged(true);
-                // Solo enfocar si el teclado está ON; si está OFF, evita abrirlo al iniciar
                 if (KeyboardService.IsEnabled)
                     txtUsuario.Focus();
             };
@@ -64,37 +62,29 @@ namespace SchettiniGestion.WPF
 
         private void OnKeyboardVisibilityChanged(bool visible)
         {
+            // Teclado full-width del monitor (puede salir del login): subimos la tarjeta.
             Dispatcher.Invoke(() =>
             {
                 if (visible)
                 {
                     if (double.IsNaN(_originalTop)) _originalTop = Top;
-
-                    double kbTop         = KeyboardService.KeyboardTop;
-                    double available     = kbTop - 8;
-                    double ideal         = (available - ActualHeight) / 2.0;
+                    double kbTop = KeyboardService.KeyboardTop;
+                    double available = kbTop - 8;
+                    double ideal = (available - ActualHeight) / 2.0;
                     Top = Math.Max(4, ideal);
                 }
-                else
+                else if (!double.IsNaN(_originalTop))
                 {
-                    if (!double.IsNaN(_originalTop))
-                    {
-                        Top        = _originalTop;
-                        _originalTop = double.NaN;
-                    }
+                    Top = _originalTop;
+                    _originalTop = double.NaN;
                 }
             });
         }
 
-        private void btnIngresar_Click(object sender, RoutedEventArgs e)
-        {
-            Ingresar();
-        }
+        private void btnIngresar_Click(object sender, RoutedEventArgs e) => Ingresar();
 
         private void btnSalir_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
-        }
+            => Application.Current.Shutdown();
 
         private void txtUsuario_KeyDown(object sender, KeyEventArgs e)
         {
@@ -119,13 +109,10 @@ namespace SchettiniGestion.WPF
 
             try
             {
-                // 1. Validar credenciales
                 if (DatabaseService.ValidarUsuario(u, p))
                 {
-                    // 2. Cargar permisos en sesión
                     if (DatabaseService.CargarSesionUsuario(u))
                     {
-                        // Advertir si está usando la contraseña por defecto de instalación
                         if (DatabaseService.UsandoContraseñaPorDefecto(u))
                         {
                             MessageBox.Show(
@@ -138,7 +125,7 @@ namespace SchettiniGestion.WPF
                                 MessageBoxImage.Warning);
                         }
 
-                        // 3. Abrir Principal
+                        KeyboardService.Hide();
                         PrincipalWindow principal = new PrincipalWindow();
                         principal.Show();
                         this.Close();

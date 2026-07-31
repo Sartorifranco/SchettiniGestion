@@ -1,28 +1,15 @@
-<Window x:Class="SchettiniGestion.WPF.VirtualKeyboardWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        WindowStyle="None"
-        AllowsTransparency="True"
-        Background="Transparent"
-        ShowActivated="False"
-        Topmost="True"
-        ShowInTaskbar="False"
-        ResizeMode="NoResize"
-        SizeToContent="Height">
+<UserControl x:Class="SchettiniGestion.WPF.VirtualKeyboardControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="False">
 
-    <Window.Resources>
-
-        <!-- ═══════════════════════════════════════════════
-             KEYCAP BASE — efecto 3D (cara + sombra física)
-             ═══════════════════════════════════════════════ -->
+    <UserControl.Resources>
         <ControlTemplate x:Key="KeycapTemplate" TargetType="Button">
             <Grid>
-                <!-- Sombra / base física de la tecla -->
                 <Border x:Name="shadow"
                         CornerRadius="9"
                         Background="{DynamicResource VKKeyShadow}"
                         Margin="1,4,1,0"/>
-                <!-- Cara de la tecla -->
                 <Border x:Name="face"
                         CornerRadius="9"
                         Background="{TemplateBinding Background}"
@@ -34,7 +21,6 @@
                 </Border>
             </Grid>
             <ControlTemplate.Triggers>
-                <!-- Presionado: cara baja, sombra desaparece -->
                 <Trigger Property="IsPressed" Value="True">
                     <Setter TargetName="face"   Property="Margin"     Value="0,4,0,0"/>
                     <Setter TargetName="face"   Property="Background" Value="{DynamicResource VKKeyPressBg}"/>
@@ -48,68 +34,61 @@
             </ControlTemplate.Triggers>
         </ControlTemplate>
 
-        <!-- ── Tecla normal ── -->
         <Style x:Key="VKKey" TargetType="Button">
-            <Setter Property="Background"     Value="{DynamicResource VKKeyBg}"/>
-            <Setter Property="Foreground"     Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="FontFamily"     Value="Segoe UI"/>
-            <Setter Property="FontSize"       Value="18"/>
-            <Setter Property="FontWeight"     Value="SemiBold"/>
-            <Setter Property="Height"         Value="58"/>
-            <Setter Property="Margin"         Value="3,0,3,8"/>
+            <Setter Property="Background"      Value="{DynamicResource VKKeyBg}"/>
+            <Setter Property="Foreground"      Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontFamily"      Value="Segoe UI"/>
+            <Setter Property="FontSize"        Value="18"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Height"          Value="58"/>
+            <Setter Property="Margin"          Value="3,0,3,8"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Focusable"      Value="False"/>
-            <Setter Property="Cursor"         Value="Hand"/>
-            <Setter Property="Template"       Value="{StaticResource KeycapTemplate}"/>
+            <Setter Property="Focusable"       Value="False"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template"        Value="{StaticResource KeycapTemplate}"/>
         </Style>
 
-        <!-- ── Tecla especial (Shift, ?#, ABC) ── -->
         <Style x:Key="VKKeySpecial" TargetType="Button" BasedOn="{StaticResource VKKey}">
             <Setter Property="Background" Value="{DynamicResource VKKeySpecialBg}"/>
             <Setter Property="FontSize"   Value="15"/>
         </Style>
 
-        <!-- ── Tecla Enter ── -->
         <Style x:Key="VKKeyEnter" TargetType="Button" BasedOn="{StaticResource VKKey}">
             <Setter Property="Background" Value="{DynamicResource VKKeySpecialBg}"/>
             <Setter Property="FontSize"   Value="20"/>
         </Style>
 
-        <!-- ── Tecla ⌫ (Backspace) ── -->
         <Style x:Key="VKKeyBack" TargetType="Button" BasedOn="{StaticResource VKKey}">
             <Setter Property="Background" Value="#B71C1C"/>
             <Setter Property="Foreground" Value="#FFEBEE"/>
             <Setter Property="FontSize"   Value="22"/>
         </Style>
 
-        <!-- ── Tecla ✓ (Confirmar/Cerrar) ── -->
         <Style x:Key="VKKeyConfirm" TargetType="Button" BasedOn="{StaticResource VKKey}">
             <Setter Property="Background" Value="#1B5E20"/>
             <Setter Property="Foreground" Value="#E8F5E9"/>
             <Setter Property="FontSize"   Value="22"/>
         </Style>
 
-        <!-- ── Barra espaciadora ── -->
         <Style x:Key="VKKeySpace" TargetType="Button" BasedOn="{StaticResource VKKey}">
             <Setter Property="Background" Value="{DynamicResource VKKeyBg}"/>
             <Setter Property="FontSize"   Value="13"/>
             <Setter Property="FontWeight" Value="Normal"/>
             <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
         </Style>
+    </UserControl.Resources>
 
-    </Window.Resources>
-
-    <!-- ══════════════ PANEL PRINCIPAL ══════════════ -->
+    <!-- El fondo negro SOLO rodea las teclas visibles (no hay ventana aparte). -->
     <Border x:Name="mainBorder"
             CornerRadius="20,20,0,0"
-            Background="{DynamicResource VKBackground}">
+            Background="{DynamicResource VKBackground}"
+            HorizontalAlignment="Stretch">
         <Border.Effect>
             <DropShadowEffect BlurRadius="24" ShadowDepth="0"
                               Direction="90" Opacity="0.5" Color="Black"/>
         </Border.Effect>
 
         <StackPanel>
-            <!-- Barra superior: indicador de modo | handle | botón ocultar -->
             <Grid Margin="12,8,12,4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -117,7 +96,6 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Indicador de modo (se actualiza desde código) -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <Border Background="{DynamicResource VKKeySpecialBg}"
                             CornerRadius="6"
@@ -130,13 +108,11 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Handle central -->
                 <Border Grid.Column="1"
                         Width="44" Height="4" CornerRadius="2"
                         Background="{DynamicResource VKKeyBorder}"
                         VerticalAlignment="Center"/>
 
-                <!-- Botón OCULTAR — prominente, alineado a la derecha -->
                 <Button x:Name="btnCerrar"
                         Grid.Column="2"
                         Click="btnCerrar_Click"
@@ -172,24 +148,18 @@
                 </Button>
             </Grid>
 
-            <!-- Barra de acento (fina línea de color en la parte superior) -->
             <Border Height="2"
                     Background="{DynamicResource VKAccentBar}"
                     Margin="0,0,0,10"
                     Opacity="0.6"/>
 
-            <!-- ══════════ TECLADO ALFA ══════════ -->
             <StackPanel x:Name="pnlAlpha" Margin="8,0,8,6"/>
 
-            <!-- ══════════ TECLADO NUMÉRICO ══════════ -->
-            <!-- Centrado, ancho fijo para el numpad -->
+            <!-- Numérico: el control se estrecha al ancho del pad (sin franja negra). -->
             <StackPanel x:Name="pnlNumeric"
                         Visibility="Collapsed"
-                        HorizontalAlignment="Center"
-                        MinWidth="320"
-                        MaxWidth="480"
-                        Margin="0,0,0,6"/>
-
+                        Width="360"
+                        Margin="10,0,10,8"/>
         </StackPanel>
     </Border>
-</Window>
+</UserControl>

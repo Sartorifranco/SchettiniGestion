@@ -15,8 +15,6 @@ namespace SchettiniGestion.WPF
         private bool _menuColapsado;
         private readonly Dictionary<Button, string> _textosNavCompletos = new Dictionary<Button, string>();
         private readonly Dictionary<Type, UIElement> _modulosCargados = new Dictionary<Type, UIElement>();
-        private Grid _hostModulos;
-        private UIElement _moduloActual;
 
         public PrincipalWindow()
         {
@@ -297,30 +295,23 @@ namespace SchettiniGestion.WPF
         }
 
         /// <summary>
-        /// Crea cada módulo una sola vez y lo conserva en memoria. Al volver a un módulo
-        /// restaura instantáneamente su grilla, filtros y selección, sin repetir consultas
-        /// ni reconstruir cientos de controles WPF.
+        /// Conserva cada módulo en memoria, pero solo uno vive en el árbol visual.
+        /// Así la navegación no mide/compone Facturación+Productos+Informes a la vez.
+        /// Los Loaded de cada módulo deben protegerse con un flag (_inicializado) para
+        /// no repetir consultas SQL al volver.
         /// </summary>
         private void MostrarModulo<T>(Func<T> crear) where T : UIElement
         {
-            if (_hostModulos == null)
-            {
-                _hostModulos = new Grid();
-                mainContentArea.Content = _hostModulos;
-            }
-
             if (!_modulosCargados.TryGetValue(typeof(T), out UIElement modulo))
             {
                 modulo = crear();
-                modulo.Visibility = Visibility.Collapsed;
-                _hostModulos.Children.Add(modulo);
                 _modulosCargados[typeof(T)] = modulo;
             }
 
-            if (ReferenceEquals(_moduloActual, modulo)) return;
-            if (_moduloActual != null) _moduloActual.Visibility = Visibility.Collapsed;
-            modulo.Visibility = Visibility.Visible;
-            _moduloActual = modulo;
+            if (ReferenceEquals(mainContentArea.Content, modulo))
+                return;
+
+            mainContentArea.Content = modulo;
         }
 
         private void btnInicio_Click(object sender, RoutedEventArgs e)

@@ -12,6 +12,7 @@ namespace SchettiniGestion.WPF
     {
         private DataRow _entidadSeleccionada;
         private bool _modoClientes = true; // True = Clientes, False = Proveedores
+        private bool _inicializado;
 
         public CuentasCorrientesControl()
         {
@@ -20,6 +21,8 @@ namespace SchettiniGestion.WPF
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_inicializado) return;
+            _inicializado = true;
             // Aseguramos que al cargar la pantalla se limpie todo correctamente
             LimpiarTodo();
         }

@@ -14,8 +14,12 @@ namespace SchettiniGestion.WPF
             InitializeComponent();
         }
 
+        private bool _inicializado;
+
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_inicializado) return;
+            _inicializado = true;
             CargarFacturasCompras();
             CargarRecepciones();
             CargarNotas();

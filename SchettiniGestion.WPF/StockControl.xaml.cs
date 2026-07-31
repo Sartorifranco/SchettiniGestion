@@ -87,6 +87,8 @@ namespace SchettiniGestion.WPF
         private DataRow _productoSeleccionado = null;
         private bool _ignorarPerdidaFoco = false;
 
+        private bool _inicializado;
+
         public StockControl()
         {
             InitializeComponent();
@@ -94,6 +96,13 @@ namespace SchettiniGestion.WPF
 
         private void StockControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_inicializado)
+            {
+                AplicarLayoutResponsivo();
+                return;
+            }
+            _inicializado = true;
+
             cmbTipoMovimiento.Items.Clear();
             cmbTipoMovimiento.Items.Add("Ingreso por Compra");
             cmbTipoMovimiento.Items.Add("Ajuste Manual (Suma)");
@@ -104,7 +113,6 @@ namespace SchettiniGestion.WPF
             LimpiarCampos();
             AplicarLayoutResponsivo();
 
-            // Cargar stock automáticamente al abrir (sin esperar que el usuario busque)
             try { CargarStockGeneral(); } catch { }
         }
 

@@ -61,7 +61,7 @@ namespace SchettiniGestion.WPF
             var timer = control.GetValue(PendingTimerProperty) as DispatcherTimer;
             if (timer == null)
             {
-                timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(80) };
+                timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(140) };
                 timer.Tick += (s, e) =>
                 {
                     timer.Stop();
@@ -76,7 +76,7 @@ namespace SchettiniGestion.WPF
 
         private static void Apply(UserControl control)
         {
-            if (!control.IsLoaded || control.ActualWidth <= 0)
+            if (!control.IsLoaded || !control.IsVisible || control.ActualWidth <= 0)
                 return;
 
             double anchoViewport = UiScaleHelper.GetViewportWidthForModule(control);

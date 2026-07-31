@@ -35,6 +35,7 @@ namespace SchettiniGestion.WPF
         }
 
         private int _usuarioIdSeleccionado = 0;
+        private bool _inicializado;
         public ObservableCollection<PermisoUI> PermisosRolActual { get; } = new ObservableCollection<PermisoUI>();
 
         public UsuariosControl()
@@ -47,6 +48,8 @@ namespace SchettiniGestion.WPF
 
         private void UsuariosControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_inicializado) return;
+            _inicializado = true;
             ConfigurarUiTecnica();
             CargarUsuarios();
             CargarRoles();

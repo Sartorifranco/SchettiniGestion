@@ -16,6 +16,7 @@ namespace SchettiniGestion.WPF
         private DataRow _clienteSeleccionado;
         private DataRow _productoSeleccionado;
         private bool _ignorarPerdidaFoco = false;
+        private bool _inicializado;
 
         public PresupuestosControl()
         {
@@ -26,6 +27,8 @@ namespace SchettiniGestion.WPF
 
         private void PresupuestosControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_inicializado) return;
+            _inicializado = true;
             LimpiarFormulario();
             CargarClientePorDefecto();
         }

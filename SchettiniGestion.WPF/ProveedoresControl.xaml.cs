@@ -10,6 +10,7 @@ namespace SchettiniGestion.WPF
     public partial class ProveedoresControl : UserControl
     {
         private DataTable _proveedoresTodos;
+        private bool _inicializado;
 
         public ProveedoresControl()
         {
@@ -18,6 +19,8 @@ namespace SchettiniGestion.WPF
 
         private void ProveedoresControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_inicializado) return;
+            _inicializado = true;
             CargarProveedores();
         }
 

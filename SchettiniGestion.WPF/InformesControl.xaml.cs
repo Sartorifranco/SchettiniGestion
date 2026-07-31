@@ -11,12 +11,16 @@ namespace SchettiniGestion.WPF
     public partial class InformesControl : UserControl
     {
         private DataTable _dtActual;
+        private bool _inicializado;
 
         public InformesControl() { InitializeComponent(); }
         public InformesControl(object param) : this() { }
 
         private void Control_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_inicializado) return;
+            _inicializado = true;
+
             dpDesde.SelectedDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
             dpHasta.SelectedDate = DateTime.Today;
             cmbTipoInforme_SelectionChanged(cmbTipoInforme, null);

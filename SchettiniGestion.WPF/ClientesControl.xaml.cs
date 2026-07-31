@@ -17,8 +17,12 @@ namespace SchettiniGestion.WPF
             InitializeComponent();
         }
 
+        private bool _inicializado;
+
         private void ClientesControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_inicializado) return;
+            _inicializado = true;
             CargarClientes();
         }
 

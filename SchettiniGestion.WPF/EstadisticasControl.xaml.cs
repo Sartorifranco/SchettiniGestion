@@ -16,93 +16,100 @@ namespace SchettiniGestion.WPF
     {
         private static readonly CultureInfo CulturaAr = CultureInfo.GetCultureInfo("es-AR");
         private int _diasMuertos = 60;
+        private bool _suscriptoTema;
+        private bool _inicializado;
 
         public EstadisticasControl()
         {
             InitializeComponent();
             ConfigurarEjesVacios();
+            Unloaded += EstadisticasControl_Unloaded;
+        }
+
+        private void EstadisticasControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (!_suscriptoTema)
+            {
+                ThemeManager.ThemeChanged += OnThemeChanged;
+                _suscriptoTema = true;
+            }
+            AplicarColoresTemaAEjes();
+
+            if (_inicializado) return;
+            _inicializado = true;
+            EstablecerFechas("Mes");
+        }
+
+        private void EstadisticasControl_Unloaded(object sender, RoutedEventArgs e)
+        {
+            if (_suscriptoTema)
+            {
+                ThemeManager.ThemeChanged -= OnThemeChanged;
+                _suscriptoTema = false;
+            }
+        }
+
+        private void OnThemeChanged(object sender, EventArgs e)
+        {
+            // LiveCharts congela brushes: hay que regenerar series/ejes al cambiar tema.
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                AplicarColoresTemaAEjes();
+                if (IsLoaded && dtpDesde.SelectedDate != null && dtpHasta.SelectedDate != null)
+                    CargarEstadisticas();
+            }));
         }
 
         private void ConfigurarEjesVacios()
         {
             Func<double, string> formatoMoneda = FormatearMonedaEje;
-            Brush textoEje = BrushTema("TextPrimary", Brushes.WhiteSmoke);
 
             chartVentasDia.AxisX.Clear();
             chartVentasDia.AxisY.Clear();
-            chartVentasDia.AxisX.Add(new Axis
-            {
-                Foreground = textoEje,
-                FontSize = 12,
-                Labels = new List<string>()
-            });
-            chartVentasDia.AxisY.Add(new Axis
-            {
-                Foreground = textoEje,
-                FontSize = 12,
-                LabelFormatter = formatoMoneda
-            });
+            chartVentasDia.AxisX.Add(new Axis { FontSize = 12, Labels = new List<string>() });
+            chartVentasDia.AxisY.Add(new Axis { FontSize = 12, LabelFormatter = formatoMoneda });
 
             chartTopProductos.AxisX.Clear();
             chartTopProductos.AxisY.Clear();
-            chartTopProductos.AxisX.Add(new Axis
-            {
-                Foreground = textoEje,
-                FontSize = 12,
-                LabelFormatter = formatoMoneda
-            });
-            chartTopProductos.AxisY.Add(new Axis
-            {
-                Foreground = textoEje,
-                FontSize = 12,
-                Labels = new List<string>()
-            });
+            chartTopProductos.AxisX.Add(new Axis { FontSize = 12, LabelFormatter = formatoMoneda });
+            chartTopProductos.AxisY.Add(new Axis { FontSize = 12, Labels = new List<string>() });
 
             chartTopMargen.AxisX.Clear();
             chartTopMargen.AxisY.Clear();
-            chartTopMargen.AxisX.Add(new Axis
-            {
-                Foreground = textoEje,
-                FontSize = 12,
-                LabelFormatter = formatoMoneda
-            });
-            chartTopMargen.AxisY.Add(new Axis
-            {
-                Foreground = textoEje,
-                FontSize = 12,
-                Labels = new List<string>()
-            });
+            chartTopMargen.AxisX.Add(new Axis { FontSize = 12, LabelFormatter = formatoMoneda });
+            chartTopMargen.AxisY.Add(new Axis { FontSize = 12, Labels = new List<string>() });
 
             chartVentasHora.AxisX.Clear();
             chartVentasHora.AxisY.Clear();
-            chartVentasHora.AxisX.Add(new Axis
-            {
-                Foreground = textoEje,
-                FontSize = 11.5,
-                Labels = new List<string>()
-            });
-            chartVentasHora.AxisY.Add(new Axis
-            {
-                Foreground = textoEje,
-                FontSize = 12,
-                LabelFormatter = formatoMoneda
-            });
+            chartVentasHora.AxisX.Add(new Axis { FontSize = 11.5, Labels = new List<string>() });
+            chartVentasHora.AxisY.Add(new Axis { FontSize = 12, LabelFormatter = formatoMoneda });
+
+            AplicarColoresTemaAEjes();
         }
 
+        private void AplicarColoresTemaAEjes()
+        {
+            Brush texto = BrushTextoEje();
+            foreach (var chart in new[] { chartVentasDia, chartVentasHora, chartTopProductos, chartTopMargen })
+            {
+                foreach (var ax in chart.AxisX) ax.Foreground = texto;
+                foreach (var ax in chart.AxisY) ax.Foreground = texto;
+            }
+            chartMediosPago.Foreground = texto;
+        }
+
+        /// <summary>Formato corto para ejes Y labels de datos (evita "$ 1.234.567" cortado).</summary>
         private static string FormatearMonedaEje(double valor)
         {
             double abs = Math.Abs(valor);
             string signo = valor < 0 ? "-$ " : "$ ";
             if (abs >= 1000000)
                 return signo + (abs / 1000000d).ToString("N1", CulturaAr) + " M";
-            if (abs >= 1000)
+            if (abs >= 10000)
                 return signo + (abs / 1000d).ToString("N0", CulturaAr) + " mil";
+            if (abs >= 1000)
+                return signo + (abs / 1000d).ToString("N1", CulturaAr) + " mil";
             return signo + abs.ToString("N0", CulturaAr);
-        }
-
-        private void EstadisticasControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            EstablecerFechas("Mes");
         }
 
         private void btnFiltroRapido_Click(object sender, RoutedEventArgs e)
@@ -147,6 +154,8 @@ namespace SchettiniGestion.WPF
 
             try
             {
+                AplicarColoresTemaAEjes();
+
                 var resumen = DatabaseService.GetResumenVentasPeriodo(desde, hasta);
                 lblTotalVendido.Text = resumen.TotalVendido.ToString("C2", CulturaAr);
                 lblCantidad.Text = resumen.CantidadComprobantes.ToString("N0", CulturaAr);
@@ -226,7 +235,6 @@ namespace SchettiniGestion.WPF
 
             var labels = new List<string>();
             var valores = new ChartValues<double>();
-            // Mostrar franja comercial típica 8–22 si hay datos; si no, todas
             bool hayDatos = porHora.Any(v => v > 0);
             int desdeH = 8, hastaH = 22;
             if (hayDatos)
@@ -255,7 +263,7 @@ namespace SchettiniGestion.WPF
                 {
                     Title = "Ventas",
                     Values = valores,
-                    Fill = BrushTema("SuccessColor", new SolidColorBrush(Color.FromRgb(0, 158, 227))),
+                    Fill = BrushTema("PrimaryColor", new SolidColorBrush(Color.FromRgb(30, 136, 229))),
                     DataLabels = false
                 }
             };
@@ -271,7 +279,7 @@ namespace SchettiniGestion.WPF
             foreach (DataRow row in filas)
             {
                 string desc = row["Descripcion"]?.ToString() ?? "";
-                if (desc.Length > 28) desc = desc.Substring(0, 26) + "…";
+                if (desc.Length > 24) desc = desc.Substring(0, 22) + "…";
                 labels.Add(desc);
                 valores.Add(Convert.ToDouble(row["TotalVendido"]));
             }
@@ -291,9 +299,9 @@ namespace SchettiniGestion.WPF
                     Title = "Total",
                     Values = valores,
                     DataLabels = true,
-                    LabelPoint = p => p.X.ToString("C0", CulturaAr),
-                    Foreground = BrushTema("TextPrimary", Brushes.White),
-                    FontSize = 12,
+                    LabelPoint = p => FormatearMonedaEje(p.X),
+                    Foreground = BrushTextoEje(),
+                    FontSize = 11,
                     Fill = BrushTema("SuccessColor", new SolidColorBrush(Color.FromRgb(0, 158, 227)))
                 }
             };
@@ -309,7 +317,7 @@ namespace SchettiniGestion.WPF
             foreach (DataRow row in filas)
             {
                 string desc = row["Descripcion"]?.ToString() ?? "";
-                if (desc.Length > 28) desc = desc.Substring(0, 26) + "…";
+                if (desc.Length > 24) desc = desc.Substring(0, 22) + "…";
                 labels.Add(desc);
                 valores.Add(Convert.ToDouble(row["Margen"]));
             }
@@ -329,10 +337,10 @@ namespace SchettiniGestion.WPF
                     Title = "Margen",
                     Values = valores,
                     DataLabels = true,
-                    LabelPoint = p => p.X.ToString("C0", CulturaAr),
-                    Foreground = BrushTema("TextPrimary", Brushes.White),
-                    FontSize = 12,
-                    Fill = new SolidColorBrush(Color.FromRgb(59, 130, 246))
+                    LabelPoint = p => FormatearMonedaEje(p.X),
+                    Foreground = BrushTextoEje(),
+                    FontSize = 11,
+                    Fill = BrushTema("PrimaryColor", new SolidColorBrush(Color.FromRgb(59, 130, 246)))
                 }
             };
         }
@@ -346,8 +354,9 @@ namespace SchettiniGestion.WPF
             double rango = maximo - minimo;
             if (rango <= 0) rango = Math.Max(1d, Math.Abs(maximo));
 
+            // Más margen a la derecha para que los labels ("$ 12 mil") no se corten.
             chart.AxisX[0].MinValue = minimo < 0 ? minimo - rango * 0.12d : 0d;
-            chart.AxisX[0].MaxValue = maximo + rango * 0.24d;
+            chart.AxisX[0].MaxValue = maximo + rango * 0.42d;
         }
 
         private void CargarAbc(DateTime desde, DateTime hasta)
@@ -404,7 +413,7 @@ namespace SchettiniGestion.WPF
             var colores = new[]
             {
                 Color.FromRgb(46, 204, 113),
-                Color.FromRgb(0, 158, 227),
+                Color.FromRgb(30, 136, 229),
                 Color.FromRgb(241, 196, 15),
                 Color.FromRgb(155, 89, 182),
                 Color.FromRgb(230, 126, 34),
@@ -412,6 +421,7 @@ namespace SchettiniGestion.WPF
                 Color.FromRgb(231, 76, 60)
             };
 
+            Brush labelBrush = BrushTextoEje();
             int i = 0;
             foreach (DataRow row in dt.Rows)
             {
@@ -423,9 +433,9 @@ namespace SchettiniGestion.WPF
                     Title = medio,
                     Values = new ChartValues<double> { Convert.ToDouble(total) },
                     DataLabels = true,
-                    LabelPoint = p => p.Y.ToString("C0", CulturaAr),
-                    Foreground = Brushes.White,
-                    FontSize = 12,
+                    LabelPoint = p => FormatearMonedaEje(p.Y),
+                    Foreground = labelBrush,
+                    FontSize = 11,
                     Fill = new SolidColorBrush(colores[i % colores.Length])
                 });
                 i++;
@@ -437,9 +447,10 @@ namespace SchettiniGestion.WPF
             chartMediosPago.Series = series;
         }
 
+        private Brush BrushTextoEje()
+            => BrushTema("TextPrimary", ThemeManager.IsDark ? Brushes.WhiteSmoke : Brushes.Black);
+
         private static Brush BrushTema(string key, Brush fallback)
-        {
-            return Application.Current?.TryFindResource(key) as Brush ?? fallback;
-        }
+            => Application.Current?.TryFindResource(key) as Brush ?? fallback;
     }
 }

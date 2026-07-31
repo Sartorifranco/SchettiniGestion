@@ -85,6 +85,8 @@
     </Window.Resources>
 
     <Grid>
+        <!-- Contenido normal del sistema -->
+        <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition x:Name="colMenuLateral" Width="290" MinWidth="72" MaxWidth="320"/>
             <ColumnDefinition Width="*"/>
@@ -245,7 +247,7 @@
                             Style="{StaticResource LiteDangerOutlineButton}"
                             Margin="0,4,0,0"
                             Click="btnSalirSistema_Click"/>
-                    <TextBlock x:Name="txtVersionFooter" Text="v2.3.5-avances"
+                    <TextBlock x:Name="txtVersionFooter" Text="v2.3.12-avances"
                                HorizontalAlignment="Center"
                                Margin="0,12,0,0"
                                Foreground="{DynamicResource TextSecondary}"
@@ -375,5 +377,15 @@
                                 VerticalAlignment="Stretch"/>
             </Border>
         </Grid>
+        </Grid>
+
+        <!-- Teclado virtual: overlay DENTRO de la ventana (no puede saltar de monitor).
+             Alfa = Stretch 100% ancho. Numérico = el control se alinea a la derecha. -->
+        <Grid x:Name="hostTecladoVirtual"
+              VerticalAlignment="Bottom"
+              HorizontalAlignment="Stretch"
+              Panel.ZIndex="1000"
+              Visibility="Collapsed"
+              IsHitTestVisible="True"/>
     </Grid>
 </Window>

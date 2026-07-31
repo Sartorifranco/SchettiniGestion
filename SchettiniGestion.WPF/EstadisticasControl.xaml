@@ -232,7 +232,8 @@
                         <TextBlock Text="Ventas por día (tendencia)" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                         <lvc:CartesianChart x:Name="chartVentasDia" Grid.Row="1" LegendLocation="None" Hoverable="True"
-                                            Padding="8,0,18,14"/>
+                                            DisableAnimations="True" ClipToBounds="False"
+                                            Padding="12,8,28,20"/>
                         <TextBlock x:Name="lblSinVentasDia" Grid.Row="1" Text="Sin ventas en el período"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Foreground="{DynamicResource TextSecondary}" Visibility="Collapsed"/>
@@ -247,7 +248,8 @@
                         <TextBlock Text="Horarios pico" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                         <lvc:CartesianChart x:Name="chartVentasHora" Grid.Row="1" LegendLocation="None" Hoverable="True"
-                                            Padding="8,0,18,14"/>
+                                            DisableAnimations="True" ClipToBounds="False"
+                                            Padding="12,8,28,20"/>
                         <TextBlock x:Name="lblSinHoras" Grid.Row="1" Text="Sin datos por hora"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Foreground="{DynamicResource TextSecondary}" Visibility="Collapsed"/>
@@ -276,7 +278,8 @@
                         <TextBlock Text="Top 10 por facturación ($)" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                         <lvc:CartesianChart x:Name="chartTopProductos" Grid.Row="1" LegendLocation="None" Hoverable="True"
-                                            Padding="8,0,22,14"/>
+                                            DisableAnimations="True" ClipToBounds="False"
+                                            Padding="8,8,40,16"/>
                         <TextBlock x:Name="lblSinTop" Grid.Row="1" Text="Sin productos vendidos"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Foreground="{DynamicResource TextSecondary}" Visibility="Collapsed"/>
@@ -292,7 +295,8 @@
                         <TextBlock Text="Top 10 por ganancia ($)" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
                         <lvc:CartesianChart x:Name="chartTopMargen" Grid.Row="1" LegendLocation="None" Hoverable="True"
-                                            Padding="8,0,22,14"/>
+                                            DisableAnimations="True" ClipToBounds="False"
+                                            Padding="8,8,40,16"/>
                         <TextBlock x:Name="lblSinMargen" Grid.Row="1" Text="Sin datos de margen"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Foreground="{DynamicResource TextSecondary}" Visibility="Collapsed"/>
@@ -348,9 +352,10 @@
                     <StackPanel>
                         <TextBlock Text="Por medio de pago" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
-                        <lvc:PieChart x:Name="chartMediosPago" Height="255" MaxWidth="540"
+                        <lvc:PieChart x:Name="chartMediosPago" Height="270" MaxWidth="560"
                                       HorizontalAlignment="Center" LegendLocation="Bottom"
-                                      InnerRadius="55" Hoverable="True" Foreground="{DynamicResource TextPrimary}"/>
+                                      InnerRadius="55" Hoverable="True" DisableAnimations="True"
+                                      Foreground="{DynamicResource TextPrimary}"/>
                         <TextBlock x:Name="lblSinMedios" Text="Sin cobros en el período"
                                    HorizontalAlignment="Center" Margin="0,20,0,0"
                                    Foreground="{DynamicResource TextSecondary}" Visibility="Collapsed"/>

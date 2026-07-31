@@ -12,6 +12,7 @@ namespace SchettiniGestion.WPF
         private int _promoId;
         private DataTable _dtProductosBusqueda;
         private DataTable _dtProductosCombo;
+        private bool _inicializado;
 
         public PromocionesControl()
         {
@@ -22,6 +23,8 @@ namespace SchettiniGestion.WPF
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_inicializado) return;
+            _inicializado = true;
             CargarCategorias();
             PrepararTablaCombo();
             CargarPromos();

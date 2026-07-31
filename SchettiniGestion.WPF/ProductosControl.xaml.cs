@@ -53,8 +53,12 @@ namespace SchettiniGestion.WPF
             };
         }
 
+        private bool _inicializado;
+
         private void ProductosControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_inicializado) return;
+            _inicializado = true;
             CargarProductos();
         }
 

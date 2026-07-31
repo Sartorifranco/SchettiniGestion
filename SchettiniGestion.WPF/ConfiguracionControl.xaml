@@ -448,8 +448,10 @@
                                 <StackPanel>
                                     <TextBlock Text="⬅ Imagen promocional — IZQUIERDA" FontWeight="Bold" FontSize="14"
                                                Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4"/>
-                                    <Border Background="#1E3A5F" CornerRadius="5" Padding="8,6" Margin="0,0,0,8">
-                                        <TextBlock TextWrapping="Wrap" FontSize="12" FontWeight="SemiBold" Foreground="#7FC4FF"
+                                    <Border Background="{DynamicResource HoverBackground}" BorderBrush="{DynamicResource PrimaryColor}"
+                                            BorderThickness="1" CornerRadius="5" Padding="8,6" Margin="0,0,0,8">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}"
                                                    Text="📍 Lo que subas acá se mostrará del lado IZQUIERDO de la pantalla del cliente."/>
                                     </Border>
                                     <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,10"
@@ -480,8 +482,10 @@
                                 <StackPanel>
                                     <TextBlock Text="⬇ Banner — ABAJO" FontWeight="Bold" FontSize="14"
                                                Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4"/>
-                                    <Border Background="#3A2E1E" CornerRadius="5" Padding="8,6" Margin="0,0,0,8">
-                                        <TextBlock TextWrapping="Wrap" FontSize="12" FontWeight="SemiBold" Foreground="#FFC876"
+                                    <Border Background="{DynamicResource HoverBackground}" BorderBrush="{DynamicResource WarningColor}"
+                                            BorderThickness="1" CornerRadius="5" Padding="8,6" Margin="0,0,0,8">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}"
                                                    Text="📍 Lo que subas acá se mostrará en la franja INFERIOR (abajo) de la pantalla del cliente."/>
                                     </Border>
                                     <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,10"
@@ -703,8 +707,9 @@
                                 </Border>
 
                                 <StackPanel x:Name="pnlOcrAzure" Visibility="Collapsed">
-                                    <Border Background="#E8F4FD" CornerRadius="6" Padding="14,10" Margin="0,0,0,14">
-                                        <TextBlock TextWrapping="Wrap" Foreground="#0D4775">
+                                    <Border Background="{DynamicResource HoverBackground}" BorderBrush="{DynamicResource PrimaryColor}"
+                                            BorderThickness="1" CornerRadius="6" Padding="14,10" Margin="0,0,0,14">
+                                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimary}">
                                             <Run FontWeight="Bold">Tu cuenta, costo y privacidad: </Run>
                                             <Run>para usar Azure necesitás crear tu propio recurso Document Intelligence. Elegí el nivel gratuito F0, que permite hasta 500 páginas por mes en tu recurso. Si superás ese cupo, Azure te pedirá pasar a un nivel pago y el costo quedará asociado únicamente a tu cuenta. Tus fotos se envían a Microsoft para analizarlas; tu clave y tu cupo no se comparten con otros comercios.</Run>
                                         </TextBlock>
@@ -749,11 +754,10 @@
                         <TextBlock TextWrapping="Wrap" FontStyle="Italic" Foreground="{DynamicResource TextSecondary}"
                                    Margin="0,0,0,10"
                                    Text="⚠ El archivo se genera en la PC donde vive la base de datos (el Servidor, o esta misma PC si trabajás en modo Solo esta PC). Elegí una carpeta accesible desde esa PC."/>
-                        <Border Background="#FFF3E0" CornerRadius="6" Padding="14,10" Margin="0,0,0,14">
-                            <TextBlock TextWrapping="Wrap" FontSize="13">
-                                <Run FontWeight="Bold" Foreground="#E65100">⚠ Muy importante:</Run>
-                                <Run Foreground="#BF360C"> guardar el backup en el mismo disco de esta PC NO alcanza. Si la PC se rompe, se roba o el disco falla, ese backup se pierde junto con los datos. Copialo SIEMPRE también a un pendrive, otra PC o una carpeta de la nube (ver "Backup automático diario" más abajo para hacerlo sin tener que acordarte todos los días).</Run>
-                            </TextBlock>
+                        <Border Background="{DynamicResource HoverBackground}" BorderBrush="{DynamicResource WarningColor}"
+                                BorderThickness="1" CornerRadius="6" Padding="14,10" Margin="0,0,0,14">
+                            <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource TextPrimary}"
+                                       Text="⚠ Muy importante: guardar el backup en el mismo disco de esta PC NO alcanza. Si la PC se rompe, se roba o el disco falla, ese backup se pierde junto con los datos. Copialo SIEMPRE también a un pendrive, otra PC o una carpeta de la nube (ver Backup automático diario más abajo para hacerlo sin tener que acordarte todos los días)."/>
                         </Border>
                         <Button x:Name="btnGenerarBackup" Content="💾  Generar copia de seguridad"
                                 Style="{StaticResource ButtonStyle}" Padding="20,12" HorizontalAlignment="Left"
@@ -819,11 +823,10 @@
                         <Border Style="{StaticResource ConfigSectionCard}">
                             <StackPanel>
                         <TextBlock Text="Restaurar copia de seguridad" Style="{StaticResource ConfigSectionTitle}" Foreground="#E57373"/>
-                        <Border Background="#FFF3E0" CornerRadius="6" Padding="14,10" Margin="0,0,0,14">
-                            <TextBlock TextWrapping="Wrap" FontSize="13">
-                                <Run FontWeight="Bold" Foreground="#E65100">⚠ ATENCIÓN:</Run>
-                                <Run Foreground="#BF360C"> Restaurar reemplaza TODOS los datos actuales con los del archivo de backup. Esta acción no se puede deshacer. El sistema se cerrará automáticamente al terminar para reconectar.</Run>
-                            </TextBlock>
+                        <Border Background="{DynamicResource HoverBackground}" BorderBrush="{DynamicResource DangerColor}"
+                                BorderThickness="1" CornerRadius="6" Padding="14,10" Margin="0,0,0,14">
+                            <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource TextPrimary}"
+                                       Text="⚠ ATENCIÓN: Restaurar reemplaza TODOS los datos actuales con los del archivo de backup. Esta acción no se puede deshacer. El sistema se cerrará automáticamente al terminar para reconectar."/>
                         </Border>
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,16"
                                    Text="Seleccioná el archivo .bak generado previamente por este sistema para restaurar la base de datos."/>

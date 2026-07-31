@@ -11,6 +11,7 @@ namespace SchettiniGestion.WPF
     {
         private int _listaID = 0;
         private DataTable _dtListas;
+        private bool _inicializado;
 
         public ListasPreciosControl()
         {
@@ -21,6 +22,8 @@ namespace SchettiniGestion.WPF
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_inicializado) return;
+            _inicializado = true;
             CargarListas();
             ActualizarVisibilidadTipo();
         }

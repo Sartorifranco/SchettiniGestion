@@ -1,29 +1,28 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Interop;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 
 namespace SchettiniGestion.WPF
 {
-    public enum VirtualKeyboardMode { Alpha, Numeric }
-
-    public partial class VirtualKeyboardWindow : Window
+    /// <summary>
+    /// Teclado virtual embebido (overlay) dentro de la ventana del sistema.
+    /// No usa Window flotante: así no puede saltar entre monitores ni quedar cortado.
+    /// </summary>
+    public partial class VirtualKeyboardControl : UserControl
     {
-        // ── Estado ───────────────────────────────────────────────
         private VirtualKeyboardMode _mode = VirtualKeyboardMode.Alpha;
-        private bool _shiftActive = false;
-        private bool _shiftLocked = false;
-        private bool _symbolsMode = false;
+        private bool _shiftActive;
+        private bool _shiftLocked;
+        private bool _symbolsMode;
         private DateTime _lastShiftTap;
+        private bool _built;
 
-        // ── Tipo de tecla ────────────────────────────────────────
+        private const double NumericPadWidth = 360;
+
         private enum KT { Normal, Special, Back, Enter, Confirm, Space }
 
-        // ── Tecla con triple estado (lower / upper / símbolo) ────
         private struct AK
         {
             public readonly string Lo, Up, Sym;
@@ -37,118 +36,103 @@ namespace SchettiniGestion.WPF
                 => new AK(null, null, null, w, KT.Normal);
         }
 
-        // Lista de teclas de letras para actualizar al cambiar modo
         private readonly List<(Button btn, string lo, string up, string sym)> _alphaKeys
             = new List<(Button, string, string, string)>();
 
-        // ── Win32: no robar el foco ──────────────────────────────
-        private const int WM_MOUSEACTIVATE = 0x0021;
-        private const int MA_NOACTIVATE    = 3;
-
-        public VirtualKeyboardWindow()
+        public VirtualKeyboardControl()
         {
             InitializeComponent();
-            Loaded  += (s, e) => { BuildAlpha(); BuildNumpad(); PositionWindow(); };
-            Closing += (s, e) => { e.Cancel = true; Hide(); };
+            Loaded += (s, e) => EnsureBuilt();
         }
 
-        protected override void OnSourceInitialized(EventArgs e)
-        {
-            base.OnSourceInitialized(e);
-            (PresentationSource.FromVisual(this) as HwndSource)?.AddHook(WndProc);
-        }
-
-        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            if (msg == WM_MOUSEACTIVATE) { handled = true; return new IntPtr(MA_NOACTIVATE); }
-            return IntPtr.Zero;
-        }
-
-        private void PositionWindow()
-        {
-            var wa = SystemParameters.WorkArea;
-            Width  = wa.Width;
-            Left   = wa.Left;
-            UpdateLayout();
-            Top = wa.Bottom - ActualHeight;
-        }
-
-        // ─────────────────────────────────────────────────────────
-        // API pública
-        // ─────────────────────────────────────────────────────────
+        public VirtualKeyboardMode CurrentMode => _mode;
 
         public void SetMode(VirtualKeyboardMode mode)
         {
+            EnsureBuilt();
             _mode = mode;
             _shiftActive = _shiftLocked = _symbolsMode = false;
 
-            pnlAlpha.Visibility   = mode == VirtualKeyboardMode.Alpha
-                                    ? Visibility.Visible : Visibility.Collapsed;
+            pnlAlpha.Visibility = mode == VirtualKeyboardMode.Alpha
+                ? Visibility.Visible : Visibility.Collapsed;
             pnlNumeric.Visibility = mode == VirtualKeyboardMode.Numeric
-                                    ? Visibility.Visible : Visibility.Collapsed;
+                ? Visibility.Visible : Visibility.Collapsed;
 
             lblModo.Text = mode == VirtualKeyboardMode.Numeric ? "123" : "ABC";
-            if (mode == VirtualKeyboardMode.Alpha) RefreshAlpha();
+
+            if (mode == VirtualKeyboardMode.Numeric)
+            {
+                // Solo el ancho del pad, pegado a la derecha del host (sin negro lateral).
+                Width = NumericPadWidth;
+                HorizontalAlignment = HorizontalAlignment.Right;
+                mainBorder.CornerRadius = new CornerRadius(16);
+                mainBorder.ClearValue(WidthProperty);
+                mainBorder.HorizontalAlignment = HorizontalAlignment.Stretch;
+            }
+            else
+            {
+                // 100% del ancho del host (= ventana del sistema).
+                ClearValue(WidthProperty);
+                HorizontalAlignment = HorizontalAlignment.Stretch;
+                mainBorder.CornerRadius = new CornerRadius(20, 20, 0, 0);
+                mainBorder.ClearValue(WidthProperty);
+                mainBorder.HorizontalAlignment = HorizontalAlignment.Stretch;
+            }
+
+            if (mode == VirtualKeyboardMode.Alpha)
+                RefreshAlpha();
         }
 
-        public new void Show()
+        private void EnsureBuilt()
         {
-            base.Show();
-            PositionWindow();
-            PlaySlideIn();
+            if (_built) return;
+            BuildAlpha();
+            BuildNumpad();
+            _built = true;
         }
-
-        // ─────────────────────────────────────────────────────────
-        // Construcción del teclado ALFA
-        // ─────────────────────────────────────────────────────────
 
         private void BuildAlpha()
         {
             pnlAlpha.Children.Clear();
             _alphaKeys.Clear();
 
-            // Fila 1: 1-0 + ⌫
             AddAlphaRow(
                 AK.Fix("1"), AK.Fix("2"), AK.Fix("3"), AK.Fix("4"), AK.Fix("5"),
                 AK.Fix("6"), AK.Fix("7"), AK.Fix("8"), AK.Fix("9"), AK.Fix("0"),
                 AK.Fix("⌫", 1.8, KT.Back));
 
-            // Fila 2: Q-P con leve indent
             AddAlphaRow(
                 AK.Gap(0.6),
-                new AK("q","Q","@"), new AK("w","W","#"), new AK("e","E","$"),
-                new AK("r","R","%"), new AK("t","T","&"), new AK("y","Y","*"),
-                new AK("u","U","-"), new AK("i","I","+"), new AK("o","O","("),
-                new AK("p","P",")"),
+                new AK("q", "Q", "@"), new AK("w", "W", "#"), new AK("e", "E", "$"),
+                new AK("r", "R", "%"), new AK("t", "T", "&"), new AK("y", "Y", "*"),
+                new AK("u", "U", "-"), new AK("i", "I", "+"), new AK("o", "O", "("),
+                new AK("p", "P", ")"),
                 AK.Gap(0.6));
 
-            // Fila 3: A-Ñ + Enter
             AddAlphaRow(
                 AK.Gap(1.0),
-                new AK("a","A","!"),  new AK("s","S","\""), new AK("d","D","'"),
-                new AK("f","F",":"),  new AK("g","G",";"),  new AK("h","H","/"),
-                new AK("j","J","_"),  new AK("k","K","~"),  new AK("l","L","·"),
-                new AK("ñ","Ñ","…"),
+                new AK("a", "A", "!"), new AK("s", "S", "\""), new AK("d", "D", "'"),
+                new AK("f", "F", ":"), new AK("g", "G", ";"), new AK("h", "H", "/"),
+                new AK("j", "J", "_"), new AK("k", "K", "~"), new AK("l", "L", "·"),
+                new AK("ñ", "Ñ", "…"),
                 AK.Fix("↵", 2.0, KT.Enter));
 
-            // Fila 4: ⇧ + Z-. + ⇧
             AddAlphaRow(
                 AK.Fix("⇧", 1.8, KT.Special),
-                new AK("z","Z","?"), new AK("x","X","~"), new AK("c","C","["),
-                new AK("v","V","]"), new AK("b","B","{"), new AK("n","N","}"),
-                new AK("m","M","\\"), new AK(",",";","<"), new AK(".",":",">" ),
+                new AK("z", "Z", "?"), new AK("x", "X", "~"), new AK("c", "C", "["),
+                new AK("v", "V", "]"), new AK("b", "B", "{"), new AK("n", "N", "}"),
+                new AK("m", "M", "\\"), new AK(",", ";", "<"), new AK(".", ":", ">"),
                 AK.Fix("⇧", 1.8, KT.Special));
 
-            // Fila 5: ?# | espacio | @ | ✓
             var g = MkGrid();
             g.ColumnDefinitions.Add(MkCol(1.5));
             g.ColumnDefinitions.Add(MkCol(6.5));
             g.ColumnDefinitions.Add(MkCol(1.0));
             g.ColumnDefinitions.Add(MkCol(1.5));
-            PlaceBtn(g, Btn("?#",     KT.Special), 0);
-            PlaceBtn(g, Btn("espacio",KT.Space),   1);
-            PlaceBtn(g, Btn("@",      KT.Normal),  2);
-            PlaceBtn(g, Btn("✓",      KT.Confirm), 3);
+            PlaceBtn(g, Btn("?#", KT.Special), 0);
+            PlaceBtn(g, Btn("espacio", KT.Space), 1);
+            PlaceBtn(g, Btn("@", KT.Normal), 2);
+            PlaceBtn(g, Btn("✓", KT.Confirm), 3);
             pnlAlpha.Children.Add(g);
         }
 
@@ -175,9 +159,9 @@ namespace SchettiniGestion.WPF
             {
                 string lbl = mode == "sym" ? sym : (mode == "up" ? up : lo);
                 btn.Content = lbl;
-                btn.Tag     = lbl;
+                btn.Tag = lbl;
             }
-            // Colorear teclas Shift
+
             foreach (UIElement row in pnlAlpha.Children)
             {
                 if (!(row is Grid g)) continue;
@@ -194,20 +178,16 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        // ─────────────────────────────────────────────────────────
-        // Construcción del NUMPAD
-        // ─────────────────────────────────────────────────────────
-
         private void BuildNumpad()
         {
             pnlNumeric.Children.Clear();
 
             var rows = new (string, KT)[][]
             {
-                new[] { ("7",KT.Normal),  ("8",KT.Normal),  ("9",KT.Normal),  ("⌫",KT.Back)    },
-                new[] { ("4",KT.Normal),  ("5",KT.Normal),  ("6",KT.Normal),  (",",KT.Special)  },
-                new[] { ("1",KT.Normal),  ("2",KT.Normal),  ("3",KT.Normal),  (".",KT.Special)  },
-                new[] { ("±",KT.Special), ("0",KT.Normal),  ("00",KT.Normal), ("✓",KT.Confirm)  },
+                new[] { ("7", KT.Normal), ("8", KT.Normal), ("9", KT.Normal), ("⌫", KT.Back) },
+                new[] { ("4", KT.Normal), ("5", KT.Normal), ("6", KT.Normal), (",", KT.Special) },
+                new[] { ("1", KT.Normal), ("2", KT.Normal), ("3", KT.Normal), (".", KT.Special) },
+                new[] { ("±", KT.Special), ("0", KT.Normal), ("00", KT.Normal), ("✓", KT.Confirm) },
             };
 
             foreach (var row in rows)
@@ -224,12 +204,8 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        // ─────────────────────────────────────────────────────────
-        // Helpers de layout
-        // ─────────────────────────────────────────────────────────
-
         private static Grid MkGrid()
-            => new Grid { Margin = new Thickness(0, 0, 0, 0) };
+            => new Grid { HorizontalAlignment = HorizontalAlignment.Stretch };
 
         private static ColumnDefinition MkCol(double w)
             => new ColumnDefinition { Width = new GridLength(w, GridUnitType.Star) };
@@ -242,26 +218,22 @@ namespace SchettiniGestion.WPF
 
         private Button Btn(string label, KT type)
         {
-            string sty = type == KT.Back    ? "VKKeyBack"
-                       : type == KT.Confirm  ? "VKKeyConfirm"
-                       : type == KT.Enter    ? "VKKeyEnter"
-                       : type == KT.Space    ? "VKKeySpace"
-                       : type == KT.Special  ? "VKKeySpecial"
+            string sty = type == KT.Back ? "VKKeyBack"
+                       : type == KT.Confirm ? "VKKeyConfirm"
+                       : type == KT.Enter ? "VKKeyEnter"
+                       : type == KT.Space ? "VKKeySpace"
+                       : type == KT.Special ? "VKKeySpecial"
                        : "VKKey";
             var btn = new Button
             {
-                Content   = label,
-                Tag       = label,
-                Style     = (Style)Resources[sty],
+                Content = label,
+                Tag = label,
+                Style = (Style)Resources[sty],
                 Focusable = false,
             };
             btn.Click += OnKeyClick;
             return btn;
         }
-
-        // ─────────────────────────────────────────────────────────
-        // Manejo de clicks
-        // ─────────────────────────────────────────────────────────
 
         private void OnKeyClick(object sender, RoutedEventArgs e)
         {
@@ -305,7 +277,7 @@ namespace SchettiniGestion.WPF
             else
             {
                 if (_shiftLocked) { _shiftLocked = _shiftActive = false; }
-                else              { _shiftActive = !_shiftActive; }
+                else { _shiftActive = !_shiftActive; }
             }
             _lastShiftTap = now;
             RefreshAlpha();
@@ -338,28 +310,7 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        // ─────────────────────────────────────────────────────────
-        // Botón cerrar barra superior
-        // ─────────────────────────────────────────────────────────
-
         private void btnCerrar_Click(object sender, RoutedEventArgs e)
             => KeyboardService.Confirm();
-
-        // ─────────────────────────────────────────────────────────
-        // Animación
-        // ─────────────────────────────────────────────────────────
-
-        private void PlaySlideIn()
-        {
-            var wa = SystemParameters.WorkArea;
-            UpdateLayout();
-            double h = ActualHeight > 10 ? ActualHeight : 340;
-            Top = wa.Bottom;
-            var anim = new DoubleAnimation(wa.Bottom - h, TimeSpan.FromMilliseconds(260))
-            {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-            BeginAnimation(TopProperty, anim);
-        }
     }
 }

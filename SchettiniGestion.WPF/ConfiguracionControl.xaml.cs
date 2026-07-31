@@ -23,6 +23,7 @@ namespace SchettiniGestion.WPF
         private bool _hayPasswordAfipGuardadaEnBd;
         private bool _passwordAfipTocadoPorUsuario;
         private bool _suprimirEventoPasswordAfip;
+        private bool _inicializado;
         private string _logoPathActual = "";
         private string _mpPointTerminalIdGuardada = "";
 
@@ -33,6 +34,8 @@ namespace SchettiniGestion.WPF
 
         private void ConfiguracionControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_inicializado) return;
+            _inicializado = true;
             CargarDatosNegocio();
             CargarDatosConexion();
             CargarDatosLicencia();

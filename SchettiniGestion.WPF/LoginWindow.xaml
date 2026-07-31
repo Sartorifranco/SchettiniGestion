@@ -10,29 +10,23 @@
         AllowsTransparency="True">
 
     <Window.Resources>
-        <SolidColorBrush x:Key="BackgroundDark" Color="#0F172A"/>
-        <SolidColorBrush x:Key="SurfaceDark" Color="#1E293B"/>
-        <SolidColorBrush x:Key="BorderColor" Color="#334155"/>
-        <SolidColorBrush x:Key="PrimaryColor" Color="#2563EB"/>
-        <SolidColorBrush x:Key="PrimaryHover" Color="#1D4ED8"/>
-        <SolidColorBrush x:Key="TextPrimary" Color="#F1F5F9"/>
-        <SolidColorBrush x:Key="TextSecondary" Color="#94A3B8"/>
+        <!-- Sin brushes de tema locales: respeta Light/Dark de la app. -->
 
         <Style x:Key="LabelStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
 
         <Style x:Key="ModernTextBox" TargetType="TextBox">
-            <Setter Property="Background" Value="{StaticResource SurfaceDark}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="Background" Value="{DynamicResource LoginFieldBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LoginFieldBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="CaretBrush" Value="White"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -42,7 +36,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -51,9 +45,9 @@
         </Style>
 
         <Style x:Key="PasswordBoxStyle" TargetType="PasswordBox">
-            <Setter Property="Background" Value="{StaticResource SurfaceDark}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="Background" Value="{DynamicResource LoginFieldBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LoginFieldBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="FontSize" Value="14"/>
@@ -66,7 +60,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -75,7 +69,7 @@
         </Style>
 
         <Style x:Key="ButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="Background" Value="{DynamicResource PrimaryColor}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -88,7 +82,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryHover}"/>
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryHover}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -98,57 +92,59 @@
 
         <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#334155"/>
-                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
     </Window.Resources>
 
-    <Border Background="{StaticResource BackgroundDark}" CornerRadius="15" BorderBrush="{StaticResource BorderColor}" BorderThickness="1">
+    <Border Background="{DynamicResource LoginFormBackgroundBrush}" CornerRadius="15"
+            BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
         <Grid>
+            <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1.2*"/>
                 <ColumnDefinition Width="1.5*"/>
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="{StaticResource SurfaceDark}" CornerRadius="15,0,0,15">
+            <Border Grid.Column="0" Background="{DynamicResource LoginAsideBackgroundBrush}" CornerRadius="15,0,0,15">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24,0">
                     <Border Width="120" Height="120" CornerRadius="60" ClipToBounds="True"
-                            Background="#0F172A" BorderBrush="{StaticResource BorderColor}" BorderThickness="1"
+                            Background="{DynamicResource BackgroundDark}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
                             HorizontalAlignment="Center" Margin="0,0,0,20" Padding="18">
                         <Viewbox Stretch="Uniform">
                             <Canvas Width="1000" Height="1000">
-                                <Path Fill="{StaticResource TextPrimary}" StrokeThickness="0"
+                                <Path Fill="{DynamicResource TextPrimary}" StrokeThickness="0"
                                       Data="M399.565,632.348c13.896-52.446,27.503-103.808,41.473-156.532c25.221,0,50.974-0.014,76.724,0c16.758,0.006,33.525,0.316,50.279,0.017c25.131-0.45,41.236-18.275,38.875-42.188c-1.117-11.36-7.129-18.76-17.697-21.915c-5.996-1.786-12.504-2.547-18.783-2.565c-59.672-0.153-119.344-0.035-179.016-0.014c-59.863,0.018-107.28-36.393-119.41-92.252c-2.301-10.599-2.63-21.62-3.98-33.382c11.36,0,20.988-0.007,30.615,0c104.585,0.048,209.181,0.018,313.769,0.186c35.531,0.065,68.391,7.979,95,33.661c29.24,28.228,38.078,63.776,36.531,102.689c-1.576,39.816-10.797,77.574-34.637,110.483c-24.316,33.566-58.232,51.262-98.662,55.018c-27.268,2.539-54.883,1.52-82.338,1.666c-6.016,0.036-8.872,1.855-10.453,7.773c-2.839,10.666-6.357,21.166-10.076,31.56c-0.822,2.304-3.637,5.535-5.557,5.554C468.428,632.443,434.638,632.348,399.565,632.348z"/>
-                                <Path Fill="{StaticResource TextPrimary}" StrokeThickness="0"
+                                <Path Fill="{DynamicResource TextPrimary}" StrokeThickness="0"
                                       Data="M775.879,109.232c-12.541,26.458-23.209,51.369-35.951,75.169c-13.104,24.479-36.051,34.511-62.783,34.669c-73.379,0.427-146.762,0.171-220.15-0.076c-25.9-0.09-35.315,5.634-45.805,28.952c-0.97,2.14-4.111,4.697-6.257,4.71c-44.159,0.272-88.314,0.204-134.372,0.204c2.826-10.645,4.797-20.357,7.968-29.661c19.313-56.646,54.73-96.87,115.123-110.699c9.702-2.225,19.913-3.097,29.894-3.11c114.599-0.221,229.195-0.152,343.802-0.159C769.33,109.232,771.314,109.232,775.879,109.232z"/>
-                                <Path Fill="{StaticResource TextPrimary}" StrokeThickness="0"
+                                <Path Fill="{DynamicResource TextPrimary}" StrokeThickness="0"
                                       Data="M227.164,571.84c10.711-31.193,20.805-60.859,31.232-90.403c0.75-2.121,3.924-4.798,5.984-4.814c42.769-0.281,85.538-0.213,129.526-0.213c-6.156,20.119-12.01,39.13-17.785,58.159c-3.1,10.239-5.684,20.662-9.335,30.693c-1.007,2.751-5.017,6.273-7.674,6.303C315.616,571.955,272.123,571.84,227.164,571.84z"/>
-                                <Path Fill="{StaticResource TextPrimary}" StrokeThickness="0"
+                                <Path Fill="{DynamicResource TextPrimary}" StrokeThickness="0"
                                       Data="M511.371,763.315c-11.119,16.787-47.681,64.383-46.997,64.818c1.477,0.948,119.05-83.42,118.921-84.532c-0.055-0.522-67.157-2.033-67.157-2.033c13.589-17.523,45.974-59.321,43.638-59.397c-1.822-0.056-118.219,77.578-118.102,78.685C441.728,761.398,511.371,763.315,511.371,763.315z"/>
                             </Canvas>
                         </Viewbox>
                     </Border>
-                    <TextBlock Text="SCHPOS" FontSize="32" FontWeight="Black" Foreground="{StaticResource PrimaryColor}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="GESTIÓN POS" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <TextBlock Text="SCHPOS" FontSize="32" FontWeight="Black" Foreground="{DynamicResource LoginBrandTextBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="GESTIÓN POS" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
 
             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="40">
-                <TextBlock Text="Bienvenido" FontSize="28" FontWeight="Bold" Foreground="White" Margin="0,0,0,5"/>
-                <TextBlock Text="Ingrese sus credenciales para continuar." FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,24"/>
+                <TextBlock Text="Bienvenido" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,5"/>
+                <TextBlock Text="Ingrese sus credenciales para continuar." FontSize="14" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,24"/>
 
                 <TextBlock Text="USUARIO" Style="{StaticResource LabelStyle}"/>
                 <TextBox x:Name="txtUsuario" Style="{StaticResource ModernTextBox}" Height="45" FontSize="16" Margin="0,0,0,6" KeyDown="txtUsuario_KeyDown"/>
-                <TextBlock Text="Usuario del sistema (ej. cajero o admin)." FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,14" Opacity="0.9"/>
+                <TextBlock Text="Usuario del sistema (ej. cajero o admin)." FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,14" Opacity="0.9"/>
 
                 <TextBlock Text="CONTRASEÑA" Style="{StaticResource LabelStyle}"/>
                 <PasswordBox x:Name="txtPassword" Style="{StaticResource PasswordBoxStyle}" Height="45" FontSize="16" Margin="0,0,0,6" KeyDown="txtPassword_KeyDown"/>
-                <TextBlock Text="La preferencia del teclado táctil se guarda aunque cierre el sistema." FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,20" Opacity="0.9"/>
+                <TextBlock Text="La preferencia del teclado táctil se guarda aunque cierre el sistema." FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,20" Opacity="0.9"/>
 
                 <Button x:Name="btnIngresar" Content="INGRESAR ➔" Click="btnIngresar_Click" Style="{StaticResource ButtonStyle}" Height="50" FontSize="16" Margin="0,0,0,12"/>
 
@@ -158,9 +154,9 @@
             <Button x:Name="btnTecladoLogin" Click="btnTecladoLogin_Click"
                     HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="18"
                     MinHeight="44" MinWidth="120" Padding="12,8"
-                    Cursor="Hand" Background="#1E293B"
-                    BorderBrush="#334155" BorderThickness="1"
-                    Foreground="{StaticResource TextSecondary}"
+                    Cursor="Hand" Background="{DynamicResource SurfaceDark}"
+                    BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
+                    Foreground="{DynamicResource TextSecondary}"
                     ToolTip="Activar o apagar el teclado táctil. La elección se recuerda al reiniciar.">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
@@ -187,6 +183,14 @@
 
             <Button Content="✕" Click="btnSalir_Click" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="15"
                     Style="{StaticResource SecondaryButtonStyle}" Width="30" Height="30"/>
+            </Grid>
+
+            <!-- Overlay teclado dentro del login (compacto, sin ventana flotante). -->
+            <Grid x:Name="hostTecladoVirtual"
+                  VerticalAlignment="Bottom"
+                  HorizontalAlignment="Stretch"
+                  Panel.ZIndex="1000"
+                  Visibility="Collapsed"/>
         </Grid>
     </Border>
 </Window>

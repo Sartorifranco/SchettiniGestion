@@ -11,6 +11,7 @@ namespace SchettiniGestion.WPF
     public partial class PreciosControl : UserControl
     {
         private TextBox _ultimoTextBoxFoco;
+        private bool _inicializado;
 
         public PreciosControl()
         {
@@ -20,7 +21,11 @@ namespace SchettiniGestion.WPF
 
         private void PreciosControl_Loaded(object sender, RoutedEventArgs e)
         {
-            CargarProductos();
+            if (!_inicializado)
+            {
+                _inicializado = true;
+                CargarProductos();
+            }
             txtBuscar.Focus();
         }
 

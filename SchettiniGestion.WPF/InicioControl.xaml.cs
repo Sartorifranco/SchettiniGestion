@@ -11,13 +11,19 @@ namespace SchettiniGestion.WPF
     public partial class InicioControl : UserControl
     {
         private static readonly CultureInfo CulturaAr = CultureInfo.GetCultureInfo("es-AR");
+        private bool _inicializado;
 
         public InicioControl()
         {
             InitializeComponent();
         }
 
-        private void InicioControl_Loaded(object sender, RoutedEventArgs e) => CargarIndicadores();
+        private void InicioControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (_inicializado) return;
+            _inicializado = true;
+            CargarIndicadores();
+        }
 
         private void btnActualizar_Click(object sender, RoutedEventArgs e) => CargarIndicadores();
 

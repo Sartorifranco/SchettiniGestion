@@ -44,6 +44,7 @@ namespace SchettiniGestion.WPF
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
+            UiScaleHelper.FitWindowToWorkArea(this, 760, 650, 680, 500);
             if (_compraId > 0)
             {
                 lblTitulo.Text = "Ver Factura de Compra";

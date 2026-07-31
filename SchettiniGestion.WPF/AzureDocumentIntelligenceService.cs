@@ -150,6 +150,22 @@ namespace SchettiniGestion.WPF
                 }
             }
 
+            // El modelo preentrenado puede omitir una fila de la tabla aun cuando su texto
+            // sí fue leído por el OCR. Reprocesar el contenido completo recupera esas líneas
+            // y las combina sin duplicar las que Azure ya devolvió estructuradas.
+            var parseTexto = FacturaCompraPdfService.ParsearTexto(result.TextoCompleto);
+            foreach (var candidata in parseTexto.Lineas)
+            {
+                string codigo = (candidata.CodigoProveedor ?? "").Trim();
+                string descripcion = DatabaseService.NormalizarDescripcionProveedor(candidata.DescripcionPdf);
+                bool duplicada = result.Lineas.Any(actual =>
+                    (!string.IsNullOrEmpty(codigo) &&
+                     string.Equals((actual.CodigoProveedor ?? "").Trim(), codigo, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(descripcion) &&
+                     DatabaseService.NormalizarDescripcionProveedor(actual.DescripcionPdf) == descripcion));
+                if (!duplicada) result.Lineas.Add(candidata);
+            }
+
             if (result.Lineas.Count == 0)
                 result.MensajeAdvertencia = "Azure detectó la factura pero no pudo identificar ítems individuales. Revise el archivo o cargue la factura a mano.";
 

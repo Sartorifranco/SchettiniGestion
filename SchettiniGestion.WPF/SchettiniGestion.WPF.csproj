@@ -338,6 +338,12 @@
     <Compile Include="ImportarFacturaCompraWindow.xaml.cs">
       <DependentUpon>ImportarFacturaCompraWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="AsignarProductoCompraWindow.xaml.cs">
+      <DependentUpon>AsignarProductoCompraWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="LineaFacturaCompraManualWindow.xaml.cs">
+      <DependentUpon>LineaFacturaCompraManualWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="RecepcionCompraModalWindow.xaml.cs">
       <DependentUpon>RecepcionCompraModalWindow.xaml</DependentUpon>
     </Compile>
@@ -625,6 +631,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ImportarFacturaCompraWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AsignarProductoCompraWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="LineaFacturaCompraManualWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

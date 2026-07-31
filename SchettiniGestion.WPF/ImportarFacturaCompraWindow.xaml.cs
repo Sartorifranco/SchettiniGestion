@@ -24,6 +24,7 @@ namespace SchettiniGestion.WPF
         {
             InitializeComponent();
             dgvLineas.ItemsSource = _lineas;
+            Loaded += (_, __) => UiScaleHelper.FitWindowToWorkArea(this, 980, 640, 700, 480);
         }
 
         public ImportarFacturaCompraWindow(Window owner) : this()
@@ -52,7 +53,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("No se pudo leer el PDF:\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageBox.Show("No se pudo leer el PDF:\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
             AplicarResultadoImportacion();
@@ -139,54 +140,55 @@ namespace SchettiniGestion.WPF
         private void btnElegirProducto_Click(object sender, RoutedEventArgs e)
         {
             if (!(sender is FrameworkElement fe) || !(fe.DataContext is LineaRevisionVm linea)) return;
+            AbrirAsignacionProducto(linea);
+        }
 
-            string sugerencia = linea.DescripcionPdf ?? "";
-            if (sugerencia.Length > 40) sugerencia = sugerencia.Substring(0, 40);
+        private void AbrirAsignacionProducto(LineaRevisionVm linea)
+        {
+            var selector = new AsignarProductoCompraWindow(
+                this, linea.CodigoPdf, linea.DescripcionPdf, linea.CostoUnitario);
+            if (selector.ShowDialog() != true) return;
 
-            var winBuscar = new ModernInputWindow("Asignar producto", "Buscar (código o descripción):", sugerencia) { Owner = this };
-            if (winBuscar.ShowDialog() != true || string.IsNullOrWhiteSpace(winBuscar.ResponseText)) return;
-
-            var dt = DatabaseService.BuscarProductosMultiples_ParaCompra(winBuscar.ResponseText.Trim());
-            if (dt == null || dt.Rows.Count == 0)
-            {
-                MessageBox.Show("No se encontraron productos.", "Atención", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            DataRow elegido = dt.Rows[0];
-            if (dt.Rows.Count > 1)
-            {
-                var opciones = new System.Collections.Generic.List<string>();
-                int max = Math.Min(10, dt.Rows.Count);
-                for (int i = 0; i < max; i++)
-                    opciones.Add($"{i + 1}) {dt.Rows[i]["Codigo"]} — {dt.Rows[i]["Descripcion"]}");
-                MessageBox.Show("Resultados:\n\n" + string.Join("\n", opciones), "Elegir producto", MessageBoxButton.OK, MessageBoxImage.Information);
-                var winNum = new ModernInputWindow("Elegir producto", "Número de opción:", "1") { Owner = this, SoloNumeros = true };
-                if (winNum.ShowDialog() != true || !int.TryParse(winNum.ResponseText, out int idx) || idx < 1 || idx > dt.Rows.Count)
-                    return;
-                elegido = dt.Rows[idx - 1];
-            }
-
-            linea.ProductoID = Convert.ToInt32(elegido["ProductoID"]);
-            linea.CodigoProducto = elegido["Codigo"]?.ToString() ?? "";
-            linea.DescripcionProducto = elegido["Descripcion"]?.ToString() ?? "";
+            linea.ProductoID = selector.ProductoID;
+            linea.CodigoProducto = selector.CodigoProducto;
+            linea.DescripcionProducto = selector.DescripcionProducto;
             linea.OrigenMatch = "Manual";
             linea.Confianza = 1m;
             dgvLineas.Items.Refresh();
             ActualizarResumen();
         }
 
+        private void btnAgregarLineaFaltante_Click(object sender, RoutedEventArgs e)
+        {
+            var modal = new LineaFacturaCompraManualWindow(this);
+            if (modal.ShowDialog() != true) return;
+
+            var linea = new LineaRevisionVm
+            {
+                CodigoPdf = modal.Codigo,
+                DescripcionPdf = modal.Descripcion,
+                Cantidad = modal.Cantidad,
+                CostoUnitario = modal.CostoUnitario,
+                DescripcionProducto = "(elegir producto)",
+                OrigenMatch = "Carga manual",
+                Confianza = 0m
+            };
+            _lineas.Add(linea);
+            ActualizarResumen();
+            AbrirAsignacionProducto(linea);
+        }
+
         private void btnConfirmar_Click(object sender, RoutedEventArgs e)
         {
             if (_lineas.Count == 0)
             {
-                MessageBox.Show("No hay ítems para importar.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("No hay ítems para importar.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             var sinMatch = _lineas.Where(l => l.ProductoID <= 0).ToList();
             if (sinMatch.Count > 0)
             {
-                if (MessageBox.Show(
+                if (ModernMessageBox.Show(
                         $"{sinMatch.Count} ítem(s) sin producto asignado se omitirán. ¿Continuar con el resto?",
                         "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                     return;
@@ -195,7 +197,7 @@ namespace SchettiniGestion.WPF
             var ok = _lineas.Where(l => l.ProductoID > 0).ToList();
             if (ok.Count == 0)
             {
-                MessageBox.Show("Asigne al menos un producto.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageBox.Show("Asigne al menos un producto.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 

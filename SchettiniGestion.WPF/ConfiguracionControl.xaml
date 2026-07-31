@@ -575,6 +575,7 @@
             </TabItem>
 
             <TabItem x:Name="tabItemRedServidor" Header="📡 Red y Servidor">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -642,9 +643,11 @@
                     </StackPanel>
                     </Border>
                 </Grid>
+                </ScrollViewer>
             </TabItem>
 
             <TabItem Header="🔑 Licencia">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <Border Style="{StaticResource ConfigSectionCard}" MaxWidth="640" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <StackPanel>
                         <TextBlock Text="Activación de producto" Style="{StaticResource ConfigSectionTitle}"/>
@@ -669,6 +672,7 @@
                         </Button>
                     </StackPanel>
                 </Border>
+                </ScrollViewer>
             </TabItem>
 
             <TabItem Header="📷 OCR Compras">
@@ -701,10 +705,17 @@
                                 <StackPanel x:Name="pnlOcrAzure" Visibility="Collapsed">
                                     <Border Background="#E8F4FD" CornerRadius="6" Padding="14,10" Margin="0,0,0,14">
                                         <TextBlock TextWrapping="Wrap" Foreground="#0D4775">
-                                            <Run FontWeight="Bold">Costo y privacidad: </Run>
-                                            <Run>cada comercio debe usar su propia cuenta y clave de Azure. El nivel F0 ofrece hasta 500 páginas por mes por cuenta/recurso de Azure; no son 500 por usuario de SCHPOS. Si varios comercios comparten la misma cuenta de Azure, también comparten ese cupo. Al superar el nivel gratuito, Microsoft factura el consumo al titular de esa cuenta. La imagen se envía a Microsoft para analizarla.</Run>
+                                            <Run FontWeight="Bold">Tu cuenta, costo y privacidad: </Run>
+                                            <Run>para usar Azure necesitás crear tu propio recurso Document Intelligence. Elegí el nivel gratuito F0, que permite hasta 500 páginas por mes en tu recurso. Si superás ese cupo, Azure te pedirá pasar a un nivel pago y el costo quedará asociado únicamente a tu cuenta. Tus fotos se envían a Microsoft para analizarlas; tu clave y tu cupo no se comparten con otros comercios.</Run>
                                         </TextBlock>
                                     </Border>
+
+                                    <Button Content="🌐  Crear recurso gratuito en Azure"
+                                            Style="{StaticResource SecondaryButtonStyle}" Padding="16,10"
+                                            HorizontalAlignment="Left" Margin="0,0,0,6"
+                                            Click="btnAbrirAzureOcr_Click"/>
+                                    <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,14"
+                                               Text="Se abrirá el portal oficial de Microsoft. Iniciá sesión, seleccioná el plan F0 y, al terminar, copiá Endpoint y Key desde “Keys and Endpoint”."/>
 
                                     <TextBlock Text="Endpoint de Azure Document Intelligence:" Style="{StaticResource ModuleLabelStyle}"/>
                                     <TextBox x:Name="txtOcrAzureEndpoint" Style="{StaticResource ModuleTextBoxStyle}"
@@ -991,13 +1002,14 @@
             </TabItem>
 
             <TabItem Header="💳 Medios de Pago">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <Border Style="{StaticResource ConfigSectionCard}">
                     <StackPanel>
                         <TextBlock Text="Medios de pago" Style="{StaticResource ConfigSectionTitle}"/>
                         <TextBlock Text="Configure los medios de pago disponibles para cobros." Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,14"/>
                         <DataGrid x:Name="dgvMediosPago" AutoGenerateColumns="False" CanUserAddRows="False"
                                   CanUserReorderColumns="True" CanUserResizeColumns="True"
-                                  Height="300" Margin="0,0,0,10"
+                                  MinHeight="180" MaxHeight="360" Margin="0,0,0,10"
                                   Background="{DynamicResource SurfaceDark}" RowBackground="{DynamicResource SurfaceDark}" Foreground="{DynamicResource TextPrimary}"
                                   GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#444">
                             <DataGrid.Resources>
@@ -1061,6 +1073,7 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
+                </ScrollViewer>
             </TabItem>
 
         </TabControl>

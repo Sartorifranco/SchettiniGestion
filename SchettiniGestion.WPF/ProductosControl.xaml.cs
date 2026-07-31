@@ -6,9 +6,11 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using SchettiniGestion;
 using System.Globalization;
 
@@ -17,6 +19,8 @@ namespace SchettiniGestion.WPF
     public partial class ProductosControl : UserControl
     {
         private DataTable _dtProductos;
+        private readonly DispatcherTimer _filtroTimer;
+        private int _versionCarga;
 
         // Columnas en el orden de la plantilla (alta masiva)
         private static readonly string[] COLS_HEADER = {
@@ -41,6 +45,12 @@ namespace SchettiniGestion.WPF
         public ProductosControl()
         {
             InitializeComponent();
+            _filtroTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            _filtroTimer.Tick += (_, __) =>
+            {
+                _filtroTimer.Stop();
+                AplicarFiltro();
+            };
         }
 
         private void ProductosControl_Loaded(object sender, RoutedEventArgs e)
@@ -48,18 +58,35 @@ namespace SchettiniGestion.WPF
             CargarProductos();
         }
 
-        private void CargarProductos()
+        private async void CargarProductos()
         {
+            int version = ++_versionCarga;
+            bool incluirInactivos = chkMostrarInactivos?.IsChecked == true;
+            if (pnlCargandoProductos != null) pnlCargandoProductos.Visibility = Visibility.Visible;
             try
             {
-                _dtProductos = DatabaseService.GetProductos("", chkMostrarInactivos?.IsChecked == true);
-                EnriquecerColumnasProductos(_dtProductos);
+                var datos = await Task.Run(() =>
+                {
+                    var dt = DatabaseService.GetProductos("", incluirInactivos);
+                    EnriquecerColumnasProductos(dt);
+                    return dt;
+                });
+                if (version != _versionCarga || !IsLoaded) return;
+
+                _dtProductos = datos;
                 dgvProductos.ItemsSource = _dtProductos.DefaultView;
                 AplicarFiltro();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar lista: " + ex.Message);
+                if (version == _versionCarga)
+                    ModernMessageBox.Show("Error al cargar la lista de productos:\n" + ex.Message,
+                        "Productos", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                if (version == _versionCarga && pnlCargandoProductos != null)
+                    pnlCargandoProductos.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -106,7 +133,12 @@ namespace SchettiniGestion.WPF
             _dtProductos.DefaultView.RowFilter = sb.Length > 0 ? sb.ToString() : "";
         }
 
-        private void txtFiltro_TextChanged(object sender, TextChangedEventArgs e) => AplicarFiltro();
+        private void txtFiltro_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_filtroTimer == null) return;
+            _filtroTimer.Stop();
+            _filtroTimer.Start();
+        }
 
         private void chkMostrarInactivos_Checked(object sender, RoutedEventArgs e) => CargarProductos();
 

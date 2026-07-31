@@ -903,14 +903,8 @@ namespace SchettiniGestion.WPF
         {
             if (!string.IsNullOrWhiteSpace(impresoraTicket))
             {
-                bool valida = false;
-                foreach (string p in WinPrinting.PrinterSettings.InstalledPrinters)
-                {
-                    if (string.Equals(p, impresoraTicket, StringComparison.OrdinalIgnoreCase)
-                        || p.IndexOf(impresoraTicket, StringComparison.OrdinalIgnoreCase) >= 0)
-                    { valida = true; break; }
-                }
-                if (!valida)
+                string nombreInstalado = ResolverNombreImpresora(impresoraTicket);
+                if (nombreInstalado == null)
                 {
                     MessageBox.Show(
                         $"La impresora de tickets configurada no está disponible:\n{impresoraTicket}\n\nSeleccione otra impresora.",
@@ -921,7 +915,10 @@ namespace SchettiniGestion.WPF
                     doc.Print();
                     return;
                 }
-                doc.PrinterSettings.PrinterName = impresoraTicket;
+                // Cambiar PrinterName reinicia PaperSize/PageSettings en varios drivers térmicos.
+                // Si el documento ya fue preparado con esa impresora, no volver a asignarla.
+                if (!string.Equals(doc.PrinterSettings.PrinterName, nombreInstalado, StringComparison.OrdinalIgnoreCase))
+                    doc.PrinterSettings.PrinterName = nombreInstalado;
                 doc.Print();
             }
             else
@@ -930,6 +927,28 @@ namespace SchettiniGestion.WPF
                 pd.Document = doc;
                 if (pd.ShowDialog() == System.Windows.Forms.DialogResult.OK) doc.Print();
             }
+        }
+
+        private static string ResolverNombreImpresora(string nombreConfigurado)
+        {
+            if (string.IsNullOrWhiteSpace(nombreConfigurado)) return null;
+            string parcial = null;
+            foreach (string instalada in WinPrinting.PrinterSettings.InstalledPrinters)
+            {
+                if (string.Equals(instalada, nombreConfigurado, StringComparison.OrdinalIgnoreCase))
+                    return instalada;
+                if (parcial == null && instalada.IndexOf(nombreConfigurado, StringComparison.OrdinalIgnoreCase) >= 0)
+                    parcial = instalada;
+            }
+            return parcial;
+        }
+
+        private static void PrepararImpresoraAntesDeConfigurarPagina(WinPrinting.PrintDocument doc, string nombreConfigurado)
+        {
+            string instalada = ResolverNombreImpresora(nombreConfigurado);
+            if (instalada != null &&
+                !string.Equals(doc.PrinterSettings.PrinterName, instalada, StringComparison.OrdinalIgnoreCase))
+                doc.PrinterSettings.PrinterName = instalada;
         }
 
         public static void ImprimirPaginaDePrueba(string nombreImpresora, string tipo)
@@ -954,10 +973,8 @@ namespace SchettiniGestion.WPF
                 {
                     var opEtiq = DatabaseService.GetOpcionesEtiqueta();
                     bool horizontalPrueba = string.Equals(opEtiq.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
-                    if (horizontalPrueba)
-                        AplicarTamanoEtiqueta(doc, opEtiq.AltoMm, opEtiq.AnchoMm);
-                    else
-                        AplicarTamanoEtiqueta(doc, opEtiq.AnchoMm, opEtiq.AltoMm);
+                    PrepararImpresoraAntesDeConfigurarPagina(doc, nombreImpresora);
+                    AplicarTamanoEtiqueta(doc, opEtiq.AnchoMm, opEtiq.AltoMm);
 
                     var itemPrueba = new EtiquetaPrintItem
                     {
@@ -976,7 +993,7 @@ namespace SchettiniGestion.WPF
                             DibujarEtiquetaGDI(e.Graphics, opEtiq, itemPrueba);
                         e.HasMorePages = false;
                     };
-                    doc.Print();
+                    ImprimirDocumentoTicket(doc, nombreImpresora);
                     MessageBox.Show($"Etiqueta de prueba ({opEtiq.AnchoMm}×{opEtiq.AltoMm} mm) enviada a:\n{nombreImpresora}",
                         "Prueba de impresión", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
@@ -1350,18 +1367,13 @@ namespace SchettiniGestion.WPF
                 string impresora = DatabaseService.GetImpresoraEtiquetas();
                 var doc = new WinPrinting.PrintDocument();
                 doc.PrintController = new WinPrinting.StandardPrintController();
+                PrepararImpresoraAntesDeConfigurarPagina(doc, impresora);
 
-                // La rotación se resuelve por software (nunca con el flag Landscape del
-                // driver): muchas impresoras térmicas de etiquetas no soportan bien la
-                // rotación a nivel de driver y terminan imprimiendo rotado igual, o
-                // directamente en blanco. Acá directamente declaramos el tamaño físico
-                // de página ya intercambiado si corresponde, y giramos el contenido
-                // nosotros mismos al dibujar.
+                // Papel físico SIEMPRE Ancho×Alto (ej. 55×44). La orientación Horizontal
+                // rota el contenido por software; no se declara 44×55 porque muchos drivers
+                // térmicos rechazan ese formulario y emiten página en blanco.
                 bool horizontal = string.Equals(opciones.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
-                if (horizontal)
-                    AplicarTamanoEtiqueta(doc, opciones.AltoMm, opciones.AnchoMm);
-                else
-                    AplicarTamanoEtiqueta(doc, opciones.AnchoMm, opciones.AltoMm);
+                AplicarTamanoEtiqueta(doc, opciones.AnchoMm, opciones.AltoMm);
 
                 int idx = 0;
                 doc.PrintPage += (s, e) =>
@@ -1387,6 +1399,7 @@ namespace SchettiniGestion.WPF
             string impresora = DatabaseService.GetImpresoraEtiquetas();
             var doc = new WinPrinting.PrintDocument();
             doc.PrintController = new WinPrinting.StandardPrintController();
+            PrepararImpresoraAntesDeConfigurarPagina(doc, impresora);
             doc.DefaultPageSettings.PaperSize = new WinPrinting.PaperSize("A4", 827, 1169);
             doc.DefaultPageSettings.Landscape = string.Equals(op.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
             doc.DefaultPageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 0);
@@ -1441,6 +1454,7 @@ namespace SchettiniGestion.WPF
             string impresora = DatabaseService.GetImpresoraEtiquetas();
             var doc = new WinPrinting.PrintDocument();
             doc.PrintController = new WinPrinting.StandardPrintController();
+            PrepararImpresoraAntesDeConfigurarPagina(doc, impresora);
             doc.DefaultPageSettings.PaperSize = new WinPrinting.PaperSize("A4", 827, 1169);
             doc.DefaultPageSettings.Landscape = string.Equals(op.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(op.ModoImpresion, "Gondola", StringComparison.OrdinalIgnoreCase);
@@ -1464,11 +1478,33 @@ namespace SchettiniGestion.WPF
             // PaperSize usa centésimas de pulgada
             int w = (int)Math.Round(anchoMm / 25.4 * 100.0);
             int h = (int)Math.Round(altoMm / 25.4 * 100.0);
-            var paper = new WinPrinting.PaperSize($"Etiqueta{anchoMm}x{altoMm}", w, h);
+
+            // Preferir un formulario ya registrado en el driver (55×44, etc.).
+            WinPrinting.PaperSize paper = null;
+            foreach (WinPrinting.PaperSize existente in doc.PrinterSettings.PaperSizes)
+            {
+                if (Math.Abs(existente.Width - w) <= 2 && Math.Abs(existente.Height - h) <= 2)
+                {
+                    paper = existente;
+                    break;
+                }
+            }
+            if (paper == null)
+                paper = new WinPrinting.PaperSize($"Etiqueta{anchoMm}x{altoMm}", w, h);
+
+            doc.DefaultPageSettings.Landscape = false;
             doc.DefaultPageSettings.PaperSize = paper;
             doc.DefaultPageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 0);
+            doc.PrinterSettings.DefaultPageSettings.Landscape = false;
             doc.PrinterSettings.DefaultPageSettings.PaperSize = paper;
             doc.PrinterSettings.DefaultPageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 0);
+            // Algunos drivers restauran su tamaño predeterminado justo antes de imprimir.
+            doc.QueryPageSettings += (s, e) =>
+            {
+                e.PageSettings.Landscape = false;
+                e.PageSettings.PaperSize = paper;
+                e.PageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 0);
+            };
         }
 
         private static void DibujarEtiquetaGDI(WinDrawing.Graphics g, OpcionesEtiqueta op, EtiquetaPrintItem item)
@@ -1554,19 +1590,34 @@ namespace SchettiniGestion.WPF
 
         /// <summary>
         /// Dibuja la etiqueta girada 90° para el modo "Horizontal" del impresor directo
-        /// de etiquetas. En vez de girar vía PageSettings.Landscape (poco confiable en
-        /// impresoras térmicas de etiquetas, causa salidas rotadas o en blanco), se
-        /// renderiza la etiqueta a su tamaño natural (Ancho x Alto) en un bitmap interno
-        /// y se rota esa imagen antes de estamparla en la página física ya intercambiada
-        /// (Alto x Ancho).
+        /// de etiquetas. El papel físico permanece Ancho×Alto; se renderiza el contenido
+        /// en un bitmap Ancho×Alto, se rota 90° y se estampa centrado dentro de esa misma
+        /// área física (sin pedir al driver un papel 44×55).
         /// </summary>
         private static void DibujarEtiquetaRotadaGDI(WinDrawing.Graphics gPagina, OpcionesEtiqueta op, EtiquetaPrintItem item)
         {
             if (gPagina == null || item == null) return;
 
             const float dpi = 300f;
-            int wPx = Math.Max(1, (int)Math.Round(Math.Max(10, op.AnchoMm) / 25.4 * dpi));
-            int hPx = Math.Max(1, (int)Math.Round(Math.Max(10, op.AltoMm) / 25.4 * dpi));
+            float fisicoW = Math.Max(10, op.AnchoMm);
+            float fisicoH = Math.Max(10, op.AltoMm);
+            // Lienzo lógico Alto×Ancho: al rotar 90° queda exactamente Ancho×Alto físico.
+            float logicaW = fisicoH;
+            float logicaH = fisicoW;
+            int wPx = Math.Max(1, (int)Math.Round(logicaW / 25.4 * dpi));
+            int hPx = Math.Max(1, (int)Math.Round(logicaH / 25.4 * dpi));
+
+            var opLogica = new OpcionesEtiqueta
+            {
+                AnchoMm = (int)Math.Round(logicaW),
+                AltoMm = (int)Math.Round(logicaH),
+                MostrarDescripcion = op.MostrarDescripcion,
+                MostrarDescripcionExtra = op.MostrarDescripcionExtra,
+                MostrarMarca = op.MostrarMarca,
+                MostrarCodigo = op.MostrarCodigo,
+                MostrarCodigoBarras = op.MostrarCodigoBarras,
+                MostrarPrecio = op.MostrarPrecio
+            };
 
             using (var bmp = new WinDrawing.Bitmap(wPx, hPx))
             {
@@ -1574,13 +1625,13 @@ namespace SchettiniGestion.WPF
                 using (var gBmp = WinDrawing.Graphics.FromImage(bmp))
                 {
                     gBmp.Clear(WinDrawing.Color.White);
-                    DibujarEtiquetaGDI(gBmp, op, item);
+                    DibujarEtiquetaGDI(gBmp, opLogica, item);
                 }
 
                 bmp.RotateFlip(WinDrawing.RotateFlipType.Rotate90FlipNone);
 
                 gPagina.PageUnit = WinDrawing.GraphicsUnit.Millimeter;
-                gPagina.DrawImage(bmp, 0f, 0f, Math.Max(10, op.AltoMm), Math.Max(10, op.AnchoMm));
+                gPagina.DrawImage(bmp, 0f, 0f, fisicoW, fisicoH);
             }
         }
 

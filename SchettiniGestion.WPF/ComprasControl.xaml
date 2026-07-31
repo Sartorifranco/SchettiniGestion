@@ -42,16 +42,16 @@
                     </Grid.RowDefinitions>
                     <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox x:Name="txtFiltroFacturas" Style="{DynamicResource ModernTextBox}" Margin="0,0,10,0" TextChanged="txtFiltroFacturas_TextChanged"/>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <Button x:Name="btnNuevaFacturaCompra" Content="➕ Nueva Factura" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,0" Click="btnNuevaFacturaCompra_Click"/>
-                                <Button x:Name="btnEditarFacturaCompra" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="btnEditarFacturaCompra_Click"/>
-                                <Button x:Name="btnEliminarFacturaCompra" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Click="btnEliminarFacturaCompra_Click"/>
-                            </StackPanel>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBox x:Name="txtFiltroFacturas" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,8" TextChanged="txtFiltroFacturas_TextChanged"/>
+                            <WrapPanel Grid.Row="1" Orientation="Horizontal">
+                                <Button x:Name="btnNuevaFacturaCompra" Content="➕ Nueva Factura" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,4" Click="btnNuevaFacturaCompra_Click"/>
+                                <Button x:Name="btnEditarFacturaCompra" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,4" Click="btnEditarFacturaCompra_Click"/>
+                                <Button x:Name="btnEliminarFacturaCompra" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Margin="0,0,0,4" Click="btnEliminarFacturaCompra_Click"/>
+                            </WrapPanel>
                         </Grid>
                     </Border>
                     <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">
@@ -78,17 +78,17 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox x:Name="txtFiltroRecepciones" Style="{DynamicResource ModernTextBox}" Margin="0,0,10,0" TextChanged="txtFiltroRecepciones_TextChanged"/>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <Button x:Name="btnNuevaRecepcion" Content="➕ Nueva" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,0" Click="btnNuevaRecepcion_Click"/>
-                                <Button x:Name="btnEditarRecepcion" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="btnEditarRecepcion_Click"/>
-                                <Button x:Name="btnEliminarRecepcion" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Click="btnEliminarRecepcion_Click"/>
-                            </StackPanel>
+                                                <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBox x:Name="txtFiltroRecepciones" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,8" TextChanged="txtFiltroRecepciones_TextChanged"/>
+                            <WrapPanel Grid.Row="1" Orientation="Horizontal">
+                                <Button x:Name="btnNuevaRecepcion" Content="➕ Nueva" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,4" Click="btnNuevaRecepcion_Click"/>
+                                <Button x:Name="btnEditarRecepcion" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,4" Click="btnEditarRecepcion_Click"/>
+                                <Button x:Name="btnEliminarRecepcion" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Margin="0,0,0,4" Click="btnEliminarRecepcion_Click"/>
+                            </WrapPanel>
                         </Grid>
                     </Border>
                     <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">
@@ -113,17 +113,17 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox x:Name="txtFiltroNotas" Style="{DynamicResource ModernTextBox}" Margin="0,0,10,0" TextChanged="txtFiltroNotas_TextChanged"/>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <Button x:Name="btnNuevaNota" Content="➕ Nueva" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,0" Click="btnNuevaNota_Click"/>
-                                <Button x:Name="btnEditarNota" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="btnEditarNota_Click"/>
-                                <Button x:Name="btnEliminarNota" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Click="btnEliminarNota_Click"/>
-                            </StackPanel>
+                                                <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBox x:Name="txtFiltroNotas" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,8" TextChanged="txtFiltroNotas_TextChanged"/>
+                            <WrapPanel Grid.Row="1" Orientation="Horizontal">
+                                <Button x:Name="btnNuevaNota" Content="➕ Nueva" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,4" Click="btnNuevaNota_Click"/>
+                                <Button x:Name="btnEditarNota" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,4" Click="btnEditarNota_Click"/>
+                                <Button x:Name="btnEliminarNota" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Margin="0,0,0,4" Click="btnEliminarNota_Click"/>
+                            </WrapPanel>
                         </Grid>
                     </Border>
                     <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">
@@ -149,17 +149,17 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox x:Name="txtFiltroGastos" Style="{DynamicResource ModernTextBox}" Margin="0,0,10,0" TextChanged="txtFiltroGastos_TextChanged"/>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <Button x:Name="btnNuevoGasto" Content="➕ Nuevo" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,0" Click="btnNuevoGasto_Click"/>
-                                <Button x:Name="btnEditarGasto" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="btnEditarGasto_Click"/>
-                                <Button x:Name="btnEliminarGasto" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Click="btnEliminarGasto_Click"/>
-                            </StackPanel>
+                                                <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBox x:Name="txtFiltroGastos" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,8" TextChanged="txtFiltroGastos_TextChanged"/>
+                            <WrapPanel Grid.Row="1" Orientation="Horizontal">
+                                <Button x:Name="btnNuevoGasto" Content="➕ Nuevo" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,4" Click="btnNuevoGasto_Click"/>
+                                <Button x:Name="btnEditarGasto" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,4" Click="btnEditarGasto_Click"/>
+                                <Button x:Name="btnEliminarGasto" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Margin="0,0,0,4" Click="btnEliminarGasto_Click"/>
+                            </WrapPanel>
                         </Grid>
                     </Border>
                     <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">
@@ -184,17 +184,17 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox x:Name="txtFiltroPagos" Style="{DynamicResource ModernTextBox}" Margin="0,0,10,0" TextChanged="txtFiltroPagos_TextChanged"/>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <Button x:Name="btnNuevoPago" Content="➕ Nuevo" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,0" Click="btnNuevoPago_Click"/>
-                                <Button x:Name="btnEditarPago" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="btnEditarPago_Click"/>
-                                <Button x:Name="btnEliminarPago" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Click="btnEliminarPago_Click"/>
-                            </StackPanel>
+                                                <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBox x:Name="txtFiltroPagos" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,8" TextChanged="txtFiltroPagos_TextChanged"/>
+                            <WrapPanel Grid.Row="1" Orientation="Horizontal">
+                                <Button x:Name="btnNuevoPago" Content="➕ Nuevo" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,4" Click="btnNuevoPago_Click"/>
+                                <Button x:Name="btnEditarPago" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,4" Click="btnEditarPago_Click"/>
+                                <Button x:Name="btnEliminarPago" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Margin="0,0,0,4" Click="btnEliminarPago_Click"/>
+                            </WrapPanel>
                         </Grid>
                     </Border>
                     <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">
@@ -219,17 +219,17 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox x:Name="txtFiltroOrdenes" Style="{DynamicResource ModernTextBox}" Margin="0,0,10,0" TextChanged="txtFiltroOrdenes_TextChanged"/>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <Button x:Name="btnNuevaOrden" Content="➕ Nueva" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,0" Click="btnNuevaOrden_Click"/>
-                                <Button x:Name="btnEditarOrden" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="btnEditarOrden_Click"/>
-                                <Button x:Name="btnEliminarOrden" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Click="btnEliminarOrden_Click"/>
-                            </StackPanel>
+                                                <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBox x:Name="txtFiltroOrdenes" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,8" TextChanged="txtFiltroOrdenes_TextChanged"/>
+                            <WrapPanel Grid.Row="1" Orientation="Horizontal">
+                                <Button x:Name="btnNuevaOrden" Content="➕ Nueva" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,4" Click="btnNuevaOrden_Click"/>
+                                <Button x:Name="btnEditarOrden" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,4" Click="btnEditarOrden_Click"/>
+                                <Button x:Name="btnEliminarOrden" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Margin="0,0,0,4" Click="btnEliminarOrden_Click"/>
+                            </WrapPanel>
                         </Grid>
                     </Border>
                     <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">

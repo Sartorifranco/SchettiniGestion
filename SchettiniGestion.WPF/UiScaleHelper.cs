@@ -13,7 +13,8 @@ namespace SchettiniGestion.WPF
         public const double DesignContentHeight = 700;
         public const double CompactWidthThreshold = 1280;
         public const double VeryCompactWidthThreshold = 1080;
-        public const double CompactHeightThreshold = 680;
+        // 740: en 1366/1368×768 el área útil suele quedar ~700–728 DIP y necesita modo compacto.
+        public const double CompactHeightThreshold = 740;
 
         public static double ScreenWidth => SystemParameters.PrimaryScreenWidth;
         public static double ScreenHeight => SystemParameters.PrimaryScreenHeight;
@@ -34,7 +35,11 @@ namespace SchettiniGestion.WPF
 
         public static bool IsVeryCompactWidth(double width) => width > 0 && width < VeryCompactWidthThreshold;
 
-        public static bool IsCompactHeight(double height) => height > 0 && height < CompactHeightThreshold;
+        public static bool IsCompactHeight(double height)
+        {
+            double efectiva = height > 0 ? Math.Min(height, WorkArea.Height) : WorkArea.Height;
+            return efectiva > 0 && efectiva < CompactHeightThreshold;
+        }
 
         public static bool IsSmallScreen()
         {
@@ -62,6 +67,45 @@ namespace SchettiniGestion.WPF
         public static Thickness HeaderPadding(bool compactHeight)
         {
             return compactHeight ? new Thickness(10, 6, 10, 6) : new Thickness(12, 10, 12, 10);
+        }
+
+        /// <summary>
+        /// Limita un modal al área de trabajo real (considera barra de tareas y escala DPI).
+        /// Evita que botones inferiores queden fuera de pantalla en 1366×768 con escala 125%.
+        /// </summary>
+        public static void FitWindowToWorkArea(
+            Window window,
+            double desiredWidth,
+            double desiredHeight,
+            double minimumWidth = 520,
+            double minimumHeight = 420)
+        {
+            if (window == null) return;
+            Rect area = WorkArea;
+            double usableW = Math.Max(320, area.Width - 20);
+            double usableH = Math.Max(240, area.Height - 20);
+            // Los mínimos no pueden superar el área útil (DPI alto / notebooks 1366×768).
+            double minW = Math.Min(minimumWidth, usableW);
+            double minH = Math.Min(minimumHeight, usableH);
+            double maxWidth = usableW;
+            double maxHeight = usableH;
+
+            window.MinWidth = Math.Min(window.MinWidth > 0 ? window.MinWidth : minW, usableW);
+            window.MinHeight = Math.Min(window.MinHeight > 0 ? window.MinHeight : minH, usableH);
+            window.MaxWidth = maxWidth;
+            window.MaxHeight = maxHeight;
+            window.Width = Math.Min(desiredWidth, maxWidth);
+            window.Height = Math.Min(desiredHeight, maxHeight);
+
+            if (window.Owner != null)
+            {
+                window.Left = Math.Max(area.Left + 6, Math.Min(
+                    window.Owner.Left + (window.Owner.ActualWidth - window.Width) / 2,
+                    area.Right - window.Width - 6));
+                window.Top = Math.Max(area.Top + 6, Math.Min(
+                    window.Owner.Top + (window.Owner.ActualHeight - window.Height) / 2,
+                    area.Bottom - window.Height - 6));
+            }
         }
 
         /// <summary>Ancho útil del área de módulo (ventana menos sidebar y padding).</summary>

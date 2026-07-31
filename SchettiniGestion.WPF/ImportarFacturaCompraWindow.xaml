@@ -81,8 +81,14 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <TextBlock Grid.Row="3" x:Name="lblResumen"
-                   Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"/>
+        <Grid Grid.Row="3" Margin="0,0,0,12">
+            <Button Content="➕ Agregar ítem que faltó"
+                    Style="{StaticResource SecondaryButtonStyle}" Padding="12,7"
+                    HorizontalAlignment="Left" Click="btnAgregarLineaFaltante_Click"
+                    ToolTip="Permite cargar manualmente un renglón que el OCR no detectó."/>
+            <TextBlock x:Name="lblResumen" HorizontalAlignment="Right" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextPrimary}" FontSize="12" FontWeight="SemiBold"/>
+        </Grid>
 
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Cancelar" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="btnCancelar_Click"/>

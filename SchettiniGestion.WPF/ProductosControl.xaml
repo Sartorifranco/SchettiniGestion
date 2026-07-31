@@ -15,10 +15,10 @@
 
         <Border Grid.Row="0" Background="{StaticResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
                 <StackPanel>
                     <TextBlock Text="Buscar por: Código, Código barras, Descripción, Rubro, SubRubro, Marca, Proveedor" Style="{StaticResource LabelStyle}" Margin="0,0,0,5"/>
@@ -34,23 +34,24 @@
                                Margin="0,2,0,0"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="15,0,0,0">
+                <WrapPanel Grid.Row="1" Margin="0,14,0,0">
                     <Button x:Name="btnNuevo" Content="➕ Nuevo Producto" Style="{StaticResource ButtonStyle}" Padding="15,10" Margin="0,0,10,0" Click="btnNuevo_Click"/>
                     <Button x:Name="btnExportarProductos" Content="📤 Exportar Productos" Style="{StaticResource SecondaryButtonStyle}" Padding="10,8" Margin="0,0,6,0" Click="btnExportarProductos_Click" ToolTip="Exporta todos los productos para actualización masiva de costos y estados"/>
                     <Button x:Name="btnImportarActualizacion" Content="📥 Importar Actualización" Style="{StaticResource SecondaryButtonStyle}" Padding="10,8" Margin="0,0,10,0" Click="btnImportarActualizacion_Click" ToolTip="Importa cambios de costo, IVA, impuestos y estados operativos"/>
                     <Button x:Name="btnDescargarPlantilla" Content="📥 Plantilla CSV" Style="{StaticResource SecondaryButtonStyle}" Padding="10,8" Margin="0,0,6,0" Click="btnDescargarPlantilla_Click" ToolTip="Plantilla para alta masiva de productos nuevos"/>
                     <Button x:Name="btnDescargarPlantillaXlsx" Content="📊 Plantilla Excel" Style="{StaticResource SecondaryButtonStyle}" Padding="10,8" Margin="0,0,6,0" Click="btnDescargarPlantillaXlsx_Click" ToolTip="Plantilla para alta masiva de productos nuevos"/>
                     <Button x:Name="btnImportarExcel" Content="📂 Importar Alta Masiva" Style="{StaticResource SecondaryButtonStyle}" Padding="10,8" Click="btnImportarExcel_Click" ToolTip="Alta masiva de productos nuevos (CSV / Excel)"/>
-                </StackPanel>
+                </WrapPanel>
             </Grid>
         </Border>
 
         <Border Grid.Row="1" Background="{StaticResource SurfaceDark}" CornerRadius="8" Padding="1">
-            <DataGrid x:Name="dgvProductos" Style="{StaticResource ModuleDataGridStyle}" 
-                      AutoGenerateColumns="False" IsReadOnly="True"
-                      HorizontalScrollBarVisibility="Auto"
-                      SelectionChanged="dgvProductos_SelectionChanged"
-                      MouseDoubleClick="dgvProductos_MouseDoubleClick">
+            <Grid>
+                <DataGrid x:Name="dgvProductos" Style="{StaticResource ModuleDataGridStyle}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          HorizontalScrollBarVisibility="Auto"
+                          SelectionChanged="dgvProductos_SelectionChanged"
+                          MouseDoubleClick="dgvProductos_MouseDoubleClick">
                 <DataGrid.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="✏️ Editar" Click="MenuItemEditar_Click"/>
@@ -74,7 +75,17 @@
                     </DataGridTextColumn>
                     <DataGridTextColumn Header="ÚLT. MODIFICACIÓN" Binding="{Binding FechaModificacion, StringFormat=dd/MM/yyyy HH:mm}" Width="Auto" MinWidth="140"/>
                 </DataGrid.Columns>
-            </DataGrid>
+                </DataGrid>
+                <Border x:Name="pnlCargandoProductos" Visibility="Collapsed"
+                        Background="#CC1E1E1E" CornerRadius="8">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ProgressBar Width="220" Height="7" IsIndeterminate="True"/>
+                        <TextBlock Text="Cargando productos…" Margin="0,12,0,0"
+                                   Foreground="White" FontSize="14" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
         </Border>
     </Grid>
 </UserControl>

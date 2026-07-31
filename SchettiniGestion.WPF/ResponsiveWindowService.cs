@@ -118,14 +118,19 @@ namespace SchettiniGestion.WPF
         private static void FitWindowToScreen(Window window, double designW, double designH)
         {
             var area = SystemParameters.WorkArea;
-            double maxW = area.Width * 0.96;
-            double maxH = area.Height * 0.92;
+            double maxW = Math.Max(320, area.Width * 0.96);
+            double maxH = Math.Max(240, area.Height * 0.92);
             double scale = Math.Min(1.0, Math.Min(maxW / designW, maxH / designH));
+
+            // MinWidth/MinHeight no pueden superar el área útil: si no, el Viewbox
+            // escala pero la ventana igual se sale de pantalla en DPI alto.
+            if (window.MinWidth > maxW) window.MinWidth = maxW;
+            if (window.MinHeight > maxH) window.MinHeight = maxH;
 
             window.MaxWidth = maxW;
             window.MaxHeight = maxH;
-            window.Width = designW * scale;
-            window.Height = designH * scale;
+            window.Width = Math.Max(window.MinWidth, designW * scale);
+            window.Height = Math.Max(window.MinHeight, designH * scale);
         }
     }
 }

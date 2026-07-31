@@ -39,25 +39,10 @@
                                Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,15"/>
 
                     <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="14,12" Margin="0,0,0,14">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="14"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="14"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="14"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="14"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="8"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="8"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
+                        <WrapPanel Orientation="Horizontal">
+                            <StackPanel Margin="0,0,14,8" MinWidth="200">
                                 <TextBlock Text="Tipo de Informe" Style="{StaticResource LabelStyle}"/>
-                                <ComboBox x:Name="cmbTipoInforme" Style="{StaticResource ModuleComboBoxStyle}" Width="240" SelectionChanged="cmbTipoInforme_SelectionChanged">
+                                <ComboBox x:Name="cmbTipoInforme" Style="{StaticResource ModuleComboBoxStyle}" MinWidth="200" MaxWidth="280" SelectionChanged="cmbTipoInforme_SelectionChanged">
                                     <ComboBoxItem Content="Ventas por Período" IsSelected="True"/>
                                     <ComboBoxItem Content="Libro IVA Ventas"/>
                                     <ComboBoxItem Content="Libro IVA Compras"/>
@@ -69,24 +54,20 @@
                                     <ComboBoxItem Content="Cuenta Corriente Proveedores"/>
                                 </ComboBox>
                             </StackPanel>
-                            <StackPanel Grid.Column="2">
+                            <StackPanel Margin="0,0,14,8">
                                 <TextBlock Text="Desde" Style="{StaticResource LabelStyle}"/>
-                                <DatePicker x:Name="dpDesde" MinWidth="170" MinHeight="48"/>
+                                <DatePicker x:Name="dpDesde" MinWidth="150" MinHeight="44"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="4">
+                            <StackPanel Margin="0,0,14,8">
                                 <TextBlock Text="Hasta" Style="{StaticResource LabelStyle}"/>
-                                <DatePicker x:Name="dpHasta" MinWidth="170" MinHeight="48"/>
+                                <DatePicker x:Name="dpHasta" MinWidth="150" MinHeight="44"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="8" VerticalAlignment="Bottom">
-                                <Button Content="📊 Generar" Style="{StaticResource ButtonStyle}" Padding="12,8" Click="btnGenerar_Click"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="10" VerticalAlignment="Bottom">
-                                <Button Content="📄 CSV" Style="{StaticResource SecondaryButtonStyle}" Padding="12,8" Click="btnExportar_Click"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="12" VerticalAlignment="Bottom">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,8">
+                                <Button Content="📊 Generar" Style="{StaticResource ButtonStyle}" Padding="12,8" Margin="0,0,8,0" Click="btnGenerar_Click"/>
+                                <Button Content="📄 CSV" Style="{StaticResource SecondaryButtonStyle}" Padding="12,8" Margin="0,0,8,0" Click="btnExportar_Click"/>
                                 <Button Content="📕 PDF" Style="{StaticResource SecondaryButtonStyle}" Padding="12,8" Click="btnExportarPdf_Click"/>
                             </StackPanel>
-                        </Grid>
+                        </WrapPanel>
                     </Border>
 
                     <DataGrid Grid.Row="2" x:Name="dgvInforme"

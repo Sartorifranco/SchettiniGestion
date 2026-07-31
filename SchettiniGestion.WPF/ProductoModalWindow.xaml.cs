@@ -16,12 +16,19 @@ namespace SchettiniGestion.WPF
 {
     public partial class ProductoModalWindow : Window
     {
+        public int ResultID { get; private set; }
+
         private int _productoId;
         private int _stockActual;
         private string _rutaImagen = "";
         private bool _modoDuplicar;
         private Action _onGuardado;
         private bool _suspendCalculoPrecio;
+        private bool _cargandoProducto;
+        private static readonly DataTable PreviewSchema = CrearSchemaPreview();
+        private string _codigoInicial;
+        private string _descripcionInicial;
+        private decimal? _costoInicial;
 
         public ProductoModalWindow(int productoId, bool duplicar, Action onGuardado)
         {
@@ -34,6 +41,7 @@ namespace SchettiniGestion.WPF
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            AjustarAlAreaVisible();
             CargarListasPrecio();
             if (_productoId == 0)
             {
@@ -43,6 +51,7 @@ namespace SchettiniGestion.WPF
                 btnCrearYOtro.Visibility = Visibility.Visible;
                 btnGuardar.Content = "💾 Crear";
                 Limpiar();
+                AplicarDatosIniciales();
             }
             else
             {
@@ -59,6 +68,25 @@ namespace SchettiniGestion.WPF
                     txtCodigoBarra.Text = "";
                 }
             }
+        }
+
+        private void AjustarAlAreaVisible()
+        {
+            UiScaleHelper.FitWindowToWorkArea(this, 960, 700, 720, 540);
+        }
+
+        public void PrecargarDesdeFactura(string codigo, string descripcion, decimal costo)
+        {
+            _codigoInicial = codigo?.Trim() ?? "";
+            _descripcionInicial = descripcion?.Trim() ?? "";
+            _costoInicial = costo >= 0 ? (decimal?)costo : null;
+        }
+
+        private void AplicarDatosIniciales()
+        {
+            if (!string.IsNullOrWhiteSpace(_codigoInicial)) txtCodigo.Text = _codigoInicial;
+            if (!string.IsNullOrWhiteSpace(_descripcionInicial)) txtDescripcion.Text = _descripcionInicial;
+            if (_costoInicial.HasValue) numCosto.Value = _costoInicial.Value;
         }
 
         private void CargarCombos()
@@ -261,11 +289,21 @@ namespace SchettiniGestion.WPF
             public decimal PrecioVentaFinal { get; set; }
         }
 
+        private static DataTable CrearSchemaPreview()
+        {
+            var dt = new DataTable();
+            dt.Columns.Add("ProductoID", typeof(int));
+            dt.Columns.Add("PrecioCosto", typeof(decimal));
+            dt.Columns.Add("ImpuestoInterno", typeof(decimal));
+            dt.Columns.Add("CostoIncluyeIva", typeof(bool));
+            dt.Columns.Add("TipoIVA", typeof(string));
+            dt.Columns.Add("PrecioVenta", typeof(decimal));
+            return dt;
+        }
+
         private DataRow ConstruirProductoPreview()
         {
-            var dt = DatabaseService.GetProductos("");
-            if (dt == null) return null;
-            var row = dt.NewRow();
+            var row = PreviewSchema.NewRow();
             row["ProductoID"] = _productoId > 0 ? _productoId : 0;
             row["PrecioCosto"] = numCosto?.Value ?? 0m;
             row["ImpuestoInterno"] = numImpuestoInterno?.Value ?? 0m;
@@ -277,16 +315,17 @@ namespace SchettiniGestion.WPF
 
         private void ActualizarPrecioLista(CheckBox chk)
         {
+            if (_cargandoProducto || _suspendCalculoPrecio) return;
             if (chk?.Tag is ListaPrecioItem item)
             {
                 if (item.PrecioFijoInput != null)
                     item.PrecioFijoInput.Visibility = chk.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-                ActualizarEtiquetaPrecioLista(chk, item);
+                ActualizarEtiquetaPrecioLista(chk, item, ConstruirProductoPreview());
             }
             ActualizarGrillaPreciosPreview();
         }
 
-        private void ActualizarEtiquetaPrecioLista(CheckBox chk, ListaPrecioItem item)
+        private void ActualizarEtiquetaPrecioLista(CheckBox chk, ListaPrecioItem item, DataRow prod = null)
         {
             if (chk == null || item == null || item.ListaRow == null) return;
             decimal? precioFijo = null;
@@ -294,7 +333,7 @@ namespace SchettiniGestion.WPF
                 precioFijo = item.PrecioFijoInput.Value;
 
             decimal precio = 0m;
-            var prod = ConstruirProductoPreview();
+            prod = prod ?? ConstruirProductoPreview();
             if (prod != null)
                 precio = DatabaseService.CalcularPrecioLista(prod, item.ListaRow, precioFijo);
             chk.Content = $"{item.NombreLista}: {precio:C2}";
@@ -302,7 +341,7 @@ namespace SchettiniGestion.WPF
 
         private void ActualizarGrillaPreciosPreview()
         {
-            if (dgvPreciosPreview == null) return;
+            if (dgvPreciosPreview == null || _cargandoProducto) return;
 
             var items = new List<PrecioListaPreviewItem>();
             decimal costoBase = ObtenerCostoCompraFinal();
@@ -319,7 +358,7 @@ namespace SchettiniGestion.WPF
                         if (lp.TipoLista == DatabaseService.TiposListaPrecio.PrecioFijo && lp.PrecioFijoInput != null)
                             precioFijo = lp.PrecioFijoInput.Value;
 
-                        ActualizarEtiquetaPrecioLista(chk, lp);
+                        ActualizarEtiquetaPrecioLista(chk, lp, prod);
                         if (chk.IsChecked == true)
                         {
                             items.Add(new PrecioListaPreviewItem
@@ -381,11 +420,8 @@ namespace SchettiniGestion.WPF
 
         private void CargarProducto(int id)
         {
-            var dt = DatabaseService.GetProductos("", true);
-            if (dt == null) return;
-            var rows = dt.Select($"ProductoID={id}");
-            if (rows.Length == 0) return;
-            var r = rows[0];
+            var r = DatabaseService.GetProductoPorId(id, incluirInactivos: true);
+            if (r == null) return;
 
             txtCodigo.Text = r["Codigo"]?.ToString() ?? "";
             txtCodigoBarra.Text = r["CodigoBarra"]?.ToString() ?? "";
@@ -414,6 +450,7 @@ namespace SchettiniGestion.WPF
             }
 
             _suspendCalculoPrecio = true;
+            _cargandoProducto = true;
             try
             {
             numCosto.Value = r["PrecioCosto"] != DBNull.Value ? Convert.ToDecimal(r["PrecioCosto"]) : 0;
@@ -450,9 +487,12 @@ namespace SchettiniGestion.WPF
                     if (item is StackPanel sp && sp.Children.Count > 0 && sp.Children[0] is CheckBox chk && chk.Tag is ListaPrecioItem lp)
                     {
                         chk.IsChecked = listasDetalle.ContainsKey(lp.ListaID);
-                        if (lp.PrecioFijoInput != null && listasDetalle.TryGetValue(lp.ListaID, out decimal? pf) && pf.HasValue)
-                            lp.PrecioFijoInput.Value = pf.Value;
-                        ActualizarPrecioLista(chk);
+                        if (lp.PrecioFijoInput != null)
+                        {
+                            lp.PrecioFijoInput.Visibility = chk.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+                            if (listasDetalle.TryGetValue(lp.ListaID, out decimal? pf) && pf.HasValue)
+                                lp.PrecioFijoInput.Value = pf.Value;
+                        }
                     }
                 }
             }
@@ -464,9 +504,7 @@ namespace SchettiniGestion.WPF
                 {
                     var lineas = componentes.Select(c =>
                     {
-                        var prod = DatabaseService.GetProductos("", true);
-                        if (prod == null) return $"{c.ProductoComponenteID}:{c.Cantidad}";
-                        var row = prod.Select($"ProductoID={c.ProductoComponenteID}").FirstOrDefault();
+                        var row = DatabaseService.GetProductoPorId(c.ProductoComponenteID, incluirInactivos: true);
                         string cod = row?["Codigo"]?.ToString() ?? c.ProductoComponenteID.ToString();
                         return $"{cod}:{c.Cantidad}";
                     });
@@ -477,13 +515,16 @@ namespace SchettiniGestion.WPF
             chkEsStockeable_Changed(null, null);
             chkUsaVariantes_Changed(null, null);
             chkEsCombo_Changed(null, null);
-            CalcularPreciosListas(null, null);
             ActualizarCostoCompraFinal();
             ActualizarAyudaCostoIva();
-            ActualizarGrillaPreciosPreview();
             ConfigurarBotonBaja();
             }
-            finally { _suspendCalculoPrecio = false; }
+            finally
+            {
+                _cargandoProducto = false;
+                _suspendCalculoPrecio = false;
+                ActualizarGrillaPreciosPreview();
+            }
         }
 
         private static string V(DataRow r, string col) => r.Table.Columns.Contains(col) && r[col] != DBNull.Value ? r[col].ToString() : "";
@@ -762,6 +803,7 @@ namespace SchettiniGestion.WPF
                 ModernMessageBox.Show("Error al guardar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
+            ResultID = productoId;
 
             var asignaciones = new List<DatabaseService.ProductoListaAsignacion>();
             if (pnlListasPrecio?.Items != null)
@@ -789,13 +831,9 @@ namespace SchettiniGestion.WPF
                     {
                         string cod = m.Groups[1].Value.Trim();
                         int cant = int.Parse(m.Groups[2].Value);
-                        var prod = DatabaseService.GetProductos("", true);
-                        if (prod != null)
-                        {
-                            var rows = prod.Select($"Codigo='{cod.Replace("'", "''")}'");
-                            if (rows.Length > 0)
-                                componentes.Add((Convert.ToInt32(rows[0]["ProductoID"]), cant));
-                        }
+                        var row = DatabaseService.GetProductoPorCodigo(cod, incluirInactivos: true);
+                        if (row != null)
+                            componentes.Add((Convert.ToInt32(row["ProductoID"]), cant));
                     }
                 }
                 DatabaseService.GuardarProductoComboDetalle(productoId, componentes);

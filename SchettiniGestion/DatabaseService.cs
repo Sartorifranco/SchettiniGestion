@@ -2358,6 +2358,56 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Clientes WHERE CUIT='00-00000000-0')
             return dt;
         }
 
+        /// <summary>Obtiene un único producto por ID (sin cargar todo el catálogo).</summary>
+        public static DataRow GetProductoPorId(int productoId, bool incluirInactivos = true)
+        {
+            if (productoId <= 0) return null;
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    string sql = incluirInactivos
+                        ? "SELECT TOP 1 * FROM Productos WHERE ProductoID=@id"
+                        : "SELECT TOP 1 * FROM Productos WHERE ProductoID=@id AND ISNULL(Activo,1)=1";
+                    using (var cmd = new SqlCommand(sql, c))
+                    {
+                        cmd.Parameters.AddWithValue("@id", productoId);
+                        var dt = new DataTable();
+                        new SqlDataAdapter(cmd).Fill(dt);
+                        return dt.Rows.Count > 0 ? dt.Rows[0] : null;
+                    }
+                }
+            }
+            catch { return null; }
+        }
+
+        /// <summary>Obtiene un único producto por código exacto.</summary>
+        public static DataRow GetProductoPorCodigo(string codigo, bool incluirInactivos = true)
+        {
+            if (string.IsNullOrWhiteSpace(codigo)) return null;
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    string sql = incluirInactivos
+                        ? "SELECT TOP 1 * FROM Productos WHERE Codigo=@cod"
+                        : "SELECT TOP 1 * FROM Productos WHERE Codigo=@cod AND ISNULL(Activo,1)=1";
+                    using (var cmd = new SqlCommand(sql, c))
+                    {
+                        cmd.Parameters.AddWithValue("@cod", codigo.Trim());
+                        var dt = new DataTable();
+                        new SqlDataAdapter(cmd).Fill(dt);
+                        return dt.Rows.Count > 0 ? dt.Rows[0] : null;
+                    }
+                }
+            }
+            catch { return null; }
+        }
+
         /// <summary>Listado para grillas (ProductosControl) con rubro/sub-rubro/proveedor resueltos.</summary>
         public static DataTable GetProductosListado(string filtro = "", bool incluirInactivos = false)
         {
@@ -2717,14 +2767,12 @@ WHERE NOT EXISTS (
 
         public static decimal CalcularPrecioListaPorIds(int productoId, int listaId)
         {
-            var dt = GetProductos("");
-            if (dt == null) return 0m;
-            var prodRows = dt.Select($"ProductoID={productoId}");
-            if (prodRows.Length == 0) return 0m;
+            var producto = GetProductoPorId(productoId, incluirInactivos: true);
+            if (producto == null) return 0m;
             var lista = GetListaPrecioRow(listaId);
             if (lista == null) return 0m;
             decimal? precioFijo = GetPrecioFijoProductoLista(productoId, listaId);
-            return CalcularPrecioLista(prodRows[0], lista, precioFijo);
+            return CalcularPrecioLista(producto, lista, precioFijo);
         }
 
         private static DataRow ObtenerFilaProducto(SqlConnection conexion, SqlTransaction transaccion, int productoId)

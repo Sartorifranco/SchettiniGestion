@@ -86,8 +86,8 @@
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="2*" MinHeight="180"/>
+            <RowDefinition Height="3*" MinHeight="180"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
@@ -99,7 +99,7 @@
                        Text="Buscá productos, indicá cuántas etiquetas de cada uno y qué datos mostrar. La impresora y la medida se configuran en Configuración → Impresoras. El rollo debe coincidir con esa medida (ej. 50×25)."/>
         </StackPanel>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12" MaxHeight="480">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12">
             <StackPanel>
 
                 <Border Style="{StaticResource EtiquetaSectionCard}" Margin="0,0,0,14">

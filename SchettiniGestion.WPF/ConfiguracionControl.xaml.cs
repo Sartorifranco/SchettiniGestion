@@ -2,6 +2,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing.Printing;
 using System.Globalization;
 using System.IO;
@@ -1237,6 +1238,21 @@ namespace SchettiniGestion.WPF
                     : "OCR con Azure activado. Las imágenes se enviarán al recurso de Azure configurado por este comercio.";
             ModernMessageBox.Show(mensaje, "Configuración guardada",
                 MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void btnAbrirAzureOcr_Click(object sender, RoutedEventArgs e)
+        {
+            const string url = "https://portal.azure.com/#create/Microsoft.CognitiveServicesFormRecognizer";
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show(
+                    "No se pudo abrir el navegador. Copiá este enlace manualmente:\n\n" + url + "\n\n" + ex.Message,
+                    "Crear recurso en Azure", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         // --- BACKUP AUTOMÁTICO ---

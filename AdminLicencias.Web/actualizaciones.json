@@ -4,9 +4,11 @@
   "notas": [
     {
       "version": "2.2.1",
-      "fecha": "2026-07-27",
-      "titulo": "POS: letra A/B/C en vivo",
+      "fecha": "2026-07-30",
+      "titulo": "Licenciador: Compras, Proveedores e Informes",
       "items": [
+        "Panel web: se pueden tildar Compras (ACCESO_COMPRAS), Proveedores (ACCESO_PROVEEDORES) e Informes/estadísticas (ACCESO_ESTADISTICAS).",
+        "Compras: descripción comercial con importación OCR (Tesseract local o Azure con cuenta propia del comercio).",
         "Panel de ventas: letra A/B/C (o X) visible y actualizada al cambiar cliente o tipo de comprobante.",
         "Instalador SCHPOS-Setup-2.2.1.exe."
       ]

@@ -152,12 +152,20 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="txtAnchoMm" Grid.Column="0" Style="{StaticResource ModuleTextBoxStyle}" Text="50"
+                                             TextChanged="txtMedidaEtiqueta_TextChanged"
                                              ToolTip="Ancho en mm"/>
                                     <TextBlock Grid.Column="1" Text="x" VerticalAlignment="Center" HorizontalAlignment="Center"
                                                Foreground="{DynamicResource TextSecondary}"/>
                                     <TextBox x:Name="txtAltoMm" Grid.Column="2" Style="{StaticResource ModuleTextBoxStyle}" Text="25"
+                                             TextChanged="txtMedidaEtiqueta_TextChanged"
                                              ToolTip="Alto en mm"/>
                                 </Grid>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="150" VerticalAlignment="Bottom">
+                                <TextBlock Text="&#160;" Style="{StaticResource ModuleLabelStyle}"/>
+                                <Button Content="⇄ Intercambiar" Style="{StaticResource SecondaryButtonStyle}"
+                                        MinHeight="44" Click="btnIntercambiarMedida_Click"
+                                        ToolTip="Cambia ancho por alto. Usalo si la etiqueta sale en blanco, corrida o girada: significa que la medida está al revés respecto del rollo cargado."/>
                             </StackPanel>
                             <StackPanel Style="{StaticResource EtiquetaMiniFieldStyle}" Width="150">
                                 <TextBlock Text="Modo de impresión:" Style="{StaticResource ModuleLabelStyle}"/>
@@ -178,7 +186,9 @@
                                 BorderThickness="1" CornerRadius="8" Padding="14,12" Margin="0,4,0,16">
                             <StackPanel>
                                 <TextBlock Text="🔎 Vista previa de orientación" FontSize="12" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
+                                           Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4"/>
+                                <TextBlock x:Name="lblMedidaFisica" FontSize="11" Margin="0,0,0,10"
+                                           TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}"/>
                                 <WrapPanel Orientation="Horizontal">
                                     <Border x:Name="bdPreviewVertical" Width="150" Height="86" Margin="0,0,14,10"
                                             Background="White" CornerRadius="6" BorderThickness="2.5"
@@ -192,7 +202,7 @@
                                     <StackPanel VerticalAlignment="Center" Width="190" Margin="0,0,20,10">
                                         <TextBlock Text="Vertical (por defecto)" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource TextPrimary}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource TextSecondary}"
-                                                   Text="El texto y el código de barras salen leíbles de arriba hacia abajo, tal como se ve al recibir la etiqueta de la impresora."/>
+                                                   Text="El texto se lee derecho, en el sentido del ancho de la etiqueta. Es la opción correcta en casi todos los rollos."/>
                                     </StackPanel>
                                     <Border x:Name="bdPreviewHorizontal" Width="150" Height="86" Margin="0,0,14,10"
                                             Background="White" CornerRadius="6" BorderThickness="2.5"
@@ -212,12 +222,12 @@
                                     <StackPanel VerticalAlignment="Center" Width="190" Margin="0,0,0,10">
                                         <TextBlock Text="Horizontal" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource TextPrimary}"/>
                                         <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource TextSecondary}"
-                                                   Text="El contenido se gira 90° dentro de la misma etiqueta física. Usalo solo si tu impresora lo requiere así."/>
+                                                   Text="El texto se lee de costado, girado 90°. La etiqueta física mide igual: sólo cambia cómo se acomoda el contenido."/>
                                     </StackPanel>
                                 </WrapPanel>
                                 <TextBlock TextWrapping="Wrap" FontSize="11" FontStyle="Italic" Margin="0,4,0,0"
                                            Foreground="{DynamicResource TextSecondary}"
-                                           Text="💡 Tip: antes de imprimir muchas etiquetas, probá con una sola desde Configuración → Impresoras → «Probar impresora» para confirmar que la orientación es la correcta."/>
+                                           Text="💡 La orientación no cambia el tamaño de la etiqueta. Si sale en blanco, corrida o cortada, el problema es la medida: usá «⇄ Intercambiar» y probá de nuevo con «Probar impresora»."/>
                             </StackPanel>
                         </Border>
 

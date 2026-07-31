@@ -14,6 +14,7 @@ namespace SchettiniGestion.WPF
     {
         private readonly ObservableCollection<EtiquetaFila> _filas = new ObservableCollection<EtiquetaFila>();
         private bool _cargandoOpciones;
+        private bool _sincronizandoMedida;
         private static readonly string[] PresetsEtiqueta =
         {
             "30 x 20 mm", "50 x 25 mm", "50 x 30 mm", "55 x 44 mm", "64 x 32 mm",
@@ -115,7 +116,7 @@ namespace SchettiniGestion.WPF
 
         private void cmbPresetEtiqueta_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_cargandoOpciones) return;
+            if (_cargandoOpciones || _sincronizandoMedida) return;
             string sel = cmbPresetEtiqueta.SelectedItem?.ToString() ?? "";
             if (sel.StartsWith("Personalizado", StringComparison.OrdinalIgnoreCase)) return;
             var partes = sel.Replace("mm", "").Split('x');
@@ -133,6 +134,27 @@ namespace SchettiniGestion.WPF
             ActualizarResaltadoOrientacion();
         }
 
+        private void txtMedidaEtiqueta_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_cargandoOpciones || _sincronizandoMedida) return;
+            _sincronizandoMedida = true;
+            try
+            {
+                SeleccionarPreset(LeerEntero(txtAnchoMm?.Text, 50, 10, 300), LeerEntero(txtAltoMm?.Text, 25, 10, 300));
+            }
+            finally { _sincronizandoMedida = false; }
+            ActualizarResaltadoOrientacion();
+        }
+
+        private void btnIntercambiarMedida_Click(object sender, RoutedEventArgs e)
+        {
+            if (txtAnchoMm == null || txtAltoMm == null) return;
+            string ancho = txtAnchoMm.Text;
+            txtAnchoMm.Text = txtAltoMm.Text;
+            txtAltoMm.Text = ancho;
+            ActualizarResaltadoOrientacion();
+        }
+
         private void cmbModoImpresion_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ActualizarResaltadoOrientacion();
@@ -140,8 +162,9 @@ namespace SchettiniGestion.WPF
 
         /// <summary>
         /// Resalta en la ayuda visual cuál de las dos tarjetas (Vertical/Horizontal)
-        /// corresponde a la orientación actualmente elegida, para que el usuario
-        /// asocie de un vistazo la opción con el resultado esperado.
+        /// corresponde a la orientación actualmente elegida, y dibuja ambas con la
+        /// proporción real de la etiqueta configurada (la orientación gira el
+        /// contenido, nunca el tamaño físico del papel).
         /// </summary>
         private void ActualizarResaltadoOrientacion()
         {
@@ -155,6 +178,24 @@ namespace SchettiniGestion.WPF
 
             bdPreviewVertical.BorderBrush = horizontal ? colorNormal : colorSeleccionado;
             bdPreviewHorizontal.BorderBrush = horizontal ? colorSeleccionado : colorNormal;
+
+            int anchoMm = LeerEntero(txtAnchoMm?.Text, 50, 10, 300);
+            int altoMm = LeerEntero(txtAltoMm?.Text, 25, 10, 300);
+            const double ladoMayor = 150;
+            double escala = ladoMayor / Math.Max(anchoMm, altoMm);
+            double w = Math.Max(48, anchoMm * escala);
+            double h = Math.Max(34, altoMm * escala);
+
+            bdPreviewVertical.Width = w;
+            bdPreviewVertical.Height = h;
+            bdPreviewHorizontal.Width = w;
+            bdPreviewHorizontal.Height = h;
+
+            if (lblMedidaFisica != null)
+            {
+                lblMedidaFisica.Text = $"Etiqueta física: {anchoMm} × {altoMm} mm. "
+                    + "Este tamaño es el mismo en Vertical y en Horizontal; debe coincidir con el rollo cargado en la impresora.";
+            }
         }
 
         private void btnGuardarOpciones_Click(object sender, RoutedEventArgs e)

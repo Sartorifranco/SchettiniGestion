@@ -175,8 +175,19 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        private bool _posInicializado;
+
         private void FacturacionControl_Loaded(object sender, RoutedEventArgs e)
         {
+            // Con el caché de módulos, Loaded puede reaparecer; la venta en curso no debe borrarse.
+            if (_posInicializado)
+            {
+                ActualizarBloqueoAperturaCaja();
+                ActualizarPromosPos();
+                return;
+            }
+            _posInicializado = true;
+
             CargarListasPrecios();
             AplicarConfigPredeterminadaPos();
             CargarCatalogo();

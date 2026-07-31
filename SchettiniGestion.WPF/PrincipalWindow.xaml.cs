@@ -14,6 +14,9 @@ namespace SchettiniGestion.WPF
         private Button _navActivo;
         private bool _menuColapsado;
         private readonly Dictionary<Button, string> _textosNavCompletos = new Dictionary<Button, string>();
+        private readonly Dictionary<Type, UIElement> _modulosCargados = new Dictionary<Type, UIElement>();
+        private Grid _hostModulos;
+        private UIElement _moduloActual;
 
         public PrincipalWindow()
         {
@@ -76,7 +79,7 @@ namespace SchettiniGestion.WPF
             AplicarLayoutResponsivoVentana();
 
             // Pantalla de bienvenida por defecto al abrir
-            try { mainContentArea.Content = new InicioControl(); }
+            try { MostrarModulo(() => new InicioControl()); }
             catch { /* InicioControl es opcional; no bloquear el arranque */ }
         }
 
@@ -293,10 +296,37 @@ namespace SchettiniGestion.WPF
                 boton.Style = (Style)FindResource("LiteNavButtonActive");
         }
 
+        /// <summary>
+        /// Crea cada módulo una sola vez y lo conserva en memoria. Al volver a un módulo
+        /// restaura instantáneamente su grilla, filtros y selección, sin repetir consultas
+        /// ni reconstruir cientos de controles WPF.
+        /// </summary>
+        private void MostrarModulo<T>(Func<T> crear) where T : UIElement
+        {
+            if (_hostModulos == null)
+            {
+                _hostModulos = new Grid();
+                mainContentArea.Content = _hostModulos;
+            }
+
+            if (!_modulosCargados.TryGetValue(typeof(T), out UIElement modulo))
+            {
+                modulo = crear();
+                modulo.Visibility = Visibility.Collapsed;
+                _hostModulos.Children.Add(modulo);
+                _modulosCargados[typeof(T)] = modulo;
+            }
+
+            if (ReferenceEquals(_moduloActual, modulo)) return;
+            if (_moduloActual != null) _moduloActual.Visibility = Visibility.Collapsed;
+            modulo.Visibility = Visibility.Visible;
+            _moduloActual = modulo;
+        }
+
         private void btnInicio_Click(object sender, RoutedEventArgs e)
         {
             SetModuloActivo(btnInicio);
-            mainContentArea.Content = new InicioControl();
+            MostrarModulo(() => new InicioControl());
         }
 
         private void btnVentasFacturacion_Click(object sender, RoutedEventArgs e)
@@ -308,7 +338,7 @@ namespace SchettiniGestion.WPF
             }
 
             SetModuloActivo(btnVentasFacturacion);
-            mainContentArea.Content = new FacturacionControl();
+            MostrarModulo(() => new FacturacionControl());
         }
 
         private void productosMenuItem_Click(object sender, RoutedEventArgs e) => btnProductos_Click(sender, e);
@@ -323,7 +353,7 @@ namespace SchettiniGestion.WPF
                 return;
             }
             SetModuloActivo(btnEtiquetas);
-            mainContentArea.Content = new EtiquetasControl();
+            MostrarModulo(() => new EtiquetasControl());
         }
 
         private void btnProductos_Click(object sender, RoutedEventArgs e)
@@ -334,7 +364,7 @@ namespace SchettiniGestion.WPF
                 return;
             }
             SetModuloActivo(btnProductos);
-            mainContentArea.Content = new ProductosControl();
+            MostrarModulo(() => new ProductosControl());
         }
 
         private void btnGestionStock_Click(object sender, RoutedEventArgs e)
@@ -345,7 +375,7 @@ namespace SchettiniGestion.WPF
                 return;
             }
             SetModuloActivo(btnGestionStock);
-            mainContentArea.Content = new StockControl();
+            MostrarModulo(() => new StockControl());
         }
 
         private void clientesMenuItem_Click(object sender, RoutedEventArgs e)
@@ -356,60 +386,60 @@ namespace SchettiniGestion.WPF
                 return;
             }
             SetModuloActivo(btnClientes);
-            mainContentArea.Content = new ClientesControl();
+            MostrarModulo(() => new ClientesControl());
         }
 
         private void btnProveedores_Click(object sender, RoutedEventArgs e)
         {
             if (!PuedeModulo(DatabaseService.PERMISO_PROVEEDORES)) { MensajeSinPermiso(); return; }
             SetModuloActivo(btnProveedores);
-            mainContentArea.Content = new ProveedoresControl();
+            MostrarModulo(() => new ProveedoresControl());
         }
 
         private void btnCompras_Click(object sender, RoutedEventArgs e)
         {
             if (!PuedeModulo(DatabaseService.PERMISO_COMPRAS)) { MensajeSinPermiso(); return; }
             SetModuloActivo(btnCompras);
-            mainContentArea.Content = new ComprasControl();
+            MostrarModulo(() => new ComprasControl());
         }
 
         private void btnPresupuestos_Click(object sender, RoutedEventArgs e)
         {
             if (!PuedeModulo(DatabaseService.PERMISO_PRESUPUESTOS)) { MensajeSinPermiso(); return; }
-            mainContentArea.Content = new PresupuestosControl();
+            MostrarModulo(() => new PresupuestosControl());
         }
 
         private void btnCuentasCorrientes_Click(object sender, RoutedEventArgs e)
         {
             if (!PuedeModulo(DatabaseService.PERMISO_CUENTASCORRIENTES)) { MensajeSinPermiso(); return; }
-            mainContentArea.Content = new CuentasCorrientesControl();
+            MostrarModulo(() => new CuentasCorrientesControl());
         }
 
         private void btnListasPrecios_Click(object sender, RoutedEventArgs e)
         {
             if (!PuedeModulo(DatabaseService.PERMISO_LISTASPRECIOS)) { MensajeSinPermiso(); return; }
             SetModuloActivo(btnListasPrecios);
-            mainContentArea.Content = new ListasPreciosControl();
+            MostrarModulo(() => new ListasPreciosControl());
         }
 
         private void btnPromociones_Click(object sender, RoutedEventArgs e)
         {
             if (!PuedeModulo(DatabaseService.PERMISO_PRODUCTOS)) { MensajeSinPermiso(); return; }
             SetModuloActivo(btnPromociones);
-            mainContentArea.Content = new PromocionesControl();
+            MostrarModulo(() => new PromocionesControl());
         }
 
         private void btnPreciosActualizar_Click(object sender, RoutedEventArgs e)
         {
             if (!PuedeModulo(DatabaseService.PERMISO_PRECIOS)) { MensajeSinPermiso(); return; }
-            mainContentArea.Content = new PreciosControl();
+            MostrarModulo(() => new PreciosControl());
         }
 
         private void btnInformes_Click(object sender, RoutedEventArgs e)
         {
             if (!PuedeInformes()) { MensajeSinPermiso(); return; }
             SetModuloActivo(btnInformes);
-            mainContentArea.Content = new InformesControl();
+            MostrarModulo(() => new InformesControl());
         }
 
         private void btnReportesVentas_Click(object sender, RoutedEventArgs e)
@@ -419,7 +449,7 @@ namespace SchettiniGestion.WPF
                 MensajeSinPermiso();
                 return;
             }
-            mainContentArea.Content = new ReportesControl();
+            MostrarModulo(() => new ReportesControl());
         }
 
         private void btnEstadisticas_Click(object sender, RoutedEventArgs e)
@@ -430,7 +460,7 @@ namespace SchettiniGestion.WPF
                 return;
             }
             SetModuloActivo(btnEstadisticas);
-            mainContentArea.Content = new EstadisticasControl();
+            MostrarModulo(() => new EstadisticasControl());
         }
 
         private static void MensajeSinPermiso()
@@ -447,7 +477,7 @@ namespace SchettiniGestion.WPF
             }
 
             SetModuloActivo(btnCaja);
-            mainContentArea.Content = new CajaModuloControl();
+            MostrarModulo(() => new CajaModuloControl());
         }
 
         private void btnUsuariosPermisos_Click(object sender, RoutedEventArgs e)
@@ -458,7 +488,7 @@ namespace SchettiniGestion.WPF
                 return;
             }
             SetModuloActivo(btnUsuariosPermisos);
-            mainContentArea.Content = new UsuariosControl();
+            MostrarModulo(() => new UsuariosControl());
         }
 
         private void btnConfiguracion_Click(object sender, RoutedEventArgs e)
@@ -470,7 +500,7 @@ namespace SchettiniGestion.WPF
             }
 
             SetModuloActivo(btnConfiguracion);
-            mainContentArea.Content = new ConfiguracionControl();
+            MostrarModulo(() => new ConfiguracionControl());
         }
 
         private void btnTeclado_Click(object sender, RoutedEventArgs e)
@@ -515,14 +545,9 @@ namespace SchettiniGestion.WPF
 
         private void RefrescarContenidoPorTema()
         {
-            if (mainContentArea?.Content == null) return;
-            var tipo = mainContentArea.Content.GetType();
-            try
-            {
-                if (Activator.CreateInstance(tipo) is UIElement nuevo)
-                    mainContentArea.Content = nuevo;
-            }
-            catch { /* si no se puede recrear, DynamicResource actualiza solo */ }
+            // Los módulos usan DynamicResource: no hace falta destruirlos y volverlos a
+            // crear (eso repetía consultas y además perdía filtros/selecciones).
+            mainContentArea?.InvalidateVisual();
         }
 
         private void InicializarMenuLateral()

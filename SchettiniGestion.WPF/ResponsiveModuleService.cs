@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace SchettiniGestion.WPF
 {
@@ -18,6 +19,20 @@ namespace SchettiniGestion.WPF
                 typeof(bool),
                 typeof(ResponsiveModuleService),
                 new PropertyMetadata(false));
+
+        private static readonly DependencyProperty PendingTimerProperty =
+            DependencyProperty.RegisterAttached(
+                "ResponsivePendingTimer",
+                typeof(DispatcherTimer),
+                typeof(ResponsiveModuleService),
+                new PropertyMetadata(null));
+
+        private static readonly DependencyProperty LastBreakpointProperty =
+            DependencyProperty.RegisterAttached(
+                "ResponsiveLastBreakpoint",
+                typeof(string),
+                typeof(ResponsiveModuleService),
+                new PropertyMetadata(null));
 
         public static void Initialize()
         {
@@ -35,8 +50,28 @@ namespace SchettiniGestion.WPF
                 return;
 
             control.SetValue(HookedProperty, true);
-            control.SizeChanged += (_, __) => Apply(control);
-            control.Loaded += (_, __) => Apply(control);
+            control.SizeChanged += (_, __) => ScheduleApply(control);
+            control.Loaded += (_, __) => ScheduleApply(control);
+        }
+
+        private static void ScheduleApply(UserControl control)
+        {
+            if (control == null) return;
+
+            var timer = control.GetValue(PendingTimerProperty) as DispatcherTimer;
+            if (timer == null)
+            {
+                timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(80) };
+                timer.Tick += (s, e) =>
+                {
+                    timer.Stop();
+                    Apply(control);
+                };
+                control.SetValue(PendingTimerProperty, timer);
+            }
+
+            timer.Stop();
+            timer.Start();
         }
 
         private static void Apply(UserControl control)
@@ -50,6 +85,13 @@ namespace SchettiniGestion.WPF
             bool compacto = UiScaleHelper.IsCompactWidth(anchoViewport);
             bool muyCompacto = UiScaleHelper.IsVeryCompactWidth(anchoViewport)
                                || UiScaleHelper.IsCompactHeight(altoViewport);
+            string breakpoint = (compacto ? "C" : "N") + (muyCompacto ? "M" : "F")
+                + ((int)(anchoViewport / 40));
+
+            string previo = control.GetValue(LastBreakpointProperty) as string;
+            if (string.Equals(previo, breakpoint, StringComparison.Ordinal))
+                return;
+            control.SetValue(LastBreakpointProperty, breakpoint);
 
             if (control.Content is Panel rootPanel)
                 rootPanel.Margin = UiScaleHelper.ContentMargin(compacto);

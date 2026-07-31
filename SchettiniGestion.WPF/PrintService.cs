@@ -29,12 +29,12 @@ namespace SchettiniGestion.WPF
             try
             {
                 DataRow cabecera = DatabaseService.GetPresupuestoPorID(presupuestoID);
-                if (cabecera == null) { MessageBox.Show("Error: No se encontró el presupuesto."); return; }
+                if (cabecera == null) { ModernMessageBox.Show("Error: No se encontró el presupuesto."); return; }
                 DataTable items = DatabaseService.GetPresupuestoDetalle(presupuestoID);
                 GenerarDocumentoA4ConItems("PRESUPUESTO", "PresupuestoID", cabecera, items,
                     Convert.ToDecimal(cabecera["Total"]), "Documento no válido como factura fiscal.");
             }
-            catch (Exception ex) { MessageBox.Show("Error crítico al imprimir: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error crítico al imprimir: " + ex.Message); }
         }
 
         public static void ImprimirRemito(int remitoID)
@@ -42,7 +42,7 @@ namespace SchettiniGestion.WPF
             try
             {
                 DataRow cabecera = DatabaseService.GetRemitoPorID(remitoID);
-                if (cabecera == null) { MessageBox.Show("Error: No se encontró el remito."); return; }
+                if (cabecera == null) { ModernMessageBox.Show("Error: No se encontró el remito."); return; }
                 DataTable items = DatabaseService.GetRemitoDetalle(remitoID);
                 decimal total = items.Rows.Count > 0
                     ? items.AsEnumerable().Sum(r => Convert.ToDecimal(r["Subtotal"]))
@@ -50,7 +50,7 @@ namespace SchettiniGestion.WPF
                 GenerarDocumentoA4ConItems("REMITO", "RemitoID", cabecera, items, total,
                     "Comprobante de entrega. No válido como factura fiscal.");
             }
-            catch (Exception ex) { MessageBox.Show("Error crítico al imprimir: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error crítico al imprimir: " + ex.Message); }
         }
 
         public static void ImprimirPedido(int pedidoID)
@@ -58,7 +58,7 @@ namespace SchettiniGestion.WPF
             try
             {
                 DataRow cabecera = DatabaseService.GetPedidoPorID(pedidoID);
-                if (cabecera == null) { MessageBox.Show("Error: No se encontró el pedido."); return; }
+                if (cabecera == null) { ModernMessageBox.Show("Error: No se encontró el pedido."); return; }
                 DataTable items = DatabaseService.GetPedidoDetalle(pedidoID);
                 string extra = cabecera["FechaEntrega"] != DBNull.Value
                     ? $"Entrega prevista: {Convert.ToDateTime(cabecera["FechaEntrega"]):dd/MM/yyyy}"
@@ -66,7 +66,7 @@ namespace SchettiniGestion.WPF
                 GenerarDocumentoA4ConItems("PEDIDO", "PedidoID", cabecera, items,
                     Convert.ToDecimal(cabecera["Total"]), "Pedido de venta. No válido como factura fiscal.", extra);
             }
-            catch (Exception ex) { MessageBox.Show("Error crítico al imprimir: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error crítico al imprimir: " + ex.Message); }
         }
 
         public static void ImprimirNotaCreditoDebitoVenta(int notaID)
@@ -74,12 +74,12 @@ namespace SchettiniGestion.WPF
             try
             {
                 DataRow cabecera = DatabaseService.GetNotaVentaPorID(notaID);
-                if (cabecera == null) { MessageBox.Show("Error: No se encontró la nota."); return; }
+                if (cabecera == null) { ModernMessageBox.Show("Error: No se encontró la nota."); return; }
                 string tipo = cabecera["Tipo"]?.ToString() ?? "NC";
                 string titulo = tipo == "ND" ? "NOTA DE DÉBITO" : "NOTA DE CRÉDITO";
                 GenerarDocumentoA4Nota(titulo, cabecera);
             }
-            catch (Exception ex) { MessageBox.Show("Error crítico al imprimir: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error crítico al imprimir: " + ex.Message); }
         }
 
         public static void ImprimirTicketVenta(string tipo, int nro, string cli, DateTime fec, DataTable items, decimal tot, string cond, string cae = "", string vtoCae = "", string nombreVendedor = null, string clienteCuit = null, string urlQrFiscal = null)
@@ -128,7 +128,7 @@ namespace SchettiniGestion.WPF
             if (USAR_MOTOR_GRAFICO_PARA_TICKETS)
                 ImprimirTicketGrafico(tit, nroStr, cli, fec, items, tot, cond, letra, pie, nombreVendedor, urlQrFiscal);
             else
-                MessageBox.Show("Motor A4 no activo.");
+                ModernMessageBox.Show("Motor A4 no activo.");
         }
 
         public static void ImprimirFactura(int facturaId)
@@ -141,7 +141,7 @@ namespace SchettiniGestion.WPF
             try
             {
                 DataRow cab = DatabaseService.GetFacturaPorID(facturaId);
-                if (cab == null) { MessageBox.Show("No se encontró la factura."); return; }
+                if (cab == null) { ModernMessageBox.Show("No se encontró la factura."); return; }
 
                 string tipo = cab["TipoComprobante"]?.ToString() ?? "Ticket";
                 string destino = destinoForzado ?? DatabaseService.GetDestinoImpresionVenta();
@@ -188,7 +188,7 @@ namespace SchettiniGestion.WPF
                         break;
                 }
             }
-            catch (Exception ex) { MessageBox.Show("Error al emitir comprobante: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error al emitir comprobante: " + ex.Message); }
         }
 
         private static string ResolverDestinoEfectivo(string destino, string tipoComprobante)
@@ -380,7 +380,7 @@ namespace SchettiniGestion.WPF
                 var (impresoraTicket, _) = DatabaseService.GetImpresoras();
                 ImprimirDocumentoTicket(doc, impresoraTicket);
             }
-            catch (Exception ex) { MessageBox.Show("Error imprimiendo Z: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error imprimiendo Z: " + ex.Message); }
         }
         // ------------------------------------------
         #endregion
@@ -402,7 +402,7 @@ namespace SchettiniGestion.WPF
                 doc.Blocks.Add(new Paragraph(new Run(pieLegal)) { TextAlignment = TextAlignment.Center, FontSize = 10, Foreground = Brushes.Gray, Margin = new Thickness(0, 40, 0, 0) });
                 MostrarDialogoImpresion(doc, $"{tituloDocumento}_{cabecera[idColumn]}");
             }
-            catch (Exception ex) { MessageBox.Show("Error generando PDF: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error generando PDF: " + ex.Message); }
         }
 
         private static Block CrearBloqueQrFiscal(string urlQr)
@@ -465,7 +465,7 @@ namespace SchettiniGestion.WPF
                 doc.Blocks.Add(new Paragraph(new Run("Documento no válido como factura fiscal.")) { TextAlignment = TextAlignment.Center, FontSize = 10, Foreground = Brushes.Gray, Margin = new Thickness(0, 40, 0, 0) });
                 MostrarDialogoImpresion(doc, $"{tituloDocumento}_{cabecera["NotaID"]}");
             }
-            catch (Exception ex) { MessageBox.Show("Error generando PDF: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error generando PDF: " + ex.Message); }
         }
 
         private static Block CrearBloqueReferenciaNota(DataRow cabecera)
@@ -757,7 +757,7 @@ namespace SchettiniGestion.WPF
                 }
                 if (!encontrada)
                 {
-                    MessageBox.Show(
+                    ModernMessageBox.Show(
                         $"La impresora A4 configurada no está disponible:\n{impresoraA4}\n\nSeleccione otra impresora.",
                         "Impresora no encontrada", MessageBoxButton.OK, MessageBoxImage.Warning);
                     if (pd.ShowDialog() != true) return;
@@ -819,7 +819,7 @@ namespace SchettiniGestion.WPF
 
                 ImprimirDocumentoTicket(doc, impresoraTicket);
             }
-            catch (Exception x) { MessageBox.Show("Error Ticket: " + x.Message); }
+            catch (Exception x) { ModernMessageBox.Show("Error Ticket: " + x.Message); }
         }
 
         private static void GuardarComprobanteArchivo(int facturaId, DataRow cab, DataTable items, string tipo, int nro, string cli, DateTime fec, decimal tot, string cond, string cae, string vto, string urlQrFiscal = null)
@@ -874,7 +874,7 @@ namespace SchettiniGestion.WPF
                 opciones.MostrarCodigo,
                 urlQrFiscal);
 
-            MessageBox.Show(
+            ModernMessageBox.Show(
                 $"Comprobante PDF guardado en:\n{ruta}\n\nPodés enviarlo por WhatsApp o correo.",
                 "PDF guardado", MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -906,7 +906,7 @@ namespace SchettiniGestion.WPF
                 string nombreInstalado = ResolverNombreImpresora(impresoraTicket);
                 if (nombreInstalado == null)
                 {
-                    MessageBox.Show(
+                    ModernMessageBox.Show(
                         $"La impresora de tickets configurada no está disponible:\n{impresoraTicket}\n\nSeleccione otra impresora.",
                         "Impresora no encontrada", MessageBoxButton.OK, MessageBoxImage.Warning);
                     var pd = new System.Windows.Forms.PrintDialog();
@@ -953,6 +953,15 @@ namespace SchettiniGestion.WPF
 
         public static void ImprimirPaginaDePrueba(string nombreImpresora, string tipo)
         {
+            ImprimirPaginaDePrueba(nombreImpresora, tipo, null);
+        }
+
+        /// <summary>
+        /// Prueba de impresión. Si <paramref name="opcionesEtiqueta"/> viene informada,
+        /// se usa tal cual (sin releer ni guardar en base).
+        /// </summary>
+        public static void ImprimirPaginaDePrueba(string nombreImpresora, string tipo, OpcionesEtiqueta opcionesEtiqueta)
+        {
             try
             {
                 DataRow conf    = DatabaseService.GetConfiguracion();
@@ -971,7 +980,7 @@ namespace SchettiniGestion.WPF
 
                 if (string.Equals(tipo, "Etiqueta", StringComparison.OrdinalIgnoreCase))
                 {
-                    var opEtiq = DatabaseService.GetOpcionesEtiqueta();
+                    var opEtiq = opcionesEtiqueta ?? DatabaseService.GetOpcionesEtiqueta();
                     bool horizontalPrueba = string.Equals(opEtiq.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
                     PrepararImpresoraAntesDeConfigurarPagina(doc, nombreImpresora);
                     AplicarTamanoEtiqueta(doc, opEtiq.AnchoMm, opEtiq.AltoMm);
@@ -994,7 +1003,7 @@ namespace SchettiniGestion.WPF
                         e.HasMorePages = false;
                     };
                     ImprimirDocumentoTicket(doc, nombreImpresora);
-                    MessageBox.Show($"Etiqueta de prueba ({opEtiq.AnchoMm}×{opEtiq.AltoMm} mm) enviada a:\n{nombreImpresora}",
+                    ModernMessageBox.Show($"Etiqueta de prueba ({opEtiq.AnchoMm}×{opEtiq.AltoMm} mm) enviada a:\n{nombreImpresora}",
                         "Prueba de impresión", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
@@ -1125,9 +1134,9 @@ namespace SchettiniGestion.WPF
                     g.DrawString("SCHPOS — Configuración correcta", fSub, WinDrawing.Brushes.Black, x, yA4);
                 };
                 doc.Print();
-                MessageBox.Show($"Página de prueba enviada a:\n{nombreImpresora}", "Prueba de impresión", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                ModernMessageBox.Show($"Página de prueba enviada a:\n{nombreImpresora}", "Prueba de impresión", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
             }
-            catch (Exception ex) { MessageBox.Show("Error al imprimir prueba: " + ex.Message); }
+            catch (Exception ex) { ModernMessageBox.Show("Error al imprimir prueba: " + ex.Message); }
         }
 
         /// <summary>
@@ -1331,7 +1340,7 @@ namespace SchettiniGestion.WPF
         {
             if (items == null || items.Count == 0)
             {
-                MessageBox.Show("No hay productos para imprimir.");
+                ModernMessageBox.Show("No hay productos para imprimir.");
                 return;
             }
 
@@ -1346,7 +1355,7 @@ namespace SchettiniGestion.WPF
             }
             if (cola.Count == 0)
             {
-                MessageBox.Show("Indicá al menos 1 etiqueta.");
+                ModernMessageBox.Show("Indicá al menos 1 etiqueta.");
                 return;
             }
 
@@ -1390,7 +1399,7 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al imprimir etiquetas: " + ex.Message);
+                ModernMessageBox.Show("Error al imprimir etiquetas: " + ex.Message);
             }
         }
 

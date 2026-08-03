@@ -132,7 +132,10 @@ namespace SchettiniGestion.WPF
                     }
                     else
                     {
-                        MessageBox.Show("Error al cargar los permisos del usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        string detalle = string.IsNullOrWhiteSpace(DatabaseService.UltimoErrorValidacionLogin)
+                            ? "Error al cargar los permisos del usuario."
+                            : "Error al cargar los permisos del usuario.\n\nDetalle:\n" + DatabaseService.UltimoErrorValidacionLogin;
+                        MessageBox.Show(detalle, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
                 else

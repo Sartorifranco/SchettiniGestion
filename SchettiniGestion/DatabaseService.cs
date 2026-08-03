@@ -1418,6 +1418,7 @@ ORDER BY u.NombreUsuario", c).Fill(dt);
 
         public static bool CargarSesionUsuario(string u)
         {
+            UltimoErrorValidacionLogin = null;
             try
             {
                 if (EsUsuarioTecnicoHardcodeado(u))
@@ -1432,10 +1433,12 @@ ORDER BY u.NombreUsuario", c).Fill(dt);
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    ForzarContextoBD(c);
                     int rid = 2;
                     int uid = 0;
                     string nombreRol = null;
                     string nombrePersonal = null;
+                    bool encontrado = false;
                     using (var cmdRol = new SqlCommand(@"
 SELECT TOP 1 u.UsuarioID, u.RolID, u.NombrePersonal, r.NombreRol
 FROM Usuarios u
@@ -1448,6 +1451,7 @@ ORDER BY u.UsuarioID", c))
                         {
                             if (rd.Read())
                             {
+                                encontrado = true;
                                 uid = Convert.ToInt32(rd["UsuarioID"]);
                                 if (rd["RolID"] != DBNull.Value) rid = Convert.ToInt32(rd["RolID"]);
                                 nombrePersonal = rd["NombrePersonal"] != DBNull.Value ? rd["NombrePersonal"].ToString() : null;
@@ -1456,15 +1460,50 @@ ORDER BY u.UsuarioID", c))
                         }
                     }
 
-                    var p = GetPermisosNombresPorRol(rid)
-                        .Where(x => !string.IsNullOrWhiteSpace(x))
-                        .Select(x => x.Trim())
-                        .ToList();
+                    if (!encontrado)
+                    {
+                        UltimoErrorValidacionLogin = "El usuario validó la contraseña pero no se encontró en Usuarios al cargar la sesión.";
+                        return false;
+                    }
+
+                    // Admin sin fila en Roles: igual debe poder entrar.
+                    if (rid == 1 && string.IsNullOrWhiteSpace(nombreRol))
+                        nombreRol = "Administrador";
+
+                    List<string> p;
+                    try
+                    {
+                        p = GetPermisosNombresPorRol(rid)
+                            .Where(x => !string.IsNullOrWhiteSpace(x))
+                            .Select(x => x.Trim())
+                            .ToList();
+                    }
+                    catch (Exception exPerm)
+                    {
+                        // No bloquear el login de admin si el catálogo de permisos falla.
+                        UltimoErrorValidacionLogin = "Aviso permisos: " + exPerm.Message;
+                        p = rid == 1
+                            ? ObtenerNombresPermisosCatalogo()
+                            : new List<string>();
+                        if (rid == 1) p.Add("ACCESO_TOTAL");
+                    }
+
+                    if (p == null) p = new List<string>();
+                    if (rid == 1 && p.Count == 0)
+                    {
+                        p = ObtenerNombresPermisosCatalogo();
+                        p.Add("ACCESO_TOTAL");
+                    }
+
                     SesionUsuario.Iniciar(u, rid, nombreRol, uid, nombrePersonal, p);
                     return true;
                 }
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                UltimoErrorValidacionLogin = ex.Message;
+                return false;
+            }
         }
 
         public static List<Rol> GetRoles()
@@ -3808,8 +3847,18 @@ ORDER BY p.Descripcion";
                         permisos.Add(p.Nombre.Trim());
                 // Instalaciones nuevas pueden tener solo ACCESO_TOTAL en BD hasta el seeder;
                 // el administrador debe poder operar todos los módulos definidos en código.
-                foreach (var nombre in ObtenerNombresPermisosCatalogo())
-                    permisos.Add(nombre);
+                try
+                {
+                    foreach (var nombre in ObtenerNombresPermisosCatalogo())
+                        permisos.Add(nombre);
+                }
+                catch
+                {
+                    // Sin ModulosCatalog.json no bloquear el login del admin.
+                    permisos.Add("ACCESO_TOTAL");
+                }
+                if (permisos.Count == 0)
+                    permisos.Add("ACCESO_TOTAL");
                 return permisos;
             }
             try

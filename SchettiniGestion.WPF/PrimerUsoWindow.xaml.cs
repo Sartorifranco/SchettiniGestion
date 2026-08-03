@@ -321,7 +321,7 @@ namespace SchettiniGestion.WPF
 
                 // Si configuró como SERVIDOR: habilitar TCP y generar archivo para clientes
                 if (rbServidor.IsChecked == true)
-                    ConfigurarServidorRed();
+                    SqlServerNetworkSetup.PrepararServidorParaRed(txtInstanciaServidor.Text.Trim());
 
                 SetTestStatus("✔", "¡Base de datos configurada!", "El sistema está listo para usar.", "success");
                 MessageBox.Show("¡Configuración completada!\n\nEl sistema se iniciará ahora.", "Listo", MessageBoxButton.OK, MessageBoxImage.Information);

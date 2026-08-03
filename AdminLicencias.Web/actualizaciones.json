@@ -1,7 +1,19 @@
 {
-  "versionActual": "2.2.1",
-  "instalador": "SCHPOS-Setup-2.2.1.exe",
+  "versionActual": "2.3.13",
+  "instalador": "SCHPOS-Setup-2.3.13.exe",
   "notas": [
+    {
+      "version": "2.3.13",
+      "fecha": "2026-08-03",
+      "titulo": "Red servidor automática + login más robusto",
+      "items": [
+        "Modo SERVIDOR: usa .\\SQLEXPRESS (no pisa con 127.0.0.1) y no fuerza puerto local que rompía el arranque.",
+        "Al guardar como servidor: habilita TCP/firewall 1433 y genera SCHPOS-Configuracion-Clientes.txt en el Escritorio.",
+        "Si falla Express, ya no vuelve solo a LocalDB sin avisar.",
+        "Login: no bloquea por error de permisos/catálogo; muestra detalle técnico.",
+        "Instalador SCHPOS-Setup-2.3.13.exe."
+      ]
+    },
     {
       "version": "2.2.1",
       "fecha": "2026-07-30",

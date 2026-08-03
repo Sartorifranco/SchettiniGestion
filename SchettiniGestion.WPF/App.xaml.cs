@@ -64,8 +64,29 @@ namespace SchettiniGestion.WPF
             DespertarLocalDB();
 
             // Intentar conectar y crear BD. Si falla, mostrar asistente de primer uso.
+            // Si ya había una conexión personalizada (Express/red), NO abrir el asistente
+            // automáticamente: eso terminaba reescribiendo conexion.cfg con LocalDB.
             if (!IntentarInicializarConexion())
             {
+                string csActual = DatabaseService.ConnectionString ?? "";
+                bool personalizada = EsConexionPersonalizada(csActual);
+                if (personalizada)
+                {
+                    var r = MessageBox.Show(
+                        "No se pudo conectar con la configuración guardada (SQL Express / red).\n\n" +
+                        "Si elegís SÍ, se abrirá el asistente y podés volver a LocalDB o reconfigurar Express.\n" +
+                        "Si elegís NO, el sistema se cerrará sin cambiar la configuración.\n\n" +
+                        "Archivo: " + DatabaseService.RutaConexionCfg,
+                        "No se pudo conectar",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
+                    if (r != MessageBoxResult.Yes)
+                    {
+                        Shutdown();
+                        return;
+                    }
+                }
+
                 var setup = new PrimerUsoWindow();
                 bool? ok = setup.ShowDialog();
                 if (ok != true)
@@ -189,9 +210,22 @@ namespace SchettiniGestion.WPF
 
             // Si hay conexión personalizada, intentar solo con esa cadena (sin fallbacks que borrarían la config).
             // Si es la default (LocalDB), intentar también Express como alternativa local.
-            string[] candidatos = esConexionPersonalizada
-                ? new[] { csConfigurado }
-                : new[] { csConfigurado, DatabaseService.CS_LOCALDB, DatabaseService.CS_SQLEXPRESS };
+            var candidatos = new System.Collections.Generic.List<string>();
+            if (esConexionPersonalizada)
+            {
+                candidatos.Add(csConfigurado);
+                // .\SQLEXPRESS,1433 falla si TCP aún no está habilitado; reintentar sin puerto (Shared Memory).
+                string sinPuerto = QuitarPuertoDeConnectionString(csConfigurado);
+                if (!string.IsNullOrWhiteSpace(sinPuerto)
+                    && !string.Equals(sinPuerto, csConfigurado, StringComparison.OrdinalIgnoreCase))
+                    candidatos.Add(sinPuerto);
+            }
+            else
+            {
+                candidatos.Add(csConfigurado);
+                candidatos.Add(DatabaseService.CS_LOCALDB);
+                candidatos.Add(DatabaseService.CS_SQLEXPRESS);
+            }
 
             const int MaxReintentos = 3;
             const int EsperaEntreReintentos = 2000; // ms
@@ -206,7 +240,7 @@ namespace SchettiniGestion.WPF
                     {
                         InicializarBaseDeDatosCompleta(cs);
                         // Solo actualizar conexion.cfg si usamos un candidato distinto al configurado
-                        // (fallback automático a LocalDB en primera instalación).
+                        // (fallback automático a LocalDB en primera instalación, o Express sin puerto).
                         if (cs != csConfigurado)
                             DatabaseService.ActualizarConexion(cs);
                         DatabaseService.InitializeDatabase();
@@ -252,8 +286,10 @@ namespace SchettiniGestion.WPF
                     "No se pudo conectar al servidor de base de datos configurado.\n\n" +
                     "Servidor: " + csConfigurado.Split(';')[0] + "\n" +
                     "Error: " + ultimoError + "\n\n" +
-                    "Verifique que el servidor SQL esté encendido y accesible en la red.\n" +
-                    "Para cambiar la configuración de red, utilice el asistente de primer uso.",
+                    "Verifique que el servicio SQL Server (SQLEXPRESS) esté en ejecución.\n" +
+                    "Archivo de conexión: " + DatabaseService.RutaConexionCfg + "\n\n" +
+                    "Si continúa el problema, edite ese archivo y deje:\n" +
+                    "Server=localhost\\SQLEXPRESS;Database=SchPosDB;Integrated Security=True;Encrypt=False;TrustServerCertificate=True;",
                     "Error de conexión al servidor",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
@@ -261,6 +297,31 @@ namespace SchettiniGestion.WPF
 
             _ = ultimoError;
             return false;
+        }
+
+        /// <summary>
+        /// Quita el puerto ",1433" de Data Source para reintentar por Shared Memory en instancias locales.
+        /// </summary>
+        private static string QuitarPuertoDeConnectionString(string cs)
+        {
+            try
+            {
+                var b = new SqlConnectionStringBuilder(cs);
+                string src = b.DataSource ?? "";
+                int coma = src.LastIndexOf(',');
+                if (coma <= 0) return null;
+                string host = src.Substring(0, coma).Trim();
+                string puerto = src.Substring(coma + 1).Trim();
+                if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(puerto)) return null;
+                // Solo para instancias locales nombradas (no IPs de red).
+                string h = host.ToLowerInvariant();
+                if (!(h.StartsWith(".\\") || h.StartsWith("localhost\\") || h.StartsWith("(local)\\")
+                      || h.StartsWith("127.0.0.1\\")))
+                    return null;
+                b.DataSource = host;
+                return b.ConnectionString;
+            }
+            catch { return null; }
         }
 
         /// <summary>

@@ -24,6 +24,7 @@ namespace SchettiniGestion.WPF
         private bool _passwordAfipTocadoPorUsuario;
         private bool _suprimirEventoPasswordAfip;
         private bool _inicializado;
+        private bool _cargandoDatosConexion;
         private string _logoPathActual = "";
         private string _mpPointTerminalIdGuardada = "";
 
@@ -917,21 +918,26 @@ namespace SchettiniGestion.WPF
             {
                 var datos = DatabaseService.GetDatosConexionActual();
 
-                // Mostrar el servidor completo (con instancia si aplica, ej: .\SQLEXPRESS o 192.168.1.5\SQLEXPRESS)
-                txtIpServidor.Text = datos["Servidor"];
-                txtPuertoServidor.Text = datos["Puerto"];
-                chkUsarWindowsAuth.IsChecked = datos.ContainsKey("UsaIntegrado") && datos["UsaIntegrado"] == "1";
-                txtUsuarioSQL.Text = string.IsNullOrEmpty(datos["Usuario"]) ? "Sistema" : datos["Usuario"];
-                txtPasswordSQL.Password = datos["Password"] ?? "";
+                _cargandoDatosConexion = true;
+                try
+                {
+                    // Mostrar el servidor completo (con instancia si aplica, ej: .\SQLEXPRESS o 192.168.1.5\SQLEXPRESS)
+                    txtIpServidor.Text = datos["Servidor"];
+                    txtPuertoServidor.Text = datos["Puerto"];
+                    chkUsarWindowsAuth.IsChecked = datos.ContainsKey("UsaIntegrado") && datos["UsaIntegrado"] == "1";
+                    txtUsuarioSQL.Text = string.IsNullOrEmpty(datos["Usuario"]) ? "Sistema" : datos["Usuario"];
+                    txtPasswordSQL.Password = datos["Password"] ?? "";
 
-                string ip = txtIpServidor.Text.Trim().ToLower();
-                if (ip == "." || ip == "127.0.0.1" || ip == "localhost" || ip.StartsWith(".\\"))
-                {
-                    cmbModoPC.SelectedIndex = 0; // Servidor
+                    string ip = txtIpServidor.Text.Trim().ToLowerInvariant();
+                    bool esLocal = ip == "." || ip == "127.0.0.1" || ip == "localhost"
+                        || ip.StartsWith(".\\") || ip.StartsWith("localhost\\")
+                        || ip.StartsWith("127.0.0.1\\") || ip.Contains("(localdb)");
+                    cmbModoPC.SelectedIndex = esLocal ? 0 : 1;
+                    txtIpServidor.IsEnabled = cmbModoPC.SelectedIndex != 0;
                 }
-                else
+                finally
                 {
-                    cmbModoPC.SelectedIndex = 1; // Cliente
+                    _cargandoDatosConexion = false;
                 }
 
                 chkUsarWindowsAuth_Changed(null, null);
@@ -956,19 +962,55 @@ namespace SchettiniGestion.WPF
 
         private void cmbModoPC_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (txtIpServidor == null) return;
+            if (txtIpServidor == null || _cargandoDatosConexion) return;
 
             if (cmbModoPC.SelectedIndex == 0) // Servidor
             {
-                txtIpServidor.Text = "127.0.0.1";
-                txtIpServidor.IsEnabled = false;
+                // Express usa instancia nombrada: 127.0.0.1 solo (sin \SQLEXPRESS) suele fallar.
+                string actual = (txtIpServidor.Text ?? "").Trim();
+                if (string.IsNullOrWhiteSpace(actual)
+                    || actual == "127.0.0.1"
+                    || actual.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                    || actual == ".")
+                {
+                    txtIpServidor.Text = ".\\SQLEXPRESS";
+                }
+                txtIpServidor.IsEnabled = true; // permitir ajustar instancia si no es SQLEXPRESS
             }
             else // Cliente
             {
-                if (txtIpServidor.Text == "127.0.0.1") txtIpServidor.Text = "";
+                string actual = (txtIpServidor.Text ?? "").Trim();
+                if (actual == "127.0.0.1" || actual.Equals(".\\SQLEXPRESS", StringComparison.OrdinalIgnoreCase)
+                    || actual.Equals("localhost\\SQLEXPRESS", StringComparison.OrdinalIgnoreCase))
+                    txtIpServidor.Text = "";
                 txtIpServidor.IsEnabled = true;
                 txtIpServidor.Focus();
             }
+        }
+
+        /// <summary>
+        /// Normaliza la dirección local para que apunte a SQL Express (.\SQLEXPRESS)
+        /// en lugar de 127.0.0.1 sin instancia, que no conecta a la instalación típica.
+        /// </summary>
+        private static string NormalizarServidorSqlLocal(string servidor)
+        {
+            if (string.IsNullOrWhiteSpace(servidor)) return @".\SQLEXPRESS";
+            string s = servidor.Trim();
+            if (s == "." || s.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                || s == "127.0.0.1" || s.Equals("(local)", StringComparison.OrdinalIgnoreCase))
+                return @".\SQLEXPRESS";
+            return s;
+        }
+
+        private static bool EsInstanciaSqlLocalNombrada(string servidor)
+        {
+            if (string.IsNullOrWhiteSpace(servidor)) return false;
+            string s = servidor.Trim().ToLowerInvariant();
+            if (s.StartsWith(".\\") || s.StartsWith("localhost\\") || s.StartsWith("(local)\\"))
+                return true;
+            if (s.StartsWith("127.0.0.1\\"))
+                return true;
+            return false;
         }
 
         private void btnGuardarConexion_Click(object sender, RoutedEventArgs e)
@@ -1002,31 +1044,57 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
-            if (ModernMessageBox.Show("Al guardar la configuración de red, el sistema se cerrará para aplicar los cambios.\n\n¿Desea continuar?", "Confirmar Reinicio", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
-            {
-                bool exito = DatabaseService.GuardarNuevaConexion(
-                    txtIpServidor.Text.Trim(),
-                    txtPuertoServidor.Text.Trim(),
-                    usarIntegrado,
-                    txtUsuarioSQL.Text.Trim(),
-                    txtPasswordSQL.Password
-                );
+            string servidor = txtIpServidor.Text.Trim();
+            if (cmbModoPC.SelectedIndex == 0)
+                servidor = NormalizarServidorSqlLocal(servidor);
 
-                if (exito)
-                {
-                    ModernMessageBox.Show(
-                        "Configuración de red guardada correctamente.\n\n" +
-                        "El sistema se cerrará ahora. Al volver a abrirlo, se conectará al servidor configurado.\n\n" +
-                        "Si la conexión falla al reiniciar, verifique que el servidor SQL esté activo y accesible en la red.",
-                        "Configuración guardada",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
-                    Application.Current.Shutdown();
-                }
-                else
-                {
-                    ModernMessageBox.Show("No se pudo guardar la configuración de red.\nVerifique permisos de escritura en:\n" + SchettiniGestion.DatabaseService.RutaConexionCfg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+            // En instancia local nombrada (.\SQLEXPRESS), forzar ,1433 exige TCP habilitado.
+            // Si TCP aún no está configurado, el arranque falla y el usuario termina de nuevo en LocalDB.
+            // Dejar el puerto vacío usa Shared Memory/named pipes en esta PC; las otras PCs sí usan IP+1433.
+            string puerto = txtPuertoServidor.Text.Trim();
+            if (EsInstanciaSqlLocalNombrada(servidor))
+                puerto = "";
+
+            if (ModernMessageBox.Show(
+                    cmbModoPC.SelectedIndex == 0
+                        ? "Se guardará esta PC como SERVIDOR.\n\nSCHPOS intentará habilitar TCP/IP (puerto 1433) y el firewall automáticamente (puede pedir permiso de administrador).\nTambién dejará un archivo en el Escritorio para configurar las otras cajas.\n\nEl sistema se cerrará para aplicar los cambios.\n\n¿Continuar?"
+                        : "Al guardar la configuración de red, el sistema se cerrará para aplicar los cambios.\n\n¿Desea continuar?",
+                    "Confirmar Reinicio",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+
+            if (cmbModoPC.SelectedIndex == 0)
+            {
+                // Automático: TCP + firewall + guía clientes (UAC una sola vez).
+                SqlServerNetworkSetup.PrepararServidorParaRed(servidor);
+            }
+
+            bool exito = DatabaseService.GuardarNuevaConexion(
+                servidor,
+                puerto,
+                usarIntegrado,
+                txtUsuarioSQL.Text.Trim(),
+                txtPasswordSQL.Password
+            );
+
+            if (exito)
+            {
+                string extra = cmbModoPC.SelectedIndex == 0
+                    ? "\n\nEn el Escritorio quedó el archivo SCHPOS-Configuracion-Clientes.txt para las otras PCs."
+                    : "";
+                ModernMessageBox.Show(
+                    "Configuración de red guardada correctamente.\n\n" +
+                    "El sistema se cerrará ahora. Al volver a abrirlo, se conectará al servidor configurado." +
+                    extra,
+                    "Configuración guardada",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                Application.Current.Shutdown();
+            }
+            else
+            {
+                ModernMessageBox.Show("No se pudo guardar la configuración de red.\nVerifique permisos de escritura en:\n" + SchettiniGestion.DatabaseService.RutaConexionCfg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

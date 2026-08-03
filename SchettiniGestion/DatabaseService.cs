@@ -430,6 +430,7 @@ namespace SchettiniGestion
                     conn.Open();
                     AsegurarMigracionLite(conn);
                     AsegurarColumnaUsuariosNombrePersonal(conn);
+                    AsegurarColumnasConfiguracionNegocio(conn);
                 }
                 return true;
             }
@@ -6202,6 +6203,54 @@ ORDER BY Fecha DESC";
             catch { return false; }
         }
 
+        /// <summary>
+        /// Columnas de Configuracion usadas al guardar negocio/ARCA/MP.
+        /// Se aplican fuera del batch grande para que un fallo anterior no deje sin estas columnas.
+        /// </summary>
+        private static void AsegurarColumnasConfiguracionNegocio(SqlConnection c)
+        {
+            try
+            {
+                ForzarContextoBD(c);
+                using (var cmd = new SqlCommand(@"
+IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Configuracion')
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='PasswordAfip')
+    ALTER TABLE Configuracion ADD PasswordAfip NVARCHAR(MAX) NULL;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='CertificadoPath')
+    ALTER TABLE Configuracion ADD CertificadoPath NVARCHAR(MAX) NULL;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='PuntoVenta')
+    ALTER TABLE Configuracion ADD PuntoVenta INT NULL;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='MPAccessToken')
+    ALTER TABLE Configuracion ADD MPAccessToken NVARCHAR(MAX) NULL;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='MPUserId')
+    ALTER TABLE Configuracion ADD MPUserId NVARCHAR(100) NULL;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='MPPosId')
+    ALTER TABLE Configuracion ADD MPPosId NVARCHAR(100) NULL;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='MPPointTerminalId')
+    ALTER TABLE Configuracion ADD MPPointTerminalId NVARCHAR(150) NULL;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='MPPointAutomatico')
+    ALTER TABLE Configuracion ADD MPPointAutomatico BIT NOT NULL DEFAULT 0;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='TipoCambioUSD')
+    ALTER TABLE Configuracion ADD TipoCambioUSD DECIMAL(18,4) NULL;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='AfipProduccion')
+    ALTER TABLE Configuracion ADD AfipProduccion BIT NOT NULL DEFAULT 0;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='LogoEnTicket')
+    ALTER TABLE Configuracion ADD LogoEnTicket BIT NOT NULL DEFAULT 1;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='LogoEnA4')
+    ALTER TABLE Configuracion ADD LogoEnA4 BIT NOT NULL DEFAULT 1;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='UsaAperturaCaja')
+    ALTER TABLE Configuracion ADD UsaAperturaCaja BIT NOT NULL DEFAULT 0;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='CondicionIVAEmpresa')
+    ALTER TABLE Configuracion ADD CondicionIVAEmpresa NVARCHAR(100) NULL;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='AfipClavePrivadaPath')
+    ALTER TABLE Configuracion ADD AfipClavePrivadaPath NVARCHAR(500) NULL;
+END", c))
+                    cmd.ExecuteNonQuery();
+            }
+            catch { }
+        }
+
         // --- Configuración del negocio (columnas coherentes con App.xaml.sql y MigracionLite: PasswordAfip, MPAccessToken…) ---
         /// <param name="conservarPasswordAfipSiContraseniaVacia">Si es true y <paramref name="certPassword"/> viene vacío, no se escribe la columna (mantiene el valor en BD).</param>
         public static bool GuardarConfiguracion(string nombreFantasia, string razonSocial, string cuit, string direccion, string telefono,
@@ -6217,6 +6266,7 @@ ORDER BY Fecha DESC";
         {
             certPassword = certPassword ?? "";
             bool omitirColumnaPwd = conservarPasswordAfipSiContraseniaVacia && string.IsNullOrWhiteSpace(certPassword);
+            UltimoError = null;
 
             try
             {
@@ -6225,6 +6275,7 @@ ORDER BY Fecha DESC";
                     c.Open();
                     ForzarContextoBD(c);
                     AsegurarMigracionLite(c);
+                    AsegurarColumnasConfiguracionNegocio(c);
 
                     string updSql = omitirColumnaPwd
                         ? @"UPDATE Configuracion SET
@@ -6302,7 +6353,11 @@ INSERT INTO Configuracion (
                     }
                 }
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                UltimoError = ex.Message;
+                return false;
+            }
         }
 
         /// <summary>Persiste rutas del par .key / .crt generado por el asistente de activación ARCA.</summary>

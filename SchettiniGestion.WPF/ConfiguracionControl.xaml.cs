@@ -903,7 +903,13 @@ namespace SchettiniGestion.WPF
                 }
 
                 if (exito) ModernMessageBox.Show("¡Datos del negocio guardados correctamente!");
-                else ModernMessageBox.Show("Error al guardar datos.");
+                else
+                {
+                    string detalle = string.IsNullOrWhiteSpace(DatabaseService.UltimoError)
+                        ? "Error al guardar datos."
+                        : "Error al guardar datos.\n\nDetalle:\n" + DatabaseService.UltimoError;
+                    ModernMessageBox.Show(detalle, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
             }
             catch (Exception ex)
             {

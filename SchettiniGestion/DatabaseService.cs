@@ -429,6 +429,7 @@ namespace SchettiniGestion
                 {
                     conn.Open();
                     AsegurarMigracionLite(conn);
+                    AsegurarColumnaUsuariosNombrePersonal(conn);
                 }
                 return true;
             }
@@ -437,6 +438,46 @@ namespace SchettiniGestion
                 NotificarError($"Error conectando a SQL Server (SchPosDB): {ex.Message}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Garantiza Usuarios.NombrePersonal fuera del batch grande de migraciones
+        /// (si un ALTER anterior falla, esta columna nunca se creaba y el login rompía).
+        /// </summary>
+        private static void AsegurarColumnaUsuariosNombrePersonal(SqlConnection c)
+        {
+            try
+            {
+                ForzarContextoBD(c);
+                using (var cmd = new SqlCommand(@"
+IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Usuarios')
+AND NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Usuarios' AND COLUMN_NAME='NombrePersonal')
+  ALTER TABLE Usuarios ADD NombrePersonal NVARCHAR(100) NULL;
+IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Facturas')
+AND NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='NombrePersonal')
+  ALTER TABLE Facturas ADD NombrePersonal NVARCHAR(100) NULL;
+IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Facturas')
+AND NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='UsuarioID')
+  ALTER TABLE Facturas ADD UsuarioID INT NULL;", c))
+                    cmd.ExecuteNonQuery();
+            }
+            catch { /* sin permiso ALTER: el login usará fallback sin la columna */ }
+        }
+
+        private static bool ExisteColumna(SqlConnection c, string tabla, string columna)
+        {
+            try
+            {
+                using (var cmd = new SqlCommand(@"
+SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME=@t AND COLUMN_NAME=@c", c))
+                {
+                    cmd.Parameters.AddWithValue("@t", tabla);
+                    cmd.Parameters.AddWithValue("@c", columna);
+                    return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+                }
+            }
+            catch { return false; }
         }
 
         // Configuración
@@ -1434,17 +1475,29 @@ ORDER BY u.NombreUsuario", c).Fill(dt);
                 {
                     c.Open();
                     ForzarContextoBD(c);
+                    AsegurarColumnaUsuariosNombrePersonal(c);
+
                     int rid = 2;
                     int uid = 0;
                     string nombreRol = null;
                     string nombrePersonal = null;
                     bool encontrado = false;
-                    using (var cmdRol = new SqlCommand(@"
+                    bool tieneNombrePersonal = ExisteColumna(c, "Usuarios", "NombrePersonal");
+                    string sqlRol = tieneNombrePersonal
+                        ? @"
 SELECT TOP 1 u.UsuarioID, u.RolID, u.NombrePersonal, r.NombreRol
 FROM Usuarios u
 LEFT JOIN Roles r ON u.RolID = r.RolID
 WHERE LOWER(LTRIM(RTRIM(u.NombreUsuario))) = LOWER(LTRIM(RTRIM(@u)))
-ORDER BY u.UsuarioID", c))
+ORDER BY u.UsuarioID"
+                        : @"
+SELECT TOP 1 u.UsuarioID, u.RolID, CAST(NULL AS NVARCHAR(100)) AS NombrePersonal, r.NombreRol
+FROM Usuarios u
+LEFT JOIN Roles r ON u.RolID = r.RolID
+WHERE LOWER(LTRIM(RTRIM(u.NombreUsuario))) = LOWER(LTRIM(RTRIM(@u)))
+ORDER BY u.UsuarioID";
+
+                    using (var cmdRol = new SqlCommand(sqlRol, c))
                     {
                         cmdRol.Parameters.AddWithValue("@u", u ?? "");
                         using (var rd = cmdRol.ExecuteReader())

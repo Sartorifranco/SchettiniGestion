@@ -174,7 +174,9 @@ namespace SchettiniGestion.WPF
         }
 
         /// <summary>
-        /// Prueba autenticación contra WSAA usando el certificado configurado (sin usar token en caché).
+        /// Prueba autenticación contra WSAA usando el certificado configurado.
+        /// Reutiliza ticket en caché si sigue vigente; si ARCA responde que ya hay TA válido,
+        /// se interpreta como éxito (el certificado está autorizado).
         /// </summary>
         public static async Task<ResultadoPruebaWsaa> ProbarConexionWsaaAsync()
         {
@@ -233,7 +235,22 @@ namespace SchettiniGestion.WPF
                     }
                 }
 
-                LoginTicket ticket = await AutenticarWSAA_Remoto(rutaCert, passCert, produccion, "wsfe");
+                LoginTicket ticket;
+                try
+                {
+                    // Preferir ticket en caché; evita el rechazo de WSAA por TA ya vigente.
+                    ticket = await ObtenerTicketAcceso(rutaCert, passCert, produccion);
+                }
+                catch (Exception exAuth) when (EsErrorTaYaVigente(exAuth))
+                {
+                    resultado.Exito = true;
+                    resultado.Mensaje =
+                        $"Conexión OK con ARCA ({ambiente}).\n\n" +
+                        "ARCA ya tenía un ticket de acceso válido para este certificado (es normal si acabás de probar o facturar).\n" +
+                        "El certificado está autorizado: el sistema puede emitir facturas electrónicas.";
+                    return resultado;
+                }
+
                 if (ticket == null || string.IsNullOrWhiteSpace(ticket.Token) || string.IsNullOrWhiteSpace(ticket.Sign))
                 {
                     resultado.Mensaje = $"ARCA ({ambiente}) respondió pero no devolvió un ticket válido. Verifique la delegación del servicio wsfe en ARCA.";
@@ -246,18 +263,62 @@ namespace SchettiniGestion.WPF
             }
             catch (Exception ex)
             {
+                if (EsErrorTaYaVigente(ex))
+                {
+                    resultado.Exito = true;
+                    resultado.Mensaje =
+                        $"Conexión OK con ARCA ({ambiente}).\n\n" +
+                        "ARCA ya tenía un ticket de acceso válido para este certificado. El sistema está listo.";
+                    return resultado;
+                }
                 resultado.Mensaje = FormatearErrorWsaaParaUsuario(ex, produccion);
                 return resultado;
             }
         }
 
+        private static bool EsErrorTaYaVigente(Exception ex)
+        {
+            string t = ObtenerMensajeExcepcionCompleto(ex).ToLowerInvariant();
+            return t.Contains("ya posee un ta")
+                || t.Contains("ya posee un t.a")
+                || t.Contains("already has a valid ta")
+                || (t.Contains("ta valido") && t.Contains("wsn"))
+                || (t.Contains("ta válido") && t.Contains("wsn"));
+        }
+
         // --- M├ëTODOS AUXILIARES ---
         private static async Task<LoginTicket> ObtenerTicketAcceso(string rutaCert, string pass, bool produccion)
         {
-            if (File.Exists(ARCHIVO_TOKEN)) { try { var doc = XDocument.Load(ARCHIVO_TOKEN); var expTime = DateTime.Parse(doc.Descendants("expirationTime").First().Value); if (expTime > DateTime.Now) return new LoginTicket { Token = doc.Descendants("token").First().Value, Sign = doc.Descendants("sign").First().Value }; } catch { } }
-            var nuevoTicket = await AutenticarWSAA_Remoto(rutaCert, pass, produccion);
-            try { File.WriteAllText(ARCHIVO_TOKEN, nuevoTicket.XmlRespuestaOriginal); } catch { }
-            return nuevoTicket;
+            if (File.Exists(ARCHIVO_TOKEN))
+            {
+                try
+                {
+                    var doc = XDocument.Load(ARCHIVO_TOKEN);
+                    var expTime = DateTime.Parse(doc.Descendants("expirationTime").First().Value);
+                    if (expTime > DateTime.Now)
+                        return new LoginTicket
+                        {
+                            Token = doc.Descendants("token").First().Value,
+                            Sign = doc.Descendants("sign").First().Value
+                        };
+                }
+                catch { }
+            }
+
+            try
+            {
+                var nuevoTicket = await AutenticarWSAA_Remoto(rutaCert, pass, produccion);
+                try { File.WriteAllText(ARCHIVO_TOKEN, nuevoTicket.XmlRespuestaOriginal); } catch { }
+                return nuevoTicket;
+            }
+            catch (Exception ex) when (EsErrorTaYaVigente(ex))
+            {
+                // Caché local perdida pero ARCA aún tiene TA vigente: no se puede re-pedir hasta que expire.
+                throw new Exception(
+                    "ARCA todavía tiene un ticket de acceso vigente y no se pudo reutilizar el guardado en esta PC. " +
+                    "Esperá unos minutos (hasta ~10-15) y volvé a intentar. No regeneres el certificado.",
+                    ex);
+            }
         }
 
         private static async Task<LoginTicket> AutenticarWSAA_Remoto(string rutaCert, string pass, bool produccion, string servicio = "wsfe")

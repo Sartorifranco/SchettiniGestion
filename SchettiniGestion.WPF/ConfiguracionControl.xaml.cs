@@ -972,24 +972,21 @@ namespace SchettiniGestion.WPF
 
             if (cmbModoPC.SelectedIndex == 0) // Servidor
             {
-                // Express usa instancia nombrada: 127.0.0.1 solo (sin \SQLEXPRESS) suele fallar.
-                string actual = (txtIpServidor.Text ?? "").Trim();
-                if (string.IsNullOrWhiteSpace(actual)
-                    || actual == "127.0.0.1"
-                    || actual.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-                    || actual == ".")
-                {
-                    txtIpServidor.Text = ".\\SQLEXPRESS";
-                }
-                txtIpServidor.IsEnabled = true; // permitir ajustar instancia si no es SQLEXPRESS
+                txtIpServidor.Text = ".\\SQLEXPRESS";
+                txtIpServidor.IsEnabled = false; // no editar: la IP LAN es solo para las otras PCs
+                if (txtPuertoServidor != null)
+                    txtPuertoServidor.Text = "";
             }
             else // Cliente
             {
                 string actual = (txtIpServidor.Text ?? "").Trim();
                 if (actual == "127.0.0.1" || actual.Equals(".\\SQLEXPRESS", StringComparison.OrdinalIgnoreCase)
-                    || actual.Equals("localhost\\SQLEXPRESS", StringComparison.OrdinalIgnoreCase))
+                    || actual.Equals("localhost\\SQLEXPRESS", StringComparison.OrdinalIgnoreCase)
+                    || actual.IndexOf("(localdb)", StringComparison.OrdinalIgnoreCase) >= 0)
                     txtIpServidor.Text = "";
                 txtIpServidor.IsEnabled = true;
+                if (txtPuertoServidor != null && string.IsNullOrWhiteSpace(txtPuertoServidor.Text))
+                    txtPuertoServidor.Text = "1433";
                 txtIpServidor.Focus();
             }
         }
@@ -1051,12 +1048,28 @@ namespace SchettiniGestion.WPF
             }
 
             string servidor = txtIpServidor.Text.Trim();
-            if (cmbModoPC.SelectedIndex == 0)
-                servidor = NormalizarServidorSqlLocal(servidor);
+            bool esModoServidor = cmbModoPC.SelectedIndex == 0;
+            if (esModoServidor)
+            {
+                // En la PC servidor la conexión local SIEMPRE es la instancia Express.
+                // Si el usuario pone la IP LAN (ej. 192.168.1.14), al reiniciar el combo
+                // aparece como CLIENTE y parece que "no guardó" el modo servidor.
+                servidor = @".\SQLEXPRESS";
+                txtIpServidor.Text = servidor;
+            }
+            else
+            {
+                // Cliente: si pegaron solo la IP, agregar \SQLEXPRESS automáticamente.
+                if (!servidor.Contains("\\")
+                    && System.Net.IPAddress.TryParse(servidor, out _))
+                {
+                    servidor = servidor + "\\SQLEXPRESS";
+                    txtIpServidor.Text = servidor;
+                }
+            }
 
             // En instancia local nombrada (.\SQLEXPRESS), forzar ,1433 exige TCP habilitado.
-            // Si TCP aún no está configurado, el arranque falla y el usuario termina de nuevo en LocalDB.
-            // Dejar el puerto vacío usa Shared Memory/named pipes en esta PC; las otras PCs sí usan IP+1433.
+            // Dejar el puerto vacío usa Shared Memory en esta PC; las otras PCs usan IP+1433.
             string puerto = txtPuertoServidor.Text.Trim();
             if (EsInstanciaSqlLocalNombrada(servidor))
                 puerto = "";
@@ -1069,6 +1082,25 @@ namespace SchettiniGestion.WPF
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning) != MessageBoxResult.Yes)
                 return;
+
+            // Antes de guardar: probar que realmente conecta (evita "guardar OK" y al reiniciar volver a LocalDB/SERVIDOR).
+            string errorPrueba;
+            if (!DatabaseService.ProbarNuevaConexion(servidor, puerto, usarIntegrado, txtUsuarioSQL.Text.Trim(), txtPasswordSQL.Password, out errorPrueba))
+            {
+                ModernMessageBox.Show(
+                    "No se pudo conectar con esos datos. No se guardó nada (así no se pierde la configuración actual).\n\n" +
+                    "Detalle:\n" + errorPrueba + "\n\n" +
+                    "En el SERVIDOR verificá:\n" +
+                    "• SQL Server (SQLEXPRESS) en ejecución\n" +
+                    "• TCP/IP habilitado y puerto 1433\n" +
+                    "• Firewall con regla SCHPOS-SQL-1433\n" +
+                    "• En el cliente usá: IP\\SQLEXPRESS y puerto 1433\n\n" +
+                    "Ejemplo: 192.168.1.14\\SQLEXPRESS",
+                    "Conexión fallida",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
 
             if (cmbModoPC.SelectedIndex == 0)
             {

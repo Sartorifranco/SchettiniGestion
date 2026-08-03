@@ -6204,6 +6204,34 @@ ORDER BY Fecha DESC";
         }
 
         /// <summary>
+        /// Prueba abrir SQL con los datos indicados, sin guardar conexion.cfg.
+        /// </summary>
+        public static bool ProbarNuevaConexion(string servidor, string puerto, bool integrado, string usuario, string password, out string error)
+        {
+            error = null;
+            try
+            {
+                string ds = string.IsNullOrWhiteSpace(puerto) ? servidor : $"{servidor},{puerto}";
+                string cs = integrado
+                    ? $"Server={ds};Database=master;Integrated Security=True;Encrypt=False;TrustServerCertificate=True;Connect Timeout=8;"
+                    : $"Server={ds};Database=master;User Id={usuario};Password={password};Encrypt=False;TrustServerCertificate=True;Connect Timeout=8;";
+
+                using (var c = new SqlConnection(cs))
+                {
+                    c.Open();
+                    using (var cmd = new SqlCommand("SELECT 1", c))
+                        cmd.ExecuteScalar();
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Columnas de Configuracion usadas al guardar negocio/ARCA/MP.
         /// Se aplican fuera del batch grande para que un fallo anterior no deje sin estas columnas.
         /// </summary>

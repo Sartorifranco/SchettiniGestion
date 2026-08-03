@@ -1,7 +1,17 @@
 {
-  "versionActual": "2.3.15",
-  "instalador": "SCHPOS-Setup-2.3.15.exe",
+  "versionActual": "2.3.16",
+  "instalador": "SCHPOS-Setup-2.3.16.exe",
   "notas": [
+    {
+      "version": "2.3.16",
+      "fecha": "2026-08-03",
+      "titulo": "ARCA: recuperar .key tras reinstalar",
+      "items": [
+        "Al subir .crt, busca automáticamente clave_privada_{CUIT}.key en ProgramData\\\\SCHPOS\\\\afip.",
+        "Mensaje de error indica la ruta exacta donde debe estar la .key.",
+        "Instalador SCHPOS-Setup-2.3.16.exe."
+      ]
+    },
     {
       "version": "2.3.15",
       "fecha": "2026-08-03",

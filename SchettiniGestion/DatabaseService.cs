@@ -6398,8 +6398,8 @@ WHERE ID = 1", c))
             try
             {
                 var dr = GetConfiguracion();
-                if (dr == null || !dr.Table.Columns.Contains("AfipClavePrivadaPath")) return "";
-                return dr["AfipClavePrivadaPath"]?.ToString() ?? "";
+                string resuelta = AfipActivacionFiscalService.ResolverRutaClavePrivada(dr);
+                return resuelta ?? "";
             }
             catch { return ""; }
         }

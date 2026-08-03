@@ -141,15 +141,22 @@ namespace SchettiniGestion
                     return resultado;
                 }
 
-                string keyPath = config.Table.Columns.Contains("AfipClavePrivadaPath")
-                    ? config["AfipClavePrivadaPath"]?.ToString()
-                    : null;
+                string keyPath = ResolverRutaClavePrivada(config, cuitDigitos);
 
                 if (string.IsNullOrWhiteSpace(keyPath) || !File.Exists(keyPath))
                 {
-                    resultado.Error = "Primero debe generar el CSR desde esta pantalla. Falta la clave privada (.key) asociada.";
+                    string carpeta = AsegurarCarpetaAfip();
+                    string esperada = Path.Combine(carpeta, $"clave_privada_{cuitDigitos}.key");
+                    resultado.Error =
+                        "Falta la clave privada (.key) asociada a este certificado.\n\n" +
+                        "Copiá el archivo .key (el que se generó con el CSR) a:\n" +
+                        esperada + "\n\n" +
+                        "Si no tenés ese archivo, generá un CSR nuevo desde esta pantalla y pedí un .crt nuevo en ARCA.";
                     return resultado;
                 }
+
+                // Rehidratar la ruta en BD por si solo estaba el archivo en disco (reinstalación).
+                DatabaseService.GuardarRutasActivacionAfip(keyPath, null);
 
                 ValidarCertificadoCorresponde(rutaArchivoOrigen, keyPath);
 
@@ -232,9 +239,8 @@ namespace SchettiniGestion
             if (config == null) return "Sin configurar";
 
             string certPath = config["CertificadoPath"]?.ToString();
-            string keyPath = config.Table.Columns.Contains("AfipClavePrivadaPath")
-                ? config["AfipClavePrivadaPath"]?.ToString()
-                : null;
+            string cuitDigitos = DatabaseService.ObtenerCuitEmpresaSoloDigitos(config);
+            string keyPath = ResolverRutaClavePrivada(config, cuitDigitos);
 
             bool tieneKey = !string.IsNullOrWhiteSpace(keyPath) && File.Exists(keyPath);
             bool tieneCert = !string.IsNullOrWhiteSpace(certPath) && File.Exists(certPath);
@@ -243,8 +249,58 @@ namespace SchettiniGestion
             if (tieneKey) return "CSR generado — falta subir el certificado .crt de ARCA";
             if (!string.IsNullOrWhiteSpace(certPath) && certPath.EndsWith(".pfx", StringComparison.OrdinalIgnoreCase))
                 return "Certificado .pfx configurado";
+            if (tieneCert && !tieneKey)
+                return "Hay .crt pero falta la clave privada (.key) en ProgramData\\SCHPOS\\afip";
 
             return "Sin certificado fiscal";
+        }
+
+        /// <summary>
+        /// Resuelve la .key: primero la ruta en BD; si falta (reinstalación), busca
+        /// clave_privada_{CUIT}.key en ProgramData\SCHPOS\afip.
+        /// </summary>
+        public static string ResolverRutaClavePrivada(DataRow config, string cuitDigitos = null)
+        {
+            try
+            {
+                if (config != null && config.Table.Columns.Contains("AfipClavePrivadaPath"))
+                {
+                    string desdeBd = config["AfipClavePrivadaPath"]?.ToString()?.Trim();
+                    if (!string.IsNullOrWhiteSpace(desdeBd) && File.Exists(desdeBd))
+                        return desdeBd;
+                }
+
+                if (string.IsNullOrWhiteSpace(cuitDigitos) && config != null)
+                    cuitDigitos = DatabaseService.ObtenerCuitEmpresaSoloDigitos(config);
+                cuitDigitos = LimpiarCuit(cuitDigitos);
+
+                string carpeta = AsegurarCarpetaAfip();
+                if (cuitDigitos.Length == 11)
+                {
+                    string porCuit = Path.Combine(carpeta, $"clave_privada_{cuitDigitos}.key");
+                    if (File.Exists(porCuit))
+                        return porCuit;
+                }
+
+                // Último recurso: cualquier clave_privada_*.key en la carpeta (una sola).
+                if (Directory.Exists(carpeta))
+                {
+                    string[] keys = Directory.GetFiles(carpeta, "clave_privada_*.key");
+                    if (keys.Length == 1 && File.Exists(keys[0]))
+                        return keys[0];
+                    if (cuitDigitos.Length == 11)
+                    {
+                        foreach (string k in keys)
+                        {
+                            if (Path.GetFileName(k).IndexOf(cuitDigitos, StringComparison.OrdinalIgnoreCase) >= 0)
+                                return k;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return null;
         }
 
         private static AsymmetricCipherKeyPair GenerarParRsa2048()

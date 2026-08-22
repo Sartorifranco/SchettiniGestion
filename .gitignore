@@ -25,6 +25,9 @@ Coverage*/
 .env
 *.local.json
 
+# Publicación local (binarios / appsettings de esa máquina; no versionar)
+/publish/
+
 # OS
 Thumbs.db
 Desktop.ini

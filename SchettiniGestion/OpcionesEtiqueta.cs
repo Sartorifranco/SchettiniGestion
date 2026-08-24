@@ -14,6 +14,10 @@ namespace SchettiniGestion
         public int Columnas { get; set; } = 3;
         public string Orientacion { get; set; } = "Vertical";
         public string ModoImpresion { get; set; } = "Rollo";
+        /// <summary>Si es true, al terminar un trabajo en modo Rollo se envía un comando de corte.</summary>
+        public bool AutoCorte { get; set; }
+        /// <summary>Auto | ESCPOS | TSPL | ZPL | EPL</summary>
+        public string ProtocoloCorte { get; set; } = "Auto";
         public bool MostrarDescripcion { get; set; } = true;
         public bool MostrarDescripcionExtra { get; set; } = false;
         public bool MostrarPrecio { get; set; } = true;

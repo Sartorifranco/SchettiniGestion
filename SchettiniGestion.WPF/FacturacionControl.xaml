@@ -40,7 +40,7 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="TabItem">
-                                <Border x:Name="border" Background="{DynamicResource SurfaceDark}" CornerRadius="6,6,0,0" Padding="15,10" Margin="0,0,5,0">
+                                <Border x:Name="border" Background="{DynamicResource SurfaceDark}" CornerRadius="{DynamicResource TabItemCornerRadius}" Padding="15,10" Margin="0,0,5,0">
                                     <ContentPresenter ContentSource="Header"/>
                                 </Border>
                                 <ControlTemplate.Triggers>
@@ -62,8 +62,8 @@
             <TabItem Header="Venta POS">
                 <Grid x:Name="pnlVentaPOS" Margin="0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.55*" MinWidth="260"/>
-                        <ColumnDefinition Width="1*" MinWidth="320" MaxWidth="500"/>
+                        <ColumnDefinition Width="1.25*" MinWidth="240"/>
+                        <ColumnDefinition Width="1.1*" MinWidth="380" MaxWidth="640"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- ═══ CATÁLOGO (centro-izquierda) ═══ -->
@@ -74,8 +74,19 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Text="Catálogo de productos" Foreground="{DynamicResource TextPrimary}"
-                                   FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                            <TextBlock Text="Catálogo de productos"
+                                       Style="{DynamicResource TitleTextStyle}"
+                                       Margin="0,0,0,4"/>
+                            <Border x:Name="bdrArcaPendiente" Visibility="Collapsed"
+                                    Padding="10,6"
+                                    Background="{DynamicResource ComboBoxItemHoverBackground}"
+                                    BorderBrush="{DynamicResource WarningColor}" BorderThickness="3,0,0,0"
+                                    CornerRadius="{DynamicResource ControlCornerRadius}">
+                                <TextBlock x:Name="txtArcaPendiente" FontSize="11" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextPrimary}"/>
+                            </Border>
+                        </StackPanel>
 
                         <Grid Grid.Row="1" Margin="0,0,0,10">
                             <Grid.ColumnDefinitions>
@@ -100,7 +111,7 @@
                                      TextChanged="txtBuscarProducto_TextChanged"
                                      LostFocus="txtBuscar_LostFocus" PreviewKeyDown="txtBuscar_PreviewKeyDown"/>
                             <Border Grid.Row="1" Grid.Column="1" Margin="0,0,8,0"
-                                    Background="{DynamicResource SurfaceDark}" CornerRadius="5" Height="48"
+                                    Background="{DynamicResource SurfaceDark}" CornerRadius="{DynamicResource ControlCornerRadius}" Height="48"
                                     BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -116,7 +127,7 @@
                             </Border>
                             <Button x:Name="btnAgregarProducto" Grid.Row="1" Grid.Column="2" Content="+"
                                     Click="btnAgregarProducto_Click" Width="56" Height="48"
-                                    Background="#007ACC" Foreground="White" FontWeight="Bold" FontSize="28"
+                                    Background="{DynamicResource PrimaryColor}" Foreground="White" FontWeight="Bold" FontSize="28"
                                     ToolTip="Agregar seleccionado" Padding="0" BorderThickness="0"/>
                             <Button x:Name="btnAyudaAtajos" Grid.Row="1" Grid.Column="3" Content="⌨ Atajos"
                                     Click="btnAyudaAtajos_Click" Style="{StaticResource SecondaryButtonStyle}"
@@ -128,7 +139,7 @@
                                        Foreground="{DynamicResource TextSecondary}" FontSize="10" Margin="0,4,0,0"/>
                             <Popup x:Name="popupProducto" PlacementTarget="{Binding ElementName=txtBuscarProducto}" StaysOpen="False">
                                     <Border Background="{DynamicResource ComboBoxDropDownBackground}"
-                                            BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="6"
+                                            BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="{DynamicResource ControlCornerRadius}"
                                             Padding="2" MaxHeight="360">
                                         <ListBox x:Name="lstSugerenciasProducto" MaxWidth="480" MaxHeight="350" FontSize="16"
                                                  Style="{StaticResource TouchSuggestionListBoxStyle}" Focusable="False" IsTabStop="False"
@@ -155,13 +166,63 @@
                         </Grid>
 
                         <Grid Grid.Row="2">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                            <Border x:Name="bdrPromosHoy" Grid.Row="0" Visibility="Collapsed"
+                        <Border x:Name="bdrFavoritos" Grid.Row="0" Visibility="Collapsed"
+                                Background="{DynamicResource SurfaceDark}"
+                                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
+                                CornerRadius="{DynamicResource CardCornerRadius}"
+                                Padding="10,8" Margin="0,0,0,8">
+                            <StackPanel>
+                                <TextBlock Text="Favoritos — tocá para vender · ★ para quitar"
+                                           FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,8"/>
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                    <ItemsControl x:Name="icFavoritos">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Width="108" Margin="0,0,8,0" Padding="8" Cursor="Hand"
+                                                        CornerRadius="{DynamicResource ControlCornerRadius}"
+                                                        Background="{DynamicResource ModuleBackgroundBrush}"
+                                                        BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
+                                                        MouseLeftButtonUp="FavoritoCard_Click">
+                                                    <StackPanel>
+                                                        <Grid Height="56" Margin="0,0,0,6">
+                                                            <Border CornerRadius="6" Background="{DynamicResource SurfaceDark}">
+                                                                <Image Source="{Binding ImagenPath, Converter={StaticResource PathToImageConverter}}" Stretch="Uniform" Margin="2"/>
+                                                            </Border>
+                                                            <Button Content="★" Click="FavoritoEstrella_Click"
+                                                                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                                    Width="26" Height="26" Padding="0" FontSize="13"
+                                                                    Background="Transparent" BorderThickness="0"
+                                                                    Foreground="#F59E0B" Cursor="Hand"
+                                                                    ToolTip="Quitar de favoritos"/>
+                                                        </Grid>
+                                                        <TextBlock Text="{Binding Descripcion}" FontSize="11" FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource TextPrimary}"
+                                                                   TextWrapping="Wrap" MaxHeight="32"/>
+                                                        <TextBlock Text="{Binding PrecioLista, StringFormat=C2}" FontSize="13" FontWeight="Bold"
+                                                                   Foreground="{StaticResource SuccessColor}" Margin="0,4,0,0"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
+
+                            <Border x:Name="bdrPromosHoy" Grid.Row="1" Visibility="Collapsed"
                                     Background="#1A27AE60" BorderBrush="#27AE60" BorderThickness="1"
                                     CornerRadius="6" Padding="10,8" Margin="0,0,0,8">
                                 <StackPanel>
@@ -172,7 +233,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,8">
                                 <Button x:Name="btnVistaCatalogoLista" Content="Lista" Click="btnVistaCatalogoLista_Click"
                                         Style="{StaticResource ButtonStyle}" Padding="14,6" Margin="0,0,6,0"/>
                                 <Button x:Name="btnVistaCatalogoCards" Content="Cards" Click="btnVistaCatalogoCards_Click"
@@ -180,7 +241,7 @@
                                 <TextBlock x:Name="lblCantidadCatalogo" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}" FontSize="13"/>
                             </StackPanel>
 
-                            <DataGrid x:Name="dgvCatalogo" Grid.Row="2" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                            <DataGrid x:Name="dgvCatalogo" Grid.Row="3" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                                       HeadersVisibility="Column" GridLinesVisibility="Horizontal" BorderThickness="0"
                                       RowHeight="48" FontSize="14" SelectionMode="Single" HorizontalScrollBarVisibility="Auto"
                                       MouseLeftButtonUp="dgvCatalogo_MouseLeftButtonUp">
@@ -193,6 +254,16 @@
                                     </Style>
                                 </DataGrid.ColumnHeaderStyle>
                                 <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="" Width="40" MinWidth="36">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="{Binding EstrellaFavorito}" Click="FavoritoEstrella_Click"
+                                                        Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                        FontSize="16" Foreground="#F59E0B" Padding="0"
+                                                        ToolTip="Favorito en el POS (acceso rápido)"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     <DataGridTextColumn Header="Cód" Binding="{Binding Codigo}" MinWidth="130" Width="Auto">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
@@ -272,7 +343,7 @@
                                 </DataGrid.RowStyle>
                             </DataGrid>
 
-                            <ScrollViewer x:Name="svCatalogoCards" Grid.Row="2" Visibility="Collapsed"
+                            <ScrollViewer x:Name="svCatalogoCards" Grid.Row="3" Visibility="Collapsed"
                                           VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                 <ItemsControl x:Name="icCatalogo">
                                     <ItemsControl.ItemsPanel>
@@ -282,7 +353,7 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Margin="6" Width="168" Padding="10" CornerRadius="8" Cursor="Hand"
+                                            <Border Margin="6" Width="168" Padding="10" CornerRadius="{DynamicResource CardCornerRadius}" Cursor="Hand"
                                                     MouseLeftButtonUp="CatalogoCard_Click"
                                                     BorderThickness="2"
                                                     ToolTip="{Binding PromoTooltip}">
@@ -299,7 +370,7 @@
                                                                 <Setter Property="BorderBrush" Value="#27AE60"/>
                                                             </DataTrigger>
                                                             <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
                                                             </Trigger>
                                                         </Style.Triggers>
                                                     </Style>
@@ -309,6 +380,12 @@
                                                         <Border CornerRadius="6" Background="{DynamicResource ModuleBackgroundBrush}">
                                                             <Image Source="{Binding ImagenPath, Converter={StaticResource PathToImageConverter}}" Stretch="Uniform" Margin="4"/>
                                                         </Border>
+                                                        <Button Content="{Binding EstrellaFavorito}" Click="FavoritoEstrella_Click"
+                                                                HorizontalAlignment="Left" VerticalAlignment="Top"
+                                                                Width="28" Height="28" Padding="0" FontSize="14"
+                                                                Background="#AA000000" BorderThickness="0" Foreground="#F59E0B"
+                                                                Cursor="Hand" Margin="2"
+                                                                ToolTip="Marcar o quitar favorito"/>
                                                         <Border HorizontalAlignment="Right" VerticalAlignment="Top"
                                                                 Background="#27AE60" CornerRadius="4" Padding="5,2" Margin="0,2,2,0"
                                                                 ToolTip="{Binding PromoTooltip}">
@@ -351,11 +428,12 @@
                     </Grid>
 
                     <!-- ═══ RESUMEN DE VENTA (derecha) ═══ -->
-                    <Border x:Name="bdrResumenVenta" Grid.Column="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10"
-                            BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
+                    <Border x:Name="bdrResumenVenta" Grid.Column="1" Background="{DynamicResource SurfaceDark}"
+                            CornerRadius="{DynamicResource CardCornerRadius}" Padding="12,10"
+                            BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
+                            local:CornerClip.Enable="True">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
@@ -363,87 +441,101 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Grid Grid.Row="0" Margin="0,0,0,6">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
-                                <TextBlock Grid.Row="0" Text="Resumen de la venta"
-                                           Foreground="{DynamicResource TextPrimary}" FontSize="18" FontWeight="Bold"/>
-
-                                <WrapPanel Grid.Row="1" Margin="0,8,0,0">
-                                    <Button x:Name="btnDescuentoGlobal" Content="% Total" MinWidth="72" Height="44" Margin="0,0,6,6"
+                            <Grid x:Name="pnlAccionesResumen" Grid.Row="0" Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock x:Name="txtTituloResumen" Text="Resumen de la venta" Style="{DynamicResource TitleTextStyle}" Margin="0,0,0,8"/>
+                                <WrapPanel>
+                                    <Button x:Name="btnDescuentoGlobal" Content="% Total" MinWidth="88" Margin="0,0,8,8"
+                                            Style="{StaticResource PosTintButtonStyle}"
                                             ToolTip="Descuento o bonificación sobre toda la venta" Click="btnDescuentoGlobal_Click"
-                                            Background="#3498DB" Foreground="White" FontWeight="Bold" FontSize="13" BorderThickness="0" Padding="8,0"/>
-                                    <Button x:Name="btnBorrarVenta" Content="🗑 Borrar" MinWidth="72" Height="44" Margin="0,0,6,6"
+                                            Background="#3498DB"/>
+                                    <Button x:Name="btnBorrarVenta" Content="🗑 Borrar" MinWidth="88" Margin="0,0,8,8"
+                                            Style="{StaticResource PosTintButtonStyle}"
                                             ToolTip="Borrar venta" Click="btnBorrarVenta_Click"
-                                            Background="#C0392B" Foreground="White" FontSize="13" FontWeight="Bold" BorderThickness="0" Padding="8,0"/>
-                                    <Button x:Name="btnGuardarConfigPredeterminada" Content="⚙ Config" MinWidth="72" Height="44" Margin="0,0,0,6"
+                                            Background="#C0392B"/>
+                                    <Button x:Name="btnGuardarConfigPredeterminada" Content="⚙ Config" MinWidth="88" Margin="0,0,8,8"
+                                            Style="{StaticResource PosTintButtonStyle}"
+                                            Foreground="{DynamicResource TextPrimary}"
                                             ToolTip="Mostrar u ocultar configuración de la venta" Click="btnToggleConfigVenta_Click"
-                                            Background="{DynamicResource BorderColor}" Foreground="{DynamicResource TextPrimary}" FontSize="13" FontWeight="Bold" BorderThickness="0" Padding="8,0"/>
+                                            Background="{DynamicResource HoverBackground}"/>
+                                    <Button x:Name="btnPausarVenta" Content="Pausar F5" MinWidth="100" Margin="0,0,8,8"
+                                            Style="{StaticResource PosTintButtonStyle}"
+                                            ToolTip="Dejar esta venta en pausa y atender otra (F5)" Click="btnPausarVenta_Click"
+                                            Background="#8E44AD"/>
+                                    <Button x:Name="btnRecuperarPausa" Content="Pausas F6" MinWidth="100" Margin="0,0,0,8"
+                                            Style="{StaticResource PosTintButtonStyle}"
+                                            ToolTip="Recuperar una venta pausada (F6)" Click="btnRecuperarPausa_Click"
+                                            Background="#6C3483"/>
                                 </WrapPanel>
-
-                                <TextBlock Grid.Row="2" x:Name="txtAyudaResumen" Text="% Total = descuento a toda la venta · Tocá un producto abajo = editar solo ese ítem"
-                                           FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,4"/>
-                                <Border Grid.Row="3" x:Name="bdrAvisoPromo" Visibility="Collapsed" Background="#1A27AE60"
-                                        BorderBrush="#27AE60" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,4,0,0">
-                                    <TextBlock x:Name="txtAvisoPromo" TextWrapping="Wrap" FontSize="13" FontWeight="SemiBold"
-                                               Foreground="#2ECC71"/>
+                                <TextBlock x:Name="txtAyudaResumen" Visibility="Collapsed"
+                                           Text="% Total = descuento a toda la venta · Tocá un producto abajo para editar ese ítem"
+                                           FontSize="11" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Border x:Name="brdLetraComprobante" Grid.Column="1"
+                                        Width="58" Height="58" CornerRadius="12" VerticalAlignment="Top"
+                                        Background="#117A65" BorderBrush="#0E6655" BorderThickness="1"
+                                        ToolTip="La letra cambia al elegir cliente (y su condición IVA) o al cambiar Factura / Ticket / NC. Monotributo del local = C. RI a RI = A. CF, monotributo o exento = B.">
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock x:Name="lblLetraComprobante" Text="B" FontSize="24" FontWeight="Bold"
+                                                   Foreground="White" HorizontalAlignment="Center"/>
+                                        <TextBlock x:Name="lblLetraDetalle" Text="Factura" FontSize="10"
+                                                   Foreground="#D6EAF8" HorizontalAlignment="Center"/>
+                                    </StackPanel>
                                 </Border>
                             </Grid>
 
-                            <!-- Cliente y comprobante siempre visibles (no dentro de Config) -->
-                            <StackPanel Grid.Row="1" Margin="0,0,0,6">
-                                <TextBlock Text="Cliente" Foreground="{DynamicResource TextSecondary}" FontSize="11" Margin="0,0,0,2"/>
-                                <Grid Margin="0,0,0,2">
+                            <StackPanel x:Name="pnlDatosVenta" Grid.Row="1" Margin="0,0,0,8">
+                                <TextBlock Text="Cliente" Foreground="{DynamicResource TextPrimary}" FontSize="12" Margin="0,0,0,4"/>
+                                <Grid Margin="0,0,0,6">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="txtBuscarCliente" Grid.Column="0" Style="{StaticResource ModuleTextBoxStyle}" Height="40" FontSize="15"
+                                    <TextBox x:Name="txtBuscarCliente" Grid.Column="0" Style="{StaticResource ModuleTextBoxStyle}" Height="42" FontSize="15"
                                              TextChanged="txtBuscarCliente_TextChanged"
                                              LostFocus="txtBuscar_LostFocus" PreviewKeyDown="txtBuscar_PreviewKeyDown"
                                              ToolTip="Buscá por nombre, CUIT o código. Enter selecciona."/>
                                     <Button x:Name="btnCrearCliente" Grid.Column="1" Content="➕" Click="btnCrearCliente_Click"
-                                            Background="#27AE60" Foreground="White" FontWeight="Bold" Height="40" Width="40" Margin="6,0,0,0" ToolTip="Crear cliente rápido"/>
+                                            Style="{StaticResource PosTintButtonStyle}"
+                                            Background="#27AE60" Height="42" Width="42" Padding="0" Margin="8,0,0,0" ToolTip="Crear cliente rápido"/>
                                     <Popup x:Name="popupCliente" PlacementTarget="{Binding ElementName=txtBuscarCliente}" StaysOpen="False">
                                         <Border Background="{DynamicResource ComboBoxDropDownBackground}"
-                                                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="6" Padding="2">
+                                                BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="10" Padding="4">
                                             <StackPanel>
                                                 <ListBox x:Name="lstSugerenciasCliente" Width="360" MaxHeight="220" FontSize="15"
                                                          Style="{StaticResource TouchSuggestionListBoxStyle}"
                                                          MouseUp="lstSugerenciasCliente_MouseUp" PreviewKeyDown="lstSugerencias_PreviewKeyDown">
                                                     <ListBox.ItemTemplate>
                                                         <DataTemplate>
-                                                            <TextBlock Text="{Binding RazonSocial}" Padding="5"
+                                                            <TextBlock Text="{Binding RazonSocial}" Padding="8,6"
                                                                        Foreground="{DynamicResource ComboBoxDropDownForeground}"/>
                                                         </DataTemplate>
                                                     </ListBox.ItemTemplate>
                                                 </ListBox>
                                                 <Button x:Name="btnCrearClientePopup" Content="➕ Crear cliente nuevo" Click="btnCrearCliente_Click"
-                                                        Background="#27AE60" Foreground="White" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Stretch"/>
+                                                        Style="{StaticResource PosTintButtonStyle}"
+                                                        Background="#27AE60" HorizontalAlignment="Stretch"/>
                                             </StackPanel>
                                         </Border>
                                     </Popup>
                                 </Grid>
-                                <TextBlock x:Name="lblClienteSeleccionado" Text="Consumidor Final" Foreground="{DynamicResource SuccessColor}" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8"/>
+                                <TextBlock x:Name="lblClienteSeleccionado" Text="Consumidor Final" Foreground="{DynamicResource SuccessColor}" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,12"/>
 
                                 <Grid Margin="0,0,0,4">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="8"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="12"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Comprobante" Foreground="{DynamicResource TextSecondary}" FontSize="11" Margin="0,0,0,2"/>
+                                        <TextBlock Text="Comprobante" Foreground="{DynamicResource TextPrimary}" FontSize="12" Margin="0,0,0,4"/>
                                         <ComboBox x:Name="cmbTipoComprobante" SelectedIndex="0" Style="{StaticResource WhiteTouchCombo}"
                                                   SelectionChanged="cmbTipoComprobante_SelectionChanged"
-                                                  ToolTip="Factura A/B/C según cliente y condición IVA. Ticket = no fiscal.">
+                                                  ToolTip="Factura A/B/C según cliente e IVA. Ticket = no fiscal. NC/ND desde acá = nota libre; para NC vinculada a una factura usá Ventas → NC.">
                                             <ComboBoxItem Content="Factura"/>
                                             <ComboBoxItem Content="Ticket"/>
                                             <ComboBoxItem Content="Remito"/>
@@ -453,19 +545,8 @@
                                             <ComboBoxItem Content="Nota de Débito"/>
                                         </ComboBox>
                                     </StackPanel>
-                                    <Border Grid.Column="2" x:Name="brdLetraComprobante"
-                                            Width="56" Height="56" CornerRadius="8" VerticalAlignment="Bottom"
-                                            Background="#1A5276" BorderBrush="#154360" BorderThickness="1"
-                                            ToolTip="Letra del comprobante según emisor y cliente (se actualiza al cambiar cliente o tipo).">
-                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                            <TextBlock x:Name="lblLetraComprobante" Text="B" FontSize="26" FontWeight="Bold"
-                                                       Foreground="White" HorizontalAlignment="Center" LineHeight="28"/>
-                                            <TextBlock x:Name="lblLetraDetalle" Text="Factura" FontSize="9"
-                                                       Foreground="#D6EAF8" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <StackPanel x:Name="pnlCondicionPago" Grid.Column="4">
-                                        <TextBlock Text="Pago" Foreground="{DynamicResource TextSecondary}" FontSize="11" Margin="0,0,0,2"/>
+                                    <StackPanel x:Name="pnlCondicionPago" Grid.Column="2">
+                                        <TextBlock Text="Pago" Foreground="{DynamicResource TextPrimary}" FontSize="12" Margin="0,0,0,4"/>
                                         <ComboBox x:Name="cmbCondicionVenta" SelectedIndex="0" SelectionChanged="cmbCondicionVenta_SelectionChanged" Style="{StaticResource WhiteTouchCombo}">
                                             <ComboBoxItem Content="Contado"/>
                                             <ComboBoxItem Content="Tarjeta"/>
@@ -474,108 +555,122 @@
                                         </ComboBox>
                                     </StackPanel>
                                 </Grid>
-                                <TextBlock Text="La letra A/B/C se actualiza al elegir cliente o tipo de comprobante."
-                                           FontSize="10" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,2,0,4"/>
+                                <TextBlock x:Name="txtAyudaTipoComprobante" Visibility="Collapsed"
+                                           FontSize="11" Foreground="{DynamicResource WarningColor}" TextWrapping="Wrap" Margin="0,6,0,0"
+                                           Text="NC/ND desde el POS es nota libre. Para acreditar una factura emitida: Ventas → NC (vinculada)."/>
+                            </StackPanel>
 
-                                <Expander x:Name="expConfigVenta" Header="Más opciones (lista, efectivo…)" IsExpanded="False" Margin="0,2,0,0"
-                                          Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold">
-                                    <StackPanel Margin="0,8,0,0">
-                                        <TextBlock Text="Lista de precios" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2"/>
+                            <Grid Grid.Row="2" Margin="0,0,0,8">
+                                <Expander x:Name="expConfigVenta" Header="Lista y efectivo" IsExpanded="False"
+                                          Visibility="Collapsed"
+                                          Style="{StaticResource CartItemExpanderStyle}"
+                                          Expanded="expConfigVenta_Expanded" Collapsed="expConfigVenta_Collapsed">
+                                    <StackPanel>
+                                        <TextBlock Text="Lista de precios" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
                                         <ComboBox x:Name="cmbListaPrecios" DisplayMemberPath="Nombre" SelectedValuePath="ListaID"
                                                   SelectionChanged="cmbListaPrecios_SelectionChanged"
-                                                  Style="{StaticResource WhiteTouchCombo}" Margin="0,0,0,6"/>
-                                        <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,10"
+                                                  Style="{StaticResource WhiteTouchCombo}" Margin="0,0,0,8"/>
+                                        <TextBlock Foreground="{DynamicResource TextPrimary}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,12"
                                                    Text="La lista define el precio de venta del catálogo. Cambiala solo si el cliente usa otra tarifa."/>
 
                                         <StackPanel x:Name="pnlCalculoEfectivo">
-                                            <TextBlock Text="Abonado ($)" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,2"/>
+                                            <TextBlock Text="Abonado ($)" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
                                             <TextBox x:Name="txtMontoPagado" Style="{StaticResource WhiteTouchText}"
                                                      TextChanged="txtMontoPagado_TextChanged" PreviewTextInput="NumberValidationTextBox" Tag="numeric"/>
-                                            <Grid Margin="0,6,0,0">
-                                                <TextBlock Text="Vuelto:" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
+                                            <Grid Margin="0,10,0,0">
+                                                <TextBlock Text="Vuelto:" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                                 <TextBlock x:Name="lblVuelto" Text="$ 0,00" Foreground="{DynamicResource WarningColor}" FontWeight="Bold" FontSize="20" HorizontalAlignment="Right"/>
                                             </Grid>
                                         </StackPanel>
                                         <Button Content="💾 Guardar como predeterminado" Click="btnGuardarConfigPredeterminada_Click"
-                                                Style="{StaticResource SecondaryButtonStyle}" FontSize="11" Padding="10,6"
-                                                HorizontalAlignment="Left" Margin="0,8,0,0"
+                                                Style="{StaticResource SecondaryButtonStyle}" FontSize="12" Padding="12,8"
+                                                HorizontalAlignment="Left" Margin="0,12,0,0"
                                                 ToolTip="Guarda lista, comprobante y forma de pago para próximas ventas"/>
                                     </StackPanel>
                                 </Expander>
-                            </StackPanel>
 
-                            <TextBlock x:Name="lblCantidadItems" Grid.Row="2" Text="0 productos en el pedido"
-                                       Foreground="{DynamicResource TextSecondary}" FontSize="11" Margin="0,0,0,4"/>
-
-                            <ScrollViewer x:Name="svCarrito" Grid.Row="3" VerticalScrollBarVisibility="Auto" Margin="0,0,0,6"
-                                          Background="Transparent" Padding="0,0,2,0">
-                                <ItemsControl x:Name="icCarrito">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Expander Margin="0,0,0,8" IsExpanded="False"
-                                                      Background="{DynamicResource ModuleBackgroundBrush}"
-                                                      BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
-                                                      Expanded="ExpanderCarrito_Expanded">
-                                                <Expander.Header>
-                                                    <Grid MinHeight="52" Margin="4,2">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <StackPanel VerticalAlignment="Center">
-                                                            <TextBlock Text="{Binding Descripcion}" FontWeight="SemiBold" TextWrapping="Wrap"
-                                                                       Foreground="{DynamicResource TextPrimary}" FontSize="14"/>
-                                                            <TextBlock Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,2,0,0">
-                                                                <Run Text="{Binding Cantidad, Mode=OneWay}"/>
-                                                                <Run Text=" × "/>
-                                                                <Run Text="{Binding PrecioUnitario, StringFormat=C2, Mode=OneWay}"/>
-                                                                <Run Text="  "/>
-                                                                <Run Text="{Binding AjusteLineaTexto, Mode=OneWay}" Foreground="#9B59B6"/>
-                                                            </TextBlock>
+                                <ScrollViewer x:Name="svCarrito" VerticalScrollBarVisibility="Auto"
+                                              Background="Transparent" Padding="0,0,4,0">
+                                    <StackPanel>
+                                        <Border x:Name="bdrAvisoPromo" Visibility="Collapsed" Background="#1A27AE60"
+                                                BorderBrush="#27AE60" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,10">
+                                            <TextBlock x:Name="txtAvisoPromo" TextWrapping="Wrap" FontSize="13" FontWeight="SemiBold"
+                                                       Foreground="#2ECC71"/>
+                                        </Border>
+                                        <TextBlock x:Name="lblCantidadItems" Text="0 productos en el pedido"
+                                                   Foreground="{DynamicResource TextPrimary}" FontSize="12" Margin="0,0,0,8"/>
+                                        <ItemsControl x:Name="icCarrito">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Expander Style="{StaticResource CartItemExpanderStyle}" IsExpanded="False"
+                                                          Expanded="ExpanderCarrito_Expanded" Collapsed="ExpanderCarrito_Collapsed">
+                                                    <Expander.Header>
+                                                        <Grid MinHeight="44" Margin="0,0,8,0">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                                                <TextBlock Text="{Binding Descripcion}" FontWeight="SemiBold" TextWrapping="Wrap"
+                                                                           Foreground="{DynamicResource TextPrimary}" FontSize="14"/>
+                                                                <TextBlock Foreground="{DynamicResource TextPrimary}" FontSize="12" Margin="0,4,0,0">
+                                                                    <Run Text="{Binding Cantidad, Mode=OneWay}"/>
+                                                                    <Run Text=" × "/>
+                                                                    <Run Text="{Binding PrecioUnitario, StringFormat=C2, Mode=OneWay}"/>
+                                                                    <Run Text="  "/>
+                                                                    <Run Text="{Binding AjusteLineaTexto, Mode=OneWay}" Foreground="#9B59B6"/>
+                                                                </TextBlock>
+                                                            </StackPanel>
+                                                            <TextBlock Grid.Column="1" Text="{Binding Subtotal, StringFormat=C2}"
+                                                                       Foreground="{StaticResource SuccessColor}" FontWeight="Bold" FontSize="16"
+                                                                       VerticalAlignment="Center"/>
+                                                        </Grid>
+                                                    </Expander.Header>
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,12">
+                                                            <Button Content="−" Width="48" Height="48" Click="btnCarritoRestar_Click" Tag="{Binding}"
+                                                                    Style="{StaticResource PosTintButtonStyle}" Padding="0"
+                                                                    Background="{DynamicResource HoverBackground}"
+                                                                    Foreground="{DynamicResource TextPrimary}" FontSize="22" Margin="0,0,14,0"/>
+                                                            <TextBlock Text="{Binding Cantidad}" Foreground="{DynamicResource TextPrimary}"
+                                                                       VerticalAlignment="Center" FontSize="22" FontWeight="Bold" MinWidth="36" TextAlignment="Center"/>
+                                                            <Button Content="+" Width="48" Height="48" Click="btnCarritoSumar_Click" Tag="{Binding}"
+                                                                    Style="{StaticResource PosTintButtonStyle}" Padding="0"
+                                                                    Background="{DynamicResource HoverBackground}"
+                                                                    Foreground="{DynamicResource TextPrimary}" FontSize="22" Margin="14,0,0,0"/>
                                                         </StackPanel>
-                                                        <TextBlock Grid.Column="1" Text="{Binding Subtotal, StringFormat=C2}"
-                                                                   Foreground="{StaticResource SuccessColor}" FontWeight="Bold" FontSize="16"
-                                                                   VerticalAlignment="Center" Margin="8,0,0,0"/>
-                                                    </Grid>
-                                                </Expander.Header>
-                                                <StackPanel Margin="4,0,4,8">
-                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,10">
-                                                        <Button Content="−" Width="48" Height="48" Click="btnCarritoRestar_Click" Tag="{Binding}"
-                                                                Background="{DynamicResource BorderColor}" Foreground="{DynamicResource TextPrimary}" BorderThickness="0" FontSize="22" FontWeight="Bold" Margin="0,0,12,0"/>
-                                                        <TextBlock Text="{Binding Cantidad}" Foreground="{DynamicResource TextPrimary}"
-                                                                   VerticalAlignment="Center" FontSize="20" FontWeight="Bold" MinWidth="32" TextAlignment="Center"/>
-                                                        <Button Content="+" Width="48" Height="48" Click="btnCarritoSumar_Click" Tag="{Binding}"
-                                                                Background="{DynamicResource BorderColor}" Foreground="{DynamicResource TextPrimary}" BorderThickness="0" FontSize="22" FontWeight="Bold" Margin="12,0,0,0"/>
+                                                        <UniformGrid Columns="2">
+                                                            <Button Content="Dto. este ítem" MinHeight="48" Margin="0,0,6,6" Click="btnDescuentoItem_Click" Tag="{Binding}"
+                                                                    Style="{StaticResource PosTintButtonStyle}" Background="#3498DB"/>
+                                                            <Button Content="Recargo +" MinHeight="48" Margin="6,0,0,6" Click="btnRecargoItem_Click" Tag="{Binding}"
+                                                                    Style="{StaticResource PosTintButtonStyle}" Background="#9B59B6"/>
+                                                            <Button Content="Editar precio" MinHeight="48" Margin="0,0,6,0" Click="btnEditarItem_Click" Tag="{Binding}"
+                                                                    Style="{StaticResource PosTintButtonStyle}"
+                                                                    IsEnabled="{Binding PermiteModificarPrecioVenta}"
+                                                                    Background="#D97706"/>
+                                                            <Button Content="Quitar" MinHeight="48" Margin="6,0,0,0" Click="btnEliminarItem_Click" Tag="{Binding}"
+                                                                    Style="{StaticResource PosTintButtonStyle}" Background="#C0392B"/>
+                                                        </UniformGrid>
+                                                        <TextBlock Text="Solo afecta a este producto (no al resto del pedido)" FontSize="11"
+                                                                   Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" Margin="0,10,0,0" TextWrapping="Wrap" TextAlignment="Center"/>
                                                     </StackPanel>
-                                                    <UniformGrid Columns="2" Margin="0,0,0,4">
-                                                        <Button Content="Dto. este ítem" MinHeight="48" Margin="0,0,4,4" Click="btnDescuentoItem_Click" Tag="{Binding}"
-                                                                Background="#3498DB" Foreground="White" FontWeight="SemiBold" BorderThickness="0" FontSize="12"/>
-                                                        <Button Content="Recargo +" MinHeight="48" Margin="4,0,0,4" Click="btnRecargoItem_Click" Tag="{Binding}"
-                                                                Background="#9B59B6" Foreground="White" FontWeight="SemiBold" BorderThickness="0" FontSize="12"/>
-                                                        <Button Content="Editar precio" MinHeight="48" Margin="0,0,4,0" Click="btnEditarItem_Click" Tag="{Binding}"
-                                                                IsEnabled="{Binding PermiteModificarPrecioVenta}"
-                                                                Background="#F39C12" Foreground="White" FontWeight="SemiBold" BorderThickness="0" FontSize="12"/>
-                                                        <Button Content="Quitar" MinHeight="48" Margin="4,0,0,0" Click="btnEliminarItem_Click" Tag="{Binding}"
-                                                                Background="#C0392B" Foreground="White" FontWeight="SemiBold" BorderThickness="0" FontSize="12"/>
-                                                    </UniformGrid>
-                                                    <TextBlock Text="Solo afecta a este producto (no al resto del pedido)" FontSize="11"
-                                                               Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" Margin="0,4,0,0" TextWrapping="Wrap" TextAlignment="Center"/>
-                                                </StackPanel>
-                                            </Expander>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
+                                                </Expander>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </Grid>
 
                             <!-- Controles ocultos (compatibilidad) — fuera del flujo visual -->
-                            <DataGrid x:Name="dgvFactura" Grid.Row="3" Visibility="Collapsed" Height="0" IsHitTestVisible="False"/>
-                            <ScrollViewer x:Name="svCardsFactura" Grid.Row="3" Visibility="Collapsed" Height="0" IsHitTestVisible="False">
+                            <DataGrid x:Name="dgvFactura" Grid.Row="2" Visibility="Collapsed" Height="0" IsHitTestVisible="False"/>
+                            <ScrollViewer x:Name="svCardsFactura" Grid.Row="2" Visibility="Collapsed" Height="0" IsHitTestVisible="False">
                                 <ItemsControl x:Name="icCardsFactura"/>
                             </ScrollViewer>
-                            <Button x:Name="btnVistaLista" Grid.Row="3" Visibility="Collapsed" Click="btnVistaLista_Click"/>
-                            <Button x:Name="btnVistaCards" Grid.Row="3" Visibility="Collapsed" Click="btnVistaCards_Click"/>
+                            <Button x:Name="btnVistaLista" Grid.Row="2" Visibility="Collapsed" Click="btnVistaLista_Click"/>
+                            <Button x:Name="btnVistaCards" Grid.Row="2" Visibility="Collapsed" Click="btnVistaCards_Click"/>
 
-                            <Grid x:Name="pnlTotalesDetalle" Grid.Row="4" Margin="0,0,0,4">
+                            <Grid x:Name="pnlTotalesDetalle" Grid.Row="3" Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
@@ -591,7 +686,7 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Subtotal:" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
+                                    <TextBlock Text="Subtotal:" Foreground="{DynamicResource TextPrimary}" FontSize="13"/>
                                     <TextBlock x:Name="lblSubtotal" Grid.Column="1" Text="$ 0,00" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold" FontSize="12"/>
                                 </Grid>
                                 <Grid Grid.Row="0" Grid.Column="1" Margin="6,0,0,2">
@@ -599,7 +694,7 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Descuentos:" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
+                                    <TextBlock Text="Descuentos:" Foreground="{DynamicResource TextPrimary}" FontSize="13"/>
                                     <TextBlock x:Name="lblDescuentos" Grid.Column="1" Text="$ 0,00" Foreground="{DynamicResource DangerColor}" FontSize="12"/>
                                 </Grid>
                                 <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,2">
@@ -607,7 +702,7 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Recargos:" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
+                                    <TextBlock Text="Recargos:" Foreground="{DynamicResource TextPrimary}" FontSize="13"/>
                                     <TextBlock x:Name="lblRecargos" Grid.Column="1" Text="$ 0,00" Foreground="#9B59B6" FontSize="12" FontWeight="SemiBold"/>
                                 </Grid>
                                 <Grid Grid.Row="2" Grid.Column="0" Margin="0,0,6,0">
@@ -615,7 +710,7 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Neto:" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
+                                    <TextBlock Text="Neto:" Foreground="{DynamicResource TextPrimary}" FontSize="13"/>
                                     <TextBlock x:Name="lblNeto" Grid.Column="1" Text="$ 0,00" Foreground="{DynamicResource TextPrimary}" FontWeight="Bold" FontSize="12"/>
                                 </Grid>
                                 <Grid Grid.Row="2" Grid.Column="1" Margin="6,0,0,0">
@@ -623,31 +718,32 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="IVA:" Foreground="{DynamicResource TextSecondary}" FontSize="12"/>
+                                    <TextBlock Text="IVA:" Foreground="{DynamicResource TextPrimary}" FontSize="13"/>
                                     <TextBlock x:Name="lblIVA" Grid.Column="1" Text="$ 0,00" Foreground="{DynamicResource TextPrimary}" FontSize="12"/>
                                 </Grid>
                                 <Separator Grid.Row="3" Grid.ColumnSpan="2" Background="{DynamicResource BorderColor}" Margin="0,6,0,0"/>
                             </Grid>
 
-                            <StackPanel x:Name="pnlTotalesAccion" Grid.Row="5">
-                                <TextBlock Text="TOTAL A PAGAR" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" FontSize="11"/>
-                                <Viewbox x:Name="viewboxTotal" Stretch="Uniform" MaxHeight="40" Margin="0,0,0,6">
+                            <StackPanel x:Name="pnlTotalesAccion" Grid.Row="4">
+                                <TextBlock Text="TOTAL A PAGAR" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" FontSize="12" Margin="0,0,0,2"/>
+                                <Viewbox x:Name="viewboxTotal" Stretch="Uniform" MaxHeight="44" Margin="0,0,0,10">
                                     <TextBlock x:Name="lblTotal" Text="$ 0,00" Foreground="{DynamicResource SuccessColor}" FontSize="36" FontWeight="Bold" HorizontalAlignment="Center"/>
                                 </Viewbox>
 
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="10"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <Button x:Name="btnGuardarFactura" Grid.Column="0" Content="✅ COBRAR" Click="btnGuardarFactura_Click"
-                                            Style="{StaticResource SuccessButtonStyle}" FontSize="15" MinHeight="48"/>
-                                    <Button x:Name="btnCancelarFactura" Grid.Column="2" Content="❌" Click="btnCancelarFactura_Click"
-                                            Background="#C0392B" Foreground="White" FontWeight="Bold" FontSize="16" MinHeight="48" MinWidth="48" ToolTip="Cancelar venta"/>
+                                            Style="{StaticResource SuccessButtonStyle}" FontSize="16" MinHeight="52"/>
+                                    <Button x:Name="btnCancelarFactura" Grid.Column="2" Content="✕" Click="btnCancelarFactura_Click"
+                                            Style="{StaticResource PosTintButtonStyle}"
+                                            Background="#C0392B" FontSize="18" MinHeight="52" MinWidth="52" Padding="0" ToolTip="Cancelar venta"/>
                                 </Grid>
-                                <Button x:Name="btnAyudaAtajosResumen" Content="⌨ Ver atajos de teclado (F1)"
-                                        Click="btnAyudaAtajos_Click" Margin="0,8,0,0"
+                                <Button x:Name="btnAyudaAtajosResumen" Content="Ver atajos de teclado (F1)"
+                                        Click="btnAyudaAtajos_Click" Margin="0,6,0,0" Visibility="Collapsed"
                                         Background="Transparent" BorderThickness="0" Cursor="Hand"
                                         Foreground="{StaticResource PrimaryColor}" FontSize="12" FontWeight="SemiBold"
                                         HorizontalAlignment="Center" ToolTip="Abrir referencia completa de atajos"/>

@@ -14,8 +14,8 @@
     <Border Background="{DynamicResource PanelBackgroundBrush}"
             BorderBrush="{DynamicResource BorderColor}"
             BorderThickness="1"
-            CornerRadius="12">
-        <Grid Margin="20">
+            CornerRadius="{DynamicResource CardCornerRadius}">
+        <Grid Margin="24">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -27,8 +27,9 @@
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
-                <TextBlock Text="Cobro"
-                           FontSize="22"
+                <TextBlock Text="Cobro de ventas"
+                           FontFamily="{DynamicResource HeadlineFontFamily}"
+                           FontSize="24"
                            FontWeight="Bold"
                            Foreground="{DynamicResource TextPrimary}"
                            VerticalAlignment="Center"/>
@@ -43,38 +44,40 @@
 
             <Border Grid.Row="1"
                     Background="{DynamicResource SurfaceDark}"
-                    CornerRadius="8"
-                    Padding="16,12"
-                    Margin="0,0,0,14"
-                    BorderBrush="{DynamicResource BorderColor}"
+                    CornerRadius="{DynamicResource CardCornerRadius}"
+                    Padding="20,16"
+                    Margin="0,0,0,16"
+                    BorderBrush="{DynamicResource PrimaryColor}"
                     BorderThickness="1">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="TOTAL A COBRAR"
-                               FontSize="14"
-                               FontWeight="Bold"
+                    <TextBlock Text="Monto a cobrar"
+                               FontFamily="{DynamicResource BodyFontFamily}"
+                               FontSize="13"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextSecondary}"
                                VerticalAlignment="Center"/>
                     <TextBlock x:Name="lblTotalACobrar"
                                Grid.Column="1"
-                               FontSize="28"
+                               FontFamily="{DynamicResource HeadlineFontFamily}"
+                               FontSize="32"
                                FontWeight="Bold"
-                               Foreground="{StaticResource SuccessColor}"
+                               Foreground="{DynamicResource PrimaryColor}"
                                VerticalAlignment="Center"/>
                 </Grid>
             </Border>
 
             <!-- Cobro rápido: un toque = confirma y cierra -->
             <StackPanel Grid.Row="2" Margin="0,0,0,12">
-                <TextBlock Text="Cobro rápido — un toque"
+                <TextBlock Text="Medio de pago"
                            FontSize="13"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource TextSecondary}"
-                           Margin="0,0,0,8"/>
-                <WrapPanel x:Name="panelCobroRapido" Orientation="Horizontal"/>
+                           Margin="0,0,0,10"/>
+                <UniformGrid x:Name="panelCobroRapido" Columns="2"/>
                 <Button x:Name="btnMercadoPagoPoint"
                         Content="💳 Point Smart"
                         Background="#009EE3"
@@ -211,17 +214,24 @@
                 </Grid>
             </Border>
 
-            <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Grid Grid.Row="6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="2*"/>
+                </Grid.ColumnDefinitions>
                 <Button Content="Cancelar"
                         Style="{StaticResource SecondaryButtonStyle}"
-                        Margin="0,0,8,0"
+                        Margin="0,0,10,0"
+                        Height="52"
                         Click="btnCancelar_Click"/>
                 <Button x:Name="btnConfirmar"
-                        Content="✔ Confirmar"
+                        Grid.Column="1"
+                        Content="Confirmar pago"
                         Style="{StaticResource ButtonStyle}"
-                        MinWidth="140"
+                        Height="52"
+                        FontSize="16"
                         Click="btnConfirmar_Click"/>
-            </StackPanel>
+            </Grid>
         </Grid>
     </Border>
 </Window>

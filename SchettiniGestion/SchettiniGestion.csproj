@@ -215,6 +215,8 @@
     <Compile Include="DatabaseService.Promociones.cs" />
     <Compile Include="DatabaseService.Etiquetas.cs" />
     <Compile Include="DatabaseService.ComprasPdf.cs" />
+    <Compile Include="DatabaseService.Red.cs" />
+    <Compile Include="DatabaseService.PosAvances.cs" />
     <Compile Include="OpcionesEtiqueta.cs" />
     <Compile Include="LicenseFileHelper.cs" />
     <Compile Include="LicenseManager.cs" />

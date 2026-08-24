@@ -7,7 +7,7 @@ using System.Windows.Controls;
 
 namespace SchettiniGestion.WPF
 {
-    public partial class ListasPreciosControl : UserControl
+    public partial class ListasPreciosControl : UserControl, ISincronizableEnRed
     {
         private int _listaID = 0;
         private DataTable _dtListas;
@@ -26,6 +26,14 @@ namespace SchettiniGestion.WPF
             _inicializado = true;
             CargarListas();
             ActualizarVisibilidadTipo();
+        }
+
+        public void AplicarCambioRed(string entidad)
+        {
+            if (!_inicializado) return;
+            if (!string.IsNullOrEmpty(entidad) && entidad != "ListasPrecios" && entidad != "Productos")
+                return;
+            CargarListas();
         }
 
         private void CargarListas()
@@ -168,6 +176,13 @@ namespace SchettiniGestion.WPF
                 CustomMessageBox.Show("Guardado.");
                 CargarListas();
                 Limpiar();
+            }
+            else
+            {
+                string detalle = string.IsNullOrWhiteSpace(DatabaseService.UltimoError)
+                    ? "No se pudo guardar la lista."
+                    : DatabaseService.UltimoError;
+                CustomMessageBox.Show(detalle, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

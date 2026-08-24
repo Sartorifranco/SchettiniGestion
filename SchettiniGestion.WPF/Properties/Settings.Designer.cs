@@ -56,5 +56,35 @@ namespace SchettiniGestion.WPF.Properties
                 this["KeyboardEnabled"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Nuevo")]
+        public string UiLook
+        {
+            get
+            {
+                return ((string)(this["UiLook"]));
+            }
+            set
+            {
+                this["UiLook"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool UiLookElegido
+        {
+            get
+            {
+                return ((bool)(this["UiLookElegido"]));
+            }
+            set
+            {
+                this["UiLookElegido"] = value;
+            }
+        }
     }
 }

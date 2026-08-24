@@ -1,0 +1,42 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- Forma Stitch (vista previa). Radios, tipografía y densidad. No cambia funciones. -->
+    <CornerRadius x:Key="ControlCornerRadius">12</CornerRadius>
+    <CornerRadius x:Key="CardCornerRadius">16</CornerRadius>
+    <CornerRadius x:Key="NavItemCornerRadius">16</CornerRadius>
+    <CornerRadius x:Key="LoginCardCornerRadius">28</CornerRadius>
+    <CornerRadius x:Key="LoginAsideCornerRadius">28,0,0,28</CornerRadius>
+    <CornerRadius x:Key="VKKeyCornerRadius">14</CornerRadius>
+    <CornerRadius x:Key="TabItemCornerRadius">16,16,0,0</CornerRadius>
+    <CornerRadius x:Key="ComboPopupCornerRadius">16</CornerRadius>
+
+    <Thickness x:Key="ButtonPadding">16,8</Thickness>
+    <Thickness x:Key="FieldPadding">12,0</Thickness>
+    <Thickness x:Key="FieldFocusBorderThickness">1</Thickness>
+    <Thickness x:Key="LoginFormPadding">48,36,48,36</Thickness>
+    <Thickness x:Key="NavItemPadding">16,14</Thickness>
+
+    <sys:Double x:Key="ButtonMinHeight">40</sys:Double>
+    <sys:Double x:Key="FieldMinHeight">44</sys:Double>
+    <sys:Double x:Key="HeadlineFontSize">28</sys:Double>
+    <sys:Double x:Key="TitleFontSize">20</sys:Double>
+    <sys:Double x:Key="BodyFontSize">14</sys:Double>
+    <sys:Double x:Key="LabelFontSize">12</sys:Double>
+    <sys:Double x:Key="VKKeyFontSize">16</sys:Double>
+
+    <FontFamily x:Key="BodyFontFamily">Segoe UI Variable Text, Segoe UI</FontFamily>
+    <FontFamily x:Key="HeadlineFontFamily">Segoe UI Variable Display, Segoe UI Semibold</FontFamily>
+    <FontFamily x:Key="AppFontFamily">Segoe UI Variable Text, Segoe UI</FontFamily>
+
+    <Thickness x:Key="VKKeyFaceMargin">0</Thickness>
+    <Visibility x:Key="VKKeyShadowVisibility">Collapsed</Visibility>
+    <sys:Double x:Key="VKKeyFaceBottomMargin">0</sys:Double>
+    <SolidColorBrush x:Key="VKHideButtonBg" Color="#334155"/>
+    <SolidColorBrush x:Key="VKHideButtonHover" Color="#475569"/>
+    <SolidColorBrush x:Key="FieldFocusGlow" Color="#662563EB"/>
+
+    <sys:Double x:Key="LoginWindowWidth">880</sys:Double>
+    <sys:Double x:Key="LoginWindowHeight">560</sys:Double>
+</ResourceDictionary>

@@ -44,7 +44,7 @@
                 <TextBlock Text="⌨" FontSize="22" Foreground="{StaticResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <StackPanel>
                     <TextBlock Text="Comandos rápidos — Venta POS" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                    <TextBlock Text="Combinaciones con tecla Alt (recomendado). Escape para volver o cerrar." FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
+                    <TextBlock Text="F2–F12 en el POS (sin mouse). Alt + tecla sigue funcionando igual." FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -122,11 +122,62 @@
                     <TextBlock Text="Quitar ítem del carrito (último tocado o último agregado)" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
                 </StackPanel>
 
-                <TextBlock Style="{StaticResource SectionHeader}" Text="Ayuda"/>
+                <TextBlock Style="{StaticResource SectionHeader}" Text="Teclas de función (POS)"/>
 
                 <StackPanel Orientation="Horizontal" Margin="0,3">
                     <Border Style="{StaticResource AtajoKey}"><TextBlock Text="F1" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="11" TextAlignment="Center"/></Border>
                     <TextBlock Text="Mostrar esta ventana de comandos rápidos" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,3">
+                    <Border Style="{StaticResource AtajoKey}"><TextBlock Text="F2" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="11" TextAlignment="Center"/></Border>
+                    <TextBlock Text="Enfocar búsqueda de producto" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,3">
+                    <Border Style="{StaticResource AtajoKey}"><TextBlock Text="F3" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="11" TextAlignment="Center"/></Border>
+                    <TextBlock Text="Enfocar búsqueda de cliente" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,3">
+                    <Border Style="{StaticResource AtajoKey}"><TextBlock Text="F4" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="11" TextAlignment="Center"/></Border>
+                    <TextBlock Text="Descuento sobre toda la venta" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,3">
+                    <Border Style="{StaticResource AtajoKey}"><TextBlock Text="F5" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="11" TextAlignment="Center"/></Border>
+                    <TextBlock Text="Pausar la venta actual y dejar el carrito libre" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,3">
+                    <Border Style="{StaticResource AtajoKey}"><TextBlock Text="F6" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="11" TextAlignment="Center"/></Border>
+                    <TextBlock Text="Recuperar una venta en pausa" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,3">
+                    <Border Style="{StaticResource AtajoKey}"><TextBlock Text="F7" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="11" TextAlignment="Center"/></Border>
+                    <TextBlock Text="Abrir u ocultar configuración de la venta" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,3">
+                    <Border Style="{StaticResource AtajoKey}"><TextBlock Text="F8" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="11" TextAlignment="Center"/></Border>
+                    <TextBlock Text="Reimprimir el último comprobante" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,3">
+                    <Border Style="{StaticResource AtajoKey}"><TextBlock Text="F9" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="11" TextAlignment="Center"/></Border>
+                    <TextBlock Text="Cambiar modo de búsqueda (todo / código / descripción)" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,3">
+                    <Border Style="{StaticResource AtajoKey}"><TextBlock Text="F10" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="11" TextAlignment="Center"/></Border>
+                    <TextBlock Text="Cobrar / emitir (igual que Alt+V)" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,3">
+                    <Border Style="{StaticResource AtajoKey}"><TextBlock Text="F11" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="11" TextAlignment="Center"/></Border>
+                    <TextBlock Text="Limpiar filtro de producto" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,3">
+                    <Border Style="{StaticResource AtajoKey}"><TextBlock Text="F12" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="11" TextAlignment="Center"/></Border>
+                    <TextBlock Text="Limpiar venta y empezar de nuevo (pide confirmación)" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
+                </StackPanel>
+
+                <TextBlock Style="{StaticResource SectionHeader}" Text="Ayuda"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,3">
+                    <Border Style="{StaticResource AtajoKey}"><TextBlock Text="F1" Foreground="{StaticResource PrimaryColor}" FontWeight="Bold" FontSize="11" TextAlignment="Center"/></Border>
+                    <TextBlock Text="Esta ventana" Style="{StaticResource AtajoDesc}" MaxWidth="480"/>
                 </StackPanel>
 
                 <Border Background="{DynamicResource SurfaceDark}" CornerRadius="6" Padding="14,10" Margin="0,12,0,0"
@@ -140,6 +191,10 @@
                                    Text="• En Venta POS: botón «⌨ Atajos» arriba del catálogo y «Ver atajos de teclado» debajo de COBRAR."/>
                         <TextBlock Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
                                    Text="• Tocá un producto del carrito para editar cantidad, descuento o precio de ese ítem."/>
+                        <TextBlock Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Text="• F5/F6: ventas en pausa (se guardan en la base: sobreviven un corte de luz o si cerrás SCHPOS). No se puede pausar si ya hubo cobro Point/QR."/>
+                        <TextBlock Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Text="• Favoritos: tocá ★ en el catálogo o en el producto. Quedan fijos arriba del POS, con foto, para vender de un toque."/>
                     </StackPanel>
                 </Border>
             </StackPanel>

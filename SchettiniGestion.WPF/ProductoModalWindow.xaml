@@ -533,6 +533,10 @@
                                               Margin="0,4,16,4"
                                               Checked="chkEsCombo_Changed"
                                               Unchecked="chkEsCombo_Changed"/>
+                                    <CheckBox x:Name="chkEsFavoritoPos"
+                                              Content="Favorito en el POS (acceso rápido con foto)"
+                                              Style="{StaticResource ProductoTouchCheckBox}"
+                                              Margin="0,4,16,4"/>
                                     <CheckBox x:Name="chkActivo"
                                               Content="Activo / visible en POS"
                                               Style="{StaticResource ProductoTouchCheckBox}"

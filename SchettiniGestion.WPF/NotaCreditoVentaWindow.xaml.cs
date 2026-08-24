@@ -7,6 +7,8 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -107,7 +109,7 @@ namespace SchettiniGestion.WPF
             Close();
         }
 
-        private void btnGuardar_Click(object sender, RoutedEventArgs e)
+        private async void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
             dgvItems.CommitEdit(DataGridEditingUnit.Cell, true);
             dgvItems.CommitEdit(DataGridEditingUnit.Row, true);
@@ -139,19 +141,111 @@ namespace SchettiniGestion.WPF
             }
 
             var itemsDetalle = ConstruirItemsDetalle(tipoNc);
-
-            int id = DatabaseService.GuardarNotaCreditoDebitoVenta(clienteId, "NC", monto, descripcion, facturaId: _facturaId, items: itemsDetalle);
-            if (id <= 0)
+            var btn = sender as Button;
+            if (btn != null) btn.IsEnabled = false;
+            try
             {
-                ModernMessageBox.Show("No se pudo guardar la nota de crédito.", "Nota de Crédito", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
+                string cae = null, vtoCae = null;
+                int? nroAfip = null;
 
-            ResultID = id;
-            if (ModernMessageBox.Show("Nota de crédito generada. ¿Imprimir ahora?", "Nota de Crédito", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                PrintService.ImprimirNotaCreditoDebitoVenta(id);
-            DialogResult = true;
-            Close();
+                // Si ARCA está licenciado y configurado, autorizar NC electrónica (CAE + QR).
+                DataRow config = DatabaseService.GetConfiguracion();
+                int ptoVta = 0;
+                bool afipOk = LicenseManager.TieneAfip()
+                    && config != null
+                    && !string.IsNullOrWhiteSpace(config["CertificadoPath"]?.ToString())
+                    && int.TryParse(config["PuntoVenta"]?.ToString()?.Trim(), out ptoVta)
+                    && ptoVta > 0;
+
+                if (afipOk)
+                {
+                    var resultado = await AutorizarNotaEnArcaAsync(monto, itemsDetalle, ptoVta, config);
+                    if (resultado == null || !resultado.Exito)
+                    {
+                        if (ModernMessageBox.Show(
+                                "ARCA no autorizó la nota de crédito.\n\n" +
+                                (resultado?.Error ?? "Error desconocido") + "\n\n" +
+                                "¿Guardarla igual como documento interno (sin CAE ni QR)?",
+                                "Nota de Crédito",
+                                MessageBoxButton.YesNo,
+                                MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                            return;
+                    }
+                    else
+                    {
+                        cae = resultado.CAE;
+                        vtoCae = resultado.Vencimiento;
+                        nroAfip = resultado.NumeroComprobante;
+                    }
+                }
+
+                int id = DatabaseService.GuardarNotaCreditoDebitoVenta(
+                    clienteId, "NC", monto, descripcion,
+                    facturaId: _facturaId, items: itemsDetalle,
+                    cae: cae, vencimientoCae: vtoCae, numeroComprobanteAfip: nroAfip);
+                if (id <= 0)
+                {
+                    ModernMessageBox.Show("No se pudo guardar la nota de crédito.", "Nota de Crédito", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                ResultID = id;
+                string msg = !string.IsNullOrWhiteSpace(cae)
+                    ? $"Nota de crédito electrónica OK.\nCAE: {cae}\nNro: {nroAfip}\n\n¿Imprimir ahora? (incluye QR ARCA)"
+                    : "Nota de crédito generada (interna, sin CAE). ¿Imprimir ahora?";
+                if (ModernMessageBox.Show(msg, "Nota de Crédito", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                    PrintService.ImprimirNotaCreditoDebitoVenta(id);
+                DialogResult = true;
+                Close();
+            }
+            finally
+            {
+                if (btn != null) btn.IsEnabled = true;
+            }
+        }
+
+        private async Task<ResultadoAfip> AutorizarNotaEnArcaAsync(
+            decimal monto, List<DatabaseService.NotaCreditoItemDetalle> itemsDetalle, int ptoVta, DataRow config)
+        {
+            string condicionIva = config.Table.Columns.Contains("CondicionIVAEmpresa")
+                ? config["CondicionIVAEmpresa"]?.ToString() ?? "" : "";
+            string clienteCuit = _encabezado.Table.Columns.Contains("ClienteCUIT")
+                ? _encabezado["ClienteCUIT"]?.ToString() ?? "" : "";
+            string condicionCliente = _encabezado.Table.Columns.Contains("ClienteCondicionIVA")
+                ? _encabezado["ClienteCondicionIVA"]?.ToString()
+                : (_encabezado.Table.Columns.Contains("CondicionIVA") ? _encabezado["CondicionIVA"]?.ToString() : null);
+
+            string letra = ArcaQrHelper.InferirLetra("Nota de Crédito", clienteCuit, condicionIva);
+            int tipoNcAfip = ArcaQrHelper.ResolverTipoComprobanteAfip("Nota de Crédito", letra, clienteCuit, condicionIva);
+
+            // Comprobante asociado (factura original)
+            string tipoFactura = _encabezado.Table.Columns.Contains("TipoComprobante")
+                ? _encabezado["TipoComprobante"]?.ToString() ?? "Factura" : "Factura";
+            string letraFactura = ArcaQrHelper.InferirLetra(tipoFactura, clienteCuit, condicionIva);
+            int tipoFacturaAfip = ArcaQrHelper.ResolverTipoComprobanteAfip(tipoFactura, letraFactura, clienteCuit, condicionIva);
+            int nroFactura = 0;
+            if (_encabezado.Table.Columns.Contains("NumeroComprobanteAFIP") && _encabezado["NumeroComprobanteAFIP"] != DBNull.Value)
+                nroFactura = Convert.ToInt32(_encabezado["NumeroComprobanteAFIP"]);
+            if (nroFactura <= 0) nroFactura = _facturaId;
+
+            long.TryParse(Regex.Replace(clienteCuit ?? "", @"\D", ""), out long cuitLong);
+
+            var itemsAfip = (itemsDetalle ?? new List<DatabaseService.NotaCreditoItemDetalle>())
+                .Select(i => new FacturaItem
+                {
+                    ProductoID = i.ProductoID,
+                    Codigo = i.Codigo,
+                    Descripcion = i.Descripcion,
+                    Cantidad = (int)Math.Max(1, Math.Round(i.Cantidad, MidpointRounding.AwayFromZero)),
+                    PrecioUnitario = i.PrecioUnitario,
+                    AlicuotaIvaPct = 21m
+                }).ToList();
+
+            return await AfipService.FacturarAsync(
+                tipoNcAfip, ptoVta, (double)monto, cuitLong, itemsAfip, condicionCliente,
+                cbteAsocTipo: tipoFacturaAfip,
+                cbteAsocPtoVta: ptoVta,
+                cbteAsocNro: nroFactura);
         }
 
         private string ConstruirDescripcion(string tipoNc, decimal monto)

@@ -13,7 +13,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
+        <Border Grid.Row="0" Style="{StaticResource SaaSTableCard}" Padding="18" Margin="0,0,0,14">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -21,17 +21,25 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel>
-                    <TextBlock Text="Gestión de Clientes" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
+                    <TextBlock Text="Clientes" Style="{DynamicResource TitleTextStyle}" Margin="0,0,0,10"/>
                     <TextBlock Text="Buscar por CUIT o Razón Social" Style="{DynamicResource LabelStyle}"/>
                     <TextBox x:Name="txtFiltroClientes" Style="{DynamicResource ModernTextBox}" TextChanged="txtFiltroClientes_TextChanged"/>
                 </StackPanel>
 
-                <Button Grid.Column="1" x:Name="btnNuevo" Content="➕ Nuevo Cliente" Style="{StaticResource ButtonStyle}"
-                        Padding="15,10" VerticalAlignment="Bottom" Margin="15,0,0,0" Click="btnNuevo_Click"/>
+                <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Orientation="Horizontal">
+                    <Button x:Name="btnPlantillaClientes" Content="📥 Plantilla" Style="{StaticResource SecondaryButtonStyle}"
+                            Padding="12,10" Margin="15,0,8,0" Click="btnPlantillaClientes_Click"
+                            ToolTip="Descarga CSV o Excel para alta masiva de clientes"/>
+                    <Button x:Name="btnImportarClientes" Content="📂 Importar" Style="{StaticResource SecondaryButtonStyle}"
+                            Padding="12,10" Margin="0,0,8,0" Click="btnImportarClientes_Click"
+                            ToolTip="Importar clientes desde CSV o Excel"/>
+                    <Button x:Name="btnNuevo" Content="➕ Nuevo Cliente" Style="{StaticResource ButtonStyle}"
+                            Padding="15,10" Click="btnNuevo_Click"/>
+                </StackPanel>
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="1">
+        <Border Grid.Row="1" Style="{StaticResource SaaSTableCard}" Padding="12,0,12,12">
             <DataGrid x:Name="dgvClientes" Style="{DynamicResource {x:Type DataGrid}}" AutoGenerateColumns="False"
                       HorizontalScrollBarVisibility="Auto" IsReadOnly="True"
                       MouseDoubleClick="dgvClientes_MouseDoubleClick">
@@ -43,13 +51,13 @@
                 </DataGrid.ContextMenu>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="CUIT" Binding="{Binding CUIT}" Width="Auto" MinWidth="110"/>
-                    <DataGridTextColumn Header="RAZÓN SOCIAL" Binding="{Binding RazonSocial}" Width="2*" MinWidth="160"/>
-                    <DataGridTextColumn Header="CONDICIÓN" Binding="{Binding CondicionIVA}" Width="Auto" MinWidth="140"/>
-                    <DataGridTextColumn Header="TELÉFONO" Binding="{Binding Telefono}" Width="Auto" MinWidth="110"/>
-                    <DataGridTextColumn Header="DOMICILIO" Binding="{Binding Direccion}" Width="1.5*" MinWidth="140"/>
-                    <DataGridTextColumn Header="EMAIL" Binding="{Binding Email}" Width="1.3*" MinWidth="140"/>
-                    <DataGridCheckBoxColumn Header="CTA. CTE." Binding="{Binding PermiteCuentaCorriente}" Width="Auto" MinWidth="80"/>
-                    <DataGridTextColumn Header="SALDO" Binding="{Binding SaldoDeuda, StringFormat=C2}" Width="Auto" MinWidth="100"/>
+                    <DataGridTextColumn Header="Razón social" Binding="{Binding RazonSocial}" Width="2*" MinWidth="160"/>
+                    <DataGridTextColumn Header="Condición" Binding="{Binding CondicionIVA}" Width="Auto" MinWidth="140"/>
+                    <DataGridTextColumn Header="Teléfono" Binding="{Binding Telefono}" Width="Auto" MinWidth="110"/>
+                    <DataGridTextColumn Header="Domicilio" Binding="{Binding Direccion}" Width="1.5*" MinWidth="140"/>
+                    <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="1.3*" MinWidth="140"/>
+                    <DataGridCheckBoxColumn Header="Cta. cte." Binding="{Binding PermiteCuentaCorriente}" Width="Auto" MinWidth="80"/>
+                    <DataGridTextColumn Header="Saldo" Binding="{Binding SaldoDeuda, StringFormat=C2}" Width="Auto" MinWidth="100"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

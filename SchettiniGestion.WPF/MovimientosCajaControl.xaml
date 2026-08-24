@@ -11,8 +11,13 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Movimientos de Caja" FontSize="22" FontWeight="Bold"
-                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,15"/>
+        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock Text="Movimientos de Caja" FontSize="22" FontWeight="Bold"
+                       Foreground="{DynamicResource TextPrimary}"/>
+            <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"
+                       Foreground="{DynamicResource TextSecondary}"
+                       Text="Consulta de ingresos, egresos y ventas del turno. Para cargar un ajuste manual de efectivo usá Caja → Ingresar / Retirar."/>
+        </StackPanel>
 
         <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8"
                 BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"

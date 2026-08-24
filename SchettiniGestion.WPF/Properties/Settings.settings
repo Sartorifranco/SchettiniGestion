@@ -10,5 +10,11 @@
     <Setting Name="KeyboardEnabled" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="UiLook" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Nuevo</Value>
+    </Setting>
+    <Setting Name="UiLookElegido" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

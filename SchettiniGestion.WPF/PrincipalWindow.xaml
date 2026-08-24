@@ -35,7 +35,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="bdr"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="10"
+                                CornerRadius="{DynamicResource NavItemCornerRadius}"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter VerticalAlignment="Center"/>
                         </Border>
@@ -66,10 +66,10 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="bdr"
                                 Background="{DynamicResource HoverBackground}"
-                                CornerRadius="10"
+                                CornerRadius="{DynamicResource NavItemCornerRadius}"
                                 Padding="{TemplateBinding Padding}"
-                                BorderBrush="{StaticResource PrimaryColor}"
-                                BorderThickness="3,0,0,0">
+                                BorderBrush="{DynamicResource PrimaryColor}"
+                                BorderThickness="4,0,0,0">
                             <ContentPresenter VerticalAlignment="Center" Margin="4,0,0,0"/>
                         </Border>
                     </ControlTemplate>
@@ -105,9 +105,10 @@
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0" Margin="12,16,12,8">
-                    <StackPanel x:Name="pnlLogoMenu" Margin="0,0,48,0">
+                    <StackPanel x:Name="pnlLogoMenu" Margin="0,0,48,0" HorizontalAlignment="Center">
                         <!-- Logo sin recuadro: S + rayo más grande, con pulso suave del rayo -->
-                        <Viewbox x:Name="vbLogoMenu" Stretch="Uniform" MaxHeight="78" Margin="4,4,4,0"
+                        <Viewbox x:Name="vbLogoMenu" Stretch="Uniform" MaxHeight="124" Width="124"
+                                 HorizontalAlignment="Center" Margin="0,8,0,0"
                                  RenderTransformOrigin="0.5,0.5">
                             <Viewbox.RenderTransform>
                                 <ScaleTransform x:Name="logoScale" ScaleX="1" ScaleY="1"/>
@@ -116,7 +117,6 @@
                                 <EventTrigger RoutedEvent="FrameworkElement.Loaded">
                                     <BeginStoryboard>
                                         <Storyboard RepeatBehavior="Forever">
-                                            <!-- Respiración muy sutil del logo completo -->
                                             <DoubleAnimation Storyboard.TargetName="logoScale"
                                                              Storyboard.TargetProperty="ScaleX"
                                                              From="1" To="1.04" Duration="0:0:2.4"
@@ -127,7 +127,6 @@
                                                              From="1" To="1.04" Duration="0:0:2.4"
                                                              AutoReverse="True"
                                                              EasingFunction="{StaticResource LogoEase}"/>
-                                            <!-- El rayo parpadea un poco más (presencia, sin ruido) -->
                                             <DoubleAnimation Storyboard.TargetName="pathRayoLogo"
                                                              Storyboard.TargetProperty="Opacity"
                                                              From="0.55" To="1" Duration="0:0:1.6"
@@ -149,6 +148,14 @@
                                       Data="M511.371,763.315c-11.119,16.787-47.681,64.383-46.997,64.818c1.477,0.948,119.05-83.42,118.921-84.532c-0.055-0.522-67.157-2.033-67.157-2.033c13.589-17.523,45.974-59.321,43.638-59.397c-1.822-0.056-118.219,77.578-118.102,78.685C441.728,761.398,511.371,763.315,511.371,763.315z"/>
                             </Canvas>
                         </Viewbox>
+                        <TextBlock x:Name="txtMarcaMenu" Text="SCHPOS"
+                                   FontFamily="{DynamicResource HeadlineFontFamily}"
+                                   FontSize="22" FontWeight="Bold"
+                                   Foreground="{DynamicResource LoginBrandTextBrush}"
+                                   HorizontalAlignment="Center" TextAlignment="Center"
+                                   Margin="0,10,0,0"/>
+                        <TextBlock x:Name="txtSubmarcaMenu" Text=""
+                                   Visibility="Collapsed"/>
                     </StackPanel>
                     <Button x:Name="btnToggleMenuLateral" Content="◀" HorizontalAlignment="Right" VerticalAlignment="Top"
                             Width="44" Height="44" Click="btnToggleMenuLateral_Click"
@@ -169,7 +176,7 @@
                               HorizontalScrollBarVisibility="Disabled"
                               Padding="12,0,12,0">
                     <StackPanel>
-                        <TextBlock x:Name="txtMenuTitulo" Text="MENÚ"
+                        <TextBlock x:Name="txtMenuTitulo" Text="Menú"
                                    Foreground="{DynamicResource TextSecondary}"
                                    FontSize="11"
                                    FontWeight="Bold"
@@ -247,7 +254,7 @@
                             Style="{StaticResource LiteDangerOutlineButton}"
                             Margin="0,4,0,0"
                             Click="btnSalirSistema_Click"/>
-                    <TextBlock x:Name="txtVersionFooter" Text="v2.3.16-avances"
+                    <TextBlock x:Name="txtVersionFooter" Text="v2.3.56"
                                HorizontalAlignment="Center"
                                Margin="0,12,0,0"
                                Foreground="{DynamicResource TextSecondary}"
@@ -274,15 +281,17 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock x:Name="txtBreadcrumbHeader" Grid.Row="0"
-                               Foreground="{DynamicResource TextSecondary}"
-                               FontSize="13"
-                               TextWrapping="Wrap"
-                               Margin="0,0,0,8">
-                        <Run Text="Panel principal"/>
-                        <Run Text=" · " Foreground="{DynamicResource BorderColor}"/>
-                        <Run Text="SCHPOS" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
-                    </TextBlock>
+                    <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                        <TextBlock x:Name="txtBreadcrumbHeader"
+                                   Foreground="{DynamicResource TextSecondary}"
+                                   FontFamily="{DynamicResource BodyFontFamily}"
+                                   FontSize="13"
+                                   TextWrapping="Wrap">
+                            <Run Text="Panel principal"/>
+                            <Run Text=" · " Foreground="{DynamicResource BorderColor}"/>
+                            <Run Text="SCHPOS" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold"/>
+                        </TextBlock>
+                    </StackPanel>
 
                     <ScrollViewer Grid.Row="1"
                                   HorizontalScrollBarVisibility="Auto"

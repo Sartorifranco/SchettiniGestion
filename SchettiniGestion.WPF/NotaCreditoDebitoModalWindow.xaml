@@ -22,9 +22,13 @@
 
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" x:Name="lblTitulo" Text="Nueva Nota de Crédito/Débito" FontSize="16" FontWeight="Bold"
-
-                   Foreground="{StaticResource PrimaryColor}" Margin="0,0,0,16"/>
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock x:Name="lblTitulo" Text="Nueva Nota de Crédito/Débito" FontSize="16" FontWeight="Bold"
+                       Foreground="{StaticResource PrimaryColor}"/>
+            <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"
+                       Foreground="{DynamicResource TextSecondary}"
+                       Text="NC = crédito del proveedor (baja la deuda). ND = débito (sube la deuda). Es registro interno de compras, no factura electrónica de venta."/>
+        </StackPanel>
 
         <StackPanel Grid.Row="1">
 

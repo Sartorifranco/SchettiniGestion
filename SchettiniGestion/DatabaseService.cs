@@ -5,7 +5,9 @@ using System.Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Security.AccessControl;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 using System.Linq;
 using System.Reflection;
@@ -225,12 +227,20 @@ namespace SchettiniGestion
         public const string CS_LOCALDB_MASTER    = @"Server=(LocalDB)\MSSQLLocalDB;Database=master;Integrated Security=True;Encrypt=False;";
         public const string CS_SQLEXPRESS_MASTER = @"Data Source=localhost\SQLEXPRESS;Initial Catalog=master;Integrated Security=True;Encrypt=False;";
 
-        /// <summary>Archivo donde se guarda la conexión activa (creado en primera ejecución o desde Configuración).</summary>
+        /// <summary>Archivo de conexión en ProgramData (compartido entre usuarios de la PC).</summary>
         public static readonly string RutaConexionCfg = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "SCHPOS", "conexion.cfg");
 
-        /// <summary>Carpeta de datos de la app (escribible sin permisos de admin). Ej: C:\ProgramData\SCHPOS</summary>
+        /// <summary>
+        /// Fallback escribible sin admin (VMs / usuarios estándar cuando ProgramData está bloqueado).
+        /// Ej: %LocalAppData%\SCHPOS\conexion.cfg
+        /// </summary>
+        public static readonly string RutaConexionCfgLocal = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "SCHPOS", "conexion.cfg");
+
+        /// <summary>Carpeta de datos de la app. Ej: C:\ProgramData\SCHPOS</summary>
         public static string CarpetaDatosSchpos => Path.GetDirectoryName(RutaConexionCfg);
 
         public static string AsegurarCarpetaDatosSchpos()
@@ -238,6 +248,7 @@ namespace SchettiniGestion
             string dir = CarpetaDatosSchpos;
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
+            try { AsegurarPermisosEscrituraCarpeta(dir); } catch { }
             return dir;
         }
 
@@ -314,24 +325,23 @@ namespace SchettiniGestion
 
         /// <summary>
         /// Orden de resolución:
-        /// 1. conexion.cfg  (guardado por el asistente de primer uso o Configuración)
-        /// 2. App.config    (para desarrolladores y entornos controlados)
-        /// 3. LocalDB       (default para instalaciones nuevas — no requiere SQL Server)
+        /// 1. conexion.cfg en ProgramData o LocalAppData (prioriza red/cliente sobre LocalDB)
+        /// 2. App.config
+        /// 3. LocalDB
         /// </summary>
         private static string ObtenerConnectionString()
         {
-            // 1. Archivo de configuración persistente (escrito por PrimerUsoWindow o Configuración)
-            try
-            {
-                if (File.Exists(RutaConexionCfg))
-                {
-                    string saved = File.ReadAllText(RutaConexionCfg).Trim();
-                    if (!string.IsNullOrWhiteSpace(saved)) return saved;
-                }
-            }
-            catch { }
+            string pd = LeerArchivoConexion(RutaConexionCfg);
+            string la = LeerArchivoConexion(RutaConexionCfgLocal);
 
-            // 2. App.config
+            // Preferir la que apunta a red/Express (no LocalDB), típico en PCs cliente.
+            bool pdRemota = EsCadenaConexionRemotaOExpress(pd);
+            bool laRemota = EsCadenaConexionRemotaOExpress(la);
+            if (laRemota) return la;
+            if (pdRemota) return pd;
+            if (!string.IsNullOrWhiteSpace(pd)) return pd;
+            if (!string.IsNullOrWhiteSpace(la)) return la;
+
             try
             {
                 var cs = ConfigurationManager.ConnectionStrings["SchPosDB"];
@@ -340,31 +350,206 @@ namespace SchettiniGestion
             }
             catch { }
 
-            // 3. LocalDB por defecto (no requiere instalación de SQL Server)
             return CS_LOCALDB;
         }
 
-        /// <summary>Guarda una nueva cadena de conexión en conexion.cfg y la activa en tiempo de ejecución.</summary>
-        public static bool ActualizarConexion(string nuevaCadena)
+        private static string LeerArchivoConexion(string ruta)
         {
             try
             {
-                // Garantizar que la cadena siempre incluye Initial Catalog/Database.
-                // Si quien llama omite el catálogo, lo tomamos de la constante por defecto.
-                var bldr = new SqlConnectionStringBuilder(nuevaCadena.Trim());
-                if (string.IsNullOrWhiteSpace(bldr.InitialCatalog))
-                    bldr.InitialCatalog = new SqlConnectionStringBuilder(CS_LOCALDB).InitialCatalog;
-                string cadenaFinal = bldr.ConnectionString;
+                if (!File.Exists(ruta)) return null;
+                string saved = (File.ReadAllText(ruta) ?? "").Trim().TrimStart('\uFEFF');
+                return string.IsNullOrWhiteSpace(saved) ? null : NormalizarCadenaConexion(saved);
+            }
+            catch { return null; }
+        }
 
-                Directory.CreateDirectory(Path.GetDirectoryName(RutaConexionCfg));
-                File.WriteAllText(RutaConexionCfg, cadenaFinal);
-                _connectionString = cadenaFinal;
+        /// <summary>
+        /// System.Data.SqlClient (.NET Framework, arranque de SCHPOS) no admite
+        /// «Trust Server Certificate». Microsoft.Data.SqlClient la escribe al guardar.
+        /// Dejamos Encrypt=False y claves clásicas (Server/Database/User Id).
+        /// </summary>
+        public static string NormalizarCadenaConexion(string cs)
+        {
+            if (string.IsNullOrWhiteSpace(cs)) return cs ?? "";
+            try
+            {
+                var b = new SqlConnectionStringBuilder(cs.Trim());
+                return ComponerCadenaCompatible(b);
+            }
+            catch
+            {
+                return QuitarClavesIncompatiblesConSqlClientClasico(cs);
+            }
+        }
+
+        private static string ComponerCadenaCompatible(SqlConnectionStringBuilder b)
+        {
+            var parts = new List<string>
+            {
+                "Server=" + (b.DataSource ?? ""),
+                "Database=" + (string.IsNullOrWhiteSpace(b.InitialCatalog) ? "SchPosDB" : b.InitialCatalog)
+            };
+            if (b.IntegratedSecurity)
+                parts.Add("Integrated Security=True");
+            else
+            {
+                if (!string.IsNullOrEmpty(b.UserID))
+                    parts.Add("User Id=" + b.UserID);
+                if (b.Password != null)
+                    parts.Add("Password=" + b.Password);
+            }
+            parts.Add("Encrypt=False");
+            if (b.ConnectTimeout > 0 && b.ConnectTimeout != 15)
+                parts.Add("Connect Timeout=" + b.ConnectTimeout);
+            return string.Join(";", parts) + ";";
+        }
+
+        private static string QuitarClavesIncompatiblesConSqlClientClasico(string cs)
+        {
+            var keep = new List<string>();
+            foreach (string part in (cs ?? "").Split(';'))
+            {
+                string t = part.Trim();
+                if (t.Length == 0) continue;
+                int eq = t.IndexOf('=');
+                string key = (eq < 0 ? t : t.Substring(0, eq)).Trim();
+                if (key.Equals("TrustServerCertificate", StringComparison.OrdinalIgnoreCase)
+                    || key.Equals("Trust Server Certificate", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                keep.Add(t);
+            }
+            return keep.Count == 0 ? cs : string.Join(";", keep) + ";";
+        }
+
+        /// <summary>Reescribe conexion.cfg si quedó con Trust Server Certificate (rompe el arranque).</summary>
+        public static void ReescribirConexionSiIncompatible()
+        {
+            try
+            {
+                foreach (string ruta in new[] { RutaConexionCfg, RutaConexionCfgLocal })
+                {
+                    if (!File.Exists(ruta)) continue;
+                    string raw = File.ReadAllText(ruta) ?? "";
+                    if (raw.IndexOf("Trust Server Certificate", StringComparison.OrdinalIgnoreCase) < 0
+                        && raw.IndexOf("TrustServerCertificate", StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
+                    ActualizarConexion(raw);
+                    break;
+                }
+            }
+            catch { }
+        }
+
+        private static bool EsCadenaConexionRemotaOExpress(string cs)
+        {
+            if (string.IsNullOrWhiteSpace(cs)) return false;
+            if (cs.IndexOf("(localdb)", StringComparison.OrdinalIgnoreCase) >= 0) return false;
+            try
+            {
+                var b = new SqlConnectionStringBuilder(cs);
+                string src = (b.DataSource ?? "").Trim();
+                if (string.IsNullOrEmpty(src)) return false;
+                // IP, nombre\INSTANCIA o .\SQLEXPRESS cuentan como configuradas (no default LocalDB).
                 return true;
             }
             catch { return false; }
         }
 
+        /// <summary>Guarda la conexión en ProgramData (y espejo en LocalAppData si hace falta).</summary>
+        public static bool ActualizarConexion(string nuevaCadena)
+        {
+            try
+            {
+                var bldr = new SqlConnectionStringBuilder(nuevaCadena.Trim());
+                if (string.IsNullOrWhiteSpace(bldr.InitialCatalog))
+                    bldr.InitialCatalog = "SchPosDB";
+                string cadenaFinal = ComponerCadenaCompatible(bldr);
+
+                bool okProgramData = IntentarEscribirConexionVerificado(RutaConexionCfg, cadenaFinal);
+                bool okLocal = IntentarEscribirConexionVerificado(RutaConexionCfgLocal, cadenaFinal);
+
+                if (okProgramData || okLocal)
+                {
+                    _connectionString = cadenaFinal;
+                    return true;
+                }
+                return false;
+            }
+            catch { return false; }
+        }
+
+        private static bool IntentarEscribirConexionVerificado(string ruta, string contenido)
+        {
+            try
+            {
+                string dir = Path.GetDirectoryName(ruta);
+                if (string.IsNullOrEmpty(dir)) return false;
+                Directory.CreateDirectory(dir);
+                AsegurarPermisosEscrituraCarpeta(dir);
+
+                // Escritura atómica: temp + replace (evita VirtualStore a medias / archivos a medias).
+                var utf8 = new UTF8Encoding(false);
+                string tmp = ruta + ".tmp";
+                File.WriteAllText(tmp, contenido, utf8);
+                try
+                {
+                    if (File.Exists(ruta))
+                    {
+                        try { File.SetAttributes(ruta, FileAttributes.Normal); } catch { }
+                        File.Replace(tmp, ruta, null);
+                    }
+                    else
+                    {
+                        File.Move(tmp, ruta);
+                    }
+                }
+                catch
+                {
+                    // ProgramData a veces no permite Replace: sobreescritura directa.
+                    File.Copy(tmp, ruta, true);
+                    try { File.Delete(tmp); } catch { }
+                }
+
+                string leido = (File.ReadAllText(ruta) ?? "").Trim().TrimStart('\uFEFF');
+                return string.Equals(leido, contenido.Trim(), StringComparison.Ordinal);
+            }
+            catch
+            {
+                try { File.Delete(ruta + ".tmp"); } catch { }
+                return false;
+            }
+        }
+
+        private static void AsegurarPermisosEscrituraCarpeta(string dir)
+        {
+            if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir)) return;
+            try
+            {
+                var di = new DirectoryInfo(dir);
+                var ac = di.GetAccessControl();
+                var users = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+                ac.AddAccessRule(new FileSystemAccessRule(
+                    users,
+                    FileSystemRights.Modify,
+                    InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                    PropagationFlags.None,
+                    AccessControlType.Allow));
+                di.SetAccessControl(ac);
+            }
+            catch { /* sin derechos de cambiar ACL: se usará LocalAppData */ }
+        }
+
         public static string ConnectionString => _connectionString;
+
+        /// <summary>
+        /// Libera conexiones en reposo del pool de Microsoft.Data.SqlClient (usado por DatabaseService).
+        /// Necesario antes de ALTER DATABASE / RESTORE para no dejar SchPosDB en SINGLE_USER ocupada.
+        /// </summary>
+        public static void LiberarPoolsConexion()
+        {
+            try { SqlConnection.ClearAllPools(); } catch { }
+        }
 
         /// <summary>
         /// Fuerza el contexto de una conexión ya abierta hacia la BD configurada.
@@ -431,6 +616,15 @@ namespace SchettiniGestion
                     AsegurarMigracionLite(conn);
                     AsegurarColumnaUsuariosNombrePersonal(conn);
                     AsegurarColumnasConfiguracionNegocio(conn);
+                    try
+                    {
+                        AsegurarEsquemaRed(conn);
+                        _redSyncOk = true;
+                    }
+                    catch (Exception exRed)
+                    {
+                        NotificarError("AsegurarEsquemaRed: " + exRed.Message);
+                    }
                 }
                 return true;
             }
@@ -502,7 +696,8 @@ WHERE TABLE_NAME=@t AND COLUMN_NAME=@c", c))
                 if (_columnasMigracionLiteOk) return;
                 try
                 {
-                    using (var cmd = new SqlCommand(@"
+                    // Varios lotes independientes: un error en uno no anula los ALTER anteriores.
+                    EjecutarLotesMigracionLite(c, @"
 -- Tablas auxiliares para catálogo de productos
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Categorias')
   CREATE TABLE dbo.Categorias (
@@ -608,6 +803,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Factur
   ALTER TABLE Facturas ADD CondicionVenta NVARCHAR(100) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='CondicionTicket')
   ALTER TABLE Facturas ADD CondicionTicket NVARCHAR(300) NULL;
+---SCHPOS_BATCH---
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='StockMinimo')
   ALTER TABLE Productos ADD StockMinimo INT NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='UsaVariantes')
@@ -640,6 +836,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Produc
   ALTER TABLE Productos ADD FechaModificacion DATETIME NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Productos' AND COLUMN_NAME='Activo')
   ALTER TABLE Productos ADD Activo BIT NOT NULL DEFAULT 1;
+---SCHPOS_BATCH---
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='ListasPrecios' AND COLUMN_NAME='TipoLista')
   ALTER TABLE ListasPrecios ADD TipoLista NVARCHAR(30) NOT NULL DEFAULT 'SobreCosto';
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='ListasPrecios' AND COLUMN_NAME='ListaRelacionadaID')
@@ -648,6 +845,12 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Listas
   ALTER TABLE ListasPrecios ADD TipoRedondeo NVARCHAR(30) NOT NULL DEFAULT 'Sin';
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='ProductosListas' AND COLUMN_NAME='PrecioFijo')
   ALTER TABLE ProductosListas ADD PrecioFijo DECIMAL(18,2) NULL;
+---SCHPOS_BATCH---
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturaDetalle' AND COLUMN_NAME='DescuentoPorcentaje')
+  ALTER TABLE FacturaDetalle ADD DescuentoPorcentaje DECIMAL(9,4) NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturaDetalle' AND COLUMN_NAME='RecargoPorcentaje')
+  ALTER TABLE FacturaDetalle ADD RecargoPorcentaje DECIMAL(9,4) NOT NULL DEFAULT 0;
+---SCHPOS_BATCH---
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='PosListaPrecioID')
   ALTER TABLE Configuracion ADD PosListaPrecioID INT NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='PosTipoComprobante')
@@ -666,14 +869,11 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Factur
   ALTER TABLE Facturas ADD UsuarioID INT NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='NombrePersonal')
   ALTER TABLE Facturas ADD NombrePersonal NVARCHAR(100) NULL;
+---SCHPOS_BATCH---
 IF NOT EXISTS (SELECT 1 FROM Roles WHERE NombreRol = N'Administrador') INSERT INTO Roles (NombreRol) VALUES (N'Administrador');
 IF NOT EXISTS (SELECT 1 FROM Roles WHERE NombreRol = N'Vendedor') INSERT INTO Roles (NombreRol) VALUES (N'Vendedor');
 IF NOT EXISTS (SELECT 1 FROM Roles WHERE NombreRol = N'Encargado / Supervisor') INSERT INTO Roles (NombreRol) VALUES (N'Encargado / Supervisor');
 IF NOT EXISTS (SELECT 1 FROM Roles WHERE NombreRol = N'Cajero') INSERT INTO Roles (NombreRol) VALUES (N'Cajero');
-IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturaDetalle' AND COLUMN_NAME='DescuentoPorcentaje')
-  ALTER TABLE FacturaDetalle ADD DescuentoPorcentaje DECIMAL(9,4) NOT NULL DEFAULT 0;
-IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturaDetalle' AND COLUMN_NAME='RecargoPorcentaje')
-  ALTER TABLE FacturaDetalle ADD RecargoPorcentaje DECIMAL(9,4) NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Promociones')
   CREATE TABLE dbo.Promociones (
     PromoID INT IDENTITY(1,1) PRIMARY KEY,
@@ -700,12 +900,17 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Provee
   ALTER TABLE Proveedores ADD PaginaWeb NVARCHAR(300) NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Compras' AND COLUMN_NAME='OrdenCompraID')
   ALTER TABLE Compras ADD OrdenCompraID INT NULL;
+---SCHPOS_BATCH---
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Compras' AND COLUMN_NAME='StockRecibido')
-BEGIN
   ALTER TABLE Compras ADD StockRecibido BIT NOT NULL DEFAULT 0;
+---SCHPOS_BATCH---
+-- UPDATE en lote aparte del ALTER (si no, SQL Server puede abortar el script completo).
+IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Compras' AND COLUMN_NAME='StockRecibido')
   UPDATE Compras SET StockRecibido = 1
-  WHERE EXISTS (SELECT 1 FROM MovimientosStock ms WHERE ms.CompraID = Compras.CompraID AND ms.TipoMovimiento = N'Compra');
-END
+  WHERE StockRecibido = 0 AND EXISTS (
+    SELECT 1 FROM MovimientosStock ms
+    WHERE ms.CompraID = Compras.CompraID AND ms.TipoMovimiento = N'Compra');
+---SCHPOS_BATCH---
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='OrdenCompraDetalle' AND COLUMN_NAME='CantidadRecibida')
   ALTER TABLE OrdenCompraDetalle ADD CantidadRecibida INT NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Promociones' AND COLUMN_NAME='Modalidad')
@@ -741,11 +946,71 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Product
     CodigoProveedor NVARCHAR(100) NULL,
     UltimoUso DATETIME NOT NULL DEFAULT GETDATE(),
     CONSTRAINT UQ_ProductoAliasProveedor UNIQUE (ProveedorID, DescripcionProveedor)
-  );", c))
-                        cmd.ExecuteNonQuery();
+  );");
+                    EjecutarLotesMigracionLite(c, SqlEsquemaPosAvances);
+                    AsegurarColumnasCriticasVenta(c);
                     _columnasMigracionLiteOk = true;
                 }
-                catch { /* sin permiso ALTER */ }
+                catch (Exception ex)
+                {
+                    // No marcar OK: reintentar en la próxima operación.
+                    // Antes se tragaba el error y Productos/Listas quedaban sin columnas nuevas.
+                    try { AsegurarColumnasCriticasVenta(c); } catch { }
+                    NotificarError("Migración de base incompleta: " + ex.Message);
+                }
+            }
+        }
+
+        /// <summary>Ejecuta lotes separados por ---SCHPOS_BATCH---; un fallo no cancela los demás.</summary>
+        private static void EjecutarLotesMigracionLite(SqlConnection c, string script)
+        {
+            Exception ultimo = null;
+            foreach (string lote in script.Split(new[] { "---SCHPOS_BATCH---" }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                string sql = lote.Trim();
+                if (sql.Length == 0) continue;
+                try
+                {
+                    using (var cmd = new SqlCommand(sql, c))
+                    {
+                        cmd.CommandTimeout = 120;
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ultimo = ex;
+                }
+            }
+            if (ultimo != null)
+                throw new Exception(ultimo.Message, ultimo);
+        }
+
+        /// <summary>Columnas mínimas para cobrar/guardar factura (siempre, sin depender del flag global).</summary>
+        private static void AsegurarColumnasCriticasVenta(SqlConnection c)
+        {
+            using (var cmd = new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturaDetalle' AND COLUMN_NAME='DescuentoPorcentaje')
+  ALTER TABLE FacturaDetalle ADD DescuentoPorcentaje DECIMAL(9,4) NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturaDetalle' AND COLUMN_NAME='RecargoPorcentaje')
+  ALTER TABLE FacturaDetalle ADD RecargoPorcentaje DECIMAL(9,4) NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='ListaID')
+  ALTER TABLE Facturas ADD ListaID INT NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='CondicionVenta')
+  ALTER TABLE Facturas ADD CondicionVenta NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='CondicionTicket')
+  ALTER TABLE Facturas ADD CondicionTicket NVARCHAR(300) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='UsuarioID')
+  ALTER TABLE Facturas ADD UsuarioID INT NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Facturas' AND COLUMN_NAME='NombrePersonal')
+  ALTER TABLE Facturas ADD NombrePersonal NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturasCobranza' AND COLUMN_NAME='MarcaTarjeta')
+  ALTER TABLE FacturasCobranza ADD MarcaTarjeta NVARCHAR(50) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FacturasCobranza' AND COLUMN_NAME='OperacionExternaID')
+  ALTER TABLE FacturasCobranza ADD OperacionExternaID NVARCHAR(100) NULL;", c))
+            {
+                cmd.CommandTimeout = 60;
+                cmd.ExecuteNonQuery();
             }
         }
 
@@ -4300,6 +4565,7 @@ ORDER BY p.Descripcion";
                 {
                     c.Open();
                     AsegurarMigracionLite(c);
+                    AsegurarColumnasCriticasVenta(c);
                     AsegurarColumnaCondicionTicketFacturas(c);
 
                     bool tieneTabFc;
@@ -6179,11 +6445,12 @@ ORDER BY Fecha DESC";
                 // depender del servicio "SQL Server Browser" (UDP 1434) para resolver el puerto.
                 string ds = string.IsNullOrWhiteSpace(puerto) ? servidor : $"{servidor},{puerto}";
                 string cs = integrado
-                    ? $"Server={ds};Database=SchPosDB;Integrated Security=True;Encrypt=False;TrustServerCertificate=True;"
-                    : $"Server={ds};Database=SchPosDB;User Id={usuario};Password={password};Encrypt=False;TrustServerCertificate=True;";
+                    ? $"Server={ds};Database=SchPosDB;Integrated Security=True;Encrypt=False;"
+                    : $"Server={ds};Database=SchPosDB;User Id={usuario};Password={password};Encrypt=False;";
 
                 // Fuente de verdad: conexion.cfg (leído en cada arranque por ObtenerConnectionString)
-                ActualizarConexion(cs);
+                if (!ActualizarConexion(cs))
+                    return false;
 
                 // Secundario: actualizar App.config para compatibilidad (puede fallar en instalaciones con permisos restringidos)
                 try
@@ -6222,13 +6489,67 @@ ORDER BY Fecha DESC";
                     using (var cmd = new SqlCommand("SELECT 1", c))
                         cmd.ExecuteScalar();
                 }
+
+                // Si master responde, probar también SchPosDB (el cliente la necesita).
+                string csDb = cs.Replace("Database=master", "Database=SchPosDB");
+                if (!string.Equals(csDb, cs, StringComparison.OrdinalIgnoreCase))
+                {
+                    using (var c2 = new SqlConnection(csDb))
+                    {
+                        c2.Open();
+                        using (var cmd = new SqlCommand("SELECT 1", c2))
+                            cmd.ExecuteScalar();
+                    }
+                }
                 return true;
             }
             catch (Exception ex)
             {
-                error = ex.Message;
+                error = FormatearErrorConexionSql(ex);
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Traduce errores típicos de SQL/red (timeout, firewall, login, LocalDB) a un texto accionable.
+        /// </summary>
+        public static string FormatearErrorConexionSql(Exception ex)
+        {
+            if (ex == null) return "Error desconocido al conectar.";
+            string raw = ex.Message ?? "";
+            string lower = raw.ToLowerInvariant();
+
+            if (lower.Contains("timeout") || lower.Contains("timed out") || lower.Contains("error 0")
+                || lower.Contains("network-related") || lower.Contains("a network-related")
+                || lower.Contains("server was not found") || lower.Contains("no se encontró")
+                || lower.Contains("could not open a connection") || lower.Contains("error 26")
+                || lower.Contains("0x80070001") || lower.Contains("0x80004005"))
+            {
+                return "No se pudo alcanzar el servidor SQL.\n\n" +
+                       "Revisá:\n" +
+                       "• Que la PC servidor esté encendida y SQL Express en ejecución\n" +
+                       "• IP correcta (ej. 192.168.1.14\\SQLEXPRESS) y puerto 1433\n" +
+                       "• Firewall del servidor con regla TCP 1433\n" +
+                       "• Que hayan usado «Preparar como SERVIDOR» en esa PC\n\n" +
+                       "Detalle técnico: " + raw;
+            }
+
+            if (lower.Contains("login failed") || lower.Contains("error de inicio de sesión")
+                || lower.Contains("login failed for user"))
+            {
+                return "El servidor respondió, pero el usuario o la contraseña SQL no son válidos.\n\n" +
+                       "En clientes usá el usuario schpos y la clave del archivo SCHPOS-Configuracion-Clientes.txt del servidor.\n\n" +
+                       "Detalle técnico: " + raw;
+            }
+
+            if (lower.Contains("certificate") || lower.Contains("ssl") || lower.Contains("encrypt"))
+            {
+                return "Problema de cifrado/certificado con SQL Server.\n" +
+                       "SCHPOS usa Encrypt=False y TrustServerCertificate=True en red local.\n\n" +
+                       "Detalle técnico: " + raw;
+            }
+
+            return raw;
         }
 
         /// <summary>
@@ -7034,7 +7355,17 @@ WHERE ProductoPadreID={productoId}", c).Fill(dt);
             return dt;
         }
 
-        public static int GuardarNotaCreditoDebitoVenta(int cid, string tipo, decimal monto, string descripcion, int? facturaId = null, string numeroComprobante = null, List<NotaCreditoItemDetalle> items = null)
+        public static int GuardarNotaCreditoDebitoVenta(
+            int cid,
+            string tipo,
+            decimal monto,
+            string descripcion,
+            int? facturaId = null,
+            string numeroComprobante = null,
+            List<NotaCreditoItemDetalle> items = null,
+            string cae = null,
+            string vencimientoCae = null,
+            int? numeroComprobanteAfip = null)
         {
             try
             {
@@ -7042,10 +7373,13 @@ WHERE ProductoPadreID={productoId}", c).Fill(dt);
                 {
                     c.Open();
                     AsegurarTablaNotaCreditoDebitoVentaDetalle(c);
+                    AsegurarColumnasFiscalesNotaVenta(c);
                     using (var tx = c.BeginTransaction())
                     {
                         var cmd = new SqlCommand(
-                            "INSERT INTO NotasCreditoDebitoVentas (ClienteID,FacturaID,Tipo,Fecha,Monto,Descripcion,NumeroComprobante) VALUES (@cid,@fid,@t,@f,@m,@d,@nc); SELECT SCOPE_IDENTITY();", c, tx);
+                            @"INSERT INTO NotasCreditoDebitoVentas
+                                (ClienteID,FacturaID,Tipo,Fecha,Monto,Descripcion,NumeroComprobante,CAE,VencimientoCAE,NumeroComprobanteAFIP)
+                              VALUES (@cid,@fid,@t,@f,@m,@d,@nc,@cae,@vto,@nro); SELECT SCOPE_IDENTITY();", c, tx);
                         cmd.Parameters.AddWithValue("@cid", cid);
                         cmd.Parameters.AddWithValue("@fid", (object)facturaId ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@t", tipo);
@@ -7055,6 +7389,10 @@ WHERE ProductoPadreID={productoId}", c).Fill(dt);
                         if (desc.Length > 500) desc = desc.Substring(0, 500);
                         cmd.Parameters.AddWithValue("@d", desc);
                         cmd.Parameters.AddWithValue("@nc", (object)numeroComprobante ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@cae", string.IsNullOrWhiteSpace(cae) ? (object)DBNull.Value : cae.Trim());
+                        cmd.Parameters.AddWithValue("@vto", string.IsNullOrWhiteSpace(vencimientoCae) ? (object)DBNull.Value : vencimientoCae.Trim());
+                        cmd.Parameters.AddWithValue("@nro", numeroComprobanteAfip.HasValue && numeroComprobanteAfip.Value > 0
+                            ? (object)numeroComprobanteAfip.Value : DBNull.Value);
                         int notaId = Convert.ToInt32(cmd.ExecuteScalar());
 
                         if (items != null)
@@ -7101,6 +7439,24 @@ WHERE ProductoPadreID={productoId}", c).Fill(dt);
             catch { }
         }
 
+        private static void AsegurarColumnasFiscalesNotaVenta(SqlConnection c)
+        {
+            try
+            {
+                new SqlCommand(@"
+IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='NotasCreditoDebitoVentas')
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='NotasCreditoDebitoVentas' AND COLUMN_NAME='CAE')
+    ALTER TABLE NotasCreditoDebitoVentas ADD CAE NVARCHAR(50) NULL;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='NotasCreditoDebitoVentas' AND COLUMN_NAME='VencimientoCAE')
+    ALTER TABLE NotasCreditoDebitoVentas ADD VencimientoCAE NVARCHAR(20) NULL;
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='NotasCreditoDebitoVentas' AND COLUMN_NAME='NumeroComprobanteAFIP')
+    ALTER TABLE NotasCreditoDebitoVentas ADD NumeroComprobanteAFIP INT NULL;
+END", c).ExecuteNonQuery();
+            }
+            catch { }
+        }
+
         public static DataRow GetNotaVentaPorID(int id)
         {
             try
@@ -7108,6 +7464,7 @@ WHERE ProductoPadreID={productoId}", c).Fill(dt);
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    AsegurarColumnasFiscalesNotaVenta(c);
                     var dt = new DataTable();
                     var cmd = new SqlCommand(
                         $"SELECT n.*, {SqlCamposClienteJoin} FROM NotasCreditoDebitoVentas n LEFT JOIN Clientes c ON n.ClienteID=c.ClienteID WHERE n.NotaID=@id", c);

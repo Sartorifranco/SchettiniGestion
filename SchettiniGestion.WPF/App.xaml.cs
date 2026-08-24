@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -40,7 +41,8 @@ namespace SchettiniGestion.WPF
                 // No debe mostrar ninguna ventana: solo genera el backup y copia el archivo afuera.
                 ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 AppCulture.Initialize();
-                DespertarLocalDB();
+                if (DebeArrancarLocalDB())
+                    DespertarLocalDB();
                 try { BackupAutoService.EjecutarBackupAutomatico(); } catch { }
                 Shutdown(0);
                 return;
@@ -60,8 +62,14 @@ namespace SchettiniGestion.WPF
             this.DispatcherUnhandledException += App_DispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 
-            // Despertar LocalDB antes de cualquier intento de conexión (resuelve Error 26).
-            DespertarLocalDB();
+            // LocalDB solo en PC de una estación / servidor. En CLIENTE no debe arrancar:
+            // sqlservr.exe se come 1–2 GB de RAM y traba Configuración en notebooks.
+            if (DebeArrancarLocalDB())
+                DespertarLocalDB();
+            else
+                IntentarDetenerLocalDB();
+
+            DatabaseService.ReescribirConexionSiIncompatible();
 
             // Intentar conectar y crear BD. Si falla, mostrar asistente de primer uso.
             // Si ya había una conexión personalizada (Express/red), NO abrir el asistente
@@ -87,7 +95,8 @@ namespace SchettiniGestion.WPF
                     }
                 }
 
-                var setup = new PrimerUsoWindow();
+                // Si esta PC ya se marcó como CLIENTE, no abrir el asistente en modo servidor/LocalDB.
+                var setup = new PrimerUsoWindow(preferirCliente: SqlServerNetworkSetup.EsModoCliente());
                 bool? ok = setup.ShowDialog();
                 if (ok != true)
                 {
@@ -131,10 +140,113 @@ namespace SchettiniGestion.WPF
             }
 
             AdvertirConexionRedSinLicencia();
+            OfrecerConfiguracionRedTrasLicencia();
 
             var login = new LoginWindow();
             MainWindow = login;
             login.Show();
+        }
+
+        /// <summary>
+        /// Tras licencia con ACCESO_RED y aún en LocalDB: preguntar SERVIDOR vs CLIENTE.
+        /// Antes se abría solo el asistente de SERVIDOR y en PCs cliente eso pisaba la intención de red.
+        /// </summary>
+        private static void OfrecerConfiguracionRedTrasLicencia()
+        {
+            try
+            {
+                if (!LicenseManager.TieneConexionRed())
+                    return;
+                if (!SqlServerNetworkSetup.EsConexionLocalDb(DatabaseService.ConnectionString))
+                    return;
+
+                // El instalador ya eligió CLIENTE: no volver a preguntar SERVIDOR vs CLIENTE.
+                if (SqlServerNetworkSetup.EsModoCliente())
+                    return;
+
+                // Solo omitir si el usuario dijo «después» o ya preparó servidor OK.
+                if (DebeOmitirOfertaRed())
+                    return;
+
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(SqlServerNetworkSetup.RutaFlagOfertaRed));
+                }
+                catch { }
+
+                var eleccion = MessageBox.Show(
+                    "Licencia con conexión en RED detectada.\n\n" +
+                    "¿Esta PC es el SERVIDOR (donde vive la base de datos)?\n\n" +
+                    "• Sí — preparar esta PC como SERVIDOR\n" +
+                    "• No — esta PC es CLIENTE (se conecta a otra PC)\n" +
+                    "• Cancelar — configurar más tarde en Configuración → Red",
+                    "Red SCHPOS",
+                    MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Question);
+
+                if (eleccion == MessageBoxResult.Cancel)
+                {
+                    try { File.WriteAllText(SqlServerNetworkSetup.RutaFlagOfertaRed, "declined"); } catch { }
+                    return;
+                }
+
+                if (eleccion == MessageBoxResult.No)
+                {
+                    // Cliente: asistente de primer uso en modo CLIENTE (no el de servidor).
+                    SqlServerNetworkSetup.GuardarModoRed(SqlServerNetworkSetup.ModoCliente);
+                    var cliente = new PrimerUsoWindow(preferirCliente: true);
+                    bool? okCliente = cliente.ShowDialog();
+                    if (okCliente == true)
+                    {
+                        try { File.WriteAllText(SqlServerNetworkSetup.RutaFlagOfertaRed, "cliente"); } catch { }
+                        MessageBox.Show(
+                            "Cliente configurado.\n\nEl sistema se cerrará; volvé a abrirlo para conectar al servidor.",
+                            "Cliente listo", MessageBoxButton.OK, MessageBoxImage.Information);
+                        Current.Shutdown();
+                    }
+                    return;
+                }
+
+                // Sí = SERVIDOR
+                bool ok = AsistenteServidorRedWindow.Ejecutar();
+                if (!ok)
+                {
+                    try { File.WriteAllText(SqlServerNetworkSetup.RutaFlagOfertaRed, "declined"); } catch { }
+                    return;
+                }
+
+                try { File.WriteAllText(SqlServerNetworkSetup.RutaFlagOfertaRed, "ok"); } catch { }
+                MessageBox.Show(
+                    "Servidor listo.\n\nEl sistema se cerrará; volvé a abrirlo para usar la base en red.",
+                    "Servidor listo", MessageBoxButton.OK, MessageBoxImage.Information);
+                Current.Shutdown();
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// true = no mostrar el cartel (usuario declinó o servidor ya OK).
+        /// </summary>
+        private static bool DebeOmitirOfertaRed()
+        {
+            try
+            {
+                string ruta = SqlServerNetworkSetup.RutaFlagOfertaRed;
+                if (!File.Exists(ruta)) return false;
+
+                string contenido = (File.ReadAllText(ruta) ?? "").Trim();
+                if (contenido.Equals("declined", StringComparison.OrdinalIgnoreCase))
+                    return true;
+                if (contenido.Equals("ok", StringComparison.OrdinalIgnoreCase))
+                    return true;
+                if (contenido.Equals("cliente", StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                // Flag legacy (fecha/timestamp de 2.3.17) u otro valor: borrar y volver a preguntar.
+                try { File.Delete(ruta); } catch { }
+                return false;
+            }
+            catch { return false; }
         }
 
         private static void AdvertirConexionRedSinLicencia()
@@ -203,7 +315,7 @@ namespace SchettiniGestion.WPF
         /// </summary>
         private bool IntentarInicializarConexion()
         {
-            string csConfigurado = DatabaseService.ConnectionString;
+            string csConfigurado = DatabaseService.NormalizarCadenaConexion(DatabaseService.ConnectionString);
 
             // Detectar si la conexión guardada fue configurada manualmente (no es LocalDB por defecto).
             bool esConexionPersonalizada = EsConexionPersonalizada(csConfigurado);
@@ -261,7 +373,10 @@ namespace SchettiniGestion.WPF
                             ex.Message.Contains("Error 26")           ||
                             ex.Message.Contains("error 26")           ||
                             ex.Message.Contains("login failed")       ||
-                            ex.Message.Contains("Login failed");
+                            ex.Message.Contains("Login failed")       ||
+                            ex.Message.IndexOf("palabra clave", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            ex.Message.IndexOf("Keyword not supported", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            ex.Message.IndexOf("no admitida", StringComparison.OrdinalIgnoreCase) >= 0;
 
                         if (!esErrorConexion)
                         {
@@ -282,14 +397,13 @@ namespace SchettiniGestion.WPF
             // Si la conexión personalizada falló, mostrar error claro en lugar de silencio.
             if (esConexionPersonalizada && !string.IsNullOrEmpty(ultimoError))
             {
+                string amigable = DatabaseService.FormatearErrorConexionSql(new Exception(ultimoError));
                 MessageBox.Show(
                     "No se pudo conectar al servidor de base de datos configurado.\n\n" +
-                    "Servidor: " + csConfigurado.Split(';')[0] + "\n" +
-                    "Error: " + ultimoError + "\n\n" +
-                    "Verifique que el servicio SQL Server (SQLEXPRESS) esté en ejecución.\n" +
+                    "Servidor: " + csConfigurado.Split(';')[0] + "\n\n" +
+                    amigable + "\n\n" +
                     "Archivo de conexión: " + DatabaseService.RutaConexionCfg + "\n\n" +
-                    "Si continúa el problema, edite ese archivo y deje:\n" +
-                    "Server=localhost\\SQLEXPRESS;Database=SchPosDB;Integrated Security=True;Encrypt=False;TrustServerCertificate=True;",
+                    "Podés reabrir el asistente al iniciar o cambiar la conexión en Configuración → Red y Servidor.",
                     "Error de conexión al servidor",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
@@ -334,6 +448,7 @@ namespace SchettiniGestion.WPF
             if (string.IsNullOrWhiteSpace(cs)) return false;
             try
             {
+                cs = DatabaseService.NormalizarCadenaConexion(cs);
                 var b = new SqlConnectionStringBuilder(cs);
                 string src = (b.DataSource ?? "").ToLowerInvariant().Trim();
                 // LocalDB o localhost sin instancia nombrada = default, no personalizada.
@@ -353,7 +468,8 @@ namespace SchettiniGestion.WPF
 
         private void InicializarBaseDeDatosCompleta(string connectionString = null)
         {
-            connectionString = connectionString ?? DatabaseService.ConnectionString;
+            connectionString = DatabaseService.NormalizarCadenaConexion(
+                connectionString ?? DatabaseService.ConnectionString);
             var builder = new SqlConnectionStringBuilder(connectionString);
             string targetDb = builder.InitialCatalog;
 
@@ -904,9 +1020,55 @@ namespace SchettiniGestion.WPF
         /// crear/arrancar la instancia. Null si la última vez salió todo bien.</summary>
         public static string UltimoDiagnosticoLocalDB { get; private set; }
 
+        private static bool DebeArrancarLocalDB()
+        {
+            try
+            {
+                if (SqlServerNetworkSetup.EsModoCliente())
+                    return false;
+                string cs = DatabaseService.ConnectionString ?? "";
+                if (SqlServerNetworkSetup.EsConexionLocalDb(cs))
+                    return true;
+                if (EsConexionPersonalizada(cs))
+                    return false;
+            }
+            catch { }
+            return true;
+        }
+
+        private static void IntentarDetenerLocalDB()
+        {
+            try
+            {
+                string exe = BuscarSqlLocalDbExe();
+                if (string.IsNullOrEmpty(exe)) return;
+                EjecutarComandoLocalDb(exe, "stop MSSQLLocalDB");
+            }
+            catch { }
+        }
+
         private static void DespertarLocalDB()
         {
             PrepararYDiagnosticarLocalDB();
+        }
+
+        private static string BuscarSqlLocalDbExe()
+        {
+            string[] versions = { "170", "160", "150", "140", "130", "120", "110" };
+            string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            foreach (string ver in versions)
+            {
+                foreach (string root in new[] { programFiles, programFilesX86 })
+                {
+                    if (string.IsNullOrWhiteSpace(root)) continue;
+                    string candidate = Path.Combine(
+                        root, "Microsoft SQL Server", ver, "Tools", "Binn", "SqlLocalDB.exe");
+                    if (File.Exists(candidate))
+                        return candidate;
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -921,26 +1083,7 @@ namespace SchettiniGestion.WPF
             UltimoDiagnosticoLocalDB = null;
             try
             {
-                // Defensa 1: buscar sqllocaldb.exe por ruta absoluta en versiones 170→110.
-                string sqlLocalDbExe = null;
-                string[] versions = { "170", "160", "150", "140", "130", "120", "110" };
-                string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-                string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-                foreach (string ver in versions)
-                {
-                    foreach (string root in new[] { programFiles, programFilesX86 })
-                    {
-                        if (string.IsNullOrWhiteSpace(root)) continue;
-                        string candidate = System.IO.Path.Combine(
-                            root, "Microsoft SQL Server", ver, "Tools", "Binn", "SqlLocalDB.exe");
-                        if (System.IO.File.Exists(candidate))
-                        {
-                            sqlLocalDbExe = candidate;
-                            break;
-                        }
-                    }
-                    if (sqlLocalDbExe != null) break;
-                }
+                string sqlLocalDbExe = BuscarSqlLocalDbExe();
 
                 // Si no se encontró por ruta absoluta, confiar en el PATH del sistema.
                 if (sqlLocalDbExe == null)

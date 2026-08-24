@@ -75,6 +75,11 @@ namespace SchettiniGestion.WPF
             ActualizarBtnTeclado();
             InicializarMenuLateral();
             AplicarLayoutResponsivoVentana();
+            AfipColaService.Iniciar();
+
+            RedSyncWatcher.Cambio -= Principal_CambioRed;
+            RedSyncWatcher.Cambio += Principal_CambioRed;
+            RedSyncWatcher.Iniciar();
 
             // Pantalla de bienvenida por defecto al abrir
             try { MostrarModulo(() => new InicioControl()); }
@@ -83,6 +88,9 @@ namespace SchettiniGestion.WPF
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            RedSyncWatcher.Cambio -= Principal_CambioRed;
+            RedSyncWatcher.Detener();
+            AfipColaService.Detener();
             ThemeManager.ThemeChanged -= _themeChangedHandler;
             CustomerScreenService.Cerrar();
             if (!_volviendoALogin)
@@ -97,7 +105,33 @@ namespace SchettiniGestion.WPF
             if (txtUsuarioLogueado != null)
                 txtUsuarioLogueado.Text = SesionUsuario.NombreParaRegistro() ?? "Usuario";
             if (txtRolLogueado != null)
-                txtRolLogueado.Text = SesionUsuario.NombreRol != null ? $"{SesionUsuario.NombreRol} · En línea" : "En línea";
+            {
+                string puesto = PuestoLocalService.Nombre;
+                string rol = SesionUsuario.NombreRol;
+                if (!string.IsNullOrWhiteSpace(puesto) && !string.IsNullOrWhiteSpace(rol))
+                    txtRolLogueado.Text = puesto + " · " + rol;
+                else if (!string.IsNullOrWhiteSpace(puesto))
+                    txtRolLogueado.Text = puesto + " · En línea";
+                else
+                    txtRolLogueado.Text = rol != null ? rol + " · En línea" : "En línea";
+            }
+        }
+
+        public void RefrescarNombrePuestoHeader()
+        {
+            ActualizarHeaderUsuario();
+        }
+
+        private void Principal_CambioRed(string entidad)
+        {
+            foreach (var modulo in _modulosCargados.Values)
+            {
+                if (modulo is ISincronizableEnRed sync)
+                {
+                    try { sync.AplicarCambioRed(entidad); }
+                    catch { }
+                }
+            }
         }
 
         private static Visibility Vis(bool mostrar)
@@ -170,18 +204,19 @@ namespace SchettiniGestion.WPF
             }
 
             if (!DatabaseService.ActualizarUsaVisorCliente(modoDosPantallas))
-                return;
-
-            CustomerScreenService.RefrescarSegunConfiguracion();
-
-            if (modoDosPantallas && System.Windows.Forms.Screen.AllScreens.Length < 2)
             {
                 MessageBox.Show(
-                    "Modo «dos pantallas» activado: el visor para el cliente se abrirá automáticamente cuando haya un segundo monitor conectado.\n\n" +
-                    "Con un solo monitor, el cajero trabaja solo en esta ventana.",
+                    "No se pudo guardar el modo de pantalla. Probá de nuevo o revisá la conexión a la base.",
                     "Pantalla cliente",
                     MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            string aviso = CustomerScreenService.AplicarModo(modoDosPantallas);
+            if (!string.IsNullOrEmpty(aviso))
+            {
+                MessageBox.Show(aviso, "Pantalla cliente", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 

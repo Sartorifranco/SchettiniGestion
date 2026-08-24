@@ -5,11 +5,19 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1000"
-             Background="{DynamicResource BackgroundDark}"
+             Background="{DynamicResource ModuleBackgroundBrush}"
              Loaded="UserControl_Loaded">
 
     <Grid Margin="20">
-        <TabControl x:Name="tabCompras" Background="Transparent" BorderThickness="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="Compras" Style="{DynamicResource TitleTextStyle}" Margin="0,0,0,4"/>
+        <TextBlock Grid.Row="1" TextWrapping="Wrap" Style="{DynamicResource PageSubtitleStyle}"
+                   Text="Orden habitual: Orden de compra (opcional) → Factura → Recepción (ingresa stock) → Pagos. Las NC/ND de compras ajustan la deuda con el proveedor (no son facturas de venta ARCA)."/>
+        <TabControl Grid.Row="2" x:Name="tabCompras" Background="Transparent" BorderThickness="0">
             <TabControl.Resources>
                 <Style TargetType="TabItem">
                     <Setter Property="FontSize" Value="14"/>
@@ -40,21 +48,25 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
+                    <Border Grid.Row="0" Style="{StaticResource SaaSTableCard}" Padding="15" Margin="0,0,0,10">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <TextBox x:Name="txtFiltroFacturas" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,8" TextChanged="txtFiltroFacturas_TextChanged"/>
-                            <WrapPanel Grid.Row="1" Orientation="Horizontal">
+                            <TextBlock Grid.Row="0" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,8"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       Text="Carga del comprobante del proveedor (manual u OCR). El stock se ingresa en Recepción, no al guardar la factura."/>
+                            <TextBox Grid.Row="1" x:Name="txtFiltroFacturas" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,8" TextChanged="txtFiltroFacturas_TextChanged"/>
+                            <WrapPanel Grid.Row="2" Orientation="Horizontal">
                                 <Button x:Name="btnNuevaFacturaCompra" Content="➕ Nueva Factura" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,4" Click="btnNuevaFacturaCompra_Click"/>
                                 <Button x:Name="btnEditarFacturaCompra" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,4" Click="btnEditarFacturaCompra_Click"/>
                                 <Button x:Name="btnEliminarFacturaCompra" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Margin="0,0,0,4" Click="btnEliminarFacturaCompra_Click"/>
                             </WrapPanel>
                         </Grid>
                     </Border>
-                    <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">
+                    <Border Grid.Row="1" Style="{StaticResource SaaSTableCard}" Padding="10">
                         <DataGrid x:Name="dgvFacturasCompras" Style="{DynamicResource {x:Type DataGrid}}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" MouseDoubleClick="dgvFacturasCompras_MouseDoubleClick">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="ID" Binding="{Binding CompraID}" Width="60"/>
@@ -77,21 +89,25 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
+                    <Border Grid.Row="0" Style="{StaticResource SaaSTableCard}" Padding="15" Margin="0,0,0,10">
                                                 <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <TextBox x:Name="txtFiltroRecepciones" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,8" TextChanged="txtFiltroRecepciones_TextChanged"/>
-                            <WrapPanel Grid.Row="1" Orientation="Horizontal">
+                            <TextBlock Grid.Row="0" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,8"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       Text="Ingresá el stock de una factura de compra ya cargada. Sin recepción, los productos no aumentan el inventario."/>
+                            <TextBox Grid.Row="1" x:Name="txtFiltroRecepciones" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,8" TextChanged="txtFiltroRecepciones_TextChanged"/>
+                            <WrapPanel Grid.Row="2" Orientation="Horizontal">
                                 <Button x:Name="btnNuevaRecepcion" Content="➕ Nueva" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,4" Click="btnNuevaRecepcion_Click"/>
                                 <Button x:Name="btnEditarRecepcion" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,4" Click="btnEditarRecepcion_Click"/>
                                 <Button x:Name="btnEliminarRecepcion" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Margin="0,0,0,4" Click="btnEliminarRecepcion_Click"/>
                             </WrapPanel>
                         </Grid>
                     </Border>
-                    <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">
+                    <Border Grid.Row="1" Style="{StaticResource SaaSTableCard}" Padding="10">
                         <DataGrid x:Name="dgvRecepciones" Style="{DynamicResource {x:Type DataGrid}}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="ID" Binding="{Binding RecepcionID}" Width="60"/>
@@ -112,21 +128,25 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
+                    <Border Grid.Row="0" Style="{StaticResource SaaSTableCard}" Padding="15" Margin="0,0,0,10">
                                                 <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <TextBox x:Name="txtFiltroNotas" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,8" TextChanged="txtFiltroNotas_TextChanged"/>
-                            <WrapPanel Grid.Row="1" Orientation="Horizontal">
+                            <TextBlock Grid.Row="0" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,8"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       Text="Ajustes con el proveedor: NC baja la deuda, ND la sube. No emite factura electrónica de venta."/>
+                            <TextBox Grid.Row="1" x:Name="txtFiltroNotas" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,8" TextChanged="txtFiltroNotas_TextChanged"/>
+                            <WrapPanel Grid.Row="2" Orientation="Horizontal">
                                 <Button x:Name="btnNuevaNota" Content="➕ Nueva" Style="{DynamicResource ButtonStyle}" Margin="0,0,8,4" Click="btnNuevaNota_Click"/>
                                 <Button x:Name="btnEditarNota" Content="✏️ Editar" Style="{DynamicResource SecondaryButtonStyle}" Margin="0,0,8,4" Click="btnEditarNota_Click"/>
                                 <Button x:Name="btnEliminarNota" Content="🗑️ Eliminar" Style="{DynamicResource DeleteButtonStyle}" Margin="0,0,0,4" Click="btnEliminarNota_Click"/>
                             </WrapPanel>
                         </Grid>
                     </Border>
-                    <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">
+                    <Border Grid.Row="1" Style="{StaticResource SaaSTableCard}" Padding="10">
                         <DataGrid x:Name="dgvNotas" Style="{DynamicResource {x:Type DataGrid}}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="ID" Binding="{Binding NotaID}" Width="60"/>
@@ -148,7 +168,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
+                    <Border Grid.Row="0" Style="{StaticResource SaaSTableCard}" Padding="15" Margin="0,0,0,10">
                                                 <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -162,7 +182,7 @@
                             </WrapPanel>
                         </Grid>
                     </Border>
-                    <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">
+                    <Border Grid.Row="1" Style="{StaticResource SaaSTableCard}" Padding="10">
                         <DataGrid x:Name="dgvGastos" Style="{DynamicResource {x:Type DataGrid}}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="ID" Binding="{Binding GastoID}" Width="60"/>
@@ -183,7 +203,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
+                    <Border Grid.Row="0" Style="{StaticResource SaaSTableCard}" Padding="15" Margin="0,0,0,10">
                                                 <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -197,7 +217,7 @@
                             </WrapPanel>
                         </Grid>
                     </Border>
-                    <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">
+                    <Border Grid.Row="1" Style="{StaticResource SaaSTableCard}" Padding="10">
                         <DataGrid x:Name="dgvPagos" Style="{DynamicResource {x:Type DataGrid}}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="ID" Binding="{Binding PagoID}" Width="60"/>
@@ -218,7 +238,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
+                    <Border Grid.Row="0" Style="{StaticResource SaaSTableCard}" Padding="15" Margin="0,0,0,10">
                                                 <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -232,7 +252,7 @@
                             </WrapPanel>
                         </Grid>
                     </Border>
-                    <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="10">
+                    <Border Grid.Row="1" Style="{StaticResource SaaSTableCard}" Padding="10">
                         <DataGrid x:Name="dgvOrdenes" Style="{DynamicResource {x:Type DataGrid}}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" MouseDoubleClick="dgvOrdenes_MouseDoubleClick">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="ID" Binding="{Binding OrdenCompraID}" Width="60"/>

@@ -295,6 +295,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AfipService.cs" />
+    <Compile Include="AfipColaService.cs" />
     <Compile Include="ArcaQrHelper.cs" />
     <Compile Include="NumericBox.cs" />
     <Compile Include="ProductoModalWindow.xaml.cs">
@@ -304,6 +305,7 @@
     <Compile Include="SvgLogoHelper.cs" />
     <Compile Include="ThemeManager.cs" />
     <Compile Include="UiScaleHelper.cs" />
+    <Compile Include="CornerClip.cs" />
     <Compile Include="ResponsiveWindowService.cs" />
     <Compile Include="ResponsiveModuleService.cs" />
     <Compile Include="TouchDatePickerHelper.cs" />
@@ -390,6 +392,13 @@
     <Compile Include="BackupService.cs" />
     <Compile Include="BackupAutoService.cs" />
     <Compile Include="SqlServerNetworkSetup.cs" />
+    <Compile Include="PuestoLocalService.cs" />
+    <Compile Include="RedSyncWatcher.cs" />
+    <Compile Include="SqlExpressInstaller.cs" />
+    <Compile Include="ElevacionHelper.cs" />
+    <Compile Include="AsistenteServidorRedWindow.xaml.cs">
+      <DependentUpon>AsistenteServidorRedWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="FacturacionPresupuestosTab.cs">
       <DependentUpon>FacturacionPresupuestosTab.xaml</DependentUpon>
     </Compile>
@@ -486,6 +495,9 @@
     <Compile Include="PdfComprobanteGenerator.cs" />
     <Compile Include="PdfInformeGenerator.cs" />
     <Compile Include="PrintService.cs" />
+    <Compile Include="RawPrinterHelper.cs" />
+    <Compile Include="EtiquetaCorteHelper.cs" />
+    <Compile Include="TextosAyudaUi.cs" />
     <Compile Include="ProductoVarioWindow.xaml.cs">
       <DependentUpon>ProductoVarioWindow.xaml</DependentUpon>
     </Compile>
@@ -564,6 +576,10 @@
     <Page Include="InformesControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AsistenteServidorRedWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="PrimerUsoWindow.xaml">
       <SubType>Designer</SubType>
@@ -694,6 +710,22 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Themes\LightTheme.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Themes\StitchLightTheme.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Themes\StitchDarkTheme.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Themes\LookClasicoChrome.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Themes\LookNuevoChrome.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -890,6 +922,8 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\app.ico" />
+    <Resource Include="Resources\app-icon.png" />
+    <Resource Include="Resources\schpos-logo.ico" />
     <Resource Include="Resources\logo.svg" />
     <Resource Include="Resources\mercadopago-logo.png" />
   </ItemGroup>
@@ -906,4 +940,7 @@
     <Error Condition="!Exists('..\packages\Microsoft.Data.SqlClient.SNI.6.0.2\build\net462\Microsoft.Data.SqlClient.SNI.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Data.SqlClient.SNI.6.0.2\build\net462\Microsoft.Data.SqlClient.SNI.targets'))" />
   </Target>
   <Import Project="..\packages\Microsoft.Data.SqlClient.SNI.6.0.2\build\net462\Microsoft.Data.SqlClient.SNI.targets" Condition="Exists('..\packages\Microsoft.Data.SqlClient.SNI.6.0.2\build\net462\Microsoft.Data.SqlClient.SNI.targets')" />
+  <Target Name="CopySchposAppIcon" AfterTargets="Build">
+    <Copy SourceFiles="$(ProjectDir)Resources\app.ico" DestinationFiles="$(TargetDir)app.ico" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

@@ -54,7 +54,11 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='EtiquetaMostrarBarras')
   ALTER TABLE Configuracion ADD EtiquetaMostrarBarras BIT NOT NULL DEFAULT 1;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='EtiquetaMostrarMarca')
-  ALTER TABLE Configuracion ADD EtiquetaMostrarMarca BIT NOT NULL DEFAULT 0;", c))
+  ALTER TABLE Configuracion ADD EtiquetaMostrarMarca BIT NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='EtiquetaAutoCorte')
+  ALTER TABLE Configuracion ADD EtiquetaAutoCorte BIT NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='EtiquetaProtocoloCorte')
+  ALTER TABLE Configuracion ADD EtiquetaProtocoloCorte NVARCHAR(20) NOT NULL DEFAULT 'Auto';", c))
                         cmd.ExecuteNonQuery();
                     _columnasEtiquetasOk = true;
                 }
@@ -126,6 +130,13 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                     op.MostrarCodigoBarras = Convert.ToBoolean(dr["EtiquetaMostrarBarras"]);
                 if (dr.Table.Columns.Contains("EtiquetaMostrarMarca") && dr["EtiquetaMostrarMarca"] != DBNull.Value)
                     op.MostrarMarca = Convert.ToBoolean(dr["EtiquetaMostrarMarca"]);
+                if (dr.Table.Columns.Contains("EtiquetaAutoCorte") && dr["EtiquetaAutoCorte"] != DBNull.Value)
+                    op.AutoCorte = Convert.ToBoolean(dr["EtiquetaAutoCorte"]);
+                if (dr.Table.Columns.Contains("EtiquetaProtocoloCorte") && dr["EtiquetaProtocoloCorte"] != DBNull.Value)
+                {
+                    string proto = dr["EtiquetaProtocoloCorte"]?.ToString()?.Trim();
+                    op.ProtocoloCorte = string.IsNullOrWhiteSpace(proto) ? "Auto" : proto;
+                }
             }
             catch { }
             return op;
@@ -147,6 +158,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Config
                 int columnas = Math.Max(1, Math.Min(12, opciones.Columnas));
                 string orientacion = string.IsNullOrWhiteSpace(opciones.Orientacion) ? "Vertical" : opciones.Orientacion.Trim();
                 string modo = string.IsNullOrWhiteSpace(opciones.ModoImpresion) ? "Rollo" : opciones.ModoImpresion.Trim();
+                string protocoloCorte = NormalizarProtocoloCorte(opciones.ProtocoloCorte);
 
                 using (var c = new SqlConnection(_connectionString))
                 {
@@ -166,6 +178,8 @@ UPDATE Configuracion SET
   EtiquetaColumnas=@cols,
   EtiquetaOrientacion=@ori,
   EtiquetaModoImpresion=@modo,
+  EtiquetaAutoCorte=@ac,
+  EtiquetaProtocoloCorte=@pc,
   EtiquetaMostrarDescripcion=@md,
   EtiquetaMostrarDescripcionExtra=@mde,
   EtiquetaMostrarPrecio=@mp,
@@ -186,6 +200,8 @@ WHERE ID=1", c))
                         cmd.Parameters.AddWithValue("@cols", columnas);
                         cmd.Parameters.AddWithValue("@ori", orientacion);
                         cmd.Parameters.AddWithValue("@modo", modo);
+                        cmd.Parameters.AddWithValue("@ac", opciones.AutoCorte);
+                        cmd.Parameters.AddWithValue("@pc", protocoloCorte);
                         cmd.Parameters.AddWithValue("@md", opciones.MostrarDescripcion);
                         cmd.Parameters.AddWithValue("@mde", opciones.MostrarDescripcionExtra);
                         cmd.Parameters.AddWithValue("@mp", opciones.MostrarPrecio);
@@ -202,6 +218,18 @@ WHERE ID=1", c))
                 NotificarError("Etiquetas: " + ex.Message);
                 return false;
             }
+        }
+
+        private static string NormalizarProtocoloCorte(string protocolo)
+        {
+            string p = (protocolo ?? "").Trim();
+            if (string.Equals(p, "ESCPOS", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(p, "ESC/POS", StringComparison.OrdinalIgnoreCase))
+                return "ESCPOS";
+            if (string.Equals(p, "TSPL", StringComparison.OrdinalIgnoreCase)) return "TSPL";
+            if (string.Equals(p, "ZPL", StringComparison.OrdinalIgnoreCase)) return "ZPL";
+            if (string.Equals(p, "EPL", StringComparison.OrdinalIgnoreCase)) return "EPL";
+            return "Auto";
         }
     }
 }

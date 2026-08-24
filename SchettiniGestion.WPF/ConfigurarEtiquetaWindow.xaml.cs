@@ -44,6 +44,10 @@ namespace SchettiniGestion.WPF
                 cmbOrientacion.SelectedIndex =
                     string.Equals(op.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
                 SeleccionarComboPorTexto(cmbModo, op.ModoImpresion, 0);
+                chkAutoCorte.IsChecked = op.AutoCorte;
+                SeleccionarProtocoloCorte(op.ProtocoloCorte);
+                ActualizarVisibilidadAutoCorte();
+                ActualizarAyudaModo();
 
                 chkNombre.IsChecked = op.MostrarDescripcion;
                 chkDescripcion.IsChecked = op.MostrarDescripcionExtra;
@@ -126,6 +130,80 @@ namespace SchettiniGestion.WPF
             if (!_cargando) ActualizarPreview();
         }
 
+        private void cmbModo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_cargando)
+            {
+                ActualizarVisibilidadAutoCorte();
+                ActualizarAyudaModo();
+            }
+        }
+
+        private void ActualizarAyudaModo()
+        {
+            if (txtAyudaModo == null) return;
+            string modo = (cmbModo?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Rollo";
+            if (string.Equals(modo, "A4", StringComparison.OrdinalIgnoreCase))
+                txtAyudaModo.Text = "A4: imprime varias etiquetas en una hoja. Configurá columnas y márgenes en la pestaña «Hoja A4».";
+            else if (string.Equals(modo, "Cartel", StringComparison.OrdinalIgnoreCase))
+                txtAyudaModo.Text = "Cartel: formato grande en A4 para exhibir precio. No usa auto-corte de rollo.";
+            else if (string.Equals(modo, "Gondola", StringComparison.OrdinalIgnoreCase))
+                txtAyudaModo.Text = "Góndola: precio para góndola en hoja A4. No usa auto-corte de rollo.";
+            else
+                txtAyudaModo.Text = "Rollo: impresora térmica de etiquetas. La medida debe coincidir con el rollo. El auto-corte solo aplica acá.";
+        }
+
+        private void btnAyudaModo_Click(object sender, RoutedEventArgs e)
+        {
+            ModernMessageBox.Show(TextosAyudaUi.ModosEtiqueta, "Modos de impresión de etiquetas",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void chkAutoCorte_Changed(object sender, RoutedEventArgs e)
+        {
+            if (cmbProtocoloCorte != null)
+                cmbProtocoloCorte.IsEnabled = chkAutoCorte?.IsChecked == true;
+        }
+
+        private void ActualizarVisibilidadAutoCorte()
+        {
+            if (pnlAutoCorte == null) return;
+            string modo = (cmbModo?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Rollo";
+            bool rollo = string.Equals(modo, "Rollo", StringComparison.OrdinalIgnoreCase);
+            pnlAutoCorte.Visibility = rollo ? Visibility.Visible : Visibility.Collapsed;
+            if (cmbProtocoloCorte != null)
+                cmbProtocoloCorte.IsEnabled = rollo && chkAutoCorte?.IsChecked == true;
+        }
+
+        private void SeleccionarProtocoloCorte(string protocolo)
+        {
+            string tag = string.IsNullOrWhiteSpace(protocolo) ? "Auto" : protocolo.Trim();
+            if (string.Equals(tag, "ESC/POS", StringComparison.OrdinalIgnoreCase)) tag = "ESCPOS";
+            for (int i = 0; i < cmbProtocoloCorte.Items.Count; i++)
+            {
+                if (cmbProtocoloCorte.Items[i] is ComboBoxItem item &&
+                    string.Equals(item.Tag?.ToString(), tag, StringComparison.OrdinalIgnoreCase))
+                {
+                    cmbProtocoloCorte.SelectedIndex = i;
+                    return;
+                }
+            }
+            cmbProtocoloCorte.SelectedIndex = 0;
+        }
+
+        private string LeerProtocoloCorte()
+        {
+            if (cmbProtocoloCorte?.SelectedItem is ComboBoxItem item && item.Tag != null)
+                return item.Tag.ToString();
+            return "Auto";
+        }
+
+        private void btnAyudaAutoCorte_Click(object sender, RoutedEventArgs e)
+        {
+            ModernMessageBox.Show(EtiquetaCorteHelper.TextoAyuda, "Auto-corte de etiquetas",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
         private void ActualizarPreview()
         {
             if (previewEtiqueta == null) return;
@@ -152,6 +230,8 @@ namespace SchettiniGestion.WPF
                 AltoMm = LeerEntero(txtAlto.Text, 25, 10, 300),
                 Orientacion = cmbOrientacion.SelectedIndex == 1 ? "Horizontal" : "Vertical",
                 ModoImpresion = (cmbModo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Rollo",
+                AutoCorte = chkAutoCorte?.IsChecked == true,
+                ProtocoloCorte = LeerProtocoloCorte(),
                 MostrarDescripcion = chkNombre.IsChecked == true,
                 MostrarDescripcionExtra = chkDescripcion.IsChecked == true,
                 MostrarPrecio = chkPrecio.IsChecked == true,

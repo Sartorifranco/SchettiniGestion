@@ -13,7 +13,7 @@
             <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource CardCornerRadius}"/>
             <Setter Property="Padding" Value="18,16"/>
             <Setter Property="Margin" Value="0,0,0,16"/>
         </Style>
@@ -92,13 +92,12 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,18">
-            <TextBlock Text="Configuración del sistema" FontSize="24" FontWeight="Bold"
-                       Foreground="{DynamicResource TextPrimary}"/>
+            <TextBlock Text="Configuración del sistema" Style="{DynamicResource TitleTextStyle}"/>
             <TextBlock Text="Parámetros del negocio, conexión, licencia e impresoras."
-                       Foreground="{DynamicResource TextSecondary}" FontSize="13" Margin="0,4,0,0"/>
+                       Style="{DynamicResource PageSubtitleStyle}"/>
         </StackPanel>
 
-        <TabControl Grid.Row="1" Style="{StaticResource ConfigTabControlStyle}">
+        <TabControl x:Name="tabConfigPrincipal" Grid.Row="1" Style="{StaticResource ConfigTabControlStyle}">
             <TabControl.Resources>
                 <Style TargetType="TabItem" BasedOn="{StaticResource ConfigTabItemStyle}"/>
             </TabControl.Resources>
@@ -110,6 +109,8 @@
                         <Border Style="{StaticResource ConfigSectionCard}">
                             <StackPanel>
                                 <TextBlock Text="Datos de la Empresa" Style="{StaticResource ConfigSectionTitle}"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"
+                                           Text="Salen en tickets, facturas A4 y en el pedido de certificado ARCA. Guardá antes de generar el CSR. La condición IVA define las letras de factura (A/B/C)."/>
 
                                 <Grid>
                             <Grid.ColumnDefinitions>
@@ -134,6 +135,8 @@
                                     <ComboBoxItem Content="Exento"/>
                                     <ComboBoxItem Content="IVA No Alcanzado"/>
                                 </ComboBox>
+                                <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,4,0,0"
+                                           Text="Monotributo suele emitir C. Responsable Inscripto emite A o B según el cliente."/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="1">
@@ -226,6 +229,12 @@
                         <Border Style="{StaticResource ConfigSectionCard}">
                         <StackPanel x:Name="panelSeccionAfip">
                         <TextBlock Text="Facturación Electrónica (ARCA)" Style="{StaticResource ConfigSectionTitle}"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,8"
+                                   Text="Homologación = ambiente de prueba. Producción = CAE reales con validez fiscal. Completá empresa, certificado, punto de venta y probá conexión antes de activar producción."/>
+                        <Button Content="¿Cómo funciona ARCA? (checklist)"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                HorizontalAlignment="Left" Margin="0,0,0,14" MinHeight="40" Padding="14,8"
+                                Click="btnAyudaArca_Click"/>
 
                         <!-- Activación Fiscal ARCA (CSR + certificado) -->
                         <Border Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="16" Margin="0,0,0,16"
@@ -234,7 +243,7 @@
                                 <TextBlock Text="Activación Fiscal ARCA" FontWeight="SemiBold" FontSize="15"
                                            Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
                                 <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"
-                                           Text="Genere el pedido de certificado (CSR) desde el sistema, súbalo en ARCA con su Clave Fiscal y luego importe aquí el .crt emitido. Usa los datos de empresa de arriba (CUIT, Razón Social, Nombre de Fantasía)."/>
+                                           Text="Genere el pedido de certificado (CSR) desde el sistema, súbalo en ARCA con su Clave Fiscal y luego importe aquí el .crt emitido. Usa los datos de empresa de arriba (CUIT, Razón Social, Nombre de Fantasía). Recordá autorizar el servicio wsfe (Factura Electrónica) en ARCA."/>
                                 <TextBlock x:Name="lblEstadoActivacionAfip" Foreground="{DynamicResource SuccessColor}"
                                            FontSize="12" FontWeight="SemiBold" Margin="0,0,0,12"/>
 
@@ -297,18 +306,54 @@
                             <StackPanel Grid.Column="1">
                                 <TextBlock Text="Punto de Venta:" Style="{StaticResource ModuleLabelStyle}"/>
                                 <TextBox x:Name="txtPuntoVenta" Style="{StaticResource ModuleTextBoxStyle}"/>
+                                <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,4,0,8"
+                                           Text="Número de PV habilitado en ARCA (ej. 1). Debe coincidir exactamente. Sin PV no se emiten facturas electrónicas."/>
 
                                 <TextBlock Text="Tipo de cambio USD (para precios en dólares):" Style="{StaticResource ModuleLabelStyle}"/>
                                 <TextBox x:Name="txtTipoCambioUSD" Style="{StaticResource ModuleTextBoxStyle}"/>
-                                <TextBlock Style="{StaticResource FieldHintTextStyle}" Text="Ej: 1050 para $1050 por 1 USD"/>
+                                <TextBlock Style="{StaticResource FieldHintTextStyle}" Text="Ej: 1050 para $1050 por 1 USD. Solo aplica a productos con precio en dólares."/>
 
-                                <CheckBox x:Name="chkAfipProduccion" Content="Ambiente ARCA: producción (no homologación)"
-                                          Foreground="{DynamicResource TextPrimary}" Margin="0,8,0,0"/>
+                                <CheckBox x:Name="chkAfipProduccion" Content="Ambiente ARCA: producción (CAE reales)"
+                                          Foreground="{DynamicResource TextPrimary}" Margin="0,8,0,4"/>
+                                <TextBlock TextWrapping="Wrap" Style="{StaticResource FieldHintTextStyle}"
+                                           Text="Desmarcado = homologación (pruebas). Marcado = producción. Activá producción solo con certificado y PV de producción autorizados."/>
                             </StackPanel>
                         </Grid>
                         <Button Content="💾 Guardar cambios de esta sección" Style="{StaticResource SecondaryButtonStyle}"
                                 HorizontalAlignment="Right" Margin="0,14,0,0" Click="btnGuardar_Click"/>
                         </StackPanel>
+                        </Border>
+
+                        <Border x:Name="cardColaArca" Style="{StaticResource ConfigSectionCard}">
+                            <StackPanel>
+                                <TextBlock Text="Reintento de CAE" Style="{StaticResource ConfigSectionTitle}"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"
+                                           Text="Lista de tickets internos que quedaron sin CAE. SCHPOS reintenta solo, sin volver a cobrar. No cambia una venta que ya salió bien."/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <Button x:Name="btnActualizarColaArca" Content="Actualizar" Style="{StaticResource SecondaryButtonStyle}"
+                                            Padding="14,8" MinHeight="40" Click="btnActualizarColaArca_Click"/>
+                                    <Button x:Name="btnReintentarColaArca" Content="Reintentar ahora" Style="{StaticResource ButtonStyle}"
+                                            Padding="14,8" MinHeight="40" Margin="8,0,0,0" Click="btnReintentarColaArca_Click"
+                                            ToolTip="Usa el mismo reintento automático. No cobra de nuevo."/>
+                                </StackPanel>
+                                <TextBlock x:Name="txtColaArcaVacia" Text="No hay tickets pendientes ni reintentos recientes."
+                                           Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,8"
+                                           Visibility="Collapsed"/>
+                                <DataGrid x:Name="dgvColaArca" Style="{DynamicResource {x:Type DataGrid}}"
+                                          AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                                          HeadersVisibility="Column" MaxHeight="280">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Venta" Binding="{Binding FacturaID}" Width="70"/>
+                                        <DataGridTextColumn Header="Fecha" Binding="{Binding FechaAlta, StringFormat=dd/MM HH:mm}" Width="110"/>
+                                        <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat=C2}" Width="90"/>
+                                        <DataGridTextColumn Header="Estado" Binding="{Binding EstadoTexto}" Width="170"/>
+                                        <DataGridTextColumn Header="Intentos" Binding="{Binding Intentos}" Width="70"/>
+                                        <DataGridTextColumn Header="CAE" Binding="{Binding CAE}" Width="130"/>
+                                        <DataGridTextColumn Header="Nro" Binding="{Binding NumeroComprobante}" Width="70"/>
+                                        <DataGridTextColumn Header="Último error" Binding="{Binding UltimoError}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
                         </Border>
 
                         <Border x:Name="cardSeccionMercadoPagoCuenta" Style="{StaticResource ConfigSectionCard}">
@@ -420,6 +465,12 @@
                             </Grid>
                             <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,6,0,8"
                                        Text="La terminal debe estar vinculada a esta cuenta. Modelos admitidos por la API: Point Smart (NEWLAND N950) y Smart 2 (PAX A910)."/>
+                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,8"
+                                       Text="«Activar modo PDV» es obligatorio para que SCHPOS envíe el importe a la terminal. Hace falta internet en la PC y en el Point."/>
+                            <Button Content="¿Cómo funciona el modo PDV?"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    HorizontalAlignment="Left" Margin="0,0,0,10" MinHeight="40" Padding="14,8"
+                                    Click="btnAyudaPointPdv_Click"/>
                             <CheckBox x:Name="chkMPPointAutomatico"
                                       Content="Ofrecer cobro automático con Point en la ventana de cobro"
                                       IsChecked="True" Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,0"/>
@@ -597,6 +648,14 @@
                                     <ComboBoxItem Content="CLIENTE (Puesto de Red)"/>
                                 </ComboBox>
 
+                                <TextBlock Text="Nombre de este puesto" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtNombrePuesto" Style="{StaticResource ModuleTextBoxStyle}" MaxLength="40"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,4,0,8"
+                                           Text="Se ve arriba a la derecha. Ejemplos: SERVIDOR, CAJA-01, CAJA-02, MOSTRADOR. Conviene que no se repita."/>
+                                <Button x:Name="btnGuardarNombrePuesto" Content="Guardar nombre del puesto" Click="btnGuardarNombrePuesto_Click"
+                                        Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,0,12" HorizontalAlignment="Left" Padding="16,8"/>
+                                <TextBlock x:Name="txtPuestosEnRed" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,16"/>
+
                                 <Border Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
                             <StackPanel>
                                 <TextBlock Text="Dirección IP del Servidor:" Style="{StaticResource ModuleLabelStyle}"/>
@@ -606,7 +665,10 @@
                                 <TextBlock Text="Puerto SQL:" Style="{StaticResource ModuleLabelStyle}"/>
                                 <TextBox x:Name="txtPuertoServidor" Style="{StaticResource ModuleTextBoxStyle}" Text="1433"/>
 
-                                <CheckBox x:Name="chkUsarWindowsAuth" Content="Usar autenticación Windows (recomendado para PC principal)" Foreground="{DynamicResource TextSecondary}" Margin="0,15,0,0" Checked="chkUsarWindowsAuth_Changed" Unchecked="chkUsarWindowsAuth_Changed"/>
+                                <CheckBox x:Name="chkUsarWindowsAuth" Content="Usar autenticación Windows (solo SERVIDOR / misma PC)" Foreground="{DynamicResource TextSecondary}" Margin="0,15,0,0" Checked="chkUsarWindowsAuth_Changed" Unchecked="chkUsarWindowsAuth_Changed"/>
+                                <TextBlock x:Name="txtAvisoAuthCliente" Visibility="Collapsed" TextWrapping="Wrap" Margin="0,6,0,0"
+                                           Foreground="#E0A800" FontSize="12"
+                                           Text="En CLIENTE desmarcá Windows Auth y usá usuario schpos + contraseña del archivo del servidor."/>
 
                                 <Border x:Name="pnlCredencialesSQL" Margin="0,10,0,0" Visibility="Collapsed">
                                     <StackPanel>
@@ -622,9 +684,12 @@
                             </StackPanel>
                         </Border>
 
+                        <Button x:Name="btnProbarConexionRed" Content="Probar conexión (sin guardar)"
+                                Click="btnProbarConexionRed_Click"
+                                Height="40" Margin="0,8,0,8"/>
                         <Button x:Name="btnGuardarConexion" Content="💾 GUARDAR Y REINICIAR" 
                                 Click="btnGuardarConexion_Click"
-                                Background="#007ACC" Foreground="White" FontWeight="Bold" Height="50" Margin="0,4,0,0">
+                                Background="#007ACC" Foreground="White" FontWeight="Bold" Height="50" Margin="0,0,0,0">
                             <Button.Resources>
                                 <Style TargetType="Border">
                                     <Setter Property="CornerRadius" Value="5"/>
@@ -635,15 +700,28 @@
 
                     <Border Grid.Column="1" Style="{StaticResource ConfigSectionCard}" VerticalAlignment="Top">
                     <StackPanel>
-                        <TextBlock Text="Instrucciones" Style="{StaticResource ConfigSectionTitle}" Foreground="Orange"/>
-                        <TextBlock Text="• MODO SERVIDOR: Si esta es la PC principal, deje la IP en 127.0.0.1 o un punto (.)." Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
-                        <TextBlock Text="• MODO CLIENTE: Si esta PC se conecta a otra, escriba la IP de la otra computadora (Ej: 192.168.1.100)." Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
-                        <TextBlock Text="• AL GUARDAR: El sistema se cerrará automáticamente para aplicar la nueva conexión." Foreground="Red" FontWeight="Bold" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                        <TextBlock Text="Asistente de red" Style="{StaticResource ConfigSectionTitle}" Foreground="Orange"/>
+                        <TextBlock x:Name="txtEstadoExpress" Text="SQL Express: verificando..." Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <TextBlock x:Name="txtEstadoModoRed" Text="" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <Button x:Name="btnInstalarExpress" Content="Instalar SQL Express en esta PC"
+                                Click="btnInstalarExpress_Click" Margin="0,0,0,8"
+                                Style="{StaticResource SuccessButtonStyle}"/>
+                        <Button x:Name="btnPrepararServidor" Content="Asistente: preparar esta PC como SERVIDOR"
+                                Click="btnPrepararServidor_Click" Margin="0,0,0,12"
+                                Style="{StaticResource ButtonStyle}"/>
+                        <TextBlock x:Name="txtChecklistRed" Text="" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" Margin="0,0,0,12"/>
 
-                        <TextBlock Text="Datos Técnicos" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,20,0,8"/>
+                        <TextBlock Text="Instrucciones" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,8"/>
+                        <TextBlock Text="• SERVIDOR: usá «Preparar como SERVIDOR». Instala una sola instancia Express (SQLEXPRESS), aplica modo mixto (para y arranca el servicio), abre el puerto 1433 y crea el usuario SQL schpos una sola vez. Si el asistente falla, no es falta de usuario: SQL todavía no acepta logins SQL o quedó un schpos viejo." Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <TextBlock Text="• CLIENTE: IP\SQLEXPRESS, puerto 1433, desmarcar Windows Auth y usar usuario/clave del archivo SCHPOS-Configuracion-Clientes.txt del servidor." Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <Button x:Name="btnCargarCredencialesRed" Content="📋 Cargar usuario/clave desde archivo del servidor"
+                                Click="btnCargarCredencialesRed_Click" Margin="0,0,0,10" Height="36"/>
+                        <TextBlock Text="• AL GUARDAR / PREPARAR: el sistema se cierra para aplicar la conexión." Foreground="Red" FontWeight="Bold" TextWrapping="Wrap"/>
+
+                        <TextBlock Text="Datos técnicos" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,20,0,8"/>
                         <TextBlock Text="Base de Datos: SchPosDB" Foreground="{DynamicResource TextSecondary}"/>
-                        <TextBlock Text="Usuario Predeterminado: Sistema" Foreground="{DynamicResource TextSecondary}"/>
-                        <TextBlock Text="Puerto Estándar: 1433" Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="Usuario red clientes: schpos (generado al preparar servidor)" Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="Puerto: 1433" Foreground="{DynamicResource TextSecondary}"/>
                     </StackPanel>
                     </Border>
                 </Grid>
@@ -655,12 +733,45 @@
                 <Border Style="{StaticResource ConfigSectionCard}" MaxWidth="640" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <StackPanel>
                         <TextBlock Text="Activación de producto" Style="{StaticResource ConfigSectionTitle}"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"
+                                   Text="Copiá el ID de máquina, envialo a soporte (info@schettini.com.ar) y pegá aquí la clave recibida. Después reiniciá SCHPOS."/>
 
                         <TextBlock Text="Estado Actual:" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,5"/>
-                        <TextBlock x:Name="lblEstadoLicencia" Text="Verificando..." Foreground="{DynamicResource SuccessColor}" FontSize="16" FontWeight="Bold" Margin="0,0,0,20"/>
+                        <TextBlock x:Name="lblEstadoLicencia" Text="Verificando..." Foreground="{DynamicResource SuccessColor}" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"/>
 
                         <TextBlock Text="Vencimiento:" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,5"/>
-                        <TextBlock x:Name="lblVencimiento" Text="-" Foreground="{DynamicResource TextPrimary}" FontSize="16" Margin="0,0,0,20"/>
+                        <TextBlock x:Name="lblVencimiento" Text="-" Foreground="{DynamicResource TextPrimary}" FontSize="16" Margin="0,0,0,12"/>
+
+                        <TextBlock Text="Extras habilitados:" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,5"/>
+                        <TextBlock x:Name="lblExtrasLicencia" Text="—" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextPrimary}" FontSize="13" Margin="0,0,0,12"/>
+                        <Border x:Name="bdrUpsellRed" Visibility="Collapsed" Background="{DynamicResource SurfaceDark}"
+                                CornerRadius="8" Padding="12" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="Conexión en RED no incluida"
+                                           FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12"
+                                           Text="Esta licencia es para una sola PC. Si más adelante contratás el extra «Conexión en RED», pedí una nueva clave, activala acá, reiniciá SCHPOS y vas a poder preparar el servidor o unirte como cliente desde la pestaña Red y Servidor."/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="ID de máquina (enviar a soporte):" Style="{StaticResource ModuleLabelStyle}"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="txtMachineIdLicencia" Grid.Column="0"
+                                     Style="{StaticResource ModuleTextBoxStyle}" IsReadOnly="True"
+                                     FontFamily="Consolas" Margin="0,0,8,0"/>
+                            <Button Grid.Column="1" Content="Copiar" MinWidth="90" MinHeight="44"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Click="btnCopiarMachineIdLicencia_Click"/>
+                        </Grid>
+                        <Button Content="¿Cómo funciona la licencia?"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                HorizontalAlignment="Left" Margin="0,0,0,16" MinHeight="40" Padding="14,8"
+                                Click="btnAyudaLicencia_Click"/>
 
                         <TextBlock Text="Clave de Licencia (Pegar aquí):" Style="{StaticResource ModuleLabelStyle}"/>
                         <TextBox x:Name="txtLicenciaKey" Style="{StaticResource ModuleTextBoxStyle}" Height="100" TextWrapping="Wrap" VerticalContentAlignment="Top" AcceptsReturn="True"/>
@@ -917,6 +1028,8 @@
                             <TextBox x:Name="txtEtiquetaAltoMm" Width="70" Height="40" FontSize="14"
                                      VerticalContentAlignment="Center" Text="25"/>
                         </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,10,0,0"
+                                   Text="El auto-corte del rollo (cuchilla) se configura en Etiquetas → Configurar etiqueta. Ahí se elige el protocolo según la marca (ESC/POS, TSPL, ZPL o EPL)."/>
                                 <Button Content="💾 Guardar cambios de esta sección" Style="{StaticResource SecondaryButtonStyle}"
                                         HorizontalAlignment="Right" Margin="0,14,0,0" Click="btnGuardarImpresoras_Click"/>
                             </StackPanel>
@@ -925,6 +1038,12 @@
                         <Border Style="{StaticResource ConfigSectionCard}">
                             <StackPanel>
                         <TextBlock Text="Comportamiento al emitir" Style="{StaticResource ConfigSectionTitle}"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,8"
+                                   Text="El Destino elige el formato (Ticket / A4 / PDF). El checkbox «Preguntar antes…» solo confirma cuando el destino ya está fijo. Si Destino = Preguntar al cobrar, al vender se elige el formato."/>
+                        <Button Content="¿Cómo funciona Destino y Preguntar?"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                HorizontalAlignment="Left" Margin="0,0,0,14" MinHeight="40" Padding="14,8"
+                                Click="btnAyudaImpresionDestino_Click"/>
 
                         <CheckBox x:Name="chkPreguntarAntesImprimir"
                                   Content="Preguntar antes de imprimir tras cada venta o documento"
@@ -932,18 +1051,20 @@
                                   Foreground="{DynamicResource TextPrimary}"
                                   Margin="0,0,0,8"/>
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,16"
-                                   Text="Si desmarcás esta opción y tenés impresora configurada, el comprobante se enviará directo a la impresora sin preguntar."/>
+                                   Text="Aplica cuando el Destino ya está fijo (Ticket, A4 o PDF). Si está desmarcado e hay impresora configurada, imprime directo sin confirmar."/>
 
                         <TextBlock Text="Destino al cobrar (ventas)" FontSize="15" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,8"
-                                   Text="Elegí cómo se emite el comprobante al finalizar una venta. Si elegís A4, se imprime en formato documento (no ticket estrecho)."/>
+                                   Text="Formato al finalizar una venta. A4 = documento (no ticket estrecho). «Preguntar al cobrar» = elegir formato en cada venta."/>
                         <ComboBox x:Name="cmbDestinoImpresionVenta"
                                   Style="{StaticResource TouchComboBoxStyle}"
                                   Height="44" FontSize="14" Margin="0,0,0,16"/>
 
                         <TextBlock Text="Ancho del papel térmico" FontSize="15" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,8"
+                                   Text="Debe coincidir con el rollo (casi siempre 80 mm). Si elegís mal, el ticket se corta o queda con mucho margen vacío."/>
                         <ComboBox x:Name="cmbAnchoTicketMm"
                                   Style="{StaticResource TouchComboBoxStyle}"
                                   Height="44" FontSize="14" Margin="0,0,0,16"/>
@@ -1009,7 +1130,8 @@
                 <Border Style="{StaticResource ConfigSectionCard}">
                     <StackPanel>
                         <TextBlock Text="Medios de pago" Style="{StaticResource ConfigSectionTitle}"/>
-                        <TextBlock Text="Configure los medios de pago disponibles para cobros." Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,14"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,14"
+                                   Text="Activo = aparece al cobrar. Orden = prioridad en pantalla. No borres medios ya usados en el historial: desactivalos. Mercado Pago QR y Point se configuran en Negocio y ARCA (con el extra de licencia)."/>
                         <DataGrid x:Name="dgvMediosPago" AutoGenerateColumns="False" CanUserAddRows="False"
                                   CanUserReorderColumns="True" CanUserResizeColumns="True"
                                   MinHeight="180" MaxHeight="360" Margin="0,0,0,10"

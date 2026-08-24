@@ -3,6 +3,9 @@ using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
@@ -43,19 +46,36 @@ namespace SchettiniGestion.WPF
                 if (host.IndexOf("(localdb)", StringComparison.OrdinalIgnoreCase) >= 0) return true;
                 if (host == "." || host.Equals("localhost", StringComparison.OrdinalIgnoreCase) || host.Equals("(local)", StringComparison.OrdinalIgnoreCase))
                     return true;
-                if (host == "127.0.0.1") return true;
+                if (host == "127.0.0.1" || host == "::1") return true;
                 if (host.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase)) return true;
 
-                try
-                {
-                    var ipsLocales = System.Net.Dns.GetHostAddresses(Environment.MachineName).Select(ip => ip.ToString());
-                    if (ipsLocales.Contains(host)) return true;
-                }
-                catch { }
+                // No usar Dns.GetHostAddresses: en notebooks con DNS lento/roto congela Configuración.
+                if (IPAddress.TryParse(host, out IPAddress ipObjetivo))
+                    return IpEsLocal(ipObjetivo);
 
                 return false;
             }
             catch { return true; }
+        }
+
+        private static bool IpEsLocal(IPAddress ip)
+        {
+            if (IPAddress.IsLoopback(ip)) return true;
+            try
+            {
+                foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (ni.OperationalStatus != OperationalStatus.Up) continue;
+                    if (ni.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+                    foreach (var ua in ni.GetIPProperties().UnicastAddresses)
+                    {
+                        if (ua.Address.AddressFamily != ip.AddressFamily) continue;
+                        if (ua.Address.Equals(ip)) return true;
+                    }
+                }
+            }
+            catch { }
+            return false;
         }
 
         /// <summary>

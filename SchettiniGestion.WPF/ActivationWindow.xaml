@@ -54,7 +54,8 @@
 
                             <TextBlock Text="Activación de Licencia" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
 
-                            <TextBlock Text="Ingrese su clave de licencia para activar el sistema" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
+                            <TextBlock Text="1) Copiá el ID · 2) Pedí la licencia · 3) Pegá la clave · 4) Activar"
+                                       FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
 
                         </StackPanel>
 
@@ -126,7 +127,8 @@
 
 
 
-                <TextBlock Text="ID de Máquina (envíe este código para obtener su licencia):" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"
+                           Text="ID de máquina — envialo a info@schettini.com.ar. Los extras (Red, ARCA, Point, etc.) vienen en la clave que te envían."/>
 
                 <Grid Margin="0,0,0,14">
 

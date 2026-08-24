@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using SharpVectors.Converters;
@@ -9,12 +10,41 @@ namespace SchettiniGestion.WPF
 {
     internal static class SvgLogoHelper
     {
-        private static readonly Uri PackLogoUri =
-            new Uri("pack://application:,,,/SchettiniGestion.WPF;component/Resources/logo.svg", UriKind.Absolute);
+        private static readonly Uri PackLogoIcoUri =
+            new Uri("pack://application:,,,/Resources/schpos-logo.ico", UriKind.Absolute);
 
-        public static DrawingImage LoadEmbeddedLogo()
+        private static readonly Uri PackLogoUri =
+            new Uri("pack://application:,,,/Resources/logo.svg", UriKind.Absolute);
+
+        private static ImageSource _cachedBrand;
+
+        public static ImageSource LoadEmbeddedLogo()
         {
-            return LoadFromUri(PackLogoUri);
+            if (_cachedBrand != null)
+                return _cachedBrand;
+
+            try
+            {
+                var decoder = BitmapDecoder.Create(
+                    PackLogoIcoUri,
+                    BitmapCreateOptions.PreservePixelFormat,
+                    BitmapCacheOption.OnLoad);
+                var frame = decoder.Frames
+                    .OrderByDescending(f => f.PixelWidth * f.PixelHeight)
+                    .FirstOrDefault();
+                if (frame != null)
+                {
+                    frame.Freeze();
+                    _cachedBrand = frame;
+                    return _cachedBrand;
+                }
+            }
+            catch { /* ico opcional */ }
+
+            var svg = LoadFromUri(PackLogoUri);
+            if (svg != null)
+                _cachedBrand = svg;
+            return _cachedBrand;
         }
 
         public static DrawingImage LoadFromUri(Uri uri)

@@ -63,7 +63,7 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="3" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="1">
+        <Border Grid.Row="3" Background="{DynamicResource SurfaceDark}" CornerRadius="{DynamicResource CardCornerRadius}" Padding="8,4,8,8">
             <DataGrid x:Name="dgvVentas" Style="{StaticResource {x:Type DataGrid}}" AutoGenerateColumns="False" IsReadOnly="True" RowHeight="40">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="NRO" Binding="{Binding FacturaID, StringFormat=D8}" Width="100"/>

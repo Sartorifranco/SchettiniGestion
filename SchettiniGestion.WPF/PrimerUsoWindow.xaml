@@ -219,7 +219,7 @@
                                         <StackPanel>
                                             <TextBlock Text="Usuario:" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
                                             <TextBox x:Name="txtUsuarioCliente" Style="{StaticResource ModuleTextBoxStyle}"
-                                                     Height="40" FontSize="13" VerticalContentAlignment="Center" Text="sa"/>
+                                                     Height="40" FontSize="13" VerticalContentAlignment="Center" Text="schpos"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="Contraseña:" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
@@ -227,6 +227,9 @@
                                                          Height="40" FontSize="13"/>
                                         </StackPanel>
                                     </Grid>
+                                    <TextBlock TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"
+                                               Foreground="{DynamicResource TextSecondary}"
+                                               Text="Si el servidor se preparó con el asistente SCHPOS, usá el usuario schpos y la clave del archivo SCHPOS-Configuracion-Clientes.txt del Escritorio del servidor (no sa)."/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>

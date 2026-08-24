@@ -5,9 +5,13 @@
     <Grid Margin="0,10,0,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="14,10" Margin="0,0,0,10">
+        <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,8"
+                   Foreground="{DynamicResource TextSecondary}" FontSize="12"
+                   Text="Listado de NC/ND de venta. Para una nota vinculada a una factura (recomendada con ARCA): Ventas → historial → NC. Eliminar acá no cancela el CAE en ARCA."/>
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="14,10" Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal">
                 <TextBox x:Name="txtFiltro" Style="{StaticResource ModernTextBox}" Width="280" TextChanged="txtFiltro_TextChanged"/>
                 <Button Content="🔍 Buscar" Style="{StaticResource ButtonStyle}" Margin="8,0,0,0" Padding="10,6" Click="btnBuscar_Click"/>
@@ -15,7 +19,7 @@
                 <Button Content="🗑 Eliminar" Style="{StaticResource DeleteButtonStyle}" Margin="8,0,0,0" Padding="10,6" Click="btnEliminar_Click"/>
             </StackPanel>
         </Border>
-        <DataGrid Grid.Row="1" x:Name="dgvNotas"
+        <DataGrid Grid.Row="2" x:Name="dgvNotas"
                   Style="{StaticResource {x:Type DataGrid}}"
                   AutoGenerateColumns="False" IsReadOnly="True"
                   HeadersVisibility="Column" CanUserAddRows="False" SelectionMode="Single">

@@ -83,9 +83,18 @@ public static class ModulosCatalog
     public static List<string> ObtenerPresetLite() =>
         ResolverLicencia(ObtenerTodos().Where(m => m.IncluidoEnLite && m.Licenciable).Select(m => m.Codigo));
 
-    /// <summary>Lite + todos los módulos licenciables visibles (plan Pro).</summary>
+    /// <summary>
+    /// Lite + módulos adicionales de negocio (listas, compras, etc.).
+    /// No incluye extras de pago único (RED, ARCA, etiquetas, visor) ni abonos (MP, soporte):
+    /// se contratan aparte en el licenciador.
+    /// </summary>
     public static List<string> ObtenerPresetPro() =>
-        ResolverLicencia(ObtenerLicenciables().Select(m => m.Codigo));
+        ResolverLicencia(
+            ObtenerLicenciables()
+                .Where(m =>
+                    string.Equals(m.Grupo, GrupoLiteBase, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(m.Grupo, GrupoModuloAdicional, StringComparison.OrdinalIgnoreCase))
+                .Select(m => m.Codigo));
 
     public static IReadOnlyList<string> ObtenerImplicitos() =>
         ObtenerTodos().Where(m => m.Implicito).Select(m => m.Codigo).Distinct(StringComparer.OrdinalIgnoreCase).ToList();

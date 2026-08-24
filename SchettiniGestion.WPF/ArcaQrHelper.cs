@@ -98,6 +98,39 @@ namespace SchettiniGestion.WPF
             return ConstruirUrl(fecha, cuitEmisor, ptoVta, tipoAfip, nro, total, cae, clienteCuit);
         }
 
+        /// <summary>QR fiscal para nota de crédito/débito electrónica (requiere CAE).</summary>
+        public static string ConstruirUrlDesdeNota(DataRow nota)
+        {
+            if (nota == null) return null;
+            string cae = nota.Table.Columns.Contains("CAE") ? nota["CAE"]?.ToString()?.Trim() ?? "" : "";
+            if (string.IsNullOrWhiteSpace(cae)) return null;
+
+            DataRow conf = DatabaseService.GetConfiguracion();
+            string cuitEmisor = conf?["CUIT"]?.ToString() ?? "";
+            string condicionIva = conf != null && conf.Table.Columns.Contains("CondicionIVAEmpresa")
+                ? conf["CondicionIVAEmpresa"]?.ToString() ?? "" : "";
+            int.TryParse(conf?["PuntoVenta"]?.ToString()?.Trim(), out int ptoVta);
+
+            string tipoCodigo = nota.Table.Columns.Contains("Tipo") ? nota["Tipo"]?.ToString() ?? "NC" : "NC";
+            string tipoNombre = tipoCodigo.Equals("ND", StringComparison.OrdinalIgnoreCase)
+                ? "Nota de Débito" : "Nota de Crédito";
+            string clienteCuit = nota.Table.Columns.Contains("ClienteCUIT") ? nota["ClienteCUIT"]?.ToString() ?? "" : "";
+            DateTime fecha = nota.Table.Columns.Contains("Fecha") && nota["Fecha"] != DBNull.Value
+                ? Convert.ToDateTime(nota["Fecha"]) : DateTime.Today;
+            decimal total = nota.Table.Columns.Contains("Monto") && nota["Monto"] != DBNull.Value
+                ? Convert.ToDecimal(nota["Monto"]) : 0m;
+
+            int nro = 0;
+            if (nota.Table.Columns.Contains("NumeroComprobanteAFIP") && nota["NumeroComprobanteAFIP"] != DBNull.Value)
+                nro = Convert.ToInt32(nota["NumeroComprobanteAFIP"]);
+            if (nro <= 0 && nota.Table.Columns.Contains("NotaID") && nota["NotaID"] != DBNull.Value)
+                nro = Convert.ToInt32(nota["NotaID"]);
+
+            string letra = InferirLetra(tipoNombre, clienteCuit, condicionIva);
+            int tipoAfip = ResolverTipoComprobanteAfip(tipoNombre, letra, clienteCuit, condicionIva);
+            return ConstruirUrl(fecha, cuitEmisor, ptoVta, tipoAfip, nro, total, cae, clienteCuit);
+        }
+
         public static WinDrawing.Bitmap GenerarBitmap(string urlQr, int pixelsPorModulo = 4)
         {
             if (string.IsNullOrWhiteSpace(urlQr)) return null;
@@ -148,6 +181,9 @@ namespace SchettiniGestion.WPF
                 return 7;
             }
 
+            if (tipo.IndexOf("Ticket", StringComparison.OrdinalIgnoreCase) >= 0)
+                return monotributo ? 11 : 6;
+
             if (let == "A") return 1;
             if (let == "C") return 11;
             if (let == "B") return 6;
@@ -157,15 +193,45 @@ namespace SchettiniGestion.WPF
             return 6;
         }
 
-        public static string InferirLetra(string tipoComprobante, string cuitCliente, string condicionIvaEmisor)
+        /// <summary>
+        /// Letra A/B/C/X. Monotributista emite C. RI emite A solo a otro RI; CF/Monotributo/Exento → B.
+        /// Si el cliente no tiene condición IVA, se usa el CUIT (CUIT real → A).
+        /// </summary>
+        public static string InferirLetra(string tipoComprobante, string cuitCliente, string condicionIvaEmisor, string condicionIvaCliente = null)
         {
             string tipo = tipoComprobante ?? "";
             if (tipo.IndexOf("Ticket", StringComparison.OrdinalIgnoreCase) >= 0) return "X";
+            if (tipo.IndexOf("Remito", StringComparison.OrdinalIgnoreCase) >= 0
+                || tipo.IndexOf("Pedido", StringComparison.OrdinalIgnoreCase) >= 0
+                || tipo.IndexOf("Presupuesto", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "—";
+
             bool monotributo = !string.IsNullOrWhiteSpace(condicionIvaEmisor)
                 && condicionIvaEmisor.IndexOf("Monotribut", StringComparison.OrdinalIgnoreCase) >= 0;
             if (monotributo) return "C";
-            if (EsCuitValido(cuitCliente)) return "A";
-            return "B";
+
+            if (EsConsumidorONoInscripto(condicionIvaCliente))
+                return "B";
+            if (EsResponsableInscripto(condicionIvaCliente))
+                return EsCuitValido(cuitCliente) ? "A" : "B";
+
+            return EsCuitValido(cuitCliente) ? "A" : "B";
+        }
+
+        private static bool EsResponsableInscripto(string condicionIva)
+        {
+            if (string.IsNullOrWhiteSpace(condicionIva)) return false;
+            return condicionIva.IndexOf("Inscripto", StringComparison.OrdinalIgnoreCase) >= 0
+                && condicionIva.IndexOf("No Responsable", StringComparison.OrdinalIgnoreCase) < 0;
+        }
+
+        private static bool EsConsumidorONoInscripto(string condicionIva)
+        {
+            if (string.IsNullOrWhiteSpace(condicionIva)) return false;
+            return condicionIva.IndexOf("Consumidor", StringComparison.OrdinalIgnoreCase) >= 0
+                || condicionIva.IndexOf("Monotribut", StringComparison.OrdinalIgnoreCase) >= 0
+                || condicionIva.IndexOf("Exento", StringComparison.OrdinalIgnoreCase) >= 0
+                || condicionIva.IndexOf("No Responsable", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public static long SoloDigitosLong(string valor)

@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Forms;
-using SchettiniGestion;
 using System.Data;
-// CORRECCION: Importamos Media para que "Brush" sea el correcto
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Windows;
+using System.Windows.Forms;
+using System.Windows.Interop;
 using System.Windows.Media;
+using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
 {
@@ -13,6 +15,12 @@ namespace SchettiniGestion.WPF
     {
         private static VisorClienteWindow _visor;
         public static event Action<string> OnClienteEligioPago;
+
+        private const uint SWP_SHOWWINDOW = 0x0040;
+        private const uint SWP_NOZORDER = 0x0004;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
         private static bool VisorEstaHabilitado()
         {
@@ -32,17 +40,40 @@ namespace SchettiniGestion.WPF
             catch { return false; }
         }
 
+        /// <summary>Abre o cierra el visor según el combo (sin releer la base: evita que un flag viejo lo cierre).</summary>
+        public static string AplicarModo(bool dosPantallas)
+        {
+            if (!dosPantallas)
+            {
+                Cerrar();
+                return null;
+            }
+
+            if (!LicenseManager.TieneVisorCliente())
+            {
+                Cerrar();
+                return "La pantalla cliente (segundo monitor) no está incluida en su licencia.";
+            }
+
+            IniciarForzado();
+
+            if (Screen.AllScreens.Length < 2)
+            {
+                return "El visor del cliente se abrió. Windows solo ve un monitor (suele pasar si está en «Duplicar» y no en «Extender»).\n\n" +
+                       "Pasá a Extender escritorio o arrastrá esa ventana al otro monitor.";
+            }
+
+            return null;
+        }
+
         public static void Iniciar()
         {
             if (!VisorEstaHabilitado()) return;
+            IniciarForzado();
+        }
 
-            if (Screen.AllScreens.Length <= 1)
-                return;
-
-            var pantallaSecundaria = Screen.AllScreens.FirstOrDefault(s => !s.Primary) ?? Screen.AllScreens[1];
-            var area = pantallaSecundaria.WorkingArea;
-
-            // Si el usuario cerró el visor, la instancia queda inválida: no se puede volver a Show().
+        private static void IniciarForzado()
+        {
             if (_visor != null && !_visor.IsLoaded)
                 _visor = null;
 
@@ -60,21 +91,10 @@ namespace SchettiniGestion.WPF
 
             try
             {
-                _visor.WindowState = System.Windows.WindowState.Normal;
-                _visor.Top = area.Top;
-                _visor.Left = area.Left;
-                _visor.Width = area.Width;
-                _visor.Height = area.Height;
-                _visor.WindowState = System.Windows.WindowState.Maximized;
-
-                if (_visor.IsVisible)
-                    _visor.Activate();
-                else
-                    _visor.Show();
+                MostrarVisor(_visor);
             }
             catch (InvalidOperationException)
             {
-                // Defensa extra: recrear y reintentar una vez.
                 _visor = null;
                 var ventana = new VisorClienteWindow();
                 ventana.Closed += (_, __) =>
@@ -84,13 +104,48 @@ namespace SchettiniGestion.WPF
                 };
                 ventana.OnOpcionSeleccionada += (opcion) => OnClienteEligioPago?.Invoke(opcion);
                 _visor = ventana;
-                _visor.Top = area.Top;
-                _visor.Left = area.Left;
-                _visor.Width = area.Width;
-                _visor.Height = area.Height;
-                _visor.WindowState = System.Windows.WindowState.Maximized;
-                _visor.Show();
+                MostrarVisor(_visor);
             }
+        }
+
+        private static void MostrarVisor(VisorClienteWindow visor)
+        {
+            visor.WindowStartupLocation = WindowStartupLocation.Manual;
+            visor.WindowState = WindowState.Normal;
+            visor.WindowStyle = WindowStyle.None;
+            visor.ResizeMode = ResizeMode.NoResize;
+
+            var secundaria = Screen.AllScreens.FirstOrDefault(s => !s.Primary);
+            if (secundaria == null && Screen.AllScreens.Length > 1)
+                secundaria = Screen.AllScreens[1];
+
+            if (secundaria != null)
+            {
+                UbicarEnPantalla(visor, secundaria);
+            }
+            else
+            {
+                visor.Width = 1024;
+                visor.Height = 768;
+                visor.Left = 80;
+                visor.Top = 80;
+            }
+
+            if (visor.IsVisible)
+                visor.Activate();
+            else
+                visor.Show();
+
+            if (secundaria != null)
+                UbicarEnPantalla(visor, secundaria);
+        }
+
+        private static void UbicarEnPantalla(Window ventana, Screen pantalla)
+        {
+            ventana.WindowState = WindowState.Normal;
+            var hwnd = new WindowInteropHelper(ventana).EnsureHandle();
+            var b = pantalla.Bounds;
+            SetWindowPos(hwnd, IntPtr.Zero, b.X, b.Y, b.Width, b.Height, SWP_SHOWWINDOW | SWP_NOZORDER);
         }
 
         public static void Actualizar(List<FacturaItem> items, decimal total)
@@ -123,7 +178,6 @@ namespace SchettiniGestion.WPF
             if (_visor != null && _visor.IsLoaded) _visor.ActualizarEstadoPoint(mensaje, color);
         }
 
-        // CORRECCION: Aseguramos que Brush sea System.Windows.Media.Brush
         public static void ActualizarMensajeQR(string mensaje, Brush color)
         {
             if (!VisorEstaHabilitado()) return;
@@ -142,7 +196,6 @@ namespace SchettiniGestion.WPF
             if (_visor != null && _visor.IsLoaded) _visor.Reiniciar();
         }
 
-        /// <summary>Recarga publicidades del carrusel en la ventana abierta, sin reiniciar el visor.</summary>
         public static void RecargarPublicidades()
         {
             if (!VisorEstaHabilitado()) return;
@@ -163,7 +216,6 @@ namespace SchettiniGestion.WPF
             catch { }
         }
 
-        /// <summary>Reaplica la configuración de visor (pantalla única vs. cliente en segundo monitor).</summary>
         public static void RefrescarSegunConfiguracion()
         {
             if (!VisorEstaHabilitado())
@@ -172,13 +224,7 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
-            if (_visor != null && _visor.IsLoaded)
-            {
-                RecargarPublicidades();
-                return;
-            }
-
-            Iniciar();
+            IniciarForzado();
             Resetear();
         }
     }

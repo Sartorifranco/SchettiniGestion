@@ -8,10 +8,11 @@ using SchettiniGestion;
 
 namespace SchettiniGestion.WPF
 {
-    public partial class PreciosControl : UserControl
+    public partial class PreciosControl : UserControl, ISincronizableEnRed
     {
         private TextBox _ultimoTextBoxFoco;
         private bool _inicializado;
+        private bool _syncPendiente;
 
         public PreciosControl()
         {
@@ -27,6 +28,32 @@ namespace SchettiniGestion.WPF
                 CargarProductos();
             }
             txtBuscar.Focus();
+        }
+
+        public void AplicarCambioRed(string entidad)
+        {
+            if (!_inicializado) return;
+            if (!string.IsNullOrEmpty(entidad) && entidad != "Productos" && entidad != "ListasPrecios")
+                return;
+            if (EditandoPrecio())
+            {
+                _syncPendiente = true;
+                return;
+            }
+            _syncPendiente = false;
+            CargarProductos(txtBuscar?.Text ?? "");
+        }
+
+        private bool EditandoPrecio()
+        {
+            var fe = Keyboard.FocusedElement as TextBox;
+            return fe == txtCosto || fe == txtPrecioVenta;
+        }
+
+        private void PrecioCampo_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (_syncPendiente)
+                AplicarCambioRed("Productos");
         }
 
         private void CargarProductos(string filtro = "")

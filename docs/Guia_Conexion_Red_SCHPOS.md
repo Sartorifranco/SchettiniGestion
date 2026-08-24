@@ -101,15 +101,24 @@ Usá lo que dice el archivo del servidor. Ejemplos:
 
 ## Si el asistente se traba en «Preparar datos»
 
-Eso no es un problema de SCHPOS en sí: SQL Server sigue en **solo Windows**. El login `schpos` entonces falla (`Login failed for user 'schpos'`).
+Eso no es «falta de usuario en pantalla»: SQL Server sigue en **solo Windows** (`SoloWindows = 1`). El puerto 1433 puede responder y el login `schpos` igual falla (`Login failed for user 'schpos'`).
 
-En la PC servidor, **una sola instancia** Express (`SQLEXPRESS`). Después de que SCHPOS pida el UAC:
+El asistente ahora, en este orden:
 
-1. Reiniciá el servicio **SQL Server (SQLEXPRESS)** (parar y arrancar; el modo mixto no aplica si no).
-2. Comprobá: `sqlcmd -S ".\SQLEXPRESS" -E -Q "SELECT SERVERPROPERTY('IsIntegratedSecurityOnly')"` → tiene que dar **0**.
-3. Recién ahí **Preparar datos**, **una vez**.
-4. Si ya falló antes: borrá el login `schpos` y reintentá una sola vez.
-5. Las otras PCs usan `SCHPOS-Configuracion-Clientes.txt` (usuario `schpos` y la clave de ese archivo).
+1. Escribe modo mixto (`LoginMode = 2` y `xp_instance_regwrite` sobre **SQLEXPRESS**).
+2. **Para y arranca** el servicio `MSSQL$SQLEXPRESS` (no alcanza un reinicio a medias, ni reciclar `SQLEXPRESS01` si existe).
+3. Comprueba `SERVERPROPERTY('IsIntegratedSecurityOnly')` → tiene que dar **0**. Si da 1, **no crea** `schpos`.
+4. Recién ahí **Preparar datos**. Si el login viejo quedó con otra clave, lo borra y lo recrea **una sola vez**.
+
+Regla corta para el técnico: **modo mixto aplicado (0) → un solo Express → un solo Preparar datos → clave del `.txt`**.
+
+Si el asistente no pudo aplicar el 0, en la PC servidor:
+
+1. Una sola instancia Express (`SQLEXPRESS`). No instales `SQLEXPRESS01` si no hace falta.
+2. Pará y arrancá **SQL Server (SQLEXPRESS)**.
+3. Comprobá: `sqlcmd -S ".\SQLEXPRESS" -E -Q "SELECT SERVERPROPERTY('IsIntegratedSecurityOnly') AS SoloWindows"` → **0**.
+4. Recién ahí **Preparar datos**, **una vez**.
+5. Las otras PCs usan `SCHPOS-Configuracion-Clientes.txt` (usuario `schpos` y la clave de ese archivo). En el servidor la conexión local sigue siendo `.\SQLEXPRESS` con Windows; en el cliente, `IP\SQLEXPRESS` puerto 1433.
 
 ---
 

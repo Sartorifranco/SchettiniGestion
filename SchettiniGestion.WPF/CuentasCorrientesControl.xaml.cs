@@ -8,7 +8,7 @@ using System.Windows.Media;
 
 namespace SchettiniGestion.WPF
 {
-    public partial class CuentasCorrientesControl : UserControl
+    public partial class CuentasCorrientesControl : UserControl, ISincronizableEnRed
     {
         private DataRow _entidadSeleccionada;
         private bool _modoClientes = true; // True = Clientes, False = Proveedores
@@ -25,6 +25,36 @@ namespace SchettiniGestion.WPF
             _inicializado = true;
             // Aseguramos que al cargar la pantalla se limpie todo correctamente
             LimpiarTodo();
+        }
+
+        public void AplicarCambioRed(string entidad)
+        {
+            if (!_inicializado) return;
+            if (!string.IsNullOrEmpty(entidad) && entidad != "Clientes" && entidad != "CuentaCorriente")
+                return;
+            if (_entidadSeleccionada == null) return;
+            try
+            {
+                string colId = _modoClientes ? "ClienteID" : "ProveedorID";
+                if (!_entidadSeleccionada.Table.Columns.Contains(colId)) return;
+                int id = Convert.ToInt32(_entidadSeleccionada[colId]);
+                if (_modoClientes)
+                {
+                    var fresco = DatabaseService.BuscarClientePorID(id);
+                    if (fresco != null)
+                    {
+                        _entidadSeleccionada = fresco;
+                        if (lblNombreEntidad != null)
+                            lblNombreEntidad.Text = fresco["RazonSocial"]?.ToString();
+                        decimal saldo = 0;
+                        if (fresco.Table.Columns.Contains("SaldoDeuda") && fresco["SaldoDeuda"] != DBNull.Value)
+                            saldo = Convert.ToDecimal(fresco["SaldoDeuda"]);
+                        ActualizarVisualizacionSaldo(saldo);
+                    }
+                }
+                CargarHistorial();
+            }
+            catch { }
         }
 
         private void rbTipo_Checked(object sender, RoutedEventArgs e)

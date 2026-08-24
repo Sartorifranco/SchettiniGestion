@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using SchettiniGestion;
 
@@ -22,6 +23,7 @@ namespace SchettiniGestion.WPF
 
         private bool _hayPasswordAfipGuardadaEnBd;
         private bool _passwordAfipTocadoPorUsuario;
+        private int _indiceTabRed = -1;
         private bool _suprimirEventoPasswordAfip;
         private bool _inicializado;
         private bool _cargandoDatosConexion;
@@ -31,21 +33,84 @@ namespace SchettiniGestion.WPF
         public ConfiguracionControl()
         {
             InitializeComponent();
+            Unloaded += ConfiguracionControl_Unloaded;
         }
 
         private void ConfiguracionControl_Loaded(object sender, RoutedEventArgs e)
         {
             if (_inicializado) return;
             _inicializado = true;
+            AfipColaService.EstadoCambiado += OnAfipColaEstadoCambiado;
             CargarDatosNegocio();
             CargarDatosConexion();
-            CargarDatosLicencia();
             CargarMediosPago();
             AplicarVisibilidadCredencialesSQL();
             AplicarVisibilidadSegunLicencia();
-            CargarImpresoras();
             CargarBackupAuto();
             CargarOcr();
+            CargarColaArca();
+            Task.Run(() =>
+            {
+                try { LicenseManager.ObtenerHardwareId(); } catch { }
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    CargarDatosLicencia();
+                    ActualizarEstadoExpressUi();
+                    CargarImpresoras();
+                }));
+            });
+        }
+
+        private void ConfiguracionControl_Unloaded(object sender, RoutedEventArgs e)
+        {
+            AfipColaService.EstadoCambiado -= OnAfipColaEstadoCambiado;
+        }
+
+        private void OnAfipColaEstadoCambiado(object sender, EventArgs e)
+        {
+            Dispatcher.BeginInvoke(new Action(CargarColaArca));
+        }
+
+        private void CargarColaArca()
+        {
+            if (dgvColaArca == null) return;
+            try
+            {
+                var filas = DatabaseService.ListarAfipColaResumen(50);
+                dgvColaArca.ItemsSource = filas;
+                if (txtColaArcaVacia != null)
+                    txtColaArcaVacia.Visibility = (filas == null || filas.Count == 0)
+                        ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch
+            {
+                dgvColaArca.ItemsSource = null;
+            }
+        }
+
+        private void btnActualizarColaArca_Click(object sender, RoutedEventArgs e)
+        {
+            CargarColaArca();
+        }
+
+        private async void btnReintentarColaArca_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnReintentarColaArca == null) return;
+            btnReintentarColaArca.IsEnabled = false;
+            try
+            {
+                await AfipColaService.ProcesarPendientesAsync();
+                CargarColaArca();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("No se pudo reintentar ARCA.\n\n" + ex.Message, "Reintento de CAE",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            finally
+            {
+                btnReintentarColaArca.IsEnabled = true;
+            }
         }
 
         private void AplicarVisibilidadSegunLicencia()
@@ -58,6 +123,8 @@ namespace SchettiniGestion.WPF
 
             if (panelSeccionAfip != null)
                 panelSeccionAfip.Visibility = afip ? Visibility.Visible : Visibility.Collapsed;
+            if (cardColaArca != null)
+                cardColaArca.Visibility = afip ? Visibility.Visible : Visibility.Collapsed;
 
             // QR y Point son servicios independientes (abonos distintos en la licencia).
             if (cardSeccionMercadoPagoCuenta != null)
@@ -69,14 +136,45 @@ namespace SchettiniGestion.WPF
 
             if (panelSeccionVisorCliente != null)
                 panelSeccionVisorCliente.Visibility = visor ? Visibility.Visible : Visibility.Collapsed;
-            if (tabItemRedServidor != null)
-                tabItemRedServidor.Visibility = red ? Visibility.Visible : Visibility.Collapsed;
+
+            AplicarVisibilidadPestanaRed(red);
+
+            if (bdrUpsellRed != null)
+                bdrUpsellRed.Visibility = red ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Quita la pestaña del TabControl (Visibility=Collapsed en TabItem a veces sigue mostrando el header).
+        /// </summary>
+        private void AplicarVisibilidadPestanaRed(bool visible)
+        {
+            if (tabItemRedServidor == null || tabConfigPrincipal == null) return;
+
+            bool estaEnTabs = tabConfigPrincipal.Items.Contains(tabItemRedServidor);
+            if (visible)
+            {
+                if (!estaEnTabs)
+                {
+                    int idx = _indiceTabRed >= 0
+                        ? Math.Min(_indiceTabRed, tabConfigPrincipal.Items.Count)
+                        : Math.Min(1, tabConfigPrincipal.Items.Count); // tras Negocio
+                    tabConfigPrincipal.Items.Insert(idx, tabItemRedServidor);
+                }
+                tabItemRedServidor.Visibility = Visibility.Visible;
+            }
+            else if (estaEnTabs)
+            {
+                _indiceTabRed = tabConfigPrincipal.Items.IndexOf(tabItemRedServidor);
+                if (ReferenceEquals(tabConfigPrincipal.SelectedItem, tabItemRedServidor))
+                    tabConfigPrincipal.SelectedIndex = 0;
+                tabConfigPrincipal.Items.Remove(tabItemRedServidor);
+            }
         }
 
         // --- LOGO ---
         private void MostrarPreviewLogo(string ruta)
         {
-            if (!string.IsNullOrWhiteSpace(ruta) && System.IO.File.Exists(ruta))
+            if (!string.IsNullOrWhiteSpace(ruta) && !RutaDeRedQuePuedeColgar(ruta) && System.IO.File.Exists(ruta))
             {
                 try
                 {
@@ -239,6 +337,11 @@ namespace SchettiniGestion.WPF
             try
             {
                 string carpeta = txtVisorPromoCarpeta?.Text?.Trim();
+                if (RutaDeRedQuePuedeColgar(carpeta))
+                {
+                    lstArchivosVisorPromo.Items.Clear();
+                    return;
+                }
                 var archivos = DatabaseService.ListarArchivosPromoVisorCliente(
                     string.IsNullOrWhiteSpace(carpeta) ? null : carpeta);
                 lstArchivosVisorPromo.Items.Clear();
@@ -255,6 +358,23 @@ namespace SchettiniGestion.WPF
                 lstArchivosVisorPromo.DisplayMemberPath = "Display";
             }
             catch { /* lista vacía si la carpeta no existe */ }
+        }
+
+        private static bool RutaDeRedQuePuedeColgar(string ruta)
+        {
+            if (string.IsNullOrWhiteSpace(ruta)) return false;
+            if (ruta.StartsWith(@"\\", StringComparison.Ordinal)) return true;
+            try
+            {
+                string root = Path.GetPathRoot(ruta);
+                if (!string.IsNullOrEmpty(root) && root.Length >= 2 && root[1] == ':')
+                {
+                    var drive = new DriveInfo(root);
+                    if (drive.DriveType == DriveType.Network) return true;
+                }
+            }
+            catch { }
+            return false;
         }
 
         private static bool EsBannerPorNombre(string nombre)
@@ -938,17 +1058,192 @@ namespace SchettiniGestion.WPF
                     bool esLocal = ip == "." || ip == "127.0.0.1" || ip == "localhost"
                         || ip.StartsWith(".\\") || ip.StartsWith("localhost\\")
                         || ip.StartsWith("127.0.0.1\\") || ip.Contains("(localdb)");
-                    cmbModoPC.SelectedIndex = esLocal ? 0 : 1;
+
+                    // Prioridad: modo_red.cfg (persiste CLIENTE aunque el archivo se haya caído a LocalDB).
+                    string modoGuardado = SqlServerNetworkSetup.LeerModoRed();
+                    if (modoGuardado == SqlServerNetworkSetup.ModoCliente)
+                        cmbModoPC.SelectedIndex = 1;
+                    else if (modoGuardado == SqlServerNetworkSetup.ModoServidor)
+                        cmbModoPC.SelectedIndex = 0;
+                    else
+                        cmbModoPC.SelectedIndex = esLocal ? 0 : 1;
+
+                    // Si está marcado CLIENTE pero la conexión volvió a LocalDB, limpiar IP para forzar reingreso.
+                    if (cmbModoPC.SelectedIndex == 1 && esLocal)
+                        txtIpServidor.Text = "";
+
                     txtIpServidor.IsEnabled = cmbModoPC.SelectedIndex != 0;
+                    if (txtNombrePuesto != null)
+                        txtNombrePuesto.Text = PuestoLocalService.Nombre;
+                    ActualizarListaPuestosEnRed();
                 }
                 finally
                 {
                     _cargandoDatosConexion = false;
                 }
 
-                chkUsarWindowsAuth_Changed(null, null);
+                AplicarUiModoRed();
             }
             catch { }
+        }
+
+        private void ActualizarEstadoExpressUi()
+        {
+            try
+            {
+                if (txtEstadoExpress == null) return;
+                bool esCliente = cmbModoPC != null && cmbModoPC.SelectedIndex == 1;
+                if (esCliente)
+                {
+                    txtEstadoExpress.Text = "SQL Express: no aplica en esta PC (es CLIENTE). El motor vive en el servidor.";
+                    if (btnInstalarExpress != null)
+                        btnInstalarExpress.IsEnabled = false;
+                    return;
+                }
+                bool ok = SqlExpressInstaller.EstaInstalado();
+                txtEstadoExpress.Text = ok
+                    ? "SQL Express: detectado (.\\SQLEXPRESS listo o instalado)."
+                    : "SQL Express: NO detectado. En el SERVIDOR hay que instalarlo (botón abajo o al preparar).";
+                if (btnInstalarExpress != null)
+                    btnInstalarExpress.IsEnabled = !ok;
+            }
+            catch { }
+        }
+
+        private void btnInstalarExpress_Click(object sender, RoutedEventArgs e)
+        {
+            if (!EsAdministrador())
+            {
+                ModernMessageBox.Show("Solo un administrador puede instalar SQL Express.", "Acceso denegado",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (ModernMessageBox.Show(
+                    "Se descargará e instalará SQL Server Express (SQLEXPRESS).\n" +
+                    "Requiere Internet y permiso de administrador. Puede tardar varios minutos.\n\n¿Continuar?",
+                    "Instalar SQL Express",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+            string err = null;
+            try
+            {
+                err = SqlExpressInstaller.InstalarSilencioso(msg =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (txtChecklistRed != null) txtChecklistRed.Text = msg;
+                    });
+                });
+            }
+            finally { Mouse.OverrideCursor = null; }
+
+            ActualizarEstadoExpressUi();
+            if (err == null)
+                ModernMessageBox.Show("SQL Express quedó instalado/listo.", "Listo", MessageBoxButton.OK, MessageBoxImage.Information);
+            else
+            {
+                if (ModernMessageBox.Show(err + "\n\n¿Abrir la página de descarga manual de Microsoft?",
+                        "SQL Express", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                    SqlExpressInstaller.AbrirPaginaDescargaManual();
+            }
+        }
+
+        private void btnPrepararServidor_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenseManager.TieneConexionRed())
+            {
+                ModernMessageBox.Show(
+                    "La conexión en red no está incluida en su licencia.",
+                    "Extra no habilitado", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            if (!EsAdministrador())
+            {
+                ModernMessageBox.Show("Solo un administrador puede preparar el servidor.", "Acceso denegado",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            Window owner = Window.GetWindow(this);
+            bool ok = AsistenteServidorRedWindow.Ejecutar(owner);
+            if (!ok) return;
+
+            if (txtChecklistRed != null)
+                txtChecklistRed.Text = "Servidor configurado con el asistente.";
+            ModernMessageBox.Show(
+                "Servidor listo.\n\nEl sistema se cerrará; volvé a abrirlo para usar la base en red.",
+                "Servidor listo", MessageBoxButton.OK, MessageBoxImage.Information);
+            Application.Current.Shutdown();
+        }
+
+        private void btnCargarCredencialesRed_Click(object sender, RoutedEventArgs e)
+        {
+            var d = SqlServerNetworkSetup.LeerCredencialesClientes();
+            if (d.Count == 0)
+            {
+                // Permitir elegir el TXT del Escritorio del servidor (copiado a esta PC)
+                var ofd = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = "Elegí SCHPOS-Configuracion-Clientes.txt o red_clientes.cfg",
+                    Filter = "Config red|*.txt;*.cfg|Todos|*.*"
+                };
+                if (ofd.ShowDialog() != true) return;
+                try
+                {
+                    foreach (var line in System.IO.File.ReadAllLines(ofd.FileName))
+                    {
+                        string t = line.Trim();
+                        if (t.StartsWith("Usuario SQL:", StringComparison.OrdinalIgnoreCase))
+                            d["Usuario"] = t.Substring("Usuario SQL:".Length).Trim();
+                        else if (t.StartsWith("Contraseña:", StringComparison.OrdinalIgnoreCase)
+                                 || t.StartsWith("Contrasena:", StringComparison.OrdinalIgnoreCase))
+                            d["Password"] = t.Substring(t.IndexOf(':') + 1).Trim();
+                        else if (t.StartsWith("IP / servidor:", StringComparison.OrdinalIgnoreCase)
+                                 || t.StartsWith("IP o nombre del servidor:", StringComparison.OrdinalIgnoreCase))
+                            d["Servidor"] = t.Substring(t.IndexOf(':') + 1).Trim();
+                        else if (t.StartsWith("Servidor=", StringComparison.OrdinalIgnoreCase))
+                            d["Servidor"] = t.Substring("Servidor=".Length).Trim();
+                        else if (t.StartsWith("Usuario=", StringComparison.OrdinalIgnoreCase))
+                            d["Usuario"] = t.Substring("Usuario=".Length).Trim();
+                        else if (t.StartsWith("Password=", StringComparison.OrdinalIgnoreCase))
+                            d["Password"] = t.Substring("Password=".Length).Trim();
+                        else if (t.StartsWith("Puerto=", StringComparison.OrdinalIgnoreCase))
+                            d["Puerto"] = t.Substring("Puerto=".Length).Trim();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ModernMessageBox.Show(ex.Message);
+                    return;
+                }
+            }
+
+            if (!d.ContainsKey("Usuario") && !d.ContainsKey("Servidor"))
+            {
+                ModernMessageBox.Show("No se encontraron credenciales en el archivo.");
+                return;
+            }
+
+            _cargandoDatosConexion = true;
+            try
+            {
+                cmbModoPC.SelectedIndex = 1;
+                if (d.ContainsKey("Servidor")) txtIpServidor.Text = d["Servidor"];
+                if (d.ContainsKey("Puerto")) txtPuertoServidor.Text = d["Puerto"];
+                else txtPuertoServidor.Text = "1433";
+                chkUsarWindowsAuth.IsChecked = false;
+                if (d.ContainsKey("Usuario")) txtUsuarioSQL.Text = d["Usuario"];
+                if (d.ContainsKey("Password")) txtPasswordSQL.Password = d["Password"];
+            }
+            finally { _cargandoDatosConexion = false; }
+
+            chkUsarWindowsAuth_Changed(null, null);
+            ModernMessageBox.Show("Datos cargados. Revisá y tocá GUARDAR Y REINICIAR.", "Cliente",
+                MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void chkUsarWindowsAuth_Changed(object sender, RoutedEventArgs e)
@@ -969,26 +1264,180 @@ namespace SchettiniGestion.WPF
         private void cmbModoPC_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (txtIpServidor == null || _cargandoDatosConexion) return;
+            AplicarUiModoRed();
+            if (cmbModoPC.SelectedIndex == 1)
+                txtIpServidor.Focus();
+        }
 
-            if (cmbModoPC.SelectedIndex == 0) // Servidor
-            {
-                txtIpServidor.Text = ".\\SQLEXPRESS";
-                txtIpServidor.IsEnabled = false; // no editar: la IP LAN es solo para las otras PCs
-                if (txtPuertoServidor != null)
-                    txtPuertoServidor.Text = "";
-            }
-            else // Cliente
+        /// <summary>Ajusta IP, auth SQL y botones según SERVIDOR vs CLIENTE (también al cargar, no solo al cambiar combo).</summary>
+        private void AplicarUiModoRed()
+        {
+            if (txtIpServidor == null || cmbModoPC == null) return;
+            bool esCliente = cmbModoPC.SelectedIndex == 1;
+
+            if (txtEstadoModoRed != null)
+                txtEstadoModoRed.Text = esCliente
+                    ? "Esta PC es CLIENTE: no instales Express acá. Conectate al servidor con usuario schpos (Windows Auth desmarcado)."
+                    : "Esta PC es SERVIDOR: los datos viven acá. Las otras PCs se conectan a esta.";
+
+            if (!esCliente)
             {
                 string actual = (txtIpServidor.Text ?? "").Trim();
-                if (actual == "127.0.0.1" || actual.Equals(".\\SQLEXPRESS", StringComparison.OrdinalIgnoreCase)
-                    || actual.Equals("localhost\\SQLEXPRESS", StringComparison.OrdinalIgnoreCase)
-                    || actual.IndexOf("(localdb)", StringComparison.OrdinalIgnoreCase) >= 0)
-                    txtIpServidor.Text = "";
-                txtIpServidor.IsEnabled = true;
-                if (txtPuertoServidor != null && string.IsNullOrWhiteSpace(txtPuertoServidor.Text))
-                    txtPuertoServidor.Text = "1433";
-                txtIpServidor.Focus();
+                if (string.IsNullOrWhiteSpace(actual) || actual.IndexOf("(localdb)", StringComparison.OrdinalIgnoreCase) >= 0
+                    || actual == "127.0.0.1" || actual.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+                    txtIpServidor.Text = ".\\SQLEXPRESS";
+                txtIpServidor.IsEnabled = false;
+                if (txtPuertoServidor != null)
+                    txtPuertoServidor.Text = "";
+                if (txtAvisoAuthCliente != null)
+                    txtAvisoAuthCliente.Visibility = Visibility.Collapsed;
+                if (btnPrepararServidor != null)
+                    btnPrepararServidor.Visibility = Visibility.Visible;
+                if (btnInstalarExpress != null)
+                    btnInstalarExpress.Visibility = Visibility.Visible;
+                chkUsarWindowsAuth_Changed(null, null);
+                ActualizarEstadoExpressUi();
+                return;
             }
+
+            string ip = (txtIpServidor.Text ?? "").Trim();
+            if (ip == "127.0.0.1" || ip.Equals(".\\SQLEXPRESS", StringComparison.OrdinalIgnoreCase)
+                || ip.Equals("localhost\\SQLEXPRESS", StringComparison.OrdinalIgnoreCase)
+                || ip.IndexOf("(localdb)", StringComparison.OrdinalIgnoreCase) >= 0)
+                txtIpServidor.Text = "";
+            txtIpServidor.IsEnabled = true;
+            if (txtPuertoServidor != null && string.IsNullOrWhiteSpace(txtPuertoServidor.Text))
+                txtPuertoServidor.Text = "1433";
+
+            if (chkUsarWindowsAuth != null)
+                chkUsarWindowsAuth.IsChecked = false;
+            if (txtAvisoAuthCliente != null)
+                txtAvisoAuthCliente.Visibility = Visibility.Visible;
+            if (btnPrepararServidor != null)
+                btnPrepararServidor.Visibility = Visibility.Collapsed;
+            if (btnInstalarExpress != null)
+                btnInstalarExpress.Visibility = Visibility.Collapsed;
+
+            PrefijarCredencialesClienteSiVacias();
+            chkUsarWindowsAuth_Changed(null, null);
+            ActualizarEstadoExpressUi();
+        }
+
+        private void btnGuardarNombrePuesto_Click(object sender, RoutedEventArgs e)
+        {
+            string nombre = PuestoLocalService.SanitizeNombre(txtNombrePuesto?.Text);
+            if (string.IsNullOrWhiteSpace(nombre))
+            {
+                ModernMessageBox.Show("Escribí un nombre para este puesto. Ejemplos: CAJA-01, MOSTRADOR, SERVIDOR.");
+                return;
+            }
+
+            PuestoLocalService.Guardar(nombre);
+            if (txtNombrePuesto != null)
+                txtNombrePuesto.Text = nombre;
+            RedSyncWatcher.RegistrarHeartbeat();
+            ActualizarListaPuestosEnRed();
+
+            if (Window.GetWindow(this) is PrincipalWindow principal)
+                principal.RefrescarNombrePuestoHeader();
+
+            ModernMessageBox.Show("Nombre del puesto guardado: " + nombre, "Puesto");
+        }
+
+        private void ActualizarListaPuestosEnRed()
+        {
+            if (txtPuestosEnRed == null) return;
+            try
+            {
+                var puestos = DatabaseService.GetPuestosRed();
+                if (puestos == null || puestos.Count == 0)
+                {
+                    txtPuestosEnRed.Text = "Todavía no hay otras cajas registradas. Al abrir SCHPOS en cada PC aparecen acá.";
+                    return;
+                }
+
+                string yo = PuestoLocalService.IdPuesto;
+                var partes = new System.Collections.Generic.List<string>();
+                foreach (var p in puestos)
+                {
+                    bool esta = string.Equals(p.PuestoId, yo, StringComparison.OrdinalIgnoreCase);
+                    bool reciente = (DateTime.UtcNow - p.UltimaVistaUtc).TotalMinutes < 5;
+                    string marca = esta ? " (esta PC)" : (reciente ? " (en línea)" : " (hace un rato)");
+                    partes.Add((p.Nombre ?? p.PuestoId) + marca);
+                }
+                txtPuestosEnRed.Text = "Cajas vistas: " + string.Join(" · ", partes);
+            }
+            catch
+            {
+                txtPuestosEnRed.Text = "";
+            }
+        }
+
+        private void PrefijarCredencialesClienteSiVacias()
+        {
+            try
+            {
+                var d = SqlServerNetworkSetup.LeerCredencialesClientes();
+                if (d.Count == 0) return;
+                if (string.IsNullOrWhiteSpace(txtIpServidor.Text) && d.ContainsKey("Servidor"))
+                    txtIpServidor.Text = d["Servidor"];
+                if (txtPuertoServidor != null && string.IsNullOrWhiteSpace(txtPuertoServidor.Text) && d.ContainsKey("Puerto"))
+                    txtPuertoServidor.Text = d["Puerto"];
+                if (txtUsuarioSQL != null && (string.IsNullOrWhiteSpace(txtUsuarioSQL.Text)
+                    || txtUsuarioSQL.Text.Equals("Sistema", StringComparison.OrdinalIgnoreCase)))
+                    txtUsuarioSQL.Text = d.ContainsKey("Usuario") ? d["Usuario"] : SqlServerNetworkSetup.UsuarioRedDefault;
+                if (txtPasswordSQL != null && string.IsNullOrEmpty(txtPasswordSQL.Password) && d.ContainsKey("Password"))
+                    txtPasswordSQL.Password = d["Password"];
+            }
+            catch { }
+        }
+
+        private void btnProbarConexionRed_Click(object sender, RoutedEventArgs e)
+        {
+            string servidor = (txtIpServidor.Text ?? "").Trim().Replace('/', '\\');
+            string puerto = (txtPuertoServidor.Text ?? "").Trim();
+            bool usarIntegrado = chkUsarWindowsAuth.IsChecked == true;
+            string usuario = (txtUsuarioSQL.Text ?? "").Trim();
+            string password = txtPasswordSQL?.Password ?? "";
+
+            if (cmbModoPC.SelectedIndex == 1)
+            {
+                usarIntegrado = false;
+                if (chkUsarWindowsAuth != null) chkUsarWindowsAuth.IsChecked = false;
+                if (!servidor.Contains("\\") && System.Net.IPAddress.TryParse(servidor, out _))
+                    servidor = servidor + "\\SQLEXPRESS";
+                txtIpServidor.Text = servidor;
+            }
+
+            if (string.IsNullOrWhiteSpace(servidor))
+            {
+                ModernMessageBox.Show("Ingresá la IP del servidor (ej. 192.168.18.115\\SQLEXPRESS).",
+                    "Probar conexión", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (cmbModoPC.SelectedIndex == 1 && string.IsNullOrWhiteSpace(usuario))
+            {
+                ModernMessageBox.Show("En CLIENTE usá usuario schpos y la contraseña del archivo del servidor.",
+                    "Probar conexión", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (EsInstanciaSqlLocalNombrada(servidor))
+                puerto = "";
+
+            string errorPrueba;
+            if (!DatabaseService.ProbarNuevaConexion(servidor, puerto, usarIntegrado, usuario, password, out errorPrueba))
+            {
+                ModernMessageBox.Show("No conecta.\n\n" + errorPrueba, "Probar conexión",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            ModernMessageBox.Show(
+                "Conexión OK.\n\nServidor: " + servidor + "\nPuerto: " + (string.IsNullOrWhiteSpace(puerto) ? "(local)" : puerto) +
+                "\n\nAhora tocá GUARDAR Y REINICIAR para dejarla fija.",
+                "Probar conexión", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         /// <summary>
@@ -1047,7 +1496,8 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
-            string servidor = txtIpServidor.Text.Trim();
+            // SQL usa barra invertida (IP\SQLEXPRESS); muchos teclean / por error
+            string servidor = (txtIpServidor.Text ?? "").Trim().Replace('/', '\\');
             bool esModoServidor = cmbModoPC.SelectedIndex == 0;
             if (esModoServidor)
             {
@@ -1059,13 +1509,30 @@ namespace SchettiniGestion.WPF
             }
             else
             {
+                // Cliente: Windows Auth entre VM/PCs sin dominio siempre falla.
+                if (usarIntegrado)
+                {
+                    ModernMessageBox.Show(
+                        "En modo CLIENTE no se puede usar autenticación Windows.\n\n" +
+                        "Desmarcá «Usar autenticación Windows» y completá:\n" +
+                        "• Usuario: schpos\n" +
+                        "• Contraseña: la del archivo SCHPOS-Configuracion-Clientes.txt del servidor\n\n" +
+                        "También podés tocar «Cargar usuario/clave desde archivo del servidor».",
+                        "Cliente — autenticación SQL",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    if (chkUsarWindowsAuth != null)
+                        chkUsarWindowsAuth.IsChecked = false;
+                    chkUsarWindowsAuth_Changed(null, null);
+                    return;
+                }
+
                 // Cliente: si pegaron solo la IP, agregar \SQLEXPRESS automáticamente.
                 if (!servidor.Contains("\\")
                     && System.Net.IPAddress.TryParse(servidor, out _))
                 {
                     servidor = servidor + "\\SQLEXPRESS";
-                    txtIpServidor.Text = servidor;
                 }
+                txtIpServidor.Text = servidor;
             }
 
             // En instancia local nombrada (.\SQLEXPRESS), forzar ,1433 exige TCP habilitado.
@@ -1074,16 +1541,20 @@ namespace SchettiniGestion.WPF
             if (EsInstanciaSqlLocalNombrada(servidor))
                 puerto = "";
 
+            // SERVIDOR: pipeline completo (Express + migración + TCP + login SQL).
+            if (esModoServidor)
+            {
+                btnPrepararServidor_Click(sender, e);
+                return;
+            }
+
             if (ModernMessageBox.Show(
-                    cmbModoPC.SelectedIndex == 0
-                        ? "Se guardará esta PC como SERVIDOR.\n\nSCHPOS intentará habilitar TCP/IP (puerto 1433) y el firewall automáticamente (puede pedir permiso de administrador).\nTambién dejará un archivo en el Escritorio para configurar las otras cajas.\n\nEl sistema se cerrará para aplicar los cambios.\n\n¿Continuar?"
-                        : "Al guardar la configuración de red, el sistema se cerrará para aplicar los cambios.\n\n¿Desea continuar?",
+                    "Al guardar la configuración de red, el sistema se cerrará para aplicar los cambios.\n\n¿Desea continuar?",
                     "Confirmar Reinicio",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning) != MessageBoxResult.Yes)
                 return;
 
-            // Antes de guardar: probar que realmente conecta (evita "guardar OK" y al reiniciar volver a LocalDB/SERVIDOR).
             string errorPrueba;
             if (!DatabaseService.ProbarNuevaConexion(servidor, puerto, usarIntegrado, txtUsuarioSQL.Text.Trim(), txtPasswordSQL.Password, out errorPrueba))
             {
@@ -1091,21 +1562,14 @@ namespace SchettiniGestion.WPF
                     "No se pudo conectar con esos datos. No se guardó nada (así no se pierde la configuración actual).\n\n" +
                     "Detalle:\n" + errorPrueba + "\n\n" +
                     "En el SERVIDOR verificá:\n" +
-                    "• SQL Server (SQLEXPRESS) en ejecución\n" +
-                    "• TCP/IP habilitado y puerto 1433\n" +
-                    "• Firewall con regla SCHPOS-SQL-1433\n" +
-                    "• En el cliente usá: IP\\SQLEXPRESS y puerto 1433\n\n" +
+                    "• Que hayan usado «Preparar esta PC como SERVIDOR»\n" +
+                    "• Ping a la IP y puerto 1433\n" +
+                    "• Usuario SQL schpos y contraseña del archivo de clientes\n\n" +
                     "Ejemplo: 192.168.1.14\\SQLEXPRESS",
                     "Conexión fallida",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 return;
-            }
-
-            if (cmbModoPC.SelectedIndex == 0)
-            {
-                // Automático: TCP + firewall + guía clientes (UAC una sola vez).
-                SqlServerNetworkSetup.PrepararServidorParaRed(servidor);
             }
 
             bool exito = DatabaseService.GuardarNuevaConexion(
@@ -1118,22 +1582,72 @@ namespace SchettiniGestion.WPF
 
             if (exito)
             {
-                string extra = cmbModoPC.SelectedIndex == 0
-                    ? "\n\nEn el Escritorio quedó el archivo SCHPOS-Configuracion-Clientes.txt para las otras PCs."
-                    : "";
+                SqlServerNetworkSetup.GuardarModoRed(SqlServerNetworkSetup.ModoCliente);
+                if (txtNombrePuesto != null && !string.IsNullOrWhiteSpace(txtNombrePuesto.Text))
+                    PuestoLocalService.Guardar(txtNombrePuesto.Text);
+                try
+                {
+                    File.WriteAllText(SqlServerNetworkSetup.RutaFlagOfertaRed, "cliente");
+                }
+                catch { }
+
+                // Verificar memoria + disco (ProgramData o LocalAppData).
+                string activa = DatabaseService.ConnectionString ?? "";
+                string enDisco = null;
+                try
+                {
+                    if (File.Exists(DatabaseService.RutaConexionCfgLocal))
+                        enDisco = File.ReadAllText(DatabaseService.RutaConexionCfgLocal).Trim();
+                    if (string.IsNullOrEmpty(enDisco) && File.Exists(DatabaseService.RutaConexionCfg))
+                        enDisco = File.ReadAllText(DatabaseService.RutaConexionCfg).Trim();
+                }
+                catch { }
+
+                bool okMemoria = activa.IndexOf("(localdb)", StringComparison.OrdinalIgnoreCase) < 0
+                    && activa.IndexOf(servidor.Split('\\')[0], StringComparison.OrdinalIgnoreCase) >= 0;
+                bool okDisco = !string.IsNullOrEmpty(enDisco)
+                    && enDisco.IndexOf("(localdb)", StringComparison.OrdinalIgnoreCase) < 0
+                    && enDisco.IndexOf(servidor.Split('\\')[0], StringComparison.OrdinalIgnoreCase) >= 0;
+
+                if (!okMemoria && !okDisco)
+                {
+                    ModernMessageBox.Show(
+                        "Se intentó guardar el modo CLIENTE pero no se pudo escribir la conexión.\n\n" +
+                        "En la VM (PowerShell como administrador):\n" +
+                        "icacls \"C:\\ProgramData\\SCHPOS\" /grant Users:(OI)(CI)M /T\n\n" +
+                        "Luego reabrí SCHPOS y volvé a GUARDAR Y REINICIAR.\n\n" +
+                        "ProgramData: " + DatabaseService.RutaConexionCfg + "\n" +
+                        "LocalAppData: " + DatabaseService.RutaConexionCfgLocal,
+                        "Error al persistir", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
                 ModernMessageBox.Show(
-                    "Configuración de red guardada correctamente.\n\n" +
-                    "El sistema se cerrará ahora. Al volver a abrirlo, se conectará al servidor configurado." +
-                    extra,
+                    "Modo CLIENTE guardado.\n\n" +
+                    "Servidor: " + servidor + "\n" +
+                    "Puerto: " + (string.IsNullOrWhiteSpace(puerto) ? "(por defecto)" : puerto) + "\n\n" +
+                    "El sistema se cerrará. Al reabrir debe seguir en CLIENTE.",
                     "Configuración guardada",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
-                Application.Current.Shutdown();
+                CerrarYReabrirSchpos();
             }
             else
             {
                 ModernMessageBox.Show("No se pudo guardar la configuración de red.\nVerifique permisos de escritura en:\n" + SchettiniGestion.DatabaseService.RutaConexionCfg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private static void CerrarYReabrirSchpos()
+        {
+            try
+            {
+                string exe = Process.GetCurrentProcess().MainModule?.FileName;
+                if (!string.IsNullOrWhiteSpace(exe) && File.Exists(exe))
+                    Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
+            }
+            catch { }
+            Application.Current.Shutdown();
         }
 
         // --- PESTAÑA 3: LICENCIA ---
@@ -1143,6 +1657,8 @@ namespace SchettiniGestion.WPF
             {
                 string keyActual = DatabaseService.ObtenerStringLicencia();
                 txtLicenciaKey.Text = keyActual;
+                if (txtMachineIdLicencia != null)
+                    txtMachineIdLicencia.Text = LicenseManager.ObtenerHardwareId();
 
                 if (LicenseManager.ValidarLicencia())
                 {
@@ -1156,8 +1672,69 @@ namespace SchettiniGestion.WPF
                     lblEstadoLicencia.Foreground = System.Windows.Media.Brushes.Red;
                     lblVencimiento.Text = "-";
                 }
+
+                if (lblExtrasLicencia != null)
+                    lblExtrasLicencia.Text = ConstruirResumenExtrasLicencia();
             }
             catch { }
+        }
+
+        private static string ConstruirResumenExtrasLicencia()
+        {
+            var extras = new System.Collections.Generic.List<string>();
+            if (LicenseManager.TieneConexionRed()) extras.Add("Red");
+            if (LicenseManager.TieneAfip()) extras.Add("ARCA");
+            if (LicenseManager.TieneEtiquetas()) extras.Add("Etiquetas");
+            if (LicenseManager.TieneVisorCliente()) extras.Add("Visor cliente");
+            if (LicenseManager.TieneMercadoPagoQr()) extras.Add("MP QR");
+            if (LicenseManager.TieneMercadoPagoPoint()) extras.Add("MP Point");
+            if (LicenseManager.TieneSoporte()) extras.Add("Soporte");
+            if (LicenseManager.TieneEstadisticas()) extras.Add("Estadísticas");
+            return extras.Count == 0
+                ? "Ningún extra adicional (solo módulos base)."
+                : string.Join(" · ", extras);
+        }
+
+        private void btnCopiarMachineIdLicencia_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string id = txtMachineIdLicencia?.Text?.Trim();
+                if (string.IsNullOrWhiteSpace(id))
+                    id = LicenseManager.ObtenerHardwareId();
+                Clipboard.SetText(id ?? "");
+                ModernMessageBox.Show("ID de máquina copiado.\nEnviálo a info@schettini.com.ar para pedir o renovar la licencia.",
+                    "Copiado", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show("No se pudo copiar: " + ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void btnAyudaLicencia_Click(object sender, RoutedEventArgs e)
+        {
+            ModernMessageBox.Show(TextosAyudaUi.LicenciaPasos, "Licencia SCHPOS",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void btnAyudaArca_Click(object sender, RoutedEventArgs e)
+        {
+            ModernMessageBox.Show(TextosAyudaUi.ArcaChecklist, "Facturación electrónica ARCA",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void btnAyudaImpresionDestino_Click(object sender, RoutedEventArgs e)
+        {
+            ModernMessageBox.Show(TextosAyudaUi.ImpresionDestinoVsPreguntar, "Impresión al cobrar",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void btnAyudaPointPdv_Click(object sender, RoutedEventArgs e)
+        {
+            ModernMessageBox.Show(TextosAyudaUi.PointModoPdv, "Mercado Pago Point — modo PDV",
+                MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void btnActivarLicencia_Click(object sender, RoutedEventArgs e)
@@ -1169,7 +1746,28 @@ namespace SchettiniGestion.WPF
             {
                 if (LicenseManager.ValidarLicencia(nuevaKey))
                 {
-                    ModernMessageBox.Show("¡Licencia activada correctamente!\n\nPor favor, reinicie el sistema para aplicar los cambios en los módulos.", "Activación Exitosa", MessageBoxButton.OK, MessageBoxImage.Information);
+                    // Si acaba de sumar RED, borrar flag que silenciaba el asistente para ofrecerlo al reiniciar.
+                    if (LicenseManager.TieneConexionRed())
+                    {
+                        try
+                        {
+                            if (File.Exists(SqlServerNetworkSetup.RutaFlagOfertaRed))
+                                File.Delete(SqlServerNetworkSetup.RutaFlagOfertaRed);
+                        }
+                        catch { }
+
+                        ModernMessageBox.Show(
+                            "¡Licencia activada correctamente!\n\n" +
+                            "Incluye el extra «Conexión en RED».\n" +
+                            "Al volver a abrir SCHPOS te vamos a preguntar si esta PC es SERVIDOR o CLIENTE para configurarla.",
+                            "Activación Exitosa", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    else
+                    {
+                        ModernMessageBox.Show(
+                            "¡Licencia activada correctamente!\n\nPor favor, reinicie el sistema para aplicar los cambios en los módulos.",
+                            "Activación Exitosa", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
                     Application.Current.Shutdown();
                 }
                 else
@@ -1600,70 +2198,95 @@ namespace SchettiniGestion.WPF
         }
 
         // --- PESTAÑA IMPRESORAS ---
-        private void CargarImpresoras()
+        private async void CargarImpresoras()
         {
             try
             {
-                var impresoras = PrinterSettings.InstalledPrinters
-                    .Cast<string>()
-                    .OrderBy(x => x)
-                    .ToList();
-
-                // Agregar opción vacía al inicio (= pedir cada vez)
-                impresoras.Insert(0, "(Preguntar cada vez)");
-
-                cmbImpresoraTicket.ItemsSource = impresoras;
-                cmbImpresoraA4.ItemsSource = new System.Collections.Generic.List<string>(impresoras);
-                if (cmbImpresoraEtiquetas != null)
-                    cmbImpresoraEtiquetas.ItemsSource = new System.Collections.Generic.List<string>(impresoras);
+                CargarPreferenciasImpresionDesdeBd();
 
                 var (ticket, a4) = DatabaseService.GetImpresoras();
-                cmbImpresoraTicket.SelectedItem = string.IsNullOrWhiteSpace(ticket) ? "(Preguntar cada vez)" : ticket;
-                cmbImpresoraA4.SelectedItem     = string.IsNullOrWhiteSpace(a4)     ? "(Preguntar cada vez)" : a4;
-
                 string etiquetas = DatabaseService.GetImpresoraEtiquetas();
-                if (cmbImpresoraEtiquetas != null)
-                    cmbImpresoraEtiquetas.SelectedItem = string.IsNullOrWhiteSpace(etiquetas) ? "(Preguntar cada vez)" : etiquetas;
 
-                CargarMedidaEtiquetaEnUi();
+                var placeholder = new List<string> { "(Preguntar cada vez)" };
+                AplicarListaImpresorasEnCombos(placeholder, ticket, a4, etiquetas);
 
-                if (chkPreguntarAntesImprimir != null)
-                    chkPreguntarAntesImprimir.IsChecked = DatabaseService.GetPreguntarAntesImprimir();
-
-                if (cmbDestinoImpresionVenta != null)
+                List<string> impresoras = new List<string>();
+                try
                 {
-                    cmbDestinoImpresionVenta.ItemsSource = new[]
-                    {
-                        new { Valor = "Ticket", Texto = "Impresora térmica (formato ticket)" },
-                        new { Valor = "A4", Texto = "Impresora A4 (formato documento)" },
-                        new { Valor = "Archivo", Texto = "Guardar como PDF (para WhatsApp / email)" },
-                        new { Valor = "Preguntar", Texto = "Preguntar al cobrar" }
-                    };
-                    cmbDestinoImpresionVenta.DisplayMemberPath = "Texto";
-                    cmbDestinoImpresionVenta.SelectedValuePath = "Valor";
-                    string destino = DatabaseService.GetDestinoImpresionVenta();
-                    foreach (dynamic item in cmbDestinoImpresionVenta.Items)
-                        if (item.Valor == destino) { cmbDestinoImpresionVenta.SelectedItem = item; break; }
-                    if (cmbDestinoImpresionVenta.SelectedItem == null && cmbDestinoImpresionVenta.Items.Count > 0)
-                        cmbDestinoImpresionVenta.SelectedIndex = 0;
+                    var t = Task.Run(() => PrinterSettings.InstalledPrinters
+                        .Cast<string>()
+                        .OrderBy(x => x)
+                        .ToList());
+                    if (await Task.WhenAny(t, Task.Delay(4000)) == t)
+                        impresoras = t.Status == TaskStatus.RanToCompletion ? t.Result : new List<string>();
                 }
+                catch { }
 
-                if (cmbAnchoTicketMm != null)
-                {
-                    cmbAnchoTicketMm.ItemsSource = new[] { "80 mm", "58 mm" };
-                    var op = DatabaseService.GetOpcionesImpresionTicket();
-                    cmbAnchoTicketMm.SelectedItem = op.AnchoMm == 58 ? "58 mm" : "80 mm";
-                }
+                if (!string.IsNullOrWhiteSpace(ticket) && !impresoras.Contains(ticket))
+                    impresoras.Add(ticket);
+                if (!string.IsNullOrWhiteSpace(a4) && !impresoras.Contains(a4))
+                    impresoras.Add(a4);
+                if (!string.IsNullOrWhiteSpace(etiquetas) && !impresoras.Contains(etiquetas))
+                    impresoras.Add(etiquetas);
 
-                if (txtCarpetaArchivosComprobantes != null)
-                    txtCarpetaArchivosComprobantes.Text = DatabaseService.GetCarpetaArchivosComprobantes() ?? "";
-
-                CargarOpcionesTicketEnUi();
+                impresoras.Insert(0, "(Preguntar cada vez)");
+                AplicarListaImpresorasEnCombos(impresoras, ticket, a4, etiquetas);
             }
             catch (Exception ex)
             {
                 ModernMessageBox.Show("Error al listar impresoras: " + ex.Message);
             }
+        }
+
+        private void CargarPreferenciasImpresionDesdeBd()
+        {
+            CargarMedidaEtiquetaEnUi();
+
+            if (chkPreguntarAntesImprimir != null)
+                chkPreguntarAntesImprimir.IsChecked = DatabaseService.GetPreguntarAntesImprimir();
+
+            if (cmbDestinoImpresionVenta != null)
+            {
+                cmbDestinoImpresionVenta.ItemsSource = new[]
+                {
+                    new { Valor = "Ticket", Texto = "Impresora térmica (formato ticket)" },
+                    new { Valor = "A4", Texto = "Impresora A4 (formato documento)" },
+                    new { Valor = "Archivo", Texto = "Guardar como PDF (para WhatsApp / email)" },
+                    new { Valor = "Preguntar", Texto = "Preguntar al cobrar" }
+                };
+                cmbDestinoImpresionVenta.DisplayMemberPath = "Texto";
+                cmbDestinoImpresionVenta.SelectedValuePath = "Valor";
+                string destino = DatabaseService.GetDestinoImpresionVenta();
+                foreach (dynamic item in cmbDestinoImpresionVenta.Items)
+                    if (item.Valor == destino) { cmbDestinoImpresionVenta.SelectedItem = item; break; }
+                if (cmbDestinoImpresionVenta.SelectedItem == null && cmbDestinoImpresionVenta.Items.Count > 0)
+                    cmbDestinoImpresionVenta.SelectedIndex = 0;
+            }
+
+            if (cmbAnchoTicketMm != null)
+            {
+                cmbAnchoTicketMm.ItemsSource = new[] { "80 mm", "58 mm" };
+                var op = DatabaseService.GetOpcionesImpresionTicket();
+                cmbAnchoTicketMm.SelectedItem = op.AnchoMm == 58 ? "58 mm" : "80 mm";
+            }
+
+            if (txtCarpetaArchivosComprobantes != null)
+                txtCarpetaArchivosComprobantes.Text = DatabaseService.GetCarpetaArchivosComprobantes() ?? "";
+
+            CargarOpcionesTicketEnUi();
+        }
+
+        private void AplicarListaImpresorasEnCombos(List<string> impresoras, string ticket, string a4, string etiquetas)
+        {
+            cmbImpresoraTicket.ItemsSource = impresoras;
+            cmbImpresoraA4.ItemsSource = new List<string>(impresoras);
+            if (cmbImpresoraEtiquetas != null)
+                cmbImpresoraEtiquetas.ItemsSource = new List<string>(impresoras);
+
+            cmbImpresoraTicket.SelectedItem = string.IsNullOrWhiteSpace(ticket) ? "(Preguntar cada vez)" : ticket;
+            cmbImpresoraA4.SelectedItem = string.IsNullOrWhiteSpace(a4) ? "(Preguntar cada vez)" : a4;
+            if (cmbImpresoraEtiquetas != null)
+                cmbImpresoraEtiquetas.SelectedItem = string.IsNullOrWhiteSpace(etiquetas) ? "(Preguntar cada vez)" : etiquetas;
         }
 
         private void CargarOpcionesTicketEnUi()

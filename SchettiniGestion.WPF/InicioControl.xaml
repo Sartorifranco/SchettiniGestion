@@ -11,8 +11,8 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
         <StackPanel>
             <Grid Margin="0,0,0,8">
-                <TextBlock Text="Resumen del día" FontSize="28" FontWeight="Bold"
-                           Foreground="{DynamicResource TextPrimary}"/>
+                <TextBlock Text="Resumen del día"
+                           Style="{DynamicResource HeadlineTextStyle}"/>
                 <Button Content="Actualizar" HorizontalAlignment="Right"
                         Style="{StaticResource SecondaryButtonStyle}" MinHeight="40" Padding="16,0"
                         Click="btnActualizar_Click"/>
@@ -23,9 +23,9 @@
             <!-- KPIs principales -->
             <UniformGrid Columns="4" Margin="0,0,0,12">
                 <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="10" Margin="0,0,10,0" Padding="18">
+                        BorderThickness="1,1,1,1" CornerRadius="{DynamicResource CardCornerRadius}" Margin="0,0,10,0" Padding="20">
                     <StackPanel>
-                        <TextBlock Text="VENTAS HOY" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="Ventas de hoy" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
                         <TextBlock x:Name="lblVentasHoy" Text="$ 0,00" FontSize="26" FontWeight="Bold"
                                    Foreground="{StaticResource SuccessColor}" Margin="0,6,0,0"/>
                         <TextBlock x:Name="lblVsAyer" Text="vs ayer: —" FontSize="12"
@@ -33,9 +33,9 @@
                     </StackPanel>
                 </Border>
                 <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="10" Margin="0,0,10,0" Padding="18">
+                        BorderThickness="1" CornerRadius="{DynamicResource CardCornerRadius}" Margin="0,0,10,0" Padding="20">
                     <StackPanel>
-                        <TextBlock Text="OPERACIONES" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="Operaciones" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
                         <TextBlock x:Name="lblCantVentas" Text="0" FontSize="26" FontWeight="Bold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,6,0,0"/>
                         <TextBlock x:Name="lblTicketPromedio" Text="Ticket prom. $ 0" FontSize="12"
@@ -43,9 +43,9 @@
                     </StackPanel>
                 </Border>
                 <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="10" Margin="0,0,10,0" Padding="18">
+                        BorderThickness="1" CornerRadius="{DynamicResource CardCornerRadius}" Margin="0,0,10,0" Padding="20">
                     <StackPanel>
-                        <TextBlock Text="GANANCIA ESTIMADA" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="Ganancia estimada" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
                         <TextBlock x:Name="lblGananciaHoy" Text="$ 0,00" FontSize="26" FontWeight="Bold"
                                    Foreground="#3B82F6" Margin="0,6,0,0"/>
                         <TextBlock x:Name="lblMargenPct" Text="Margen —%" FontSize="12"
@@ -53,9 +53,9 @@
                     </StackPanel>
                 </Border>
                 <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="10" Padding="18">
+                        BorderThickness="1" CornerRadius="{DynamicResource CardCornerRadius}" Padding="20">
                     <StackPanel>
-                        <TextBlock Text="SALDO CAJA" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="Saldo de caja" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
                         <TextBlock x:Name="lblCaja" Text="$ 0,00" FontSize="26" FontWeight="Bold"
                                    Foreground="{StaticResource WarningColor}" Margin="0,6,0,0"/>
                         <TextBlock Text="Efectivo / movimientos" FontSize="12"
@@ -67,27 +67,27 @@
             <!-- KPIs operativos -->
             <UniformGrid Columns="3" Margin="0,0,0,16">
                 <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="10" Margin="0,0,10,0" Padding="16">
+                        BorderThickness="1" CornerRadius="{DynamicResource CardCornerRadius}" Margin="0,0,10,0" Padding="16">
                     <StackPanel>
-                        <TextBlock Text="STOCK EN ALERTA" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="Stock en alerta" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
                         <TextBlock x:Name="lblStockBajo" Text="0" FontSize="24" FontWeight="Bold"
                                    Foreground="{StaticResource DangerColor}" Margin="0,4,0,0"/>
                         <TextBlock Text="En o bajo el mínimo" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
                     </StackPanel>
                 </Border>
                 <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="10" Margin="0,0,10,0" Padding="16">
+                        BorderThickness="1" CornerRadius="{DynamicResource CardCornerRadius}" Margin="0,0,10,0" Padding="16">
                     <StackPanel>
-                        <TextBlock Text="CATÁLOGO" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="Catálogo" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
                         <TextBlock x:Name="lblProductos" Text="0" FontSize="24" FontWeight="Bold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,0"/>
                         <TextBlock Text="Productos cargados" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
                     </StackPanel>
                 </Border>
                 <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="10" Padding="16">
+                        BorderThickness="1" CornerRadius="{DynamicResource CardCornerRadius}" Padding="16">
                     <StackPanel>
-                        <TextBlock Text="CLIENTES" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="Clientes" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
                         <TextBlock x:Name="lblClientes" Text="0" FontSize="24" FontWeight="Bold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,0"/>
                         <TextBlock Text="Registrados" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
@@ -107,7 +107,7 @@
                 <!-- Top productos hoy -->
                 <Border Grid.Column="0" Background="{DynamicResource SurfaceDark}"
                         BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
-                        CornerRadius="10" Padding="14" MinHeight="280">
+                        CornerRadius="{DynamicResource CardCornerRadius}" Padding="14" MinHeight="280">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -135,7 +135,7 @@
                 <!-- Medios de pago hoy -->
                 <Border Grid.Column="2" Background="{DynamicResource SurfaceDark}"
                         BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
-                        CornerRadius="10" Padding="14" MinHeight="280">
+                        CornerRadius="{DynamicResource CardCornerRadius}" Padding="14" MinHeight="280">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -162,7 +162,7 @@
                 <!-- Alertas stock -->
                 <Border Grid.Column="4" Background="{DynamicResource SurfaceDark}"
                         BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
-                        CornerRadius="10" Padding="14" MinHeight="280">
+                        CornerRadius="{DynamicResource CardCornerRadius}" Padding="14" MinHeight="280">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>

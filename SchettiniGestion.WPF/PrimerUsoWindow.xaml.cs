@@ -12,9 +12,13 @@ namespace SchettiniGestion.WPF
     {
         private string _cadenaTesteada = null;
         private double _originalTop    = double.NaN;
+        private readonly bool _preferirCliente;
 
-        public PrimerUsoWindow()
+        public PrimerUsoWindow() : this(false) { }
+
+        public PrimerUsoWindow(bool preferirCliente)
         {
+            _preferirCliente = preferirCliente;
             InitializeComponent();
             Loaded   += (s, e) =>
             {
@@ -50,6 +54,31 @@ namespace SchettiniGestion.WPF
             if (rbCliente != null) rbCliente.Visibility = redOk ? Visibility.Visible : Visibility.Collapsed;
             if (txtNotaConexionRed != null)
                 txtNotaConexionRed.Visibility = redOk ? Visibility.Collapsed : Visibility.Visible;
+
+            if (redOk && _preferirCliente && rbCliente != null)
+            {
+                rbCliente.IsChecked = true;
+                PrefijarDatosClienteDesdeArchivo();
+            }
+        }
+
+        private void PrefijarDatosClienteDesdeArchivo()
+        {
+            try
+            {
+                var d = SqlServerNetworkSetup.LeerCredencialesClientes();
+                if (d.Count == 0) return;
+                if (d.ContainsKey("Servidor") && txtIPServidor != null)
+                    txtIPServidor.Text = d["Servidor"];
+                if (d.ContainsKey("Puerto") && txtPuertoCliente != null)
+                    txtPuertoCliente.Text = d["Puerto"];
+                if (rbSqlAuth != null) rbSqlAuth.IsChecked = true;
+                if (d.ContainsKey("Usuario") && txtUsuarioCliente != null)
+                    txtUsuarioCliente.Text = d["Usuario"];
+                if (d.ContainsKey("Password") && txtPasswordCliente != null)
+                    txtPasswordCliente.Password = d["Password"];
+            }
+            catch { }
         }
 
         private void Header_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -287,7 +316,10 @@ namespace SchettiniGestion.WPF
             if (mensaje.Contains("Login failed") || mensaje.Contains("login"))
             {
                 return rbSqlAuth.IsChecked == true
-                    ? "Las credenciales son incorrectas, o el servidor no tiene habilitado el modo de autenticación mixta (SQL Server y Windows).\nSi el servidor fue configurado con 'Esta PC es el SERVIDOR' de SCHPOS, el modo mixto ya se habilita solo. Si el SQL Server fue instalado/configurado a mano, habilitalo desde SQL Server Management Studio → click derecho en el servidor → Propiedades → Seguridad → 'SQL Server and Windows Authentication mode', y reiniciá el servicio."
+                    ? "Las credenciales son incorrectas, o el servidor sigue en solo Windows (SoloWindows = 1).\n" +
+                      "Eso no se arregla poniendo el usuario en pantalla: hay que aplicar modo mixto y parar/arrancar SQL Server (SQLEXPRESS).\n" +
+                      "En el servidor: sqlcmd -S \".\\SQLEXPRESS\" -E -Q \"SELECT SERVERPROPERTY('IsIntegratedSecurityOnly')\" tiene que dar 0.\n" +
+                      "Si da 1, pará y arrancá el servicio MSSQL$SQLEXPRESS (no SQLEXPRESS01) y usá el usuario schpos + la clave de SCHPOS-Configuracion-Clientes.txt."
                     : "El usuario de Windows de esta PC no tiene acceso al SQL Server del servidor.\nEn un grupo de trabajo (workgroup, sin dominio), la autenticación Windows requiere que exista el MISMO usuario y contraseña de Windows en ambas PCs. Si no es así, probá con 'Usuario y contraseña SQL' en su lugar.";
             }
 
@@ -306,7 +338,40 @@ namespace SchettiniGestion.WPF
 
             try
             {
+                // SERVIDOR con licencia RED: pipeline completo (TCP, login SQL, guía).
+                if (rbServidor.IsChecked == true && LicenseManager.TieneConexionRed())
+                {
+                    SetTestStatus("⏳", "Preparando servidor de red...", "Express, TCP, usuario clientes...", "pending");
+                    var result = SqlServerNetworkSetup.ConfigurarComoServidor(msg =>
+                        Dispatcher.Invoke(() => SetTestStatus("⏳", msg, "", "pending")));
+                    if (!result.Ok)
+                    {
+                        SetTestStatus("✖", "No se pudo preparar el servidor", result.Mensaje, "error");
+                        MessageBox.Show(result.Mensaje, "Servidor", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    var appSrv = (App)Application.Current;
+                    typeof(App)
+                        .GetMethod("InicializarBaseDeDatosCompleta",
+                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                        ?.Invoke(appSrv, new object[] { DatabaseService.ConnectionString });
+                    DatabaseService.InitializeDatabase();
+                    DatabaseService.AsegurarUsuarioAdminInicial();
+
+                    SetTestStatus("✔", "¡Servidor listo!", result.Mensaje, "success");
+                    MessageBox.Show(result.Mensaje + "\n\nEl sistema se iniciará ahora.", "Listo",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    DialogResult = true;
+                    Close();
+                    return;
+                }
+
                 DatabaseService.ActualizarConexion(_cadenaTesteada);
+                if (rbCliente != null && rbCliente.IsChecked == true)
+                    SqlServerNetworkSetup.GuardarModoRed(SqlServerNetworkSetup.ModoCliente);
+                else if (rbServidor != null && rbServidor.IsChecked == true)
+                    SqlServerNetworkSetup.GuardarModoRed(SqlServerNetworkSetup.ModoServidor);
 
                 SetTestStatus("⏳", "Configurando base de datos...", "Creando tablas y datos iniciales...", "pending");
 
@@ -318,10 +383,6 @@ namespace SchettiniGestion.WPF
 
                 DatabaseService.InitializeDatabase();
                 DatabaseService.AsegurarUsuarioAdminInicial();
-
-                // Si configuró como SERVIDOR: habilitar TCP y generar archivo para clientes
-                if (rbServidor.IsChecked == true)
-                    SqlServerNetworkSetup.PrepararServidorParaRed(txtInstanciaServidor.Text.Trim());
 
                 SetTestStatus("✔", "¡Base de datos configurada!", "El sistema está listo para usar.", "success");
                 MessageBox.Show("¡Configuración completada!\n\nEl sistema se iniciará ahora.", "Listo", MessageBoxButton.OK, MessageBoxImage.Information);

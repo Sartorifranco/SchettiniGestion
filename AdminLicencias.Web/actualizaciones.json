@@ -1,7 +1,402 @@
 {
-  "versionActual": "2.3.16",
-  "instalador": "SCHPOS-Setup-2.3.16.exe",
+  "versionActual": "2.3.56",
+  "instalador": "SCHPOS-Setup-2.3.56.exe",
   "notas": [
+    {
+      "version": "2.3.56",
+      "fecha": "2026-08-23",
+      "titulo": "Lista de reintentos de CAE (sin tocar el cobro)",
+      "items": [
+        "En Configuración › Negocio y ARCA se ven los tickets internos pendientes, autorizados o que agotaron reintentos.",
+        "«Reintentar ahora» usa la misma cola automática: no cobra de nuevo ni cambia una venta que ya salió bien.",
+        "Instalador SCHPOS-Setup-2.3.56.exe."
+      ]
+    },
+    {
+      "version": "2.3.55",
+      "fecha": "2026-08-23",
+      "titulo": "Favoritos, pausas persistentes, cola ARCA e import de clientes",
+      "items": [
+        "Favoritos en el POS: productos fijos con foto (★ en el catálogo o en el producto).",
+        "Las ventas en pausa (F5/F6) se guardan en la base: sobreviven un corte de luz o al cerrar SCHPOS.",
+        "Si ARCA falla después de cobrar, el ticket interno entra a una cola y se reintenta el CAE solo (sin volver a cobrar).",
+        "Importación de clientes por CSV/Excel. Productos ya tenían alta masiva.",
+        "Caja, Configuración, Informes, Compras y Stock alineados al look nuevo.",
+        "Instalador SCHPOS-Setup-2.3.55.exe."
+      ]
+    },
+    {
+      "version": "2.3.54",
+      "fecha": "2026-08-22",
+      "titulo": "Diseño nuevo como único look",
+      "items": [
+        "El diseño nuevo queda como principal y único.",
+        "Se quitó la opción de volver al estilo anterior (login y menú).",
+        "Sigue disponible el cambio de tema claro/oscuro.",
+        "Instalador SCHPOS-Setup-2.3.54.exe."
+      ]
+    },
+    {
+      "version": "2.3.53",
+      "fecha": "2026-08-22",
+      "titulo": "Letra de factura A/B/C según IVA del cliente",
+      "items": [
+        "La letra se actualiza al elegir cliente o cambiar Factura/Ticket/NC.",
+        "RI a RI = A. CF, monotributo o exento = B. El local monotributista = C.",
+        "La misma letra se usa al facturar en ARCA.",
+        "Instalador SCHPOS-Setup-2.3.53.exe."
+      ]
+    },
+    {
+      "version": "2.3.52",
+      "fecha": "2026-08-22",
+      "titulo": "POS: textos claros en oscuro y panel que se achica solo",
+      "items": [
+        "Subtotal, IVA y el resto de etiquetas se leen en tema oscuro (ya no quedan negras).",
+        "Al tocar un producto o Config, se ocultan cliente y textos de ayuda para que entren los botones sin scroll.",
+        "COBRAR sigue fijo abajo. F1 sigue abriendo atajos.",
+        "Instalador SCHPOS-Setup-2.3.52.exe."
+      ]
+    },
+    {
+      "version": "2.3.51",
+      "fecha": "2026-08-22",
+      "titulo": "Arranque corregido (el 2.3.50 no abría)",
+      "items": [
+        "Corrige el cierre inmediato al abrir SCHPOS por un estilo duplicado.",
+        "Instalador SCHPOS-Setup-2.3.51.exe."
+      ]
+    },
+    {
+      "version": "2.3.50",
+      "fecha": "2026-08-22",
+      "titulo": "Listas sin esquinas rotas y resumen de venta más amplio",
+      "items": [
+        "Las tablas ya no muestran un recuadro claro cuadrado sobre las esquinas redondas.",
+        "Resumen de la venta más ancho, con botones redondeados y más aire.",
+        "Al desplegar un ítem o «Más opciones» se scrollea: COBRAR no se sale de la pantalla.",
+        "Instalador SCHPOS-Setup-2.3.50.exe."
+      ]
+    },
+    {
+      "version": "2.3.49",
+      "fecha": "2026-08-22",
+      "titulo": "Login completo, visor en 2.ª pantalla y listas rediseñadas",
+      "items": [
+        "El selector de diseño ya no empuja el login: se ve Ingresar y Salir del sistema.",
+        "Los campos de usuario y contraseña no recortan el texto ni los puntos.",
+        "Al elegir dos pantallas se abre el visor del cliente (en el segundo monitor, o arrastrable si Windows ve uno solo).",
+        "Productos, precios, clientes, proveedores y listas con tabla tipo SaaS.",
+        "Menú: logo S más grande, SCHPOS centrado y sin «Gestión comercial».",
+        "Instalador SCHPOS-Setup-2.3.49.exe."
+      ]
+    },
+    {
+      "version": "2.3.48",
+      "fecha": "2026-08-22",
+      "titulo": "Campos sin recorte, texto visible en oscuro y botón SQL Express",
+      "items": [
+        "Los puntos de la contraseña y el texto de los campos ya no se cortan arriba.",
+        "Combos y textos de ayuda en tema oscuro pasan a color claro.",
+        "El botón «Instalar SQL Express» se lee bien (verde con texto blanco).",
+        "Instalador SCHPOS-Setup-2.3.48.exe."
+      ]
+    },
+    {
+      "version": "2.3.47",
+      "fecha": "2026-08-22",
+      "titulo": "Campos legibles, listas SaaS y arreglo de dos pantallas",
+      "items": [
+        "Los campos de texto ya no se recortan: se ve lo que se escribe.",
+        "Listas (clientes, productos, proveedores) con filas y encabezados más tipo SaaS.",
+        "El combo de una/dos pantallas vuelve a mostrar la opción elegida.",
+        "Instalador SCHPOS-Setup-2.3.47.exe."
+      ]
+    },
+    {
+      "version": "2.3.46",
+      "fecha": "2026-08-22",
+      "titulo": "Teclado, cobro e inicio con forma Stitch",
+      "items": [
+        "Teclado nuevo: teclas planas y redondas (sin 3D ni retroceso rojo).",
+        "Cobro: medios en grilla y confirmar pago a lo ancho.",
+        "Resumen del día con tarjetas más redondeadas.",
+        "Instalador SCHPOS-Setup-2.3.46.exe."
+      ]
+    },
+    {
+      "version": "2.3.45",
+      "fecha": "2026-08-22",
+      "titulo": "Diseño nuevo: forma, tipografía y teclado (vista previa)",
+      "items": [
+        "El diseño nuevo ya no es solo color: cambia radios, campos, tipografía y teclado.",
+        "Se elige en el login (Diseño nuevo / Diseño actual). Las funciones no cambian.",
+        "Instalador SCHPOS-Setup-2.3.45.exe."
+      ]
+    },
+    {
+      "version": "2.3.44",
+      "fecha": "2026-08-22",
+      "titulo": "ARCA no pierde el cobro y atajos F2–F12 en el POS",
+      "items": [
+        "Si ARCA falla después de un cobro, la venta se guarda como ticket interno.",
+        "POS: F2–F12 y ventas en pausa (F5/F6) sin cambiar el cobro.",
+        "Diseño nuevo (Stitch) opcional: el look actual sigue por defecto.",
+        "Instalador SCHPOS-Setup-2.3.44.exe."
+      ]
+    },
+    {
+      "version": "2.3.43",
+      "fecha": "2026-08-22",
+      "titulo": "Asistente de red: modo mixto antes de crear schpos",
+      "items": [
+        "El asistente de servidor aplica modo mixto, para y arranca SQLEXPRESS, y solo entonces crea el usuario schpos.",
+        "Si SoloWindows sigue en 1 no insiste con Preparar datos ni genera otra clave.",
+        "Instalador SCHPOS-Setup-2.3.43.exe."
+      ]
+    },
+    {
+      "version": "2.3.42",
+      "fecha": "2026-08-20",
+      "titulo": "Logo del instalador sin deformar",
+      "items": [
+        "El panel izquierdo del instalador respeta la proporción del logo: ya no se estira ni se ve achatado.",
+        "Instalador SCHPOS-Setup-2.3.42.exe."
+      ]
+    },
+    {
+      "version": "2.3.40",
+      "fecha": "2026-08-20",
+      "titulo": "Logo del instalador, sin scrolls blancos e ícono de tarea",
+      "items": [
+        "Vuelve el logo SCHPOS en la bienvenida del instalador.",
+        "Se ocultan las barras de desplazamiento blancas del resumen.",
+        "El ícono de SCHPOS en la barra de tareas es la S (sin texto pixelado).",
+        "Instalador SCHPOS-Setup-2.3.40.exe."
+      ]
+    },
+    {
+      "version": "2.3.38",
+      "fecha": "2026-08-20",
+      "titulo": "Instalador con look SCHPOS e ícono nítido",
+      "items": [
+        "El asistente ya no menciona Schettini Tec: solo SCHPOS.",
+        "El menú lateral vuelve a la S blanca original.",
+        "Ícono de barra de tareas con la marca SP en alta resolución.",
+        "Instalador SCHPOS-Setup-2.3.38.exe."
+      ]
+    },
+    {
+      "version": "2.3.37",
+      "fecha": "2026-08-20",
+      "titulo": "Marca SCHPOS en alta calidad",
+      "items": [
+        "Ícono de la aplicación nítido en barra de tareas, ventanas y .exe.",
+        "Logo SchPos en el login, el menú y el instalador.",
+        "Instalador SCHPOS-Setup-2.3.37.exe."
+      ]
+    },
+    {
+      "version": "2.3.36",
+      "fecha": "2026-08-20",
+      "titulo": "Nombre de caja y datos en vivo entre puestos",
+      "items": [
+        "Cada PC tiene un nombre de puesto (CAJA-01, MOSTRADOR, SERVIDOR) en el instalador, el encabezado y Configuración.",
+        "Precios, clientes y cuenta corriente se refrescan solos en las otras cajas (sin cerrar sesión).",
+        "Instalador SCHPOS-Setup-2.3.36.exe."
+      ]
+    },
+    {
+      "version": "2.3.35",
+      "fecha": "2026-08-20",
+      "titulo": "Instalador SCHPOS con tipo SERVIDOR o CLIENTE",
+      "items": [
+        "El instalador pregunta si esta PC es SERVIDOR o CLIENTE (con gráficos SCHPOS).",
+        "En CLIENTE no se instala LocalDB ni se prepara una base local.",
+        "Al finalizar muestra los pasos siguientes según el tipo elegido.",
+        "Instalador SCHPOS-Setup-2.3.35.exe."
+      ]
+    },
+    {
+      "version": "2.3.34",
+      "fecha": "2026-08-20",
+      "titulo": "Cliente: arranque tras guardar conexión en red",
+      "items": [
+        "Corrige «Palabra clave no admitida: Trust Server Certificate» al reabrir SCHPOS como CLIENTE.",
+        "Después de Guardar y reiniciar, el programa se vuelve a abrir solo.",
+        "Instalador SCHPOS-Setup-2.3.34.exe."
+      ]
+    },
+    {
+      "version": "2.3.33",
+      "fecha": "2026-08-20",
+      "titulo": "Cliente ya no arranca LocalDB (RAM / Configuración trabada)",
+      "items": [
+        "En PC CLIENTE no se inicia SQL LocalDB: ese proceso (SQL Server Windows NT) se comía 1–2 GB y trababa Configuración.",
+        "El ID de máquina y el listado de impresoras se cargan fuera del hilo de la ventana.",
+        "Instalador SCHPOS-Setup-2.3.33.exe."
+      ]
+    },
+    {
+      "version": "2.3.32",
+      "fecha": "2026-08-20",
+      "titulo": "Configuración no se traba en PCs cliente",
+      "items": [
+        "Al abrir Configuración ya no se intenta conectar a .\\SQLEXPRESS local (eso congelaba la notebook cliente).",
+        "El listado de impresoras no bloquea la ventana si hay una impresora de red caída.",
+        "Instalador SCHPOS-Setup-2.3.32.exe."
+      ]
+    },
+    {
+      "version": "2.3.31",
+      "fecha": "2026-08-20",
+      "titulo": "Red: cliente guarda y conecta de verdad",
+      "items": [
+        "Al elegir CLIENTE se desmarca Windows Auth y se piden usuario/clave schpos (evita dominio no confiable).",
+        "conexion.cfg se escribe también en LocalAppData si ProgramData está bloqueado.",
+        "Botón «Probar conexión» sin cerrar el sistema.",
+        "El guardado falla de forma explícita si no pudo persistir el archivo.",
+        "Instalador SCHPOS-Setup-2.3.31.exe."
+      ]
+    },
+    {
+      "version": "2.3.30",
+      "fecha": "2026-08-08",
+      "titulo": "Extra RED solo si está en la licencia",
+      "items": [
+        "Sin ACCESO_RED no aparece la pestaña Red y Servidor (se quita del TabControl).",
+        "Extras monetizables ya no se habilitan por licencia legacy/Pro automática.",
+        "Plan Pro del licenciador no incluye RED/ARCA/MP: se tildan aparte.",
+        "Al activar una clave con RED, al reiniciar ofrece configurar SERVIDOR o CLIENTE.",
+        "Instalador SCHPOS-Setup-2.3.30.exe."
+      ]
+    },
+    {
+      "version": "2.3.29",
+      "fecha": "2026-08-08",
+      "titulo": "Modo CLIENTE ya no vuelve a SERVIDOR/LocalDB",
+      "items": [
+        "Al iniciar con licencia RED pregunta SERVIDOR vs CLIENTE (antes abría solo el asistente de servidor).",
+        "Persiste modo_red.cfg para que el rol CLIENTE no se pierda al reiniciar.",
+        "Verifica que conexion.cfg quedó con la IP de red al guardar cliente.",
+        "Instalador SCHPOS-Setup-2.3.29.exe."
+      ]
+    },
+    {
+      "version": "2.3.28",
+      "fecha": "2026-08-08",
+      "titulo": "Fix migración: productos y listas en red",
+      "items": [
+        "Corrige fallo silencioso de migración (ALTER+UPDATE StockRecibido) que impedía crear productos y listas.",
+        "Muestra el detalle del error al guardar producto o lista de precios.",
+        "Instalador SCHPOS-Setup-2.3.28.exe."
+      ]
+    },
+    {
+      "version": "2.3.27",
+      "fecha": "2026-08-08",
+      "titulo": "Servidor de red solo listo si TCP 1433 responde",
+      "items": [
+        "El asistente no marca la PC como servidor hasta que el puerto 1433 escuche de verdad.",
+        "Escritura DWORD explícita de TCP/IP Enabled (evita quedar Enabled=0).",
+        "El script elevado falla si nadie escucha en 1433 tras reiniciar Express.",
+        "Instalador SCHPOS-Setup-2.3.27.exe."
+      ]
+    },
+    {
+      "version": "2.3.26",
+      "fecha": "2026-08-05",
+      "titulo": "Asistente red: TCP 1433 más robusto",
+      "items": [
+        "Reaplica TCP/IP + firewall si 1433 no responde y espera a que el puerto escuche.",
+        "Prueba varias formas de conexión (127.0.0.1,1433 / instancia).",
+        "Si TCP falla, el asistente igual finaliza el servidor local y muestra aviso claro.",
+        "Instalador SCHPOS-Setup-2.3.26.exe."
+      ]
+    },
+    {
+      "version": "2.3.25",
+      "fecha": "2026-08-05",
+      "titulo": "Migración LocalDB→Express con versiones distintas",
+      "items": [
+        "Si LocalDB es más nuevo que Express (ej. 2022 vs 2019), migra por copia de tablas (RESTORE no permite bajar de versión).",
+        "Fallback automático cuando el RESTORE falla por incompatibilidad de versión.",
+        "Instalador SCHPOS-Setup-2.3.25.exe."
+      ]
+    },
+    {
+      "version": "2.3.24",
+      "fecha": "2026-08-05",
+      "titulo": "Fix migración LocalDB→Express (SINGLE_USER)",
+      "items": [
+        "Limpia pools ADO.NET (System.Data y Microsoft.Data) antes del ALTER/RESTORE.",
+        "Expulsa sesiones y fuerza MULTI_USER/SINGLE_USER con ROLLBACK IMMEDIATE desde master.",
+        "Evita el error 'base de datos en modo usuario único' en el asistente de servidor.",
+        "Instalador SCHPOS-Setup-2.3.24.exe."
+      ]
+    },
+    {
+      "version": "2.3.23",
+      "fecha": "2026-08-05",
+      "titulo": "QR en NC/ND, auto-corte etiquetas y textos de ayuda",
+      "items": [
+        "Notas de crédito/débito electrónicas con CAE e impresión de QR ARCA (ticket/A4/PDF).",
+        "Auto-corte opcional en etiquetas rollo (ESC/POS, TSPL, ZPL, EPL) con mensaje de marcas.",
+        "Textos de ayuda en ARCA, licencia, impresión, NC/ND, caja, compras, Point y etiquetas.",
+        "Instalador SCHPOS-Setup-2.3.23.exe."
+      ]
+    },
+    {
+      "version": "2.3.22",
+      "fecha": "2026-08-04",
+      "titulo": "Fix UAC PowerShell (error ruta código 3)",
+      "items": [
+        "Corrige 'El sistema no puede encontrar la ruta especificada' al pedir admin (Sysnative+runas).",
+        "Asistente de servidor sin carteles intermedios; solo el escudo de Windows.",
+        "Instalador SCHPOS-Setup-2.3.22.exe."
+      ]
+    },
+    {
+      "version": "2.3.21",
+      "fecha": "2026-08-04",
+      "titulo": "Asistente de servidor en red (Siguiente)",
+      "items": [
+        "Asistente paso a paso: SQL Express → puerto/firewall → datos y usuario clientes.",
+        "Reemplaza la cascada de carteles; Windows solo pide permiso cuando corresponde.",
+        "Instalador SCHPOS-Setup-2.3.21.exe."
+      ]
+    },
+    {
+      "version": "2.3.19",
+      "fecha": "2026-08-04",
+      "titulo": "Fix cartel Conexión en RED al iniciar",
+      "items": [
+        "El cartel de preparar servidor no se ocultaba por un flag viejo tras un intento fallido.",
+        "Solo se omite si elegiste No o si el servidor ya quedó OK.",
+        "Instalador SCHPOS-Setup-2.3.19.exe."
+      ]
+    },
+    {
+      "version": "2.3.18",
+      "fecha": "2026-08-04",
+      "titulo": "Fix preparar servidor (registro SQL 64-bit)",
+      "items": [
+        "Corrige error 'No hay instancias de SQL Server en el registro' al usar PowerShell 64-bit.",
+        "Si falta Express, instala con UI de respaldo y solo avanza cuando .\\\\SQLEXPRESS responde.",
+        "Instalador SCHPOS-Setup-2.3.18.exe."
+      ]
+    },
+    {
+      "version": "2.3.17",
+      "fecha": "2026-08-04",
+      "titulo": "Red multi-PC punta a punta",
+      "items": [
+        "Preparar SERVIDOR: instala SQL Express si falta, migra LocalDB, TCP/firewall con verificación UAC, usuario SQL schpos.",
+        "Guía SCHPOS-Configuracion-Clientes.txt con usuario/clave; clientes pueden cargar el archivo.",
+        "Tras activar licencia RED, ofrece configurar servidor (el primer uso ya no oculta el camino).",
+        "Instalador SCHPOS-Setup-2.3.17.exe."
+      ]
+    },
     {
       "version": "2.3.16",
       "fecha": "2026-08-03",

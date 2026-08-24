@@ -30,9 +30,10 @@
                            HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="0,16,0,10"/>
                 <ProgressBar x:Name="prgEspera" IsIndeterminate="True" Height="7" Width="320"
                              Foreground="#009EE3" Background="{DynamicResource SurfaceDark}"/>
-                <TextBlock Text="El cliente debe completar el pago en el Point."
+                <TextBlock Text="El cliente debe completar el pago en el Point. Cancelar también anula el cobro en Mercado Pago."
                            Foreground="{DynamicResource TextSecondary}" FontSize="13"
-                           HorizontalAlignment="Center" Margin="0,14,0,0"/>
+                           HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
+                           Margin="24,14,24,0"/>
             </StackPanel>
 
             <Button x:Name="btnCancelar" Grid.Row="2" Content="Cancelar cobro"

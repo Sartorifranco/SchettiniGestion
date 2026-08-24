@@ -41,6 +41,9 @@
             </Grid>
 
             <StackPanel Grid.Row="1">
+                <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,14"
+                           Foreground="{DynamicResource TextSecondary}"
+                           Text="Movimiento manual de efectivo. No registra una venta ni modifica el stock."/>
                 <TextBlock Text="Monto" Style="{DynamicResource ModalCaptionTextStyle}" Margin="0,0,0,6"/>
                 <xctk:DecimalUpDown x:Name="numMonto"
                                     Style="{StaticResource ModuleNumericUpDownStyle}"

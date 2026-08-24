@@ -124,16 +124,19 @@ namespace SchettiniGestion.WPF
                 {
                     Content = medio.Nombre,
                     Tag = medio,
-                    MinWidth = 150,
-                    MinHeight = 56,
-                    Margin = new Thickness(0, 0, 8, 8),
-                    FontSize = 15,
+                    MinHeight = 72,
+                    Margin = new Thickness(4),
+                    FontSize = 16,
                     FontWeight = FontWeights.SemiBold,
                     Cursor = Cursors.Hand,
-                    Style = TryFindResource("ButtonStyle") as Style
+                    Style = TryFindResource("SecondaryButtonStyle") as Style
                 };
                 if (EsEfectivo(medio.Nombre))
-                    btn.Background = TryFindResource("SuccessColor") as Brush ?? btn.Background;
+                {
+                    btn.Style = TryFindResource("ButtonStyle") as Style;
+                    btn.Background = TryFindResource("PrimaryColor") as Brush ?? btn.Background;
+                    btn.Foreground = Brushes.White;
+                }
                 btn.Click += (s, e) =>
                 {
                     if (s is Button b && b.Tag is MedioPagoOpcion m)

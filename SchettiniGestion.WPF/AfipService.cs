@@ -29,7 +29,16 @@ namespace SchettiniGestion.WPF
         private const string URL_PADRON_HOMO = "https://awshomo.afip.gov.ar/sr-padron/webservices/personaServiceA4";
         private const string URL_PADRON_PROD = "https://aws.afip.gov.ar/sr-padron/webservices/personaServiceA4";
 
-        public static async Task<ResultadoAfip> FacturarAsync(int tipoComprobante, int puntoVenta, double importeTotal, long cuitCliente, List<FacturaItem> items, string condicionIvaCliente = null)
+        public static async Task<ResultadoAfip> FacturarAsync(
+            int tipoComprobante,
+            int puntoVenta,
+            double importeTotal,
+            long cuitCliente,
+            List<FacturaItem> items,
+            string condicionIvaCliente = null,
+            int? cbteAsocTipo = null,
+            int? cbteAsocPtoVta = null,
+            long? cbteAsocNro = null)
         {
             var resultado = new ResultadoAfip();
 
@@ -44,7 +53,7 @@ namespace SchettiniGestion.WPF
                     return resultado;
                 }
                 string rutaCert = config["CertificadoPath"]?.ToString() ?? "";
-                string passCert = config["PasswordAfip"]?.ToString() ?? "";
+                string passCert = DatabaseService.DecodeAfipCertificatePasswordStored(config["PasswordAfip"]);
 
                 // 1. LOGIN
                 LoginTicket ticket;
@@ -58,13 +67,15 @@ namespace SchettiniGestion.WPF
                     ticket = await ObtenerTicketAcceso(rutaCert, passCert, prod);
                 }
 
-                // 2. ├ÜLTIMO COMPROBANTE
+                // 2. ÚLTIMO COMPROBANTE
                 int nroComprobante = await ObtenerUltimoComprobante(ticket, cuitEmpresa, puntoVenta, tipoComprobante, prod) + 1;
 
                 // 3. DATOS VENTA (neto / IVA según alícuota por ítem)
+                // Tipos C (11 Factura C, 12 ND C, 13 NC C): sin discriminación de IVA
+                bool esTipoC = tipoComprobante == 11 || tipoComprobante == 12 || tipoComprobante == 13;
                 double neto = 0, iva = 0;
                 var lineas = items ?? new List<FacturaItem>();
-                if (tipoComprobante == 11)
+                if (esTipoC)
                 {
                     neto = importeTotal;
                     iva = 0;
@@ -86,6 +97,12 @@ namespace SchettiniGestion.WPF
                         neto += nl;
                         iva += ivp;
                     }
+                    if (lineas.Count == 0)
+                    {
+                        // NC/ND sin ítems tipados: asumir IVA 21 % incluido
+                        neto = Math.Round(importeTotal / 1.21, 2);
+                        iva = Math.Round(importeTotal - neto, 2);
+                    }
                 }
 
                 // --- Documento y condición IVA del receptor ---
@@ -93,7 +110,7 @@ namespace SchettiniGestion.WPF
                 long docNro = 0;
                 int condicionIvaReceptor = MapearCondicionIvaAfip(condicionIvaCliente, cuitCliente);
 
-                if (prod && cuitCliente > 0)
+                if (cuitCliente > 0 && (prod || tipoComprobante == 1 || tipoComprobante == 2 || tipoComprobante == 3))
                 {
                     docTipo = 80;
                     docNro = cuitCliente;
@@ -104,7 +121,26 @@ namespace SchettiniGestion.WPF
                 string strNeto = neto.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
                 string strIva = iva.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
 
-                // XML CON EL CAMPO NUEVO <CondicionIVAReceptorId>
+                // Comprobante asociado obligatorio en NC/ND electrónicas
+                string xmlCbteAsoc = "";
+                if (cbteAsocTipo.HasValue && cbteAsocPtoVta.HasValue && cbteAsocNro.HasValue
+                    && cbteAsocTipo.Value > 0 && cbteAsocPtoVta.Value > 0 && cbteAsocNro.Value > 0)
+                {
+                    xmlCbteAsoc = $@"
+                                    <CbtesAsoc>
+                                        <CbteAsoc>
+                                            <Tipo>{cbteAsocTipo.Value}</Tipo>
+                                            <PtoVta>{cbteAsocPtoVta.Value}</PtoVta>
+                                            <Nro>{cbteAsocNro.Value}</Nro>
+                                            <Cuit>{cuitEmpresa}</Cuit>
+                                        </CbteAsoc>
+                                    </CbtesAsoc>";
+                }
+
+                string xmlIva = esTipoC
+                    ? ""
+                    : $@"<Iva><AlicIva><Id>5</Id><BaseImp>{strNeto}</BaseImp><Importe>{strIva}</Importe></AlicIva></Iva>";
+
                 string xmlBody = $@"
                     <FECAESolicitar xmlns=""http://ar.gov.afip.dif.FEV1/"">
                         <Auth>
@@ -135,7 +171,8 @@ namespace SchettiniGestion.WPF
                                     <MonId>PES</MonId>
                                     <MonCotiz>1</MonCotiz>
                                     <CondicionIVAReceptorId>{condicionIvaReceptor}</CondicionIVAReceptorId>
-                                    {(tipoComprobante != 11 ? $@"<Iva><AlicIva><Id>5</Id><BaseImp>{strNeto}</BaseImp><Importe>{strIva}</Importe></AlicIva></Iva>" : "")}
+                                    {xmlCbteAsoc}
+                                    {xmlIva}
                                 </FECAEDetRequest>
                             </FeDetReq>
                         </FeCAEReq>
@@ -171,6 +208,91 @@ namespace SchettiniGestion.WPF
             {
                 return new ResultadoAfip { Exito = false, Error = "Error Sistema: " + ex.Message };
             }
+        }
+
+        /// <summary>
+        /// Reintento de CAE: primero consulta si ARCA ya autorizó (timeout), si no pide uno nuevo.
+        /// </summary>
+        public static async Task<ResultadoAfip> ReintentarCaePendienteAsync(
+            int tipoComprobante,
+            int puntoVenta,
+            double importeTotal,
+            long cuitCliente,
+            List<FacturaItem> items,
+            string condicionIvaCliente)
+        {
+            var recuperado = await IntentarRecuperarCaePerdido(tipoComprobante, puntoVenta, importeTotal);
+            if (recuperado != null && recuperado.Exito)
+                return recuperado;
+            return await FacturarAsync(tipoComprobante, puntoVenta, importeTotal, cuitCliente, items, condicionIvaCliente);
+        }
+
+        private static async Task<ResultadoAfip> IntentarRecuperarCaePerdido(int tipoComprobante, int puntoVenta, double importeTotal)
+        {
+            try
+            {
+                bool prod = DatabaseService.GetAfipAmbienteProduccion();
+                DataRow config = DatabaseService.GetConfiguracion();
+                string cuitRaw = config["CUIT"]?.ToString().Replace("-", "").Trim() ?? "";
+                if (string.IsNullOrEmpty(cuitRaw) || !long.TryParse(cuitRaw, out long cuitEmpresa))
+                    return null;
+                string rutaCert = config["CertificadoPath"]?.ToString() ?? "";
+                string passCert = DatabaseService.DecodeAfipCertificatePasswordStored(config["PasswordAfip"]);
+                LoginTicket ticket;
+                try { ticket = await ObtenerTicketAcceso(rutaCert, passCert, prod); }
+                catch
+                {
+                    if (File.Exists(ARCHIVO_TOKEN)) File.Delete(ARCHIVO_TOKEN);
+                    ticket = await ObtenerTicketAcceso(rutaCert, passCert, prod);
+                }
+
+                int ultimo = await ObtenerUltimoComprobante(ticket, cuitEmpresa, puntoVenta, tipoComprobante, prod);
+                string hoy = DateTime.Now.ToString("yyyyMMdd");
+                foreach (int nro in new[] { ultimo, ultimo + 1 })
+                {
+                    if (nro <= 0) continue;
+                    var cons = await ConsultarComprobante(ticket, cuitEmpresa, puntoVenta, tipoComprobante, nro, prod);
+                    if (cons == null || !cons.Exito) continue;
+                    if (!string.Equals(cons.FechaCbte, hoy, StringComparison.Ordinal)) continue;
+                    if (Math.Abs(cons.ImporteTotal - importeTotal) > 0.05) continue;
+                    return cons;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private static async Task<ResultadoAfip> ConsultarComprobante(
+            LoginTicket ticket, long cuit, int ptoVta, int tipoCbte, int nro, bool produccion)
+        {
+            string xmlBody = $@"<FECompConsultar xmlns=""http://ar.gov.afip.dif.FEV1/"">
+                <Auth><Token>{ticket.Token}</Token><Sign>{ticket.Sign}</Sign><Cuit>{cuit}</Cuit></Auth>
+                <FeCompConsReq>
+                    <PtoVta>{ptoVta}</PtoVta>
+                    <CbteTipo>{tipoCbte}</CbteTipo>
+                    <CbteNro>{nro}</CbteNro>
+                </FeCompConsReq>
+            </FECompConsultar>";
+            string url = produccion ? URL_WSFE_PROD : URL_WSFE_HOMO;
+            string resp = await EnviarSoap(url, xmlBody, "http://ar.gov.afip.dif.FEV1/FECompConsultar");
+            var doc = XDocument.Parse(resp);
+            XNamespace ns = "http://ar.gov.afip.dif.FEV1/";
+            string cae = doc.Descendants(ns + "CodAutorizacion").FirstOrDefault()?.Value
+                ?? doc.Descendants(ns + "CAE").FirstOrDefault()?.Value;
+            if (string.IsNullOrWhiteSpace(cae)) return null;
+            string imp = doc.Descendants(ns + "ImpTotal").FirstOrDefault()?.Value;
+            double.TryParse(imp, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double total);
+            return new ResultadoAfip
+            {
+                Exito = true,
+                CAE = cae,
+                Vencimiento = doc.Descendants(ns + "FchVto").FirstOrDefault()?.Value
+                    ?? doc.Descendants(ns + "CAEFchVto").FirstOrDefault()?.Value,
+                NumeroComprobante = nro,
+                FechaCbte = doc.Descendants(ns + "CbteFch").FirstOrDefault()?.Value,
+                ImporteTotal = total
+            };
         }
 
         /// <summary>
@@ -405,7 +527,7 @@ namespace SchettiniGestion.WPF
                     return resultado;
                 }
                 string rutaCert = config["CertificadoPath"]?.ToString();
-                string passCert = config["PasswordAfip"]?.ToString();
+                string passCert = DatabaseService.DecodeAfipCertificatePasswordStored(config["PasswordAfip"]);
                 if (string.IsNullOrEmpty(rutaCert) || !File.Exists(rutaCert)) { resultado.Error = "Certificado ARCA no configurado o no encontrado"; return resultado; }
 
                 LoginTicket ticket = await ObtenerTicketAccesoPadron(rutaCert, passCert ?? "", prod);
@@ -566,6 +688,15 @@ namespace SchettiniGestion.WPF
     }
 
     public class ResultadoPruebaWsaa { public bool Exito; public string Mensaje; }
-    public class ResultadoAfip { public bool Exito; public string CAE; public string Vencimiento; public int NumeroComprobante; public string Error; }
+    public class ResultadoAfip
+    {
+        public bool Exito;
+        public string CAE;
+        public string Vencimiento;
+        public int NumeroComprobante;
+        public string Error;
+        public string FechaCbte;
+        public double ImporteTotal;
+    }
     public class PersonaAfip { public bool Exito; public string Error; public string RazonSocial; public string CondicionIVA; }
 }

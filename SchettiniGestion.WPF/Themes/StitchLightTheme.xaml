@@ -1,0 +1,55 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Vista previa Stitch (claro): mismos keys que LightTheme. No cambia funciones. -->
+    <LinearGradientBrush x:Key="ShellAccentGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#F7F9FB" Offset="0"/>
+        <GradientStop Color="#F2F4F6" Offset="0.5"/>
+        <GradientStop Color="#DBE1FF" Offset="1"/>
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="PrimaryColor" Color="#2563EB"/>
+    <SolidColorBrush x:Key="PrimaryHover" Color="#004AC6"/>
+    <SolidColorBrush x:Key="SuccessColor" Color="#10B981"/>
+    <SolidColorBrush x:Key="DangerColor" Color="#EF4444"/>
+    <SolidColorBrush x:Key="WarningColor" Color="#F59E0B"/>
+
+    <SolidColorBrush x:Key="BackgroundDark" Color="#F7F9FB"/>
+    <SolidColorBrush x:Key="SurfaceDark" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="BorderColor" Color="#C3C6D7"/>
+    <SolidColorBrush x:Key="TextPrimary" Color="#191C1E"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#434655"/>
+    <SolidColorBrush x:Key="ModuleBackgroundBrush" Color="#F7F9FB"/>
+    <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="HeaderForegroundBrush" Color="#191C1E"/>
+    <SolidColorBrush x:Key="BodyForegroundBrush" Color="#434655"/>
+    <SolidColorBrush x:Key="BorderDarkBrush" Color="#C3C6D7"/>
+    <SolidColorBrush x:Key="HoverBackground" Color="#ECEEF0"/>
+    <SolidColorBrush x:Key="AlternatingRowBackground" Color="#F2F4F6"/>
+    <SolidColorBrush x:Key="ComboBoxBackground" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ComboBoxForeground" Color="#191C1E"/>
+    <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ComboBoxDropDownForeground" Color="#191C1E"/>
+    <SolidColorBrush x:Key="ComboBoxItemHoverBackground" Color="#D5E3FC"/>
+    <SolidColorBrush x:Key="MenuSidebarHoverBackground" Color="#D5E3FC"/>
+
+    <SolidColorBrush x:Key="LoginFormBackgroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="LoginAsideBackgroundBrush" Color="#F2F4F6"/>
+    <SolidColorBrush x:Key="LoginFieldBackgroundBrush" Color="#F2F4F6"/>
+    <SolidColorBrush x:Key="LoginFieldBorderBrush" Color="#C3C6D7"/>
+    <SolidColorBrush x:Key="LoginMutedTextBrush" Color="#434655"/>
+    <SolidColorBrush x:Key="LoginBrandTextBrush" Color="#2563EB"/>
+    <SolidColorBrush x:Key="LoginFooterTextBrush" Color="#737686"/>
+    <SolidColorBrush x:Key="LoginSeparatorBrush" Color="#C3C6D7"/>
+
+    <SolidColorBrush x:Key="OverlayScrimBrush" Color="#66000000"/>
+
+    <SolidColorBrush x:Key="VKBackground"    Color="#ECEEF0"/>
+    <SolidColorBrush x:Key="VKKeyBg"         Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="VKKeySpecialBg"  Color="#D5E3FC"/>
+    <SolidColorBrush x:Key="VKKeyShadow"     Color="#C3C6D7"/>
+    <SolidColorBrush x:Key="VKKeyBorder"     Color="#C3C6D7"/>
+    <SolidColorBrush x:Key="VKKeyPressBg"    Color="#2563EB"/>
+    <SolidColorBrush x:Key="VKShiftActiveBg" Color="#004AC6"/>
+    <SolidColorBrush x:Key="VKAccentBar"     Color="#2563EB"/>
+</ResourceDictionary>

@@ -467,6 +467,8 @@ namespace SchettiniGestion.WPF
             chkUsaVariantes.IsChecked = r.Table.Columns.Contains("UsaVariantes") && r["UsaVariantes"] != DBNull.Value && Convert.ToBoolean(r["UsaVariantes"]);
             chkEsCombo.IsChecked = r.Table.Columns.Contains("EsCombo") && r["EsCombo"] != DBNull.Value && Convert.ToBoolean(r["EsCombo"]);
             chkActivo.IsChecked = !r.Table.Columns.Contains("Activo") || r["Activo"] == DBNull.Value || Convert.ToBoolean(r["Activo"]);
+            if (chkEsFavoritoPos != null)
+                chkEsFavoritoPos.IsChecked = DatabaseService.EsFavoritoPos(r);
 
             txtVarianteColor.Text = V(r, "VarianteColor");
             txtVarianteTalle.Text = V(r, "VarianteTalle");
@@ -578,6 +580,7 @@ namespace SchettiniGestion.WPF
             chkUsaVariantes.IsChecked = false;
             chkEsCombo.IsChecked = false;
             chkActivo.IsChecked = true;
+            if (chkEsFavoritoPos != null) chkEsFavoritoPos.IsChecked = false;
             txtVarianteColor.Text = "";
             txtVarianteTalle.Text = "";
             txtVarianteUnidadMedida.Text = "";
@@ -800,10 +803,14 @@ namespace SchettiniGestion.WPF
 
             if (productoId <= 0)
             {
-                ModernMessageBox.Show("Error al guardar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                string detalle = string.IsNullOrWhiteSpace(DatabaseService.UltimoError)
+                    ? ""
+                    : "\n\nDetalle:\n" + DatabaseService.UltimoError;
+                ModernMessageBox.Show("Error al guardar." + detalle, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
             ResultID = productoId;
+            DatabaseService.SetFavoritoPos(productoId, chkEsFavoritoPos?.IsChecked == true);
 
             var asignaciones = new List<DatabaseService.ProductoListaAsignacion>();
             if (pnlListasPrecio?.Items != null)

@@ -30,7 +30,7 @@
                                FontSize="22"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimary}"/>
-                    <TextBlock Text="Revisá los totales del turno antes de registrar el cierre."
+                    <TextBlock Text="Revisá los totales del turno antes de registrar el cierre. Al confirmar se cierra el turno: para seguir vendiendo hay que abrir caja de nuevo. Las ventas ya registradas no se borran."
                                FontSize="13"
                                Foreground="{DynamicResource TextSecondary}"
                                Margin="0,6,0,0"

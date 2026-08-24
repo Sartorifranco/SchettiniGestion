@@ -19,8 +19,6 @@ namespace SchettiniGestion.WPF
         private DateTime _lastShiftTap;
         private bool _built;
 
-        private const double NumericPadWidth = 360;
-
         private enum KT { Normal, Special, Back, Enter, Confirm, Space }
 
         private struct AK
@@ -42,7 +40,38 @@ namespace SchettiniGestion.WPF
         public VirtualKeyboardControl()
         {
             InitializeComponent();
-            Loaded += (s, e) => EnsureBuilt();
+            Loaded += (s, e) =>
+            {
+                ThemeManager.ThemeChanged += OnThemeChanged;
+                AplicarLookTeclado();
+                EnsureBuilt();
+            };
+            Unloaded += (s, e) => ThemeManager.ThemeChanged -= OnThemeChanged;
+        }
+
+        private void OnThemeChanged(object sender, EventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                AplicarLookTeclado();
+                _built = false;
+                EnsureBuilt();
+                SetMode(_mode);
+            });
+        }
+
+        private void AplicarLookTeclado()
+        {
+            if (lblTituloTeclado != null)
+                lblTituloTeclado.Visibility = Visibility.Visible;
+            if (bdrAccent != null)
+                bdrAccent.Visibility = Visibility.Collapsed;
+            if (bdrModo != null)
+                bdrModo.CornerRadius = new CornerRadius(999);
+            if (kbShadow != null)
+                kbShadow.Opacity = 0.18;
+            if (mainBorder != null)
+                mainBorder.CornerRadius = new CornerRadius(28, 28, 0, 0);
         }
 
         public VirtualKeyboardMode CurrentMode => _mode;
@@ -62,19 +91,17 @@ namespace SchettiniGestion.WPF
 
             if (mode == VirtualKeyboardMode.Numeric)
             {
-                // Solo el ancho del pad, pegado a la derecha del host (sin negro lateral).
-                Width = NumericPadWidth;
+                Width = 420;
                 HorizontalAlignment = HorizontalAlignment.Right;
-                mainBorder.CornerRadius = new CornerRadius(16);
+                mainBorder.CornerRadius = new CornerRadius(24);
                 mainBorder.ClearValue(WidthProperty);
                 mainBorder.HorizontalAlignment = HorizontalAlignment.Stretch;
             }
             else
             {
-                // 100% del ancho del host (= ventana del sistema).
                 ClearValue(WidthProperty);
                 HorizontalAlignment = HorizontalAlignment.Stretch;
-                mainBorder.CornerRadius = new CornerRadius(20, 20, 0, 0);
+                mainBorder.CornerRadius = new CornerRadius(28, 28, 0, 0);
                 mainBorder.ClearValue(WidthProperty);
                 mainBorder.HorizontalAlignment = HorizontalAlignment.Stretch;
             }
@@ -197,7 +224,7 @@ namespace SchettiniGestion.WPF
                 for (int c = 0; c < row.Length; c++)
                 {
                     var btn = Btn(row[c].Item1, row[c].Item2);
-                    btn.Height = 68;
+                    btn.Height = 78;
                     PlaceBtn(g, btn, c);
                 }
                 pnlNumeric.Children.Add(g);
@@ -218,12 +245,13 @@ namespace SchettiniGestion.WPF
 
         private Button Btn(string label, KT type)
         {
-            string sty = type == KT.Back ? "VKKeyBack"
-                       : type == KT.Confirm ? "VKKeyConfirm"
-                       : type == KT.Enter ? "VKKeyEnter"
-                       : type == KT.Space ? "VKKeySpace"
-                       : type == KT.Special ? "VKKeySpecial"
-                       : "VKKey";
+            string suf = "N";
+            string sty = type == KT.Back ? "VKKeyBack" + suf
+                       : type == KT.Confirm ? "VKKeyConfirm" + suf
+                       : type == KT.Enter ? "VKKeyEnter" + suf
+                       : type == KT.Space ? "VKKeySpace" + suf
+                       : type == KT.Special ? "VKKeySpecial" + suf
+                       : "VKKey" + suf;
             var btn = new Button
             {
                 Content = label,

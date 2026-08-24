@@ -10,10 +10,17 @@
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="Productos" Style="{StaticResource TitleTextStyle}"/>
+            <TextBlock Text="Catálogo del local. Buscá, exportá o importá sin cambiar cómo funciona el alta."
+                       Style="{StaticResource PageSubtitleStyle}"/>
+        </StackPanel>
+
+        <Border Grid.Row="1" Style="{StaticResource SaaSTableCard}" Padding="18" Margin="0,0,0,14">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -45,7 +52,7 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="1">
+        <Border Grid.Row="2" Style="{StaticResource SaaSTableCard}" Padding="12,0,12,12">
             <Grid>
                 <DataGrid x:Name="dgvProductos" Style="{StaticResource ModuleDataGridStyle}"
                           AutoGenerateColumns="False" IsReadOnly="True"
@@ -59,21 +66,21 @@
                     </ContextMenu>
                 </DataGrid.ContextMenu>
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="COD" Binding="{Binding Codigo}" Width="Auto" MinWidth="70"/>
-                    <DataGridTextColumn Header="DESCRIPCIÓN" Binding="{Binding Descripcion}" Width="*"/>
-                    <DataGridTextColumn Header="RUBRO" Binding="{Binding Categoria}" Width="Auto" MinWidth="80"/>
-                    <DataGridTextColumn Header="SUB-RUBRO" Binding="{Binding SubRubro}" Width="Auto" MinWidth="80"/>
-                    <DataGridTextColumn Header="MARCA" Binding="{Binding Marca}" Width="Auto" MinWidth="70"/>
-                    <DataGridTextColumn Header="PROVEEDOR" Binding="{Binding Proveedor}" Width="Auto" MinWidth="100"/>
-                    <DataGridCheckBoxColumn Header="ACTIVO" Binding="{Binding Activo}" Width="Auto" MinWidth="70"/>
-                    <DataGridTextColumn Header="COSTO COMPRA FINAL" Binding="{Binding CostoCompraFinal, StringFormat=C2}" Width="Auto" MinWidth="130">
+                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="Auto" MinWidth="70"/>
+                    <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
+                    <DataGridTextColumn Header="Rubro" Binding="{Binding Categoria}" Width="Auto" MinWidth="80"/>
+                    <DataGridTextColumn Header="Sub-rubro" Binding="{Binding SubRubro}" Width="Auto" MinWidth="80"/>
+                    <DataGridTextColumn Header="Marca" Binding="{Binding Marca}" Width="Auto" MinWidth="70"/>
+                    <DataGridTextColumn Header="Proveedor" Binding="{Binding Proveedor}" Width="Auto" MinWidth="100"/>
+                    <DataGridCheckBoxColumn Header="Activo" Binding="{Binding Activo}" Width="Auto" MinWidth="70"/>
+                    <DataGridTextColumn Header="Costo compra final" Binding="{Binding CostoCompraFinal, StringFormat=C2}" Width="Auto" MinWidth="130">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource StockNumericCellStyle}">
                                 <Setter Property="ToolTip" Value="{Binding CostoCompraFinal}"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
-                    <DataGridTextColumn Header="ÚLT. MODIFICACIÓN" Binding="{Binding FechaModificacion, StringFormat=dd/MM/yyyy HH:mm}" Width="Auto" MinWidth="140"/>
+                    <DataGridTextColumn Header="Últ. modificación" Binding="{Binding FechaModificacion, StringFormat=dd/MM/yyyy HH:mm}" Width="Auto" MinWidth="140"/>
                 </DataGrid.Columns>
                 </DataGrid>
                 <Border x:Name="pnlCargandoProductos" Visibility="Collapsed"

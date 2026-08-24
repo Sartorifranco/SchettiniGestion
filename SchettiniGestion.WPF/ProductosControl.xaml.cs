@@ -16,7 +16,7 @@ using System.Globalization;
 
 namespace SchettiniGestion.WPF
 {
-    public partial class ProductosControl : UserControl
+    public partial class ProductosControl : UserControl, ISincronizableEnRed
     {
         private DataTable _dtProductos;
         private readonly DispatcherTimer _filtroTimer;
@@ -62,11 +62,21 @@ namespace SchettiniGestion.WPF
             CargarProductos();
         }
 
-        private async void CargarProductos()
+        public void AplicarCambioRed(string entidad)
+        {
+            if (!_inicializado) return;
+            if (!string.IsNullOrEmpty(entidad) && entidad != "Productos" && entidad != "ListasPrecios")
+                return;
+            if (RedSyncWatcher.HayVentanaVisible<ProductoModalWindow>())
+                return;
+            CargarProductos(silencioso: true);
+        }
+
+        private async void CargarProductos(bool silencioso = false)
         {
             int version = ++_versionCarga;
             bool incluirInactivos = chkMostrarInactivos?.IsChecked == true;
-            if (pnlCargandoProductos != null) pnlCargandoProductos.Visibility = Visibility.Visible;
+            if (!silencioso && pnlCargandoProductos != null) pnlCargandoProductos.Visibility = Visibility.Visible;
             try
             {
                 var datos = await Task.Run(() =>
@@ -89,7 +99,7 @@ namespace SchettiniGestion.WPF
             }
             finally
             {
-                if (version == _versionCarga && pnlCargandoProductos != null)
+                if (version == _versionCarga && !silencioso && pnlCargandoProductos != null)
                     pnlCargandoProductos.Visibility = Visibility.Collapsed;
             }
         }
@@ -148,7 +158,7 @@ namespace SchettiniGestion.WPF
 
         private void btnNuevo_Click(object sender, RoutedEventArgs e)
         {
-            var modal = new ProductoModalWindow(0, false, CargarProductos);
+            var modal = new ProductoModalWindow(0, false, () => CargarProductos());
             modal.Owner = Window.GetWindow(this);
             modal.ShowDialog();
         }
@@ -166,7 +176,7 @@ namespace SchettiniGestion.WPF
             if (dgvProductos.SelectedItem is DataRowView row)
             {
                 int id = Convert.ToInt32(row["ProductoID"]);
-                var modal = new ProductoModalWindow(id, false, CargarProductos);
+                var modal = new ProductoModalWindow(id, false, () => CargarProductos());
                 modal.Owner = Window.GetWindow(this);
                 modal.ShowDialog();
             }
@@ -177,7 +187,7 @@ namespace SchettiniGestion.WPF
             if (dgvProductos.SelectedItem is DataRowView row)
             {
                 int id = Convert.ToInt32(row["ProductoID"]);
-                var modal = new ProductoModalWindow(id, true, CargarProductos);
+                var modal = new ProductoModalWindow(id, true, () => CargarProductos());
                 modal.Owner = Window.GetWindow(this);
                 modal.ShowDialog();
             }

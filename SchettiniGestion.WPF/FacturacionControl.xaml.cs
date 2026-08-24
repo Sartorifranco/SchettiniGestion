@@ -16,7 +16,7 @@ using System.Windows.Threading;
 
 namespace SchettiniGestion.WPF
 {
-    public partial class FacturacionControl : UserControl
+    public partial class FacturacionControl : UserControl, ISincronizableEnRed
     {
         public class PosProductoVm
         {
@@ -32,6 +32,8 @@ namespace SchettiniGestion.WPF
             public string ImagenPath { get; set; }
             public bool EnPromo { get; set; }
             public string PromoTooltip { get; set; }
+            public bool EsFavorito { get; set; }
+            public string EstrellaFavorito => EsFavorito ? "★" : "☆";
         }
 
         private ObservableCollection<FacturaItem> CarritoDeVenta;
@@ -62,6 +64,21 @@ namespace SchettiniGestion.WPF
         private DispatcherTimer _timerLectorBarras;
         private string _textoPendienteLector;
         private List<DatabaseService.PromoActivaHoy> _promosVigentesPos = new List<DatabaseService.PromoActivaHoy>();
+        private readonly List<VentaPausada> _ventasPausa = new List<VentaPausada>();
+
+        private sealed class VentaPausada
+        {
+            public int PausaID;
+            public int Numero;
+            public DateTime Hora;
+            public int ClienteId;
+            public string ClienteNombre;
+            public string TipoComprobante;
+            public string CondicionVenta;
+            public int? ListaId;
+            public List<FacturaItem> Items;
+            public decimal Total;
+        }
 
         /// <summary>Si se asigna (ej. "Remito", "Pedido"), preselecciona ese tipo al cargar. Usado cuando se abre desde Nuevo Remito/Pedido.</summary>
         public string TipoComprobanteInicial { get; set; }
@@ -192,11 +209,15 @@ namespace SchettiniGestion.WPF
             AplicarConfigPredeterminadaPos();
             CargarCatalogo();
             CargarClientePorDefecto();
+            CargarPausasDesdeSql();
+            ActualizarBannerArcaPendiente();
+            AfipColaService.EstadoCambiado += OnAfipColaEstadoCambiado;
             SincronizarCarritoVisible();
             CustomerScreenService.Iniciar();
             CustomerScreenService.Resetear();
             LimpiarFormulario();
             cmbCondicionVenta_SelectionChanged(null, null);
+            AplicarModoResumenPos();
             var w = Window.GetWindow(this);
             if (w != null) w.PreviewKeyDown += Ventana_PreviewKeyDown;
 
@@ -220,6 +241,37 @@ namespace SchettiniGestion.WPF
             ActualizarIndicadorModoBusqueda();
         }
 
+        public void AplicarCambioRed(string entidad)
+        {
+            if (!_posInicializado) return;
+            bool prod = string.IsNullOrEmpty(entidad) || entidad == "Productos";
+            bool listas = string.IsNullOrEmpty(entidad) || entidad == "ListasPrecios";
+            bool cli = string.IsNullOrEmpty(entidad) || entidad == "Clientes" || entidad == "CuentaCorriente";
+            if (prod || listas)
+                CargarCatalogo();
+            if (listas)
+                CargarListasPrecios();
+            if (cli)
+                RefrescarClienteSeleccionado();
+        }
+
+        private void RefrescarClienteSeleccionado()
+        {
+            if (_clienteSeleccionado == null || !_clienteSeleccionado.Table.Columns.Contains("ClienteID"))
+                return;
+            try
+            {
+                int id = Convert.ToInt32(_clienteSeleccionado["ClienteID"]);
+                var fresco = DatabaseService.BuscarClientePorID(id);
+                if (fresco == null) return;
+                _clienteSeleccionado = fresco;
+                if (lblClienteSeleccionado != null)
+                    lblClienteSeleccionado.Text = fresco["RazonSocial"]?.ToString();
+                ActualizarLetraComprobanteVisible();
+            }
+            catch { }
+        }
+
         private void FacturacionControl_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             AplicarLayoutResponsivo();
@@ -238,14 +290,70 @@ namespace SchettiniGestion.WPF
             if (gridRoot != null)
                 gridRoot.Margin = UiScaleHelper.ContentMargin(compacto);
 
-            if (txtAyudaResumen != null)
-                txtAyudaResumen.Visibility = muyCompacto ? Visibility.Collapsed : Visibility.Visible;
-
             if (viewboxTotal != null)
                 viewboxTotal.MaxHeight = muyCompacto ? 30 : (compacto ? 36 : 44);
 
             if (btnAyudaAtajos != null)
-                btnAyudaAtajos.Visibility = muyCompacto ? Visibility.Collapsed : Visibility.Visible;
+                btnAyudaAtajos.Visibility = Visibility.Collapsed;
+            if (btnAyudaAtajosResumen != null)
+                btnAyudaAtajosResumen.Visibility = Visibility.Collapsed;
+            if (txtAyudaResumen != null)
+                txtAyudaResumen.Visibility = Visibility.Collapsed;
+
+            AplicarModoResumenPos();
+        }
+
+        private bool HayItemCarritoExpandido()
+        {
+            if (icCarrito == null) return false;
+            foreach (var exp in FindVisualChildren<Expander>(icCarrito))
+            {
+                if (exp.IsExpanded) return true;
+            }
+            return false;
+        }
+
+        private void CerrarItemsCarrito()
+        {
+            if (icCarrito == null) return;
+            foreach (var exp in FindVisualChildren<Expander>(icCarrito))
+                exp.IsExpanded = false;
+        }
+
+        /// <summary>
+        /// Libera altura: Config reemplaza el carrito; al editar un ítem se ocultan cliente y el desglose.
+        /// COBRAR queda siempre visible.
+        /// </summary>
+        private void AplicarModoResumenPos()
+        {
+            if (!IsLoaded || bdrResumenVenta == null) return;
+
+            bool config = expConfigVenta != null && expConfigVenta.IsExpanded;
+            bool item = !config && HayItemCarritoExpandido();
+
+            if (txtTituloResumen != null)
+                txtTituloResumen.Visibility = (config || item) ? Visibility.Collapsed : Visibility.Visible;
+            if (pnlDatosVenta != null)
+                pnlDatosVenta.Visibility = (config || item) ? Visibility.Collapsed : Visibility.Visible;
+            if (lblCantidadItems != null)
+                lblCantidadItems.Visibility = Visibility.Collapsed;
+            if (pnlTotalesDetalle != null)
+                pnlTotalesDetalle.Visibility = item ? Visibility.Collapsed : Visibility.Visible;
+            if (svCarrito != null)
+                svCarrito.Visibility = config ? Visibility.Collapsed : Visibility.Visible;
+            if (expConfigVenta != null)
+                expConfigVenta.Visibility = config ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void expConfigVenta_Expanded(object sender, RoutedEventArgs e)
+        {
+            CerrarItemsCarrito();
+            AplicarModoResumenPos();
+        }
+
+        private void expConfigVenta_Collapsed(object sender, RoutedEventArgs e)
+        {
+            AplicarModoResumenPos();
         }
 
         private void CargarCatalogo()
@@ -308,6 +416,8 @@ namespace SchettiniGestion.WPF
 
             dgvCatalogo?.Items.Refresh();
             icCatalogo?.Items.Refresh();
+            icFavoritos?.Items.Refresh();
+            RefrescarFavoritosPos();
         }
 
         private int? ObtenerListaIdSeleccionada()
@@ -345,7 +455,8 @@ namespace SchettiniGestion.WPF
                 StockTexto = esStockeable
                     ? (sinStock ? "Sin stock" : politica.AceptaStockNegativo && stock <= 0m ? "0 (permite neg.)" : FormatearStockCatalogo(stock))
                     : "—",
-                ImagenPath = r.Table.Columns.Contains("ImagenPath") ? r["ImagenPath"]?.ToString() : null
+                ImagenPath = r.Table.Columns.Contains("ImagenPath") ? r["ImagenPath"]?.ToString() : null,
+                EsFavorito = DatabaseService.EsFavoritoPos(r)
             };
         }
 
@@ -397,6 +508,60 @@ namespace SchettiniGestion.WPF
             }
             if (lblCantidadCatalogo != null)
                 lblCantidadCatalogo.Text = $"{CatalogoProductos.Count} producto(s) mostrados";
+            RefrescarFavoritosPos();
+        }
+
+        private void RefrescarFavoritosPos()
+        {
+            if (icFavoritos == null || bdrFavoritos == null) return;
+            var favs = new System.Collections.Generic.List<PosProductoVm>();
+            foreach (var p in _catalogoCompleto)
+            {
+                if (p != null && p.EsFavorito)
+                    favs.Add(p);
+            }
+            icFavoritos.ItemsSource = favs;
+            bdrFavoritos.Visibility = favs.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void FavoritoCard_Click(object sender, MouseButtonEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is PosProductoVm vm)
+                AgregarProductoAlCarritoDesdeVm(vm);
+        }
+
+        private void FavoritoEstrella_Click(object sender, RoutedEventArgs e)
+        {
+            e.Handled = true;
+            if ((sender as FrameworkElement)?.DataContext is PosProductoVm vm)
+                AlternarFavorito(vm);
+        }
+
+        private void AlternarFavorito(PosProductoVm vm)
+        {
+            if (vm == null || vm.ProductoID <= 0) return;
+            bool nuevo = !vm.EsFavorito;
+            if (nuevo && DatabaseService.ContarFavoritosPos() >= DatabaseService.MaxFavoritosPos)
+            {
+                CustomMessageBox.Show(
+                    "Podés tener hasta " + DatabaseService.MaxFavoritosPos + " favoritos en el POS.",
+                    "Favoritos", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            if (!DatabaseService.SetFavoritoPos(vm.ProductoID, nuevo))
+            {
+                CustomMessageBox.Show("No se pudo actualizar el favorito.", "Favoritos",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            vm.EsFavorito = nuevo;
+            if (vm.Row != null && vm.Row.Table.Columns.Contains("EsFavoritoPos"))
+            {
+                try { vm.Row["EsFavoritoPos"] = nuevo; } catch { }
+            }
+            dgvCatalogo?.Items.Refresh();
+            icCatalogo?.Items.Refresh();
+            RefrescarFavoritosPos();
         }
 
         private void ActualizarIndicadorModoBusqueda()
@@ -449,6 +614,18 @@ namespace SchettiniGestion.WPF
 
         private void dgvCatalogo_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            if (e.OriginalSource is DependencyObject origen)
+            {
+                var btn = origen as Button;
+                if (btn == null)
+                {
+                    var p = VisualTreeHelper.GetParent(origen);
+                    while (p != null && !(p is Button) && !(p is DataGrid))
+                        p = VisualTreeHelper.GetParent(p);
+                    btn = p as Button;
+                }
+                if (btn != null) return;
+            }
             if (dgvCatalogo.SelectedItem is PosProductoVm vm)
                 AgregarProductoAlCarritoDesdeVm(vm);
         }
@@ -579,6 +756,7 @@ namespace SchettiniGestion.WPF
         {
             if (expConfigVenta == null) return;
             expConfigVenta.IsExpanded = !expConfigVenta.IsExpanded;
+            AplicarModoResumenPos();
         }
 
         private void btnGuardarConfigPredeterminada_Click(object sender, RoutedEventArgs e)
@@ -670,6 +848,14 @@ namespace SchettiniGestion.WPF
                         hijo.IsExpanded = false;
                 }
             }
+            if (expConfigVenta != null && expConfigVenta.IsExpanded)
+                expConfigVenta.IsExpanded = false;
+            AplicarModoResumenPos();
+        }
+
+        private void ExpanderCarrito_Collapsed(object sender, RoutedEventArgs e)
+        {
+            AplicarModoResumenPos();
         }
 
         private static System.Collections.Generic.IEnumerable<T> FindVisualChildren<T>(DependencyObject parent) where T : DependencyObject
@@ -756,35 +942,46 @@ namespace SchettiniGestion.WPF
             }
 
             ActualizarLetraComprobanteVisible();
+            ActualizarAyudaTipoComprobante(tipo);
+        }
+
+        private void ActualizarAyudaTipoComprobante(string tipo)
+        {
+            if (txtAyudaTipoComprobante == null) return;
+            bool nota = tipo == "Nota de Crédito" || tipo == "Nota de Débito";
+            txtAyudaTipoComprobante.Visibility = nota ? Visibility.Visible : Visibility.Collapsed;
+            if (nota)
+            {
+                txtAyudaTipoComprobante.Text = tipo == "Nota de Crédito"
+                    ? "NC desde el POS = nota libre (sin vincular factura). Para acreditar una factura emitida: Ventas → NC."
+                    : "ND desde el POS = nota libre. Para NC/ND fiscal vinculada a una factura usá el historial de Ventas.";
+            }
         }
 
         /// <summary>
-        /// Muestra en vivo la letra A/B/C (o X / —) según tipo de comprobante, condición IVA del emisor y CUIT del cliente.
+        /// Muestra en vivo la letra A/B/C (o X / —) al cambiar cliente, su IVA o el tipo de comprobante.
         /// </summary>
         private void ActualizarLetraComprobanteVisible()
         {
             if (lblLetraComprobante == null || lblLetraDetalle == null) return;
 
             string tipo = ObtenerTipoComprobanteSeleccionado();
-            string letra;
+            string letra = ResolverLetraComprobanteFiscal();
             string detalle;
             string colorFondo;
 
             if (tipo == "Ticket")
             {
-                letra = "X";
                 detalle = "No fiscal";
                 colorFondo = "#7F8C8D";
             }
             else if (tipo == "Factura" || tipo == "Nota de Crédito" || tipo == "Nota de Débito")
             {
-                letra = ResolverLetraComprobanteFiscal();
                 detalle = tipo == "Factura" ? "Factura" : (tipo == "Nota de Crédito" ? "N.Crédito" : "N.Débito");
                 colorFondo = letra == "A" ? "#1A5276" : (letra == "B" ? "#117A65" : "#6C3483");
             }
             else
             {
-                letra = "—";
                 detalle = tipo.Length > 10 ? tipo.Substring(0, 9) + "…" : tipo;
                 colorFondo = "#566573";
             }
@@ -810,12 +1007,13 @@ namespace SchettiniGestion.WPF
                 string condicionEmisor = config != null && config.Table.Columns.Contains("CondicionIVAEmpresa")
                     ? config["CondicionIVAEmpresa"]?.ToString() ?? ""
                     : "";
-
-                if (condicionEmisor.IndexOf("monotrib", StringComparison.OrdinalIgnoreCase) >= 0)
-                    return "C";
-
-                string cuit = _clienteSeleccionado?["CUIT"]?.ToString()?.Replace("-", "").Trim() ?? "";
-                return cuit.Length >= 11 && !cuit.Contains("00000000") ? "A" : "B";
+                string cuit = _clienteSeleccionado != null && _clienteSeleccionado.Table.Columns.Contains("CUIT")
+                    ? _clienteSeleccionado["CUIT"]?.ToString() ?? ""
+                    : "";
+                string condCliente = _clienteSeleccionado != null && _clienteSeleccionado.Table.Columns.Contains("CondicionIVA")
+                    ? _clienteSeleccionado["CondicionIVA"]?.ToString()
+                    : null;
+                return ArcaQrHelper.InferirLetra(ObtenerTipoComprobanteSeleccionado(), cuit, condicionEmisor, condCliente);
             }
             catch
             {
@@ -826,20 +1024,40 @@ namespace SchettiniGestion.WPF
         private void FacturacionControl_Unloaded(object sender, RoutedEventArgs e)
         {
             CustomerScreenService.OnClienteEligioPago -= ProcesarPagoCliente;
+            AfipColaService.EstadoCambiado -= OnAfipColaEstadoCambiado;
             var w = Window.GetWindow(this);
             if (w != null) w.PreviewKeyDown -= Ventana_PreviewKeyDown;
             this.PreviewKeyDown -= FacturacionControl_PreviewKeyDown;
             CancelarModoQR();
         }
 
+        private void OnAfipColaEstadoCambiado(object sender, EventArgs e)
+        {
+            Dispatcher.BeginInvoke(new Action(ActualizarBannerArcaPendiente));
+        }
+
+        private void ActualizarBannerArcaPendiente()
+        {
+            if (bdrArcaPendiente == null || txtArcaPendiente == null) return;
+            int n = 0;
+            try { n = DatabaseService.ContarAfipColaPendientes(); } catch { }
+            if (n <= 0)
+            {
+                bdrArcaPendiente.Visibility = Visibility.Collapsed;
+                return;
+            }
+            txtArcaPendiente.Text = n == 1
+                ? "Hay 1 ticket interno pendiente de CAE. SCHPOS reintenta solo, sin volver a cobrar. El detalle está en Configuración › Negocio y ARCA."
+                : "Hay " + n + " tickets internos pendientes de CAE. SCHPOS reintenta solo, sin volver a cobrar. El detalle está en Configuración › Negocio y ARCA.";
+            bdrArcaPendiente.Visibility = Visibility.Visible;
+        }
+
         private void Ventana_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (!IsVisible || !EnPestañaPos()) return;
-            if (e.Key == Key.F1)
-            {
-                MostrarAyudaAtajos();
+            Key tecla = ObtenerTecla(e);
+            if (ProcesarTeclaFuncion(tecla))
                 e.Handled = true;
-            }
         }
 
         private void FacturacionControl_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -848,9 +1066,8 @@ namespace SchettiniGestion.WPF
 
             Key tecla = ObtenerTecla(e);
 
-            if (tecla == Key.F1)
+            if (ProcesarTeclaFuncion(tecla))
             {
-                MostrarAyudaAtajos();
                 e.Handled = true;
                 return;
             }
@@ -932,6 +1149,66 @@ namespace SchettiniGestion.WPF
                     CiclarModoBusqueda();
                     e.Handled = true;
                     break;
+            }
+        }
+
+        private bool ProcesarTeclaFuncion(Key tecla)
+        {
+            if (_guardandoVenta && tecla != Key.F1)
+                return false;
+
+            switch (tecla)
+            {
+                case Key.F1:
+                    MostrarAyudaAtajos();
+                    return true;
+                case Key.F2:
+                    txtBuscarProducto?.Focus();
+                    txtBuscarProducto?.SelectAll();
+                    return true;
+                case Key.F3:
+                    txtBuscarCliente?.Focus();
+                    txtBuscarCliente?.SelectAll();
+                    return true;
+                case Key.F4:
+                    btnDescuentoGlobal_Click(null, null);
+                    return true;
+                case Key.F5:
+                    PausarVentaActual();
+                    return true;
+                case Key.F6:
+                    RecuperarVentaPausada();
+                    return true;
+                case Key.F7:
+                    btnToggleConfigVenta_Click(null, null);
+                    return true;
+                case Key.F8:
+                    ImprimirUltimoComprobante();
+                    return true;
+                case Key.F9:
+                    CiclarModoBusqueda();
+                    return true;
+                case Key.F10:
+                    if (btnGuardarFactura?.IsEnabled == true)
+                        btnGuardarFactura_Click(btnGuardarFactura, new RoutedEventArgs());
+                    return true;
+                case Key.F11:
+                    if (txtBuscarProducto != null)
+                    {
+                        txtBuscarProducto.Text = "";
+                        _productoSeleccionado = null;
+                        if (popupProducto != null) popupProducto.IsOpen = false;
+                        txtBuscarProducto.Focus();
+                    }
+                    return true;
+                case Key.F12:
+                    if (CarritoDeVenta.Count == 0 || CustomMessageBox.Show(
+                        "¿Limpiar la venta actual y empezar un comprobante nuevo?",
+                        "Nueva venta", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                        LimpiarFormulario();
+                    return true;
+                default:
+                    return false;
             }
         }
 
@@ -1022,6 +1299,246 @@ namespace SchettiniGestion.WPF
             {
                 CustomMessageBox.Show("Error al imprimir: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void btnPausarVenta_Click(object sender, RoutedEventArgs e) => PausarVentaActual();
+        private void btnRecuperarPausa_Click(object sender, RoutedEventArgs e) => RecuperarVentaPausada();
+
+        private void PausarVentaActual(bool silencioso = false)
+        {
+            if (_guardandoVenta) return;
+            if (CarritoDeVenta.Count == 0)
+            {
+                CustomMessageBox.Show("No hay productos en el carrito para pausar.", "Pausar venta",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            if (_pagoPointAprobado || _pagoMPAprobado)
+            {
+                CustomMessageBox.Show(
+                    "Hay un cobro electrónico ya aprobado. Terminá esta venta (F10) antes de pausar otra.",
+                    "Pausar venta", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (DatabaseService.ContarVentasPausa(Environment.MachineName) >= DatabaseService.MaxVentasPausa)
+            {
+                CustomMessageBox.Show("Hay " + DatabaseService.MaxVentasPausa + " ventas en pausa. Recuperá una (F6) antes de pausar otra.",
+                    "Pausar venta", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            int numero = DatabaseService.ProximoNumeroPausa(Environment.MachineName);
+            int cliId = 0;
+            string cliNombre = "Consumidor Final";
+            if (_clienteSeleccionado != null && _clienteSeleccionado.Table.Columns.Contains("ClienteID"))
+            {
+                try { cliId = Convert.ToInt32(_clienteSeleccionado["ClienteID"]); } catch { }
+                if (_clienteSeleccionado.Table.Columns.Contains("RazonSocial"))
+                    cliNombre = _clienteSeleccionado["RazonSocial"]?.ToString() ?? cliNombre;
+            }
+
+            var items = new List<FacturaItem>();
+            foreach (var it in CarritoDeVenta)
+            {
+                if (it == null || !it.EsValido) continue;
+                items.Add(ClonarItemCarrito(it));
+            }
+            if (items.Count == 0)
+            {
+                CustomMessageBox.Show("No hay ítems válidos para pausar.", "Pausar venta",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var pausa = new VentaPausada
+            {
+                Numero = numero,
+                Hora = DateTime.Now,
+                ClienteId = cliId,
+                ClienteNombre = cliNombre,
+                TipoComprobante = ObtenerTipoComprobanteSeleccionado(),
+                CondicionVenta = (cmbCondicionVenta?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Contado",
+                ListaId = ObtenerListaIdSeleccionada(),
+                Items = items,
+                Total = items.Sum(x => x.Subtotal)
+            };
+            pausa.PausaID = DatabaseService.GuardarVentaPausa(new DatabaseService.VentaPausaDto
+            {
+                Numero = pausa.Numero,
+                Hora = pausa.Hora,
+                ClienteId = pausa.ClienteId,
+                ClienteNombre = pausa.ClienteNombre,
+                TipoComprobante = pausa.TipoComprobante,
+                CondicionVenta = pausa.CondicionVenta,
+                ListaId = pausa.ListaId,
+                Total = pausa.Total,
+                Items = items,
+                Maquina = Environment.MachineName,
+                Usuario = SesionUsuario.NombreParaRegistro()
+            });
+            if (pausa.PausaID <= 0)
+            {
+                CustomMessageBox.Show("No se pudo guardar la pausa en la base.", "Pausar venta",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            _ventasPausa.Add(pausa);
+
+            LimpiarFormulario();
+            ActualizarIndicadorPausas();
+            if (!silencioso)
+            {
+                CustomMessageBox.Show(
+                    "Venta #" + numero + " en pausa (" + items.Count + " ítem/s · " + cliNombre + ").\n\n" +
+                    "F6 o «Pausas» para recuperarla. Queda guardada si se corta la luz o se cierra SCHPOS.",
+                    "Venta pausada", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            txtBuscarProducto?.Focus();
+        }
+
+        private void RecuperarVentaPausada()
+        {
+            if (_guardandoVenta) return;
+            if (_ventasPausa.Count == 0)
+            {
+                CustomMessageBox.Show("No hay ventas en pausa.", "Pausas",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (CarritoDeVenta.Count > 0)
+            {
+                var r = CustomMessageBox.Show(
+                    "Hay una venta en curso.\n\nSí = pausarla y recuperar otra.\nNo = cancelar.",
+                    "Recuperar pausa", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (r != MessageBoxResult.Yes) return;
+                PausarVentaActual(silencioso: true);
+                if (CarritoDeVenta.Count > 0) return;
+            }
+
+            VentaPausada elegida = _ventasPausa[_ventasPausa.Count - 1];
+            if (_ventasPausa.Count > 1)
+            {
+                var lineas = new System.Text.StringBuilder();
+                lineas.AppendLine("Escribí el número de la venta a recuperar:");
+                lineas.AppendLine();
+                foreach (var p in _ventasPausa)
+                    lineas.AppendLine("#" + p.Numero + "  " + p.Hora.ToString("HH:mm") + "  " + p.ClienteNombre + "  " + p.Total.ToString("C2") + "  (" + p.Items.Count + ")");
+                var win = CrearInputModal("Ventas en pausa", lineas.ToString(), elegida.Numero.ToString(), soloNumeros: true);
+                if (win.ShowDialog() != true) return;
+                int n;
+                if (!int.TryParse(win.ResponseText?.Trim(), out n))
+                {
+                    CustomMessageBox.Show("Número inválido.", "Pausas", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                elegida = _ventasPausa.FirstOrDefault(p => p.Numero == n);
+                if (elegida == null)
+                {
+                    CustomMessageBox.Show("No hay una pausa con ese número.", "Pausas", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+            }
+
+            RestaurarVentaPausada(elegida);
+        }
+
+        private void RestaurarVentaPausada(VentaPausada pausa)
+        {
+            if (pausa == null) return;
+            _ventasPausa.Remove(pausa);
+            if (pausa.PausaID > 0)
+                DatabaseService.EliminarVentaPausa(pausa.PausaID);
+
+            CarritoDeVenta.Clear();
+            foreach (var it in pausa.Items)
+                CarritoDeVenta.Add(ClonarItemCarrito(it));
+
+            if (pausa.ClienteId > 0)
+            {
+                var cli = DatabaseService.BuscarClientePorID(pausa.ClienteId);
+                if (cli != null)
+                {
+                    _clienteSeleccionado = cli;
+                    if (lblClienteSeleccionado != null)
+                        lblClienteSeleccionado.Text = cli["RazonSocial"]?.ToString() ?? pausa.ClienteNombre;
+                    if (txtBuscarCliente != null) txtBuscarCliente.Text = "";
+                }
+                else
+                    CargarClientePorDefecto();
+            }
+            else
+                CargarClientePorDefecto();
+
+            SeleccionarComboPorTexto(cmbTipoComprobante, pausa.TipoComprobante);
+            SeleccionarComboPorTexto(cmbCondicionVenta, pausa.CondicionVenta);
+            if (pausa.ListaId.HasValue && cmbListaPrecios != null)
+            {
+                _cargandoListas = true;
+                try { cmbListaPrecios.SelectedValue = pausa.ListaId.Value; }
+                catch { }
+                finally { _cargandoListas = false; }
+            }
+
+            ActualizarUiSegunTipoComprobante();
+            ActualizarTotal();
+            ActualizarIndicadorPausas();
+            txtBuscarProducto?.Focus();
+        }
+
+        private static FacturaItem ClonarItemCarrito(FacturaItem src)
+        {
+            if (src == null) return null;
+            return new FacturaItem
+            {
+                ProductoID = src.ProductoID,
+                Codigo = src.Codigo,
+                Descripcion = src.Descripcion,
+                Cantidad = src.Cantidad,
+                PrecioUnitario = src.PrecioUnitario,
+                DescuentoPorcentaje = src.DescuentoPorcentaje,
+                RecargoPorcentaje = src.RecargoPorcentaje,
+                PromoNombre = src.PromoNombre,
+                DescuentoPromocionAutomatica = src.DescuentoPromocionAutomatica,
+                AlicuotaIvaPct = src.AlicuotaIvaPct,
+                ImagenPath = src.ImagenPath,
+                PermiteModificarPrecioVenta = src.PermiteModificarPrecioVenta
+            };
+        }
+
+        private void CargarPausasDesdeSql()
+        {
+            _ventasPausa.Clear();
+            try
+            {
+                foreach (var dto in DatabaseService.ListarVentasPausa(Environment.MachineName))
+                {
+                    if (dto == null || dto.Items == null || dto.Items.Count == 0) continue;
+                    _ventasPausa.Add(new VentaPausada
+                    {
+                        PausaID = dto.PausaID,
+                        Numero = dto.Numero,
+                        Hora = dto.Hora,
+                        ClienteId = dto.ClienteId,
+                        ClienteNombre = dto.ClienteNombre,
+                        TipoComprobante = dto.TipoComprobante,
+                        CondicionVenta = dto.CondicionVenta,
+                        ListaId = dto.ListaId,
+                        Items = dto.Items,
+                        Total = dto.Total
+                    });
+                }
+            }
+            catch { }
+            ActualizarIndicadorPausas();
+        }
+
+        private void ActualizarIndicadorPausas()
+        {
+            if (btnRecuperarPausa != null)
+                btnRecuperarPausa.Content = _ventasPausa.Count == 0
+                    ? "Pausas F6"
+                    : "Pausas F6 (" + _ventasPausa.Count + ")";
         }
 
         private void MarcarItemCarrito(FacturaItem item)
@@ -1512,6 +2029,18 @@ namespace SchettiniGestion.WPF
             if (_clienteSeleccionado == null) CargarClientePorDefecto();
             if (_clienteSeleccionado == null) { CustomMessageBox.Show("No se pudo cargar el cliente por defecto. Verificá la conexión a la base de datos."); return; }
 
+            RefrescarClienteSeleccionado();
+            string condVentaElegida = (cmbCondicionVenta.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+            if (EsCuentaCorriente(condVentaElegida) && !ClientePermiteCuentaCorriente(_clienteSeleccionado))
+            {
+                CustomMessageBox.Show(
+                    "Este cliente no tiene habilitada la cuenta corriente.\n\n" +
+                    "Si la acabás de tildar en otra caja, esperá un segundo y reintentá. " +
+                    "Si no, editá el cliente y marcá «Permite cuenta corriente».",
+                    "Cuenta corriente");
+                return;
+            }
+
             string tipoCompTexto = ObtenerTipoComprobanteSeleccionado();
             if (tipoCompTexto == "Presupuesto") { GuardarPresupuestoDesdePos(); return; }
             if (tipoCompTexto == "Remito") { GuardarRemitoDesdePos(); return; }
@@ -1537,30 +2066,28 @@ namespace SchettiniGestion.WPF
             // 2. Determinar Tipo ARCA
             decimal total = CarritoDeVenta.Sum(x => x.Subtotal);
 
-            // Un emisor monotributista siempre emite Factura C (tipo 11), nunca A ni B.
-            bool emisorMonotributo = config != null
-                && config.Table.Columns.Contains("CondicionIVAEmpresa")
-                && (config["CondicionIVAEmpresa"]?.ToString() ?? "")
-                    .IndexOf("monotrib", StringComparison.OrdinalIgnoreCase) >= 0;
+            string condicionEmisor = config != null && config.Table.Columns.Contains("CondicionIVAEmpresa")
+                ? config["CondicionIVAEmpresa"]?.ToString() ?? ""
+                : "";
+            bool emisorMonotributo = condicionEmisor.IndexOf("monotrib", StringComparison.OrdinalIgnoreCase) >= 0;
+            string cuitCliente = _clienteSeleccionado["CUIT"]?.ToString() ?? "";
+            string condCliente = _clienteSeleccionado.Table.Columns.Contains("CondicionIVA")
+                ? _clienteSeleccionado["CondicionIVA"]?.ToString()
+                : null;
+            string letraFiscal = ArcaQrHelper.InferirLetra(tipoCompTexto, cuitCliente, condicionEmisor, condCliente);
 
             int tipoAfip = 0;
             if (tipoCompTexto == "Factura")
-            {
-                if (emisorMonotributo) tipoAfip = 11;
-                else
-                {
-                    string cuitStr = _clienteSeleccionado["CUIT"].ToString();
-                    if (cuitStr.Length >= 11 && !cuitStr.Contains("00-00000000")) tipoAfip = 1;
-                    else tipoAfip = 6;
-                }
-            }
-            else if (tipoCompTexto == "Ticket") tipoAfip = emisorMonotributo ? 11 : 6;
+                tipoAfip = ArcaQrHelper.ResolverTipoComprobanteAfip("Factura", letraFiscal, cuitCliente, condicionEmisor);
+            else if (tipoCompTexto == "Ticket")
+                tipoAfip = emisorMonotributo ? 11 : 6;
 
             // Validación Factura A
             if (tipoAfip == 1)
             {
-                string cuitStr = _clienteSeleccionado["CUIT"].ToString();
-                if (cuitStr.Length < 11 || cuitStr.Contains("00-00000000"))
+                string cuitDigits = System.Text.RegularExpressions.Regex.Replace(
+                    _clienteSeleccionado["CUIT"]?.ToString() ?? "", @"\D", "");
+                if (cuitDigits.Length < 11 || cuitDigits.Contains("00000000"))
                 {
                     CustomMessageBox.Show("Error: Para Factura A, el cliente debe tener CUIT válido.");
                     return;
@@ -1570,6 +2097,8 @@ namespace SchettiniGestion.WPF
             btnGuardarFactura.IsEnabled = false;
             _guardandoVenta = true;
             bool cobroConfirmado = false;
+            bool arcaFalloConCobro = false;
+            string errorArca = null;
             try
             {
                 bool afipLicenciado = LicenseManager.TieneAfip();
@@ -1684,9 +2213,9 @@ namespace SchettiniGestion.WPF
                 {
                     CustomerScreenService.ActualizarMensajeQR("Facturando ARCA...", Brushes.Orange);
                     string cuitLimpio = _clienteSeleccionado["CUIT"].ToString().Replace("-", "").Trim();
-                    long cuitCliente = 0;
-                    long.TryParse(cuitLimpio, out cuitCliente);
-                    var resultadoAfip = await AfipService.FacturarAsync(tipoAfip, puntoVentaConfig, (double)total, cuitCliente, CarritoDeVenta.ToList(),
+                    long cuitClienteAfip = 0;
+                    long.TryParse(cuitLimpio, out cuitClienteAfip);
+                    var resultadoAfip = await AfipService.FacturarAsync(tipoAfip, puntoVentaConfig, (double)total, cuitClienteAfip, CarritoDeVenta.ToList(),
                         _clienteSeleccionado["CondicionIVA"]?.ToString());
                     if (resultadoAfip.Exito)
                     {
@@ -1696,20 +2225,33 @@ namespace SchettiniGestion.WPF
                     }
                     else
                     {
-                        CustomMessageBox.Show(
-                            "❌ ARCA rechazó la factura electrónica.\n\n" +
-                            "Detalle: " + resultadoAfip.Error + "\n\n" +
-                            "⚠️ IMPORTANTE: el cobro fue confirmado pero la venta NO quedó registrada.\n\n" +
-                            "Opciones:\n" +
-                            "• Intentar de nuevo (el cobro ya fue recibido, NO vuelva a cobrar).\n" +
-                            "• Cambiar el tipo a 'Ticket' para guardar sin código ARCA.",
-                            "Error ARCA — venta no registrada");
-                        btnGuardarFactura.IsEnabled = true;
-                        return;
+                        errorArca = resultadoAfip.Error;
+                        if (cobroConfirmado)
+                        {
+                            // El cobro ya salió: no se pierde la venta. Se guarda ticket interno, sin CAE.
+                            arcaFalloConCobro = true;
+                            tipoCompTexto = "Ticket";
+                            cae = null;
+                            vtoCae = null;
+                            nroComprobante = 0;
+                        }
+                        else
+                        {
+                            CustomMessageBox.Show(
+                                "ARCA rechazó la factura electrónica.\n\n" +
+                                "Detalle: " + (resultadoAfip.Error ?? "(sin detalle)") + "\n\n" +
+                                "La venta no se guardó (no hubo cobro en caja). Corregí el error y reintentá.",
+                                "Error ARCA — venta no registrada");
+                            btnGuardarFactura.IsEnabled = true;
+                            return;
+                        }
                     }
                 }
 
                 string condicionTicket = string.Join(" + ", cobranzasConfirmadas.Select(c => $"{c.nombreMedio} {c.monto:C2}"));
+                if (arcaFalloConCobro)
+                    condicionTicket = (string.IsNullOrWhiteSpace(condicionTicket) ? "" : condicionTicket + " | ")
+                        + "Ticket interno: ARCA no autorizó CAE";
                 string condVent = (cmbCondicionVenta.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Contado";
                 int cliID = Convert.ToInt32(_clienteSeleccionado["ClienteID"]);
                 int? listaId = cmbListaPrecios.SelectedItem is DataRowView lr ? (int?)Convert.ToInt32(lr["ListaID"]) : null;
@@ -1739,7 +2281,30 @@ namespace SchettiniGestion.WPF
                     RegistrarUltimoComprobante(fid, tipoCompTexto);
                     CustomerScreenService.PantallaGracias();
                     string msgExito = "Venta Guardada.";
-                    if (!string.IsNullOrEmpty(cae)) msgExito += "\n¡Factura Electrónica Aprobada!";
+                    if (arcaFalloConCobro)
+                    {
+                        long cuitCola = 0;
+                        try
+                        {
+                            string cuitLimpioCola = _clienteSeleccionado["CUIT"]?.ToString().Replace("-", "").Trim() ?? "";
+                            long.TryParse(cuitLimpioCola, out cuitCola);
+                        }
+                        catch { }
+                        DatabaseService.EncolarAfipCae(
+                            fid, tipoAfip, puntoVentaConfig, total, cuitCola,
+                            _clienteSeleccionado["CondicionIVA"]?.ToString(),
+                            CarritoDeVenta.ToList(), errorArca);
+                        msgExito =
+                            "El cobro quedó registrado y la venta se guardó como Ticket interno (sin CAE).\n\n" +
+                            "ARCA no autorizó la factura electrónica.\n" +
+                            "Detalle: " + (errorArca ?? "(sin detalle)") + "\n\n" +
+                            "NO vuelva a cobrar. SCHPOS reintenta el CAE solo. Este ticket no reemplaza una factura fiscal hasta que ARCA autorice.";
+                        ActualizarBannerArcaPendiente();
+                    }
+                    else if (!string.IsNullOrEmpty(cae))
+                    {
+                        msgExito += "\n¡Factura Electrónica Aprobada!";
+                    }
                     OfrecerImprimirComprobante(fid, PrintService.ImprimirFactura, msgExito, tipoCompTexto);
                     await Task.Delay(2000);
                     LimpiarFormulario();
@@ -2229,6 +2794,14 @@ namespace SchettiniGestion.WPF
             if (string.IsNullOrWhiteSpace(condicionVenta)) return false;
             return condicionVenta.IndexOf("Cta", StringComparison.OrdinalIgnoreCase) >= 0
                 || condicionVenta.IndexOf("Corriente", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool ClientePermiteCuentaCorriente(DataRow cliente)
+        {
+            if (cliente == null || !cliente.Table.Columns.Contains("PermiteCuentaCorriente"))
+                return false;
+            if (cliente["PermiteCuentaCorriente"] == DBNull.Value) return false;
+            return Convert.ToBoolean(cliente["PermiteCuentaCorriente"]);
         }
 
         private void CargarClientePorDefecto()

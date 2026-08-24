@@ -328,25 +328,17 @@
                             <StackPanel VerticalAlignment="Center"
                                         HorizontalAlignment="Center"
                                         Margin="24,0">
-                                <Border HorizontalAlignment="Center"
-                                        Width="140" Height="140"
-                                        CornerRadius="70"
-                                        ClipToBounds="True">
-                                    <Image x:Name="imgMarcaLogin"
-                                           Stretch="UniformToFill"
-                                           RenderOptions.BitmapScalingMode="HighQuality"/>
-                                </Border>
+                                <Image x:Name="imgMarcaLogin"
+                                       Width="200" Height="130"
+                                       Stretch="Uniform"
+                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                       SnapsToDevicePixels="True"
+                                       Source="/SCHPOS;component/Resources/schpos-logo.ico"/>
                                 <Rectangle Height="3" Width="48"
                                            HorizontalAlignment="Center"
                                            RadiusX="2" RadiusY="2"
                                            Margin="0,22,0,18"
                                            Fill="{StaticResource PrimaryColor}"/>
-                                <TextBlock Text="SCHPOS"
-                                           Foreground="{DynamicResource TextPrimary}"
-                                           FontSize="17"
-                                           FontWeight="Bold"
-                                           HorizontalAlignment="Center"
-                                           Margin="0,0,0,6"/>
                                 <TextBlock Text="Sistema de Gestión"
                                            Foreground="{DynamicResource TextSecondary}"
                                            FontSize="12"

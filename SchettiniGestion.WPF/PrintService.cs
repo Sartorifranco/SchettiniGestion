@@ -76,10 +76,111 @@ namespace SchettiniGestion.WPF
                 DataRow cabecera = DatabaseService.GetNotaVentaPorID(notaID);
                 if (cabecera == null) { ModernMessageBox.Show("Error: No se encontró la nota."); return; }
                 string tipo = cabecera["Tipo"]?.ToString() ?? "NC";
-                string titulo = tipo == "ND" ? "NOTA DE DÉBITO" : "NOTA DE CRÉDITO";
-                GenerarDocumentoA4Nota(titulo, cabecera);
+                string titulo = tipo.Equals("ND", StringComparison.OrdinalIgnoreCase) ? "NOTA DE DÉBITO" : "NOTA DE CRÉDITO";
+                string tipoNombre = tipo.Equals("ND", StringComparison.OrdinalIgnoreCase) ? "Nota de Débito" : "Nota de Crédito";
+
+                string cae = cabecera.Table.Columns.Contains("CAE") ? cabecera["CAE"]?.ToString()?.Trim() ?? "" : "";
+                string vto = cabecera.Table.Columns.Contains("VencimientoCAE") ? cabecera["VencimientoCAE"]?.ToString()?.Trim() ?? "" : "";
+                string urlQr = !string.IsNullOrWhiteSpace(cae) ? ArcaQrHelper.ConstruirUrlDesdeNota(cabecera) : null;
+                string clienteCuit = cabecera.Table.Columns.Contains("ClienteCUIT") ? cabecera["ClienteCUIT"]?.ToString() ?? "" : "";
+                string cli = cabecera.Table.Columns.Contains("ClienteNombre") ? cabecera["ClienteNombre"]?.ToString() ?? "" : "";
+                DateTime fec = cabecera.Table.Columns.Contains("Fecha") && cabecera["Fecha"] != DBNull.Value
+                    ? Convert.ToDateTime(cabecera["Fecha"]) : DateTime.Now;
+                decimal tot = cabecera.Table.Columns.Contains("Monto") && cabecera["Monto"] != DBNull.Value
+                    ? Convert.ToDecimal(cabecera["Monto"]) : 0m;
+                int nro = 0;
+                if (cabecera.Table.Columns.Contains("NumeroComprobanteAFIP") && cabecera["NumeroComprobanteAFIP"] != DBNull.Value)
+                    nro = Convert.ToInt32(cabecera["NumeroComprobanteAFIP"]);
+                if (nro <= 0) nro = Convert.ToInt32(cabecera["NotaID"]);
+
+                DataTable items = DatabaseService.GetNotaVentaDetalle(Convert.ToInt32(cabecera["NotaID"]));
+                if (items.Rows.Count == 0)
+                {
+                    items = new DataTable();
+                    items.Columns.Add("Codigo", typeof(string));
+                    items.Columns.Add("Descripcion", typeof(string));
+                    items.Columns.Add("Cantidad", typeof(decimal));
+                    items.Columns.Add("PrecioUnitario", typeof(decimal));
+                    items.Columns.Add("Subtotal", typeof(decimal));
+                    items.Rows.Add("", cabecera["Descripcion"]?.ToString() ?? tipoNombre, 1m, tot, tot);
+                }
+
+                string destino = DatabaseService.GetDestinoImpresionVenta();
+                if (destino == "Preguntar")
+                {
+                    destino = PreguntarDestinoImpresion();
+                    if (string.IsNullOrEmpty(destino)) return;
+                }
+                destino = ResolverDestinoEfectivo(destino, "Factura");
+
+                if (destino == "Archivo")
+                {
+                    // Reutiliza generador PDF de ventas con cabecera adaptada
+                    GuardarComprobanteArchivoNota(titulo, cabecera, items, tot, cae, vto, urlQr);
+                    return;
+                }
+
+                if (destino == "Ticket")
+                {
+                    ImprimirTicketVenta(tipoNombre, nro, cli, fec, items, tot, "", cae, vto, null, clienteCuit, urlQr);
+                    return;
+                }
+
+                GenerarDocumentoA4Nota(titulo, cabecera, urlQr, cae, vto);
             }
             catch (Exception ex) { ModernMessageBox.Show("Error crítico al imprimir: " + ex.Message); }
+        }
+
+        private static void GuardarComprobanteArchivoNota(
+            string titulo, DataRow cabecera, DataTable items, decimal total, string cae, string vto, string urlQr)
+        {
+            try
+            {
+                string cli = cabecera.Table.Columns.Contains("ClienteNombre") ? cabecera["ClienteNombre"]?.ToString() ?? "" : "";
+                string letra = ObtenerLetraFactura(cli);
+                int nro = 0;
+                if (cabecera.Table.Columns.Contains("NumeroComprobanteAFIP") && cabecera["NumeroComprobanteAFIP"] != DBNull.Value)
+                    nro = Convert.ToInt32(cabecera["NumeroComprobanteAFIP"]);
+                int notaId = Convert.ToInt32(cabecera["NotaID"]);
+                if (nro <= 0) nro = notaId;
+
+                string pieFiscal = !string.IsNullOrWhiteSpace(cae) ? $"CAE: {cae}    Vto CAE: {vto}" : "";
+                string pieLegal = !string.IsNullOrWhiteSpace(cae)
+                    ? "Comprobante autorizado por ARCA. Escaneá el QR para verificar."
+                    : "Documento interno (sin CAE).";
+
+                string nombreBase = $"{titulo.Replace(" ", "_")}_{nro:D8}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                string ruta;
+                string carpeta = DatabaseService.GetCarpetaArchivosComprobantes();
+                if (!string.IsNullOrWhiteSpace(carpeta) && Directory.Exists(carpeta))
+                    ruta = Path.Combine(carpeta, nombreBase);
+                else
+                {
+                    var dlg = new SaveFileDialog
+                    {
+                        Filter = "Documento PDF (*.pdf)|*.pdf|Todos los archivos|*.*",
+                        FileName = nombreBase,
+                        Title = "Guardar nota PDF"
+                    };
+                    if (dlg.ShowDialog() != true) return;
+                    ruta = dlg.FileName;
+                }
+
+                if (string.IsNullOrWhiteSpace(urlQr) && !string.IsNullOrWhiteSpace(cae))
+                    urlQr = ArcaQrHelper.ConstruirUrlDesdeNota(cabecera);
+
+                PdfComprobanteGenerator.GenerarComprobanteVenta(
+                    ruta, cabecera, items, titulo, letra, nro, total,
+                    null, pieFiscal, pieLegal, true, urlQr);
+
+                ModernMessageBox.Show(
+                    $"PDF guardado en:\n{ruta}\n\nPodés enviarlo por WhatsApp o correo.",
+                    "PDF guardado", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show("Error al generar PDF: " + ex.Message);
+            }
         }
 
         public static void ImprimirTicketVenta(string tipo, int nro, string cli, DateTime fec, DataTable items, decimal tot, string cond, string cae = "", string vtoCae = "", string nombreVendedor = null, string clienteCuit = null, string urlQrFiscal = null)
@@ -433,28 +534,37 @@ namespace SchettiniGestion.WPF
             catch { return null; }
         }
 
-        private static void GenerarDocumentoA4Nota(string tituloDocumento, DataRow cabecera)
+        private static void GenerarDocumentoA4Nota(string tituloDocumento, DataRow cabecera, string urlQrFiscal = null, string cae = null, string vtoCae = null)
         {
             try
             {
                 int notaId = Convert.ToInt32(cabecera["NotaID"]);
                 DataTable itemsDetalle = DatabaseService.GetNotaVentaDetalle(notaId);
 
+                if (string.IsNullOrWhiteSpace(cae) && cabecera.Table.Columns.Contains("CAE"))
+                    cae = cabecera["CAE"]?.ToString()?.Trim() ?? "";
+                if (string.IsNullOrWhiteSpace(vtoCae) && cabecera.Table.Columns.Contains("VencimientoCAE"))
+                    vtoCae = cabecera["VencimientoCAE"]?.ToString()?.Trim() ?? "";
+                if (string.IsNullOrWhiteSpace(urlQrFiscal) && !string.IsNullOrWhiteSpace(cae))
+                    urlQrFiscal = ArcaQrHelper.ConstruirUrlDesdeNota(cabecera);
+
+                string lineaExtra = !string.IsNullOrWhiteSpace(cae) ? $"CAE: {cae}  Vto: {vtoCae}" : null;
+                string pieLegal = !string.IsNullOrWhiteSpace(cae)
+                    ? "Comprobante autorizado por ARCA. Escaneá el QR para verificar."
+                    : "Documento interno (sin CAE). No válido como comprobante fiscal electrónico.";
+
                 FlowDocument doc = CrearDocumentoBase();
-                doc.Blocks.Add(CrearEncabezadoDocumento(tituloDocumento, "NotaID", cabecera));
+                doc.Blocks.Add(CrearEncabezadoDocumento(tituloDocumento, "NotaID", cabecera, lineaExtra));
                 doc.Blocks.Add(CrearBloqueCliente(cabecera));
 
                 doc.Blocks.Add(CrearBloqueReferenciaNota(cabecera));
 
                 if (itemsDetalle.Rows.Count > 0)
                 {
-                    // Documento estructurado por ítems (igual que una factura), no un párrafo con todo junto.
                     doc.Blocks.Add(CrearTablaItems(itemsDetalle));
                 }
                 else
                 {
-                    // Notas anteriores a esta mejora: no tienen detalle estructurado, se
-                    // muestra el texto original guardado en su momento.
                     Paragraph pDetalle = new Paragraph { FontSize = 12, Margin = new Thickness(0, 4, 0, 14) };
                     pDetalle.Inlines.Add(new Run("Descripción: ") { FontWeight = FontWeights.Bold });
                     pDetalle.Inlines.Add(new Run(cabecera["Descripcion"]?.ToString() ?? "—"));
@@ -462,7 +572,25 @@ namespace SchettiniGestion.WPF
                 }
 
                 doc.Blocks.Add(CrearBloqueTotal(Convert.ToDecimal(cabecera["Monto"])));
-                doc.Blocks.Add(new Paragraph(new Run("Documento no válido como factura fiscal.")) { TextAlignment = TextAlignment.Center, FontSize = 10, Foreground = Brushes.Gray, Margin = new Thickness(0, 40, 0, 0) });
+                if (!string.IsNullOrWhiteSpace(urlQrFiscal))
+                {
+                    var bloqueQr = CrearBloqueQrFiscal(urlQrFiscal);
+                    if (bloqueQr != null) doc.Blocks.Add(bloqueQr);
+                    doc.Blocks.Add(new Paragraph(new Run("Escaneá el QR para verificar en ARCA"))
+                    {
+                        TextAlignment = TextAlignment.Center,
+                        FontSize = 10,
+                        Foreground = Brushes.Gray,
+                        Margin = new Thickness(0, 4, 0, 0)
+                    });
+                }
+                doc.Blocks.Add(new Paragraph(new Run(pieLegal))
+                {
+                    TextAlignment = TextAlignment.Center,
+                    FontSize = 10,
+                    Foreground = Brushes.Gray,
+                    Margin = new Thickness(0, 24, 0, 0)
+                });
                 MostrarDialogoImpresion(doc, $"{tituloDocumento}_{cabecera["NotaID"]}");
             }
             catch (Exception ex) { ModernMessageBox.Show("Error generando PDF: " + ex.Message); }
@@ -879,18 +1007,13 @@ namespace SchettiniGestion.WPF
                 "PDF guardado", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private static string ObtenerLetraFactura(string cuitCliente)
+        private static string ObtenerLetraFactura(string cuitCliente, string condicionIvaCliente = null)
         {
             DataRow config = DatabaseService.GetConfiguracion();
             string condicionEmisor = config != null && config.Table.Columns.Contains("CondicionIVAEmpresa")
                 ? config["CondicionIVAEmpresa"]?.ToString() ?? ""
                 : "";
-
-            if (condicionEmisor.IndexOf("monotrib", StringComparison.OrdinalIgnoreCase) >= 0)
-                return "C";
-
-            string cuitLimpio = cuitCliente?.Replace("-", "").Trim() ?? "";
-            return cuitLimpio.Length >= 11 && !cuitLimpio.Contains("00000000") ? "A" : "B";
+            return ArcaQrHelper.InferirLetra("Factura", cuitCliente, condicionEmisor, condicionIvaCliente);
         }
 
         private static float ObtenerAnchoTicketPixels(int anchoMm)
@@ -1003,6 +1126,10 @@ namespace SchettiniGestion.WPF
                         e.HasMorePages = false;
                     };
                     ImprimirDocumentoTicket(doc, nombreImpresora);
+                    string nombreUsadoPrueba = !string.IsNullOrWhiteSpace(doc.PrinterSettings?.PrinterName)
+                        ? doc.PrinterSettings.PrinterName
+                        : nombreImpresora;
+                    EtiquetaCorteHelper.IntentarCorteTrasImpresion(nombreUsadoPrueba, opEtiq);
                     ModernMessageBox.Show($"Etiqueta de prueba ({opEtiq.AnchoMm}×{opEtiq.AltoMm} mm) enviada a:\n{nombreImpresora}",
                         "Prueba de impresión", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
@@ -1396,6 +1523,10 @@ namespace SchettiniGestion.WPF
                 };
 
                 ImprimirDocumentoTicket(doc, impresora);
+                string nombreUsado = !string.IsNullOrWhiteSpace(doc.PrinterSettings?.PrinterName)
+                    ? doc.PrinterSettings.PrinterName
+                    : impresora;
+                EtiquetaCorteHelper.IntentarCorteTrasImpresion(nombreUsado, opciones);
             }
             catch (Exception ex)
             {

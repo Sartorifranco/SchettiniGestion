@@ -34,7 +34,21 @@ namespace SchettiniGestion
         //  El mismo algoritmo se usa en ActivationWindow para mostrárselo
         //  al usuario y en ValidarLicencia() para compararlo.
         // ─────────────────────────────────────────────────────────────
+        private static string _hardwareIdCache;
+        private static readonly object _hardwareIdLock = new object();
+
         public static string ObtenerHardwareId()
+        {
+            if (!string.IsNullOrEmpty(_hardwareIdCache)) return _hardwareIdCache;
+            lock (_hardwareIdLock)
+            {
+                if (!string.IsNullOrEmpty(_hardwareIdCache)) return _hardwareIdCache;
+                _hardwareIdCache = CalcularHardwareIdWmi();
+                return _hardwareIdCache;
+            }
+        }
+
+        private static string CalcularHardwareIdWmi()
         {
             string cpuId = "";
             string boardSerial = "";
@@ -329,19 +343,20 @@ namespace SchettiniGestion
             return _licenciaActual.ModulosPermitidos.Contains(mod);
         }
 
-        /// <summary>Extras monetizables (RED, ARCA, etiquetas, visor, MP QR, MP Point, soporte). Respeta licencias legacy.</summary>
+        /// <summary>
+        /// Extras monetizables (RED, ARCA, etiquetas, visor, MP QR/Point, soporte).
+        /// Solo se habilitan si el código está en la licencia.
+        /// Ya no se regalan por «licencia legacy/Pro»: si no compró RED, no ve ni usa red.
+        /// </summary>
         public static bool IsExtraEnabled(string extraCode)
         {
             if (string.IsNullOrWhiteSpace(extraCode))
                 return false;
 
-            string mod = extraCode.ToUpperInvariant();
-            if (IsModuleEnabled(mod))
-                return true;
-
-            return EsLicenciaLegacyCompleta();
+            return IsModuleEnabled(extraCode.ToUpperInvariant());
         }
 
+        /// <summary>True solo con el extra ACCESO_RED contratado en la licencia.</summary>
         public static bool TieneConexionRed() => IsExtraEnabled("ACCESO_RED");
         public static bool TieneAfip() => IsExtraEnabled("ACCESO_AFIP");
         public static bool TieneEtiquetas() => IsExtraEnabled("ACCESO_ETIQUETAS");

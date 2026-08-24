@@ -13,7 +13,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="15" Margin="0,0,0,10">
+        <Border Grid.Row="0" Style="{StaticResource SaaSTableCard}" Padding="18" Margin="0,0,0,14">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -21,7 +21,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel>
-                    <TextBlock Text="Proveedores" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10"/>
+                    <TextBlock Text="Proveedores" Style="{DynamicResource TitleTextStyle}" Margin="0,0,0,10"/>
                     <TextBlock Text="Buscar por CUIT o Razón Social" Style="{DynamicResource LabelStyle}"/>
                     <TextBox x:Name="txtFiltroProveedores" Style="{DynamicResource ModernTextBox}" TextChanged="txtFiltroProveedores_TextChanged"/>
                 </StackPanel>
@@ -31,7 +31,7 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Background="{DynamicResource SurfaceDark}" CornerRadius="8" Padding="1">
+        <Border Grid.Row="1" Style="{StaticResource SaaSTableCard}" Padding="12,0,12,12">
             <DataGrid x:Name="dgvProveedores" Style="{DynamicResource {x:Type DataGrid}}" AutoGenerateColumns="False"
                       HorizontalScrollBarVisibility="Auto" IsReadOnly="True"
                       MouseDoubleClick="dgvProveedores_MouseDoubleClick">
@@ -43,14 +43,14 @@
                 </DataGrid.ContextMenu>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="CUIT" Binding="{Binding CUIT}" Width="Auto" MinWidth="110"/>
-                    <DataGridTextColumn Header="RAZÓN SOCIAL" Binding="{Binding RazonSocial}" Width="2*" MinWidth="160"/>
-                    <DataGridTextColumn Header="CAT. FISCAL" Binding="{Binding CategoriaFiscal}" Width="Auto" MinWidth="90"/>
-                    <DataGridTextColumn Header="CONTACTO" Binding="{Binding PersonaContacto}" Width="Auto" MinWidth="110"/>
-                    <DataGridTextColumn Header="TELÉFONO" Binding="{Binding Telefono}" Width="Auto" MinWidth="110"/>
-                    <DataGridTextColumn Header="DOMICILIO" Binding="{Binding Direccion}" Width="1.5*" MinWidth="140"/>
-                    <DataGridTextColumn Header="EMAIL" Binding="{Binding Email}" Width="1.2*" MinWidth="140"/>
-                    <DataGridTextColumn Header="PÁGINA WEB" Binding="{Binding PaginaWeb}" Width="1.2*" MinWidth="120"/>
-                    <DataGridTextColumn Header="SALDO" Binding="{Binding SaldoDeuda, StringFormat=C2}" Width="Auto" MinWidth="100"/>
+                    <DataGridTextColumn Header="Razón social" Binding="{Binding RazonSocial}" Width="2*" MinWidth="160"/>
+                    <DataGridTextColumn Header="Cat. fiscal" Binding="{Binding CategoriaFiscal}" Width="Auto" MinWidth="90"/>
+                    <DataGridTextColumn Header="Contacto" Binding="{Binding PersonaContacto}" Width="Auto" MinWidth="110"/>
+                    <DataGridTextColumn Header="Teléfono" Binding="{Binding Telefono}" Width="Auto" MinWidth="110"/>
+                    <DataGridTextColumn Header="Domicilio" Binding="{Binding Direccion}" Width="1.5*" MinWidth="140"/>
+                    <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="1.2*" MinWidth="140"/>
+                    <DataGridTextColumn Header="Página web" Binding="{Binding PaginaWeb}" Width="1.2*" MinWidth="120"/>
+                    <DataGridTextColumn Header="Saldo" Binding="{Binding SaldoDeuda, StringFormat=C2}" Width="Auto" MinWidth="100"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

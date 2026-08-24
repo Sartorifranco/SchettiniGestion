@@ -17,11 +17,13 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Configuración de Listas de Precios" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource HeaderForegroundBrush}" Margin="0,0,0,8"/>
-        <TextBlock Grid.Row="0" Text="Todas las listas calculan precios a partir del Costo de Compra del producto." FontSize="12"
-                   Foreground="{DynamicResource TextSecondary}" Margin="0,32,0,12"/>
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="Listas de precios" Style="{StaticResource TitleTextStyle}"/>
+            <TextBlock Text="Todas las listas calculan precios a partir del costo de compra del producto."
+                       Style="{StaticResource PageSubtitleStyle}"/>
+        </StackPanel>
 
-        <Border Grid.Row="1" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="5" Padding="20" Margin="0,0,0,20">
+        <Border Grid.Row="1" Style="{StaticResource SaaSTableCard}" Padding="20" Margin="0,0,0,14">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -71,7 +73,7 @@
                     <TextBlock x:Name="lblPorcentaje" Text="% sobre costo / lista anterior:" Style="{StaticResource ModuleLabelStyle}"/>
                     <xctk:DecimalUpDown x:Name="numPorcentaje" Style="{StaticResource ModuleNumericUpDownStyle}" Value="0" Minimum="-100" Maximum="1000"/>
                     <TextBlock x:Name="txtAyudaPorcentaje" Text="Ej: 30 = costo + 30%. En lista relacionada, suma % sobre la lista padre."
-                               Foreground="#888" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                               Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
                 </StackPanel>
 
                 <StackPanel x:Name="pnlListaRelacionada" Grid.Row="1" Grid.Column="1" Margin="0,0,12,0" Visibility="Collapsed">
@@ -79,18 +81,19 @@
                     <ComboBox x:Name="cmbListaRelacionada" Style="{StaticResource ModuleComboBoxStyle}"
                               DisplayMemberPath="Nombre" SelectedValuePath="ListaID"/>
                     <TextBlock Text="La lista padre se resuelve primero; luego se aplica el % de esta lista."
-                               Foreground="#888" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                               Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
                 </StackPanel>
 
                 <StackPanel x:Name="pnlPrecioFijo" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Visibility="Collapsed">
                     <TextBlock Text="Precio Fijo por producto" Style="{StaticResource ModuleLabelStyle}"/>
                     <TextBlock Text="Asigne el precio final en cada producto (pestaña Precios del producto). Esta lista no usa porcentaje."
-                               Foreground="#888" FontSize="11" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <DataGrid x:Name="dgvListas" Grid.Row="2" Style="{StaticResource ModuleDataGridStyle}" AutoGenerateColumns="False" IsReadOnly="True"
+        <Border Grid.Row="2" Style="{StaticResource SaaSTableCard}" Padding="12,0,12,12">
+        <DataGrid x:Name="dgvListas" Style="{StaticResource ModuleDataGridStyle}" AutoGenerateColumns="False" IsReadOnly="True"
                   HorizontalScrollBarVisibility="Auto" SelectionChanged="dgvListas_SelectionChanged">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding ListaID}" Width="50"/>
@@ -108,5 +111,6 @@
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
+        </Border>
     </Grid>
 </UserControl>

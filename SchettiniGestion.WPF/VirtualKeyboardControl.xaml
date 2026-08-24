@@ -4,7 +4,8 @@
              Focusable="False">
 
     <UserControl.Resources>
-        <ControlTemplate x:Key="KeycapTemplate" TargetType="Button">
+        <!-- Diseño actual: tecla 3D -->
+        <ControlTemplate x:Key="KeycapClasico" TargetType="Button">
             <Grid>
                 <Border x:Name="shadow"
                         CornerRadius="9"
@@ -16,100 +17,151 @@
                         BorderBrush="{DynamicResource VKKeyBorder}"
                         BorderThickness="0,0,0,1"
                         Margin="0,0,0,4">
-                    <ContentPresenter HorizontalAlignment="Center"
-                                      VerticalAlignment="Center"/>
+                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
             </Grid>
             <ControlTemplate.Triggers>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter TargetName="face"   Property="Margin"     Value="0,4,0,0"/>
-                    <Setter TargetName="face"   Property="Background" Value="{DynamicResource VKKeyPressBg}"/>
-                    <Setter TargetName="face"   Property="BorderThickness" Value="0"/>
+                    <Setter TargetName="face" Property="Margin" Value="0,4,0,0"/>
+                    <Setter TargetName="face" Property="Background" Value="{DynamicResource VKKeyPressBg}"/>
+                    <Setter TargetName="face" Property="BorderThickness" Value="0"/>
                     <Setter TargetName="shadow" Property="Visibility" Value="Collapsed"/>
                     <Setter Property="Foreground" Value="White"/>
                 </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <!-- Diseño nuevo (Stitch / cobro): tecla plana, bien redonda -->
+        <ControlTemplate x:Key="KeycapNuevo" TargetType="Button">
+            <Border x:Name="face"
+                    CornerRadius="16"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{DynamicResource VKKeyBorder}"
+                    BorderThickness="1"
+                    Margin="5,4">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter TargetName="face" Property="Background" Value="{DynamicResource VKKeyPressBg}"/>
+                    <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource VKKeyPressBg}"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter TargetName="face" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                    <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
                 </Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate>
 
         <Style x:Key="VKKey" TargetType="Button">
-            <Setter Property="Background"      Value="{DynamicResource VKKeyBg}"/>
-            <Setter Property="Foreground"      Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="FontFamily"      Value="Segoe UI"/>
-            <Setter Property="FontSize"        Value="18"/>
-            <Setter Property="FontWeight"      Value="SemiBold"/>
-            <Setter Property="Height"          Value="58"/>
-            <Setter Property="Margin"          Value="3,0,3,8"/>
+            <Setter Property="Background" Value="{DynamicResource VKKeyBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="58"/>
+            <Setter Property="Margin" Value="3,0,3,8"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Focusable"       Value="False"/>
-            <Setter Property="Cursor"          Value="Hand"/>
-            <Setter Property="Template"        Value="{StaticResource KeycapTemplate}"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template" Value="{StaticResource KeycapClasico}"/>
         </Style>
-
         <Style x:Key="VKKeySpecial" TargetType="Button" BasedOn="{StaticResource VKKey}">
             <Setter Property="Background" Value="{DynamicResource VKKeySpecialBg}"/>
-            <Setter Property="FontSize"   Value="15"/>
+            <Setter Property="FontSize" Value="15"/>
         </Style>
-
         <Style x:Key="VKKeyEnter" TargetType="Button" BasedOn="{StaticResource VKKey}">
             <Setter Property="Background" Value="{DynamicResource VKKeySpecialBg}"/>
-            <Setter Property="FontSize"   Value="20"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
-
         <Style x:Key="VKKeyBack" TargetType="Button" BasedOn="{StaticResource VKKey}">
             <Setter Property="Background" Value="#B71C1C"/>
             <Setter Property="Foreground" Value="#FFEBEE"/>
-            <Setter Property="FontSize"   Value="22"/>
+            <Setter Property="FontSize" Value="22"/>
         </Style>
-
         <Style x:Key="VKKeyConfirm" TargetType="Button" BasedOn="{StaticResource VKKey}">
             <Setter Property="Background" Value="#1B5E20"/>
             <Setter Property="Foreground" Value="#E8F5E9"/>
-            <Setter Property="FontSize"   Value="22"/>
+            <Setter Property="FontSize" Value="22"/>
+        </Style>
+        <Style x:Key="VKKeySpace" TargetType="Button" BasedOn="{StaticResource VKKey}">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
         </Style>
 
-        <Style x:Key="VKKeySpace" TargetType="Button" BasedOn="{StaticResource VKKey}">
+        <Style x:Key="VKKeyN" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource VKKeyBg}"/>
-            <Setter Property="FontSize"   Value="13"/>
-            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource BodyFontFamily}"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="62"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template" Value="{StaticResource KeycapNuevo}"/>
+        </Style>
+        <Style x:Key="VKKeySpecialN" TargetType="Button" BasedOn="{StaticResource VKKeyN}">
+            <Setter Property="Background" Value="{DynamicResource VKKeySpecialBg}"/>
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
+        <Style x:Key="VKKeyEnterN" TargetType="Button" BasedOn="{StaticResource VKKeyN}">
+            <Setter Property="Background" Value="{DynamicResource PrimaryColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="22"/>
+        </Style>
+        <Style x:Key="VKKeyBackN" TargetType="Button" BasedOn="{StaticResource VKKeyN}">
+            <Setter Property="Background" Value="{DynamicResource VKKeySpecialBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="22"/>
+        </Style>
+        <Style x:Key="VKKeyConfirmN" TargetType="Button" BasedOn="{StaticResource VKKeyN}">
+            <Setter Property="Background" Value="{DynamicResource PrimaryColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="22"/>
+        </Style>
+        <Style x:Key="VKKeySpaceN" TargetType="Button" BasedOn="{StaticResource VKKeyN}">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
         </Style>
     </UserControl.Resources>
 
-    <!-- El fondo negro SOLO rodea las teclas visibles (no hay ventana aparte). -->
     <Border x:Name="mainBorder"
-            CornerRadius="20,20,0,0"
+            CornerRadius="28,28,0,0"
             Background="{DynamicResource VKBackground}"
             HorizontalAlignment="Stretch">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="24" ShadowDepth="0"
-                              Direction="90" Opacity="0.5" Color="Black"/>
+            <DropShadowEffect x:Name="kbShadow" BlurRadius="24" ShadowDepth="0"
+                              Direction="90" Opacity="0.18" Color="Black"/>
         </Border.Effect>
 
         <StackPanel>
-            <Grid Margin="12,8,12,4">
+            <Grid x:Name="grdHeader" Margin="16,10,16,6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="{DynamicResource VKKeySpecialBg}"
-                            CornerRadius="6"
-                            Padding="8,4">
-                        <TextBlock x:Name="lblModo"
-                                   Text="ABC"
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="lblTituloTeclado" Text="Teclado"
+                               FontFamily="{DynamicResource HeadlineFontFamily}"
+                               FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimary}"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Border x:Name="bdrModo" Background="{DynamicResource VKKeySpecialBg}"
+                            CornerRadius="999" Padding="12,5">
+                        <TextBlock x:Name="lblModo" Text="ABC"
                                    Foreground="{DynamicResource TextPrimary}"
-                                   FontSize="12"
-                                   FontWeight="Bold"/>
+                                   FontSize="12" FontWeight="Bold"/>
                     </Border>
                 </StackPanel>
 
-                <Border Grid.Column="1"
-                        Width="44" Height="4" CornerRadius="2"
+                <Border x:Name="bdrHandle" Grid.Column="1"
+                        Width="48" Height="5" CornerRadius="3"
                         Background="{DynamicResource VKKeyBorder}"
                         VerticalAlignment="Center"/>
 
@@ -118,29 +170,26 @@
                         Click="btnCerrar_Click"
                         HorizontalAlignment="Right"
                         Height="36"
-                        Padding="12,0"
+                        Padding="14,0"
                         Focusable="False"
                         Cursor="Hand">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="b"
-                                    CornerRadius="8"
-                                    Background="#C62828"
+                                    CornerRadius="18"
+                                    Background="{DynamicResource VKHideButtonBg}"
                                     Padding="{TemplateBinding Padding}">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock Text="▼" FontSize="11" Foreground="White"
-                                               VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                    <TextBlock Text="Ocultar" FontSize="12" FontWeight="SemiBold"
+                                               VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Ocultar" FontSize="13" FontWeight="SemiBold"
+                                               FontFamily="{DynamicResource BodyFontFamily}"
                                                Foreground="White" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                             <ControlTemplate.Triggers>
-                                <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="b" Property="Background" Value="#B71C1C"/>
-                                    <Setter TargetName="b" Property="Opacity"    Value="0.85"/>
-                                </Trigger>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="b" Property="Background" Value="#E53935"/>
+                                    <Setter TargetName="b" Property="Background" Value="{DynamicResource VKHideButtonHover}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -148,18 +197,18 @@
                 </Button>
             </Grid>
 
-            <Border Height="2"
+            <Border x:Name="bdrAccent" Height="2"
                     Background="{DynamicResource VKAccentBar}"
-                    Margin="0,0,0,10"
-                    Opacity="0.6"/>
+                    Margin="0,0,0,8"
+                    Opacity="0.6"
+                    Visibility="Collapsed"/>
 
-            <StackPanel x:Name="pnlAlpha" Margin="8,0,8,6"/>
+            <StackPanel x:Name="pnlAlpha" Margin="10,0,10,10"/>
 
-            <!-- Numérico: el control se estrecha al ancho del pad (sin franja negra). -->
             <StackPanel x:Name="pnlNumeric"
                         Visibility="Collapsed"
-                        Width="360"
-                        Margin="10,0,10,8"/>
+                        Width="400"
+                        Margin="12,0,12,12"/>
         </StackPanel>
     </Border>
 </UserControl>

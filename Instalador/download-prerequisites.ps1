@@ -58,4 +58,3 @@ foreach ($item in $downloads) {
 
 Write-Host ""
 Write-Host "Prerequisitos listos en: $PrerequisitesDir" -ForegroundColor Green
-Write-Host "Opcional: copie licencia.key en esa carpeta antes de compilar el Setup (solo testing)."

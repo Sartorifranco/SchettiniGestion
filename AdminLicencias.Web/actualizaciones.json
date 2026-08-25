@@ -1,7 +1,28 @@
 {
-  "versionActual": "2.3.56",
-  "instalador": "SCHPOS-Setup-2.3.56.exe",
+  "versionActual": "2.4.0",
+  "instalador": "SCHPOS-Setup-2.4.0.exe",
   "notas": [
+    {
+      "version": "2.4.0",
+      "fecha": "2026-08-24",
+      "titulo": "Instalador de venta sin licencia embebida",
+      "items": [
+        "El Setup ya no incluye licencia.key: en un equipo nuevo pide activación al abrir.",
+        "Las PC que ya tienen licencia en ProgramData siguen igual al actualizar.",
+        "Instalador SCHPOS-Setup-2.4.0.exe."
+      ]
+    },
+    {
+      "version": "2.3.57",
+      "fecha": "2026-08-24",
+      "titulo": "Cobro ARCA, columnas del ticket y QR",
+      "items": [
+        "Si ARCA ya tenía un ticket de acceso vigente, SCHPOS reutiliza el guardado en la PC (ya no pide uno nuevo ni lo borra).",
+        "En el ticket térmico el importe queda a la derecha, sin pisar la descripción.",
+        "Con CAE se imprime el QR oficial de ARCA. En homologación el QR sale igual aunque sea de prueba.",
+        "Instalador SCHPOS-Setup-2.3.57.exe."
+      ]
+    },
     {
       "version": "2.3.56",
       "fecha": "2026-08-23",

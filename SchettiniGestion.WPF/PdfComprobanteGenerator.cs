@@ -300,7 +300,11 @@ namespace SchettiniGestion.WPF
                             y += 10;
                             gfx.DrawImage(img, xQr, y, side, side);
                             y += side + 6;
-                            gfx.DrawString("Escaneá el QR para verificar en ARCA", fEmpresaDet, XBrushes.DimGray,
+                            gfx.DrawString(
+                                ArcaQrHelper.EsUrlFiscalOficial(urlQrFiscal)
+                                    ? "Escaneá el QR para verificar en ARCA"
+                                    : "QR de prueba (homologación)",
+                                fEmpresaDet, XBrushes.DimGray,
                                 new XRect(Margen, y, anchoContenido, 14), XStringFormats.TopCenter);
                             y += 16;
                         }

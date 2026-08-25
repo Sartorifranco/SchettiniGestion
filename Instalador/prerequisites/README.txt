@@ -13,8 +13,4 @@ Archivos esperados (generados localmente):
   - SqlLocalDB.msi
   - ndp48-x86-x64-allos-enu.exe   (.NET Framework 4.8 offline)
 
-Opcional para testing sin pantalla de activacion:
-  - licencia.key   (una linea con la clave Base64 de LicenseGenerator)
-
-Generar licencia:
-  dotnet run --project LicenseGenerator
+La licencia NO va en el Setup. El cliente activa al abrir SCHPOS.

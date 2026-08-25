@@ -4,6 +4,7 @@ using SchettiniGestion;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -214,17 +215,7 @@ namespace SchettiniGestion.WPF
                 pie = $"CAE: {cae}\nVto CAE: {vtoCae}";
             }
 
-            // QR fiscal ARCA obligatorio cuando hay CAE
-            if (string.IsNullOrWhiteSpace(urlQrFiscal) && !string.IsNullOrWhiteSpace(cae))
-            {
-                DataRow conf = DatabaseService.GetConfiguracion();
-                string cuitEmisor = conf?["CUIT"]?.ToString() ?? "";
-                string condicionIva = conf != null && conf.Table.Columns.Contains("CondicionIVAEmpresa")
-                    ? conf["CondicionIVAEmpresa"]?.ToString() ?? "" : "";
-                int.TryParse(conf?["PuntoVenta"]?.ToString()?.Trim(), out int ptoVta);
-                int tipoAfip = ArcaQrHelper.ResolverTipoComprobanteAfip(tipo, letra, clienteCuit, condicionIva);
-                urlQrFiscal = ArcaQrHelper.ConstruirUrl(fec, cuitEmisor, ptoVta, tipoAfip, nro, tot, cae, clienteCuit);
-            }
+            urlQrFiscal = CompletarUrlQrTicket(urlQrFiscal, tipo, letra, nro, fec, tot, cae, clienteCuit);
 
             if (USAR_MOTOR_GRAFICO_PARA_TICKETS)
                 ImprimirTicketGrafico(tit, nroStr, cli, fec, items, tot, cond, letra, pie, nombreVendedor, urlQrFiscal);
@@ -269,7 +260,9 @@ namespace SchettiniGestion.WPF
                     ? cab["ClienteCUIT"]?.ToString()?.Trim() ?? "" : "";
                 string letraTmp = tipo.Equals("Factura", StringComparison.OrdinalIgnoreCase)
                     ? ObtenerLetraFactura(clienteCuit) : "X";
-                string urlQr = ArcaQrHelper.ConstruirUrlDesdeFactura(cab, letraTmp);
+                string urlQr = CompletarUrlQrTicket(
+                    ArcaQrHelper.ConstruirUrlDesdeFactura(cab, letraTmp),
+                    tipo, letraTmp, nro, fec, tot, cae, clienteCuit);
 
                 switch (destino)
                 {
@@ -935,14 +928,18 @@ namespace SchettiniGestion.WPF
             try
             {
                 var (impresoraTicket, _) = DatabaseService.GetImpresoras();
+                var opciones = DatabaseService.GetOpcionesImpresionTicket();
 
                 WinPrinting.PrintDocument doc = new WinPrinting.PrintDocument();
                 doc.PrintController = new WinPrinting.StandardPrintController();
+                PrepararImpresoraAntesDeConfigurarPagina(doc, impresoraTicket);
+                AplicarTamanoTicket(doc, opciones.AnchoMm);
                 doc.PrintPage += (s, e) =>
                 {
                     var g = e.Graphics;
                     float y = 10f;
                     DibujarTicketGDI(g, t, n, c ?? "", f, i, tot, extra, l, pie, ref y, nombreVendedor, urlQrFiscal);
+                    e.HasMorePages = false;
                 };
 
                 ImprimirDocumentoTicket(doc, impresoraTicket);
@@ -990,9 +987,9 @@ namespace SchettiniGestion.WPF
                 ruta = dlg.FileName;
             }
 
-            // CUIT/CAE/Punto de venta/QR son obligatorios en comprobantes con CAE.
-            if (string.IsNullOrWhiteSpace(urlQrFiscal) && !string.IsNullOrWhiteSpace(cae))
-                urlQrFiscal = ArcaQrHelper.ConstruirUrlDesdeFactura(cab, letra);
+            // QR: oficial si hay CAE; en homologación se imprime igual un QR de prueba.
+            if (string.IsNullOrWhiteSpace(urlQrFiscal))
+                urlQrFiscal = CompletarUrlQrTicket(null, tipo, letra, nro, fec, tot, cae, null);
 
             PdfComprobanteGenerator.GenerarComprobanteVenta(
                 ruta, cab, items, tit, letra, nro > 0 ? nro : facturaId, tot,
@@ -1005,6 +1002,65 @@ namespace SchettiniGestion.WPF
             ModernMessageBox.Show(
                 $"Comprobante PDF guardado en:\n{ruta}\n\nPodés enviarlo por WhatsApp o correo.",
                 "PDF guardado", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private static string CompletarUrlQrTicket(
+            string urlQrFiscal,
+            string tipo,
+            string letra,
+            int nro,
+            DateTime fec,
+            decimal tot,
+            string cae,
+            string clienteCuit)
+        {
+            if (!string.IsNullOrWhiteSpace(urlQrFiscal)) return urlQrFiscal;
+
+            if (!string.IsNullOrWhiteSpace(cae))
+            {
+                DataRow conf = DatabaseService.GetConfiguracion();
+                string cuitEmisor = conf?["CUIT"]?.ToString() ?? "";
+                string condicionIva = conf != null && conf.Table.Columns.Contains("CondicionIVAEmpresa")
+                    ? conf["CondicionIVAEmpresa"]?.ToString() ?? "" : "";
+                int.TryParse(conf?["PuntoVenta"]?.ToString()?.Trim(), out int ptoVta);
+                int tipoAfip = ArcaQrHelper.ResolverTipoComprobanteAfip(tipo, letra, clienteCuit, condicionIva);
+                string oficial = ArcaQrHelper.ConstruirUrl(fec, cuitEmisor, ptoVta, tipoAfip, nro, tot, cae, clienteCuit);
+                if (!string.IsNullOrWhiteSpace(oficial)) return oficial;
+            }
+
+            // Homologación: el QR se imprime igual aunque ARCA no haya dado CAE (no verifica en el sitio).
+            if (!DatabaseService.GetAfipAmbienteProduccion())
+                return ArcaQrHelper.ConstruirPayloadPrueba(fec, nro, tot);
+
+            return null;
+        }
+
+        private static void AplicarTamanoTicket(WinPrinting.PrintDocument doc, int anchoMm)
+        {
+            anchoMm = anchoMm <= 58 ? 58 : 80;
+            int w = (int)Math.Round(anchoMm / 25.4 * 100.0);
+            // Rollo largo: ítems + QR no deben cortarse por un formulario corto del driver.
+            int h = (int)Math.Round(320 / 25.4 * 100.0);
+            WinPrinting.PaperSize paper = null;
+            foreach (WinPrinting.PaperSize existente in doc.PrinterSettings.PaperSizes)
+            {
+                if (Math.Abs(existente.Width - w) <= 4 && existente.Height >= h - 20)
+                {
+                    paper = existente;
+                    break;
+                }
+            }
+            if (paper == null)
+                paper = new WinPrinting.PaperSize("SCHPOS Ticket", w, h);
+            try
+            {
+                doc.DefaultPageSettings.Landscape = false;
+                doc.DefaultPageSettings.PaperSize = paper;
+                doc.DefaultPageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 0);
+                doc.PrinterSettings.DefaultPageSettings.Landscape = false;
+                doc.PrinterSettings.DefaultPageSettings.PaperSize = paper;
+            }
+            catch { /* algunos drivers térmicos ignoran el PaperSize custom */ }
         }
 
         private static string ObtenerLetraFactura(string cuitCliente, string condicionIvaCliente = null)
@@ -1364,29 +1420,21 @@ namespace SchettiniGestion.WPF
 
             DibujarLinea(g, ref y, w);
 
-            int maxDesc = opciones.MostrarCodigo ? (angosto ? 14 : 18) : (angosto ? 20 : 24);
-            string encabezado = opciones.MostrarCodigo ? "Cant  Cód  Descripción" : "Cant  Descripción";
-            g.DrawString(encabezado, fC, WinDrawing.Brushes.DimGray, 0, y);
-            DibujarTextoDerecha(g, "Total", fC, w, 2, ref y, false);
-            y += 12;
+            string encabezadoIzq = opciones.MostrarCodigo ? "Cant  Cód  Descripción" : "Cant  Descripción";
+            DibujarFilaTicket(g, encabezadoIzq, "Total", fC, w, ref y, esEncabezado: true);
 
             foreach (DataRow r in its.Rows)
             {
                 string d = r.Table.Columns.Contains("Descripcion") ? r["Descripcion"].ToString() : r["Producto"].ToString();
-                if (d.Length > maxDesc) d = d.Substring(0, maxDesc);
-
                 string cod = opciones.MostrarCodigo && r.Table.Columns.Contains("Codigo")
                     ? (r["Codigo"]?.ToString() ?? "").Trim() : "";
                 if (opciones.MostrarCodigo && cod.Length > 8) cod = cod.Substring(0, 8);
 
-                string linea = opciones.MostrarCodigo
-                    ? $"{r["Cantidad"],2}x {cod,-8} {d}"
-                    : $"{r["Cantidad"],2}x  {d}";
-                g.DrawString(linea, fN, WinDrawing.Brushes.Black, 0, y);
-
+                string lineaIzq = opciones.MostrarCodigo
+                    ? $"{r["Cantidad"],2}x {cod} {d}"
+                    : $"{r["Cantidad"],2}x {d}";
                 string subtotalStr = Convert.ToDecimal(r["Subtotal"]).ToString("N2");
-                DibujarTextoDerecha(g, subtotalStr, fN, w, 2, ref y, false);
-                y += 14;
+                DibujarFilaTicket(g, lineaIzq, subtotalStr, fN, w, ref y, esEncabezado: false);
             }
             DibujarLinea(g, ref y, w);
 
@@ -1418,7 +1466,13 @@ namespace SchettiniGestion.WPF
                     DibujarTextoCentrado(g, lineaPie.Trim(), fC, w, ref y);
             }
 
-            // QR fiscal ARCA obligatorio cuando el comprobante tiene CAE.
+            // QR: oficial con CAE; en homologación siempre hay un QR (de prueba si no hay CAE).
+            if (string.IsNullOrWhiteSpace(urlQrFiscal))
+            {
+                int.TryParse(nro, NumberStyles.Integer, CultureInfo.InvariantCulture, out int nroInt);
+                urlQrFiscal = CompletarUrlQrTicket(null, tit, let, nroInt, fec, tot, ExtraerCaeDelPie(pie), null);
+            }
+
             if (!string.IsNullOrWhiteSpace(urlQrFiscal))
             {
                 try
@@ -1430,13 +1484,15 @@ namespace SchettiniGestion.WPF
                             y += 6;
                             float side = Math.Min(w - 8f, angosto ? 110f : 140f);
                             float xQr = (w - side) / 2f;
-                            // NearestNeighbor mantiene módulos nítidos en térmica
                             var oldInterp = g.InterpolationMode;
                             g.InterpolationMode = WinDrawing.Drawing2D.InterpolationMode.NearestNeighbor;
                             g.DrawImage(qrBmp, xQr, y, side, side);
                             g.InterpolationMode = oldInterp;
                             y += side + 4f;
-                            DibujarTextoCentrado(g, "Escaneá el QR para verificar en ARCA", fC, w, ref y);
+                            string leyendaQr = ArcaQrHelper.EsUrlFiscalOficial(urlQrFiscal)
+                                ? "Escaneá el QR para verificar en ARCA"
+                                : "QR de prueba (homologación)";
+                            DibujarTextoCentrado(g, leyendaQr, fC, w, ref y);
                         }
                     }
                 }
@@ -1449,6 +1505,47 @@ namespace SchettiniGestion.WPF
                 DibujarTextoCentrado(g, "Gracias por su compra", fC, w, ref y);
             }
             DibujarTextoCentrado(g, ".", fC, w, ref y);
+        }
+
+        private static void DibujarFilaTicket(
+            WinDrawing.Graphics g, string izquierda, string derecha, WinDrawing.Font f, float w, ref float y, bool esEncabezado)
+        {
+            const float margen = 2f;
+            float alto = f.GetHeight(g) + 2f;
+            string monto = derecha ?? "";
+            float wMonto = Math.Max(
+                g.MeasureString("000.000,00", f).Width,
+                g.MeasureString(monto, f).Width);
+            float xMonto = Math.Max(margen, w - margen - wMonto);
+            float wIzq = Math.Max(8f, xMonto - 6f);
+
+            using (var fmtIzq = new WinDrawing.StringFormat(WinDrawing.StringFormatFlags.NoWrap)
+            {
+                Trimming = WinDrawing.StringTrimming.EllipsisCharacter,
+                Alignment = WinDrawing.StringAlignment.Near,
+                LineAlignment = WinDrawing.StringAlignment.Near
+            })
+            using (var fmtDer = new WinDrawing.StringFormat(WinDrawing.StringFormatFlags.NoWrap)
+            {
+                Alignment = WinDrawing.StringAlignment.Far,
+                LineAlignment = WinDrawing.StringAlignment.Near
+            })
+            {
+                var brush = esEncabezado ? WinDrawing.Brushes.DimGray : WinDrawing.Brushes.Black;
+                g.DrawString(izquierda ?? "", f, brush, new WinDrawing.RectangleF(0, y, wIzq, alto), fmtIzq);
+                g.DrawString(monto, f, brush, new WinDrawing.RectangleF(xMonto, y, wMonto, alto), fmtDer);
+            }
+            y += esEncabezado ? 12f : 16f;
+        }
+
+        private static string ExtraerCaeDelPie(string pie)
+        {
+            if (string.IsNullOrWhiteSpace(pie)) return "";
+            int i = pie.IndexOf("CAE:", StringComparison.OrdinalIgnoreCase);
+            if (i < 0) return "";
+            string resto = pie.Substring(i + 4).Trim();
+            int corte = resto.IndexOfAny(new[] { '\n', '\r', ' ' });
+            return corte > 0 ? resto.Substring(0, corte).Trim() : resto.Trim();
         }
 
         private static void DibujarTextoDerecha(WinDrawing.Graphics g, string texto, WinDrawing.Font f, float w, float margen, ref float y, bool avanzarY)

@@ -11,9 +11,9 @@ Objetivo: que el tester instale con **Siguiente → Siguiente → Listo** y teng
 | 3 | Instala **SQL Server LocalDB** si falta |
 | 4 | Escribe `conexion.cfg` en `%ProgramData%\SCHPOS` |
 | 5 | Ejecuta `SCHPOS.exe /bootstrap` (crea `SchPosDB`, tablas y usuario `admin`) |
-| 6 | (Opcional) Copia `licencia.key` si la incluiste al compilar |
+| 6 | No copia licencia: al abrir, SCHPOS pide activación |
 
-La **licencia** puede ir aparte (pegar clave en activación) o empaquetada para testing.
+La **licencia no va en el Setup**. El cliente pega la clave o carga `licencia.key` en la pantalla de activación.
 
 ## Generar el Setup.exe (un solo comando)
 
@@ -43,15 +43,9 @@ Solo descargar prerequisitos:
 .\Instalador\download-prerequisites.ps1
 ```
 
-**Salida:** `Instalador\Output\SCHPOS-Setup-2.1.9.exe`
+**Salida:** `Instalador\Output\SCHPOS-Setup-2.4.0.exe`
 
-### Incluir licencia en el Setup (opcional)
-
-```powershell
-dotnet run --project LicenseGenerator
-# Copiar la clave a: Instalador\prerequisites\licencia.key
-.\Instalador\build-release.ps1 -SkipBuild -BuildInstaller
-```
+La licencia no se incluye en el Setup. Generala con LicenseGenerator y enviala al cliente.
 
 ### Empaquetar AdminLicencias portable
 
@@ -78,8 +72,8 @@ Login admin → cambiar contraseña → usar el sistema
 ## Checklist antes de enviar a testing
 
 - [ ] `.\Instalador\build-release.ps1 -BuildInstaller` sin errores
-- [ ] Existe `Instalador\Output\SCHPOS-Setup-2.1.9.exe`
-- [ ] (Opcional) `licencia.key` en prerequisites
+- [ ] Existe `Instalador\Output\SCHPOS-Setup-2.4.0.exe`
+- [ ] El Setup no contiene `licencia.key`
 - [ ] Probar en VM o PC limpia
 - [ ] Documentar: usuario `admin`, cambiar contraseña
 - [ ] ARCA en homologación hasta certificado de producción (`docs/Guia_Activacion_ARCA_ARCA.md`)

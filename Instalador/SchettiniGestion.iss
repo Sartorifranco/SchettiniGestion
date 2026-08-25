@@ -3,7 +3,7 @@
 ; Guardar este archivo en UTF-8.
 
 #define MyAppName "SCHPOS"
-#define MyAppVersion "2.3.56"
+#define MyAppVersion "2.4.0"
 #define MyAppPublisher "SCHPOS"
 #define MyAppExeName "SCHPOS.exe"
 #define MyAppUrl "https://github.com/Sartorifranco/SchettiniGestion"
@@ -100,7 +100,7 @@ SchposMemoPuesto=Nombre de este puesto:
 Name: "desktopicon"; Description: "Crear acceso directo en el escritorio"; GroupDescription: "Accesos directos:"
 
 [Files]
-Source: "staging\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs restartreplace
+Source: "staging\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs restartreplace; Excludes: "licencia.key"
 #ifdef Ndp48Bundled
 Source: "prerequisites\ndp48-x86-x64-allos-enu.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not Net48Installed
 #endif
@@ -598,7 +598,7 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  CfgDir, CfgPath, CfgContent, ModoPath, Modo, LicSrc, LicDst, NombrePuesto: String;
+  CfgDir, CfgPath, CfgContent, ModoPath, Modo, NombrePuesto: String;
   ResultCode: Integer;
 begin
   if CurStep = ssPostInstall then
@@ -637,11 +637,6 @@ begin
       CfgContent := 'Server=(LocalDB)\MSSQLLocalDB;Database=SchPosDB;Integrated Security=True;Encrypt=False;';
       SaveStringToFile(CfgPath, CfgContent, False);
     end;
-
-    LicSrc := ExpandConstant('{app}\licencia.key');
-    LicDst := CfgDir + '\licencia.key';
-    if FileExists(LicSrc) and (not FileExists(LicDst)) then
-      CopyFile(LicSrc, LicDst, False);
 
     SHChangeNotify($08000000, $0000, 0, 0);
   end;

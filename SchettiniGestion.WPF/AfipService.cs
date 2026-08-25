@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -18,8 +19,8 @@ namespace SchettiniGestion.WPF
 {
     public static class AfipService
     {
-        private const string ARCHIVO_TOKEN = "afip_token.xml";
-        private const string ARCHIVO_TOKEN_PADRON = "afip_token_padron.xml";
+        private const string ARCHIVO_TOKEN_LEGACY = "afip_token.xml";
+        private const string ARCHIVO_TOKEN_PADRON_LEGACY = "afip_token_padron.xml";
 
         // URLs
         private const string URL_WSAA_HOMO = "https://wsaahomo.afip.gov.ar/ws/services/LoginCms";
@@ -55,17 +56,8 @@ namespace SchettiniGestion.WPF
                 string rutaCert = config["CertificadoPath"]?.ToString() ?? "";
                 string passCert = DatabaseService.DecodeAfipCertificatePasswordStored(config["PasswordAfip"]);
 
-                // 1. LOGIN
-                LoginTicket ticket;
-                try
-                {
-                    ticket = await ObtenerTicketAcceso(rutaCert, passCert, prod);
-                }
-                catch
-                {
-                    if (File.Exists(ARCHIVO_TOKEN)) File.Delete(ARCHIVO_TOKEN);
-                    ticket = await ObtenerTicketAcceso(rutaCert, passCert, prod);
-                }
+                // 1. LOGIN (reutiliza TA en disco; no borrar el archivo si ARCA ya tiene uno vigente)
+                LoginTicket ticket = await ObtenerTicketAcceso(rutaCert, passCert, prod);
 
                 // 2. ÚLTIMO COMPROBANTE
                 int nroComprobante = await ObtenerUltimoComprobante(ticket, cuitEmpresa, puntoVenta, tipoComprobante, prod) + 1;
@@ -238,13 +230,7 @@ namespace SchettiniGestion.WPF
                     return null;
                 string rutaCert = config["CertificadoPath"]?.ToString() ?? "";
                 string passCert = DatabaseService.DecodeAfipCertificatePasswordStored(config["PasswordAfip"]);
-                LoginTicket ticket;
-                try { ticket = await ObtenerTicketAcceso(rutaCert, passCert, prod); }
-                catch
-                {
-                    if (File.Exists(ARCHIVO_TOKEN)) File.Delete(ARCHIVO_TOKEN);
-                    ticket = await ObtenerTicketAcceso(rutaCert, passCert, prod);
-                }
+                LoginTicket ticket = await ObtenerTicketAcceso(rutaCert, passCert, prod);
 
                 int ultimo = await ObtenerUltimoComprobante(ticket, cuitEmpresa, puntoVenta, tipoComprobante, prod);
                 string hoy = DateTime.Now.ToString("yyyyMMdd");
@@ -409,36 +395,123 @@ namespace SchettiniGestion.WPF
         }
 
         // --- M├ëTODOS AUXILIARES ---
+        private static string CarpetaTokensWsaa()
+        {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "SCHPOS");
+        }
+
+        private static string RutaTokenWsaa(bool produccion, bool padron)
+        {
+            string nombre = padron
+                ? (produccion ? "afip_token_padron_prod.xml" : "afip_token_padron_homo.xml")
+                : (produccion ? "afip_token_prod.xml" : "afip_token_homo.xml");
+            return Path.Combine(CarpetaTokensWsaa(), nombre);
+        }
+
+        private static IEnumerable<string> RutasTokenLegacy(bool padron)
+        {
+            string nombre = padron ? ARCHIVO_TOKEN_PADRON_LEGACY : ARCHIVO_TOKEN_LEGACY;
+            yield return Path.Combine(AppDomain.CurrentDomain.BaseDirectory ?? "", nombre);
+            yield return Path.Combine(Directory.GetCurrentDirectory(), nombre);
+            yield return nombre;
+        }
+
+        private static bool TryParseFechaWsaa(string raw, out DateTime fecha)
+        {
+            fecha = default;
+            if (string.IsNullOrWhiteSpace(raw)) return false;
+            if (DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out fecha))
+                return true;
+            if (DateTime.TryParse(raw, CultureInfo.GetCultureInfo("es-AR"), DateTimeStyles.None, out fecha))
+                return true;
+            try
+            {
+                fecha = XmlConvert.ToDateTime(raw.Trim(), XmlDateTimeSerializationMode.Local);
+                return true;
+            }
+            catch { return false; }
+        }
+
+        private static LoginTicket CargarTicketDesdeArchivo(string path, bool exigirVigente)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
+            try
+            {
+                var doc = XDocument.Load(path);
+                string token = doc.Descendants("token").FirstOrDefault()?.Value;
+                string sign = doc.Descendants("sign").FirstOrDefault()?.Value;
+                if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(sign)) return null;
+                if (exigirVigente)
+                {
+                    string expRaw = doc.Descendants("expirationTime").FirstOrDefault()?.Value;
+                    // 2 minutos de holgura por desfasaje de reloj; si no se puede parsear, igual se usa (WSAA no re-emite).
+                    if (TryParseFechaWsaa(expRaw, out DateTime exp) && exp <= DateTime.Now.AddMinutes(1))
+                        return null;
+                }
+                return new LoginTicket
+                {
+                    Token = token,
+                    Sign = sign,
+                    XmlRespuestaOriginal = doc.Root != null ? doc.ToString() : File.ReadAllText(path)
+                };
+            }
+            catch { return null; }
+        }
+
+        private static LoginTicket CargarTicketGuardado(bool produccion, bool padron, bool exigirVigente)
+        {
+            var ticket = CargarTicketDesdeArchivo(RutaTokenWsaa(produccion, padron), exigirVigente);
+            if (ticket != null) return ticket;
+            foreach (string legacy in RutasTokenLegacy(padron))
+            {
+                ticket = CargarTicketDesdeArchivo(legacy, exigirVigente);
+                if (ticket != null) return ticket;
+            }
+            return null;
+        }
+
+        private static void GuardarTicket(bool produccion, bool padron, LoginTicket ticket)
+        {
+            if (ticket == null || string.IsNullOrWhiteSpace(ticket.XmlRespuestaOriginal)) return;
+            try
+            {
+                string dir = CarpetaTokensWsaa();
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(RutaTokenWsaa(produccion, padron), ticket.XmlRespuestaOriginal, Encoding.UTF8);
+            }
+            catch { /* Program Files / permisos: no abortar la facturación si el TA ya está en memoria */ }
+        }
+
         private static async Task<LoginTicket> ObtenerTicketAcceso(string rutaCert, string pass, bool produccion)
         {
-            if (File.Exists(ARCHIVO_TOKEN))
+            var vigente = CargarTicketGuardado(produccion, false, exigirVigente: true);
+            if (vigente != null)
             {
-                try
-                {
-                    var doc = XDocument.Load(ARCHIVO_TOKEN);
-                    var expTime = DateTime.Parse(doc.Descendants("expirationTime").First().Value);
-                    if (expTime > DateTime.Now)
-                        return new LoginTicket
-                        {
-                            Token = doc.Descendants("token").First().Value,
-                            Sign = doc.Descendants("sign").First().Value
-                        };
-                }
-                catch { }
+                GuardarTicket(produccion, false, vigente);
+                return vigente;
             }
 
             try
             {
                 var nuevoTicket = await AutenticarWSAA_Remoto(rutaCert, pass, produccion);
-                try { File.WriteAllText(ARCHIVO_TOKEN, nuevoTicket.XmlRespuestaOriginal); } catch { }
+                GuardarTicket(produccion, false, nuevoTicket);
                 return nuevoTicket;
             }
             catch (Exception ex) when (EsErrorTaYaVigente(ex))
             {
-                // Caché local perdida pero ARCA aún tiene TA vigente: no se puede re-pedir hasta que expire.
+                // Caché local perdida o vencida según el reloj, pero ARCA aún tiene TA vigente:
+                // hay que reutilizar la copia, no pedir otra ni borrar el archivo.
+                var guardado = CargarTicketGuardado(produccion, false, exigirVigente: false);
+                if (guardado != null)
+                {
+                    GuardarTicket(produccion, false, guardado);
+                    return guardado;
+                }
                 throw new Exception(
-                    "ARCA todavía tiene un ticket de acceso vigente y no se pudo reutilizar el guardado en esta PC. " +
-                    "Esperá unos minutos (hasta ~10-15) y volvé a intentar. No regeneres el certificado.",
+                    "ARCA todavía tiene un ticket de acceso vigente (suele durar hasta ~12 horas) y no quedó una copia usable en esta PC. " +
+                    "Esperá a que venza y volvé a intentar. No regeneres el certificado.",
                     ex);
             }
         }
@@ -607,20 +680,29 @@ namespace SchettiniGestion.WPF
 
         private static async Task<LoginTicket> ObtenerTicketAccesoPadron(string rutaCert, string pass, bool produccion)
         {
-            if (File.Exists(ARCHIVO_TOKEN_PADRON))
+            var vigente = CargarTicketGuardado(produccion, true, exigirVigente: true);
+            if (vigente != null)
             {
-                try
-                {
-                    var doc = XDocument.Load(ARCHIVO_TOKEN_PADRON);
-                    var expTime = DateTime.Parse(doc.Descendants("expirationTime").First().Value);
-                    if (expTime > DateTime.Now)
-                        return new LoginTicket { Token = doc.Descendants("token").First().Value, Sign = doc.Descendants("sign").First().Value };
-                }
-                catch { }
+                GuardarTicket(produccion, true, vigente);
+                return vigente;
             }
-            var nuevoTicket = await AutenticarWSAA_Remoto(rutaCert, pass, produccion, "ws_sr_padron_a4");
-            try { File.WriteAllText(ARCHIVO_TOKEN_PADRON, nuevoTicket.XmlRespuestaOriginal); } catch { }
-            return nuevoTicket;
+
+            try
+            {
+                var nuevoTicket = await AutenticarWSAA_Remoto(rutaCert, pass, produccion, "ws_sr_padron_a4");
+                GuardarTicket(produccion, true, nuevoTicket);
+                return nuevoTicket;
+            }
+            catch (Exception ex) when (EsErrorTaYaVigente(ex))
+            {
+                var guardado = CargarTicketGuardado(produccion, true, exigirVigente: false);
+                if (guardado != null)
+                {
+                    GuardarTicket(produccion, true, guardado);
+                    return guardado;
+                }
+                throw;
+            }
         }
 
         private static string FormatearErrorWsaaParaUsuario(Exception ex, bool produccion)

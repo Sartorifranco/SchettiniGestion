@@ -65,6 +65,24 @@ namespace SchettiniGestion.WPF
             return UrlBaseQr + "?p=" + b64;
         }
 
+        /// <summary>
+        /// QR de homologación cuando no hay CAE: se imprime y se puede escanear,
+        /// pero no verifica en ARCA (no reemplaza un comprobante fiscal).
+        /// </summary>
+        public static string ConstruirPayloadPrueba(DateTime fecha, int numeroComprobante, decimal importeTotal)
+        {
+            return "SCHPOS-PRUEBA|"
+                + fecha.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
+                + "|" + numeroComprobante.ToString(CultureInfo.InvariantCulture)
+                + "|" + importeTotal.ToString("0.00", CultureInfo.InvariantCulture);
+        }
+
+        public static bool EsUrlFiscalOficial(string urlQr)
+        {
+            return !string.IsNullOrWhiteSpace(urlQr)
+                && urlQr.StartsWith(UrlBaseQr, StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>Construye la URL a partir de una factura guardada y la configuración del negocio.</summary>
         public static string ConstruirUrlDesdeFactura(DataRow cab, string letra = null)
         {

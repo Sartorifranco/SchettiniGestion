@@ -112,11 +112,8 @@ Copy-Item -Path (Join-Path $outDir "*") -Destination $staging -Recurse -Force
 
 Get-ChildItem $staging -Filter "*.pdb" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
 
-$prereqLic = Join-Path $PSScriptRoot "prerequisites\licencia.key"
-if (Test-Path $prereqLic) {
-    Copy-Item $prereqLic (Join-Path $staging "licencia.key") -Force
-    Write-Host "licencia.key incluida en staging (testing)." -ForegroundColor Yellow
-}
+# El instalador de venta nunca lleva licencia: el cliente activa al primer arranque.
+Get-ChildItem $staging -Filter "licencia.key" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
 
 Write-Host ""
 Write-Host "Carpeta lista para Inno Setup:" -ForegroundColor Green
@@ -127,7 +124,7 @@ Write-Host ('  1. Ejecute con -BuildInstaller para descargar prerequisitos y gen
 Write-Host ('  2. O abra ' + (Join-Path $PSScriptRoot 'SchettiniGestion.iss') + ' en Inno Setup (F9)')
 Write-Host ('  3. El Setup.exe quedara en ' + (Join-Path $PSScriptRoot 'Output'))
 Write-Host ""
-Write-Host "Licencias: ejecute LicenseGenerator. Opcional: copie licencia.key a Instalador\prerequisites antes del build."
+Write-Host "Licencias: no van en el Setup. El cliente activa al abrir SCHPOS (pegar clave o cargar licencia.key)."
 Write-Host "Usuario inicial tras instalar: admin (cambiar contrasena en primer uso)."
 
 if ($BuildInstaller) {

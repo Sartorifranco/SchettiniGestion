@@ -9,36 +9,120 @@ using AdminLicencias.Core.Models;
 using AdminLicencias.Core.Options;
 using AdminLicencias.Core.Services;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
+using System.Net;
 using System.Reflection;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
+    options.KnownProxies.Add(IPAddress.Loopback);
+    options.KnownProxies.Add(IPAddress.IPv6Loopback);
+    // nginx en el mismo host
+    options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse("127.0.0.0"), 8));
 });
 
 builder.Services.Configure<LicensingOptions>(builder.Configuration.GetSection(LicensingOptions.SectionName));
 builder.Services.Configure<ApiSecurityOptions>(builder.Configuration.GetSection(ApiSecurityOptions.SectionName));
+builder.Services.AddDataProtection();
+builder.Services.AddSingleton<AdminSessionService>();
 builder.Services.AddAdminLicenciasCore();
 builder.Services.AddSingleton<AuditLogService>();
 
-builder.Services.AddCors(options =>
+builder.Services.AddRateLimiter(options =>
 {
-    options.AddPolicy("LicensePanel", policy =>
-        policy.SetIsOriginAllowed(_ => true)
-              .AllowAnyHeader()
-              .AllowAnyMethod());
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("licenses", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("validate", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
 });
 
 var app = builder.Build();
 
-app.UseForwardedHeaders();
-app.UseCors("LicensePanel");
+// Validación de configuración en Production
+{
+    var licOpts = app.Services.GetRequiredService<IOptions<LicensingOptions>>().Value;
+    var secOpts = app.Services.GetRequiredService<IOptions<ApiSecurityOptions>>().Value;
+    var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
 
-// Siempre devolver JSON con el mensaje real (evita "HTTP 500" vacío en el panel).
+    if (app.Environment.IsProduction())
+    {
+        if (string.IsNullOrWhiteSpace(licOpts.SecretKey))
+            throw new InvalidOperationException(
+                "Production: Licensing__SecretKey es obligatoria (misma clave que SCHPOS LicenseManager).");
+
+        if (string.IsNullOrWhiteSpace(secOpts.AdminApiKey) ||
+            secOpts.AdminApiKey.Contains("CAMBIAR", StringComparison.OrdinalIgnoreCase) ||
+            secOpts.AdminApiKey.Contains("REEMPLAZAR", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Production: ApiSecurity__AdminApiKey debe ser una clave fuerte.");
+
+        // Fail-closed: en Production siempre exigir PosApiKey
+        if (string.IsNullOrWhiteSpace(secOpts.PosApiKey))
+        {
+            logger.LogWarning(
+                "Production sin PosApiKey: se fuerza RequirePosApiKey. Configure ApiSecurity__PosApiKey para habilitar /validate.");
+            secOpts.RequirePosApiKey = true;
+        }
+        else
+        {
+            secOpts.RequirePosApiKey = true;
+        }
+    }
+    else if (string.IsNullOrWhiteSpace(licOpts.SecretKey))
+    {
+        logger.LogWarning("Licensing:SecretKey vacía — configure appsettings.Development.json o variables de entorno.");
+    }
+}
+
+app.UseForwardedHeaders();
+
+var allowedOrigins = app.Services.GetRequiredService<IOptions<ApiSecurityOptions>>().Value.AllowedOrigins
+    ?? Array.Empty<string>();
+app.UseCors(policy =>
+{
+    if (allowedOrigins.Length == 0)
+    {
+        policy.SetIsOriginAllowed(_ => false);
+    }
+    else
+    {
+        policy.WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    }
+});
+
 app.Use(async (context, next) =>
 {
     try
@@ -57,14 +141,17 @@ app.Use(async (context, next) =>
         context.Response.Clear();
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
         context.Response.ContentType = "application/json; charset=utf-8";
+
+        bool reveal = app.Environment.IsDevelopment();
         await context.Response.WriteAsJsonAsync(new
         {
-            error = ex.Message,
-            type = ex.GetType().Name
+            error = reveal ? ex.Message : "Error interno del servidor.",
+            type = reveal ? ex.GetType().Name : "ServerError"
         });
     }
 });
 
+app.UseRateLimiter();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseMiddleware<AuditMiddleware>();
 app.UseDefaultFiles();
@@ -81,10 +168,11 @@ string buildId = Assembly.GetExecutingAssembly()
 app.MapGet("/api", () => Results.Ok(new
 {
     servicio = "SCHPOS License API",
-    version = "1.2",
+    version = "1.3",
     build = buildId,
     endpoints = new[]
     {
+        "POST /api/auth/login", "POST /api/auth/logout", "GET /api/auth/me",
         "POST /api/licenses/generate", "POST /api/licenses/validate", "GET /api/licenses/history",
         "GET|POST /api/licenses/clients", "PUT|DELETE /api/licenses/clients/{id}",
         "GET /api/licenses/dashboard", "GET /api/licenses/modules", "POST /api/licenses/revoke",
@@ -92,15 +180,27 @@ app.MapGet("/api", () => Results.Ok(new
     }
 }));
 
-app.MapGet("/api/version", (DataStore dataStore) =>
+app.MapGet("/api/version", (IHostEnvironment env) =>
 {
+    if (env.IsProduction())
+    {
+        return Results.Ok(new
+        {
+            version = "1.3",
+            build = buildId,
+            environment = env.EnvironmentName,
+            utc = DateTime.UtcNow
+        });
+    }
+
+    var dataStore = app.Services.GetRequiredService<DataStore>();
     string dataPath = dataStore.RutaActual;
     string? dataDir = Path.GetDirectoryName(dataPath);
     return Results.Ok(new
     {
-        version = "1.2",
+        version = "1.3",
         build = buildId,
-        environment = app.Environment.EnvironmentName,
+        environment = env.EnvironmentName,
         dataFile = dataPath,
         dataFileExists = File.Exists(dataPath),
         dataDirWritable = dataDir != null && IsDirWritable(dataDir),
@@ -125,12 +225,61 @@ static bool IsDirWritable(string dir)
     }
 }
 
-var licenses = app.MapGroup("/api/licenses");
+var auth = app.MapGroup("/api/auth").RequireRateLimiting("auth");
+
+auth.MapPost("/login", (
+    LoginRequest req,
+    AdminSessionService sessions,
+    IOptions<ApiSecurityOptions> security,
+    HttpContext http) =>
+{
+    var opts = security.Value;
+    if (string.IsNullOrWhiteSpace(req.AdminApiKey) || string.IsNullOrWhiteSpace(req.UserIdentifier))
+        return Results.BadRequest(new { error = "AdminApiKey y UserIdentifier son obligatorios." });
+
+    if (!SecureCompare.EqualsConstantTime(req.AdminApiKey, opts.AdminApiKey))
+        return Results.Unauthorized();
+
+    string user = req.UserIdentifier.Trim();
+    if (user.Length < 2 || user.Length > 80)
+        return Results.BadRequest(new { error = "UserIdentifier inválido." });
+
+    string cookieValue = sessions.CreateCookieValue(user);
+    http.Response.Cookies.Append(ApiKeyConstants.SessionCookieName, cookieValue, sessions.BuildCookieOptions(http.Request));
+
+    return Results.Ok(new { ok = true, userIdentifier = user });
+});
+
+auth.MapPost("/logout", (AdminSessionService sessions, HttpContext http) =>
+{
+    http.Response.Cookies.Delete(ApiKeyConstants.SessionCookieName, new CookieOptions
+    {
+        Path = "/",
+        Secure = http.Request.IsHttps
+            || string.Equals(http.Request.Headers["X-Forwarded-Proto"].ToString(), "https", StringComparison.OrdinalIgnoreCase),
+        SameSite = SameSiteMode.Strict,
+        HttpOnly = true
+    });
+    return Results.Ok(new { ok = true });
+});
+
+auth.MapGet("/me", (HttpContext http) =>
+{
+    if (http.Items.TryGetValue(ApiKeyConstants.UserIdentifierHeaderName, out var item)
+        && item is string user
+        && !string.IsNullOrWhiteSpace(user))
+        return Results.Ok(new { authenticated = true, userIdentifier = user });
+
+    return Results.Json(new { authenticated = false }, statusCode: StatusCodes.Status401Unauthorized);
+});
+
+var licenses = app.MapGroup("/api/licenses").RequireRateLimiting("licenses");
 
 licenses.MapPost("/generate", (
     GenerateLicenseRequest req,
     LicenseService licenseService,
-    DataStore dataStore) =>
+    DataStore dataStore,
+    IHostEnvironment env) =>
 {
     try
     {
@@ -171,7 +320,8 @@ licenses.MapPost("/generate", (
         }
         catch (Exception ex)
         {
-            return Results.Json(new { error = "Error al generar la clave: " + ex.Message }, statusCode: 500);
+            string msg = env.IsDevelopment() ? "Error al generar la clave: " + ex.Message : "Error al generar la clave.";
+            return Results.Json(new { error = msg }, statusCode: 500);
         }
 
         var licencia = new Licencia
@@ -179,12 +329,13 @@ licenses.MapPost("/generate", (
             ClienteId = cliente.Id,
             HWID = hwid,
             LicenseKey = clave,
+            HuellaClave = LicenseService.HuellaClave(clave),
             FechaEmision = DateTime.Today,
             FechaVencimiento = req.FechaVencimiento.Date,
             Modulos = modulos,
             MontoLicencia = req.MontoLicencia,
             AbonoMensual = req.AbonoMensual,
-            VersionSchpos = req.VersionSchpos ?? "2.0.8",
+            VersionSchpos = string.IsNullOrWhiteSpace(req.VersionSchpos) ? "2.4.0" : req.VersionSchpos.Trim(),
             EsRenovacion = req.EsRenovacion,
             Observaciones = req.Observaciones ?? "",
             Plan = plan
@@ -212,13 +363,15 @@ licenses.MapPost("/generate", (
     }
     catch (Exception ex)
     {
-        return Results.Json(new { error = "Error al guardar la licencia: " + ex.Message }, statusCode: 500);
+        string msg = env.IsDevelopment() ? "Error al guardar la licencia: " + ex.Message : "Error al guardar la licencia.";
+        return Results.Json(new { error = msg }, statusCode: 500);
     }
 });
 
 licenses.MapPost("/validate", (
     ValidateLicenseRequest req,
-    LicenseService licenseService) =>
+    LicenseService licenseService,
+    DataStore dataStore) =>
 {
     if (string.IsNullOrWhiteSpace(req.LicenseKey))
         return Results.BadRequest(new { error = "LicenseKey es obligatorio." });
@@ -226,7 +379,8 @@ licenses.MapPost("/validate", (
     if (string.IsNullOrWhiteSpace(req.HardwareId))
         return Results.BadRequest(new { error = "HardwareId es obligatorio." });
 
-    var result = licenseService.Validar(req.LicenseKey, req.HardwareId);
+    bool revocada = dataStore.EstaClaveRevocada(req.LicenseKey);
+    var result = licenseService.Validar(req.LicenseKey, req.HardwareId, revocada);
 
     return Results.Ok(new ValidateLicenseResponse
     {
@@ -238,7 +392,7 @@ licenses.MapPost("/validate", (
         CuitCliente = result.Payload?.CuitCliente,
         ModulosPermitidos = result.Payload?.ModulosPermitidos ?? new List<string>()
     });
-});
+}).RequireRateLimiting("validate");
 
 licenses.MapGet("/history", (DataStore dataStore) =>
 {
@@ -313,7 +467,11 @@ licenses.MapPost("/revoke", (RevokeLicenseRequest req, DataStore dataStore) =>
     if (!dataStore.RevocarLicencia(req.LicenciaId))
         return Results.NotFound(new { error = "Licencia no encontrada." });
 
-    return Results.Ok(new { mensaje = "Licencia revocada.", licenciaId = req.LicenciaId });
+    return Results.Ok(new
+    {
+        mensaje = "Licencia revocada. /validate rechazará la clave; SCHPOS offline sigue hasta renovar o consultar online.",
+        licenciaId = req.LicenciaId
+    });
 });
 
 licenses.MapGet("/dashboard", (DataStore dataStore) =>
@@ -332,7 +490,8 @@ licenses.MapGet("/modules", () =>
             m.IncluidoEnLite,
             m.EsAbonoMensual,
             m.Descripcion,
-            m.Orden
+            m.Orden,
+            m.DependeDe
         }));
 });
 
@@ -340,3 +499,9 @@ licenses.MapGet("/audit", (AuditLogService auditLog) =>
     Results.Ok(auditLog.ObtenerUltimos(100)));
 
 app.Run();
+
+public sealed class LoginRequest
+{
+    public string AdminApiKey { get; set; } = "";
+    public string UserIdentifier { get; set; } = "";
+}

@@ -93,6 +93,11 @@ public sealed class AuditMiddleware
 
     internal static string ObtenerUsuario(HttpContext context)
     {
+        if (context.Items.TryGetValue(ApiKeyConstants.UserIdentifierHeaderName, out var item)
+            && item is string fromSession
+            && !string.IsNullOrWhiteSpace(fromSession))
+            return fromSession.Trim();
+
         if (context.Request.Headers.TryGetValue(ApiKeyConstants.UserIdentifierHeaderName, out var value))
         {
             string id = value.ToString().Trim();

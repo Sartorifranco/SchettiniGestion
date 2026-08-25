@@ -13,6 +13,9 @@ public sealed class LicensingOptions
     /// <summary>Ruta opcional del archivo de configuración de ruta (compat WPF).</summary>
     public string ConfigFilePath { get; set; } = "";
 
-    /// <summary>Clave AES — debe coincidir con SCHPOS / GeneradorLicencias.</summary>
-    public string SecretKey { get; set; } = "Soctech_Sistemas_Seguridad_2025!";
+    /// <summary>
+    /// Clave AES compartida con SCHPOS / LicenseManager.
+    /// Obligatorio vía configuración o variable de entorno (nunca hardcodear en Production).
+    /// </summary>
+    public string SecretKey { get; set; } = "";
 }

@@ -10,6 +10,7 @@ public sealed class DataStore
     private readonly string _dataPath;
     private readonly string _configPath;
     private StoreData _data = new();
+    private readonly object _gate = new();
 
     public DataStore(LicensingOptions options)
     {
@@ -19,71 +20,148 @@ public sealed class DataStore
 
     public string RutaActual => _dataPath;
 
-    public IReadOnlyList<Cliente> Clientes => _data.Clientes;
-    public IReadOnlyList<Licencia> Licencias => _data.Licencias;
+    public IReadOnlyList<Cliente> Clientes
+    {
+        get { lock (_gate) return _data.Clientes.ToList(); }
+    }
+
+    public IReadOnlyList<Licencia> Licencias
+    {
+        get { lock (_gate) return _data.Licencias.ToList(); }
+    }
 
     public void Cargar()
     {
-        try
+        lock (_gate)
         {
-            if (!File.Exists(_dataPath))
+            try
+            {
+                if (!File.Exists(_dataPath))
+                {
+                    _data = new StoreData();
+                    return;
+                }
+
+                string json = File.ReadAllText(_dataPath, Encoding.UTF8);
+                _data = JsonConvert.DeserializeObject<StoreData>(json) ?? new StoreData();
+                _data.ClavesRevocadas ??= new List<string>();
+            }
+            catch
             {
                 _data = new StoreData();
-                return;
             }
-
-            string json = File.ReadAllText(_dataPath, Encoding.UTF8);
-            _data = JsonConvert.DeserializeObject<StoreData>(json) ?? new StoreData();
-        }
-        catch
-        {
-            _data = new StoreData();
         }
     }
 
     public void Guardar()
     {
-        string? dir = Path.GetDirectoryName(_dataPath);
-        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-            Directory.CreateDirectory(dir);
-
-        string json = JsonConvert.SerializeObject(_data, Formatting.Indented);
-        File.WriteAllText(_dataPath, json, Encoding.UTF8);
+        lock (_gate)
+        {
+            PersistUnlocked();
+        }
     }
 
     public void GuardarCliente(Cliente cliente)
     {
-        int idx = _data.Clientes.FindIndex(x => x.Id == cliente.Id);
-        if (idx >= 0) _data.Clientes[idx] = cliente;
-        else _data.Clientes.Add(cliente);
-        Guardar();
+        lock (_gate)
+        {
+            int idx = _data.Clientes.FindIndex(x => x.Id == cliente.Id);
+            if (idx >= 0) _data.Clientes[idx] = cliente;
+            else _data.Clientes.Add(cliente);
+            PersistUnlocked();
+        }
     }
 
-    public Cliente? ObtenerCliente(Guid id) =>
-        _data.Clientes.FirstOrDefault(c => c.Id == id);
+    public Cliente? ObtenerCliente(Guid id)
+    {
+        lock (_gate) return _data.Clientes.FirstOrDefault(c => c.Id == id);
+    }
 
     public Cliente? BuscarClientePorCuit(string cuit)
     {
         if (string.IsNullOrWhiteSpace(cuit)) return null;
-        return _data.Clientes.FirstOrDefault(c =>
-            string.Equals(c.CUIT?.Trim(), cuit.Trim(), StringComparison.OrdinalIgnoreCase));
+        lock (_gate)
+        {
+            return _data.Clientes.FirstOrDefault(c =>
+                string.Equals(c.CUIT?.Trim(), cuit.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
     }
 
     public void EliminarCliente(Guid id)
     {
-        _data.Clientes.RemoveAll(x => x.Id == id);
-        _data.Licencias.RemoveAll(x => x.ClienteId == id);
-        Guardar();
+        lock (_gate)
+        {
+            _data.Clientes.RemoveAll(x => x.Id == id);
+            _data.Licencias.RemoveAll(x => x.ClienteId == id);
+            PersistUnlocked();
+        }
     }
 
     public bool RevocarLicencia(Guid licenciaId)
     {
-        var lic = _data.Licencias.FirstOrDefault(x => x.Id == licenciaId);
-        if (lic == null) return false;
+        lock (_gate)
+        {
+            var lic = _data.Licencias.FirstOrDefault(x => x.Id == licenciaId);
+            if (lic == null) return false;
 
-        lic.FechaVencimiento = DateTime.Today.AddDays(-1);
-        Guardar();
-        return true;
+            lic.Revocada = true;
+            lic.FechaRevocacion = DateTime.Now;
+            lic.FechaVencimiento = DateTime.Today.AddDays(-1);
+
+            if (string.IsNullOrWhiteSpace(lic.HuellaClave) && !string.IsNullOrWhiteSpace(lic.LicenseKey))
+                lic.HuellaClave = LicenseService.HuellaClave(lic.LicenseKey);
+
+            if (!string.IsNullOrWhiteSpace(lic.HuellaClave))
+            {
+                _data.ClavesRevocadas ??= new List<string>();
+                if (!_data.ClavesRevocadas.Contains(lic.HuellaClave, StringComparer.OrdinalIgnoreCase))
+                    _data.ClavesRevocadas.Add(lic.HuellaClave);
+            }
+
+            string? dir = Path.GetDirectoryName(_dataPath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            PersistUnlocked();
+            return true;
+        }
+    }
+
+    public bool EstaClaveRevocada(string? licenseKeyOrHuella)
+    {
+        if (string.IsNullOrWhiteSpace(licenseKeyOrHuella)) return false;
+        string raw = licenseKeyOrHuella.Trim();
+        string huella = EsHuellaHex(raw) ? raw.ToUpperInvariant() : LicenseService.HuellaClave(raw);
+
+        lock (_gate)
+        {
+            if (_data.ClavesRevocadas != null &&
+                _data.ClavesRevocadas.Any(h => string.Equals(h, huella, StringComparison.OrdinalIgnoreCase)))
+                return true;
+
+            return _data.Licencias.Any(l =>
+                l.Revocada &&
+                (string.Equals(l.HuellaClave, huella, StringComparison.OrdinalIgnoreCase) ||
+                 (!string.IsNullOrWhiteSpace(l.LicenseKey) &&
+                  string.Equals(LicenseService.HuellaClave(l.LicenseKey), huella, StringComparison.OrdinalIgnoreCase))));
+        }
+    }
+
+    private static bool EsHuellaHex(string value) =>
+        value.Length == 64 && value.All(c =>
+            (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+
+    private void PersistUnlocked()
+    {
+        string? dir = Path.GetDirectoryName(_dataPath);
+        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
+
+        string tmp = _dataPath + ".tmp";
+        string json = JsonConvert.SerializeObject(_data, Formatting.Indented);
+        File.WriteAllText(tmp, json, Encoding.UTF8);
+        File.Copy(tmp, _dataPath, overwrite: true);
+        try { File.Delete(tmp); } catch { /* ignore */ }
     }
 
     public ClienteDetalleDto? ObtenerClienteDetalle(Guid id)
@@ -119,17 +197,28 @@ public sealed class DataStore
 
     public void GuardarLicencia(Licencia licencia)
     {
-        int idx = _data.Licencias.FindIndex(x => x.Id == licencia.Id);
-        if (idx >= 0) _data.Licencias[idx] = licencia;
-        else _data.Licencias.Add(licencia);
-        Guardar();
+        lock (_gate)
+        {
+            if (string.IsNullOrWhiteSpace(licencia.HuellaClave) && !string.IsNullOrWhiteSpace(licencia.LicenseKey))
+                licencia.HuellaClave = LicenseService.HuellaClave(licencia.LicenseKey);
+
+            int idx = _data.Licencias.FindIndex(x => x.Id == licencia.Id);
+            if (idx >= 0) _data.Licencias[idx] = licencia;
+            else _data.Licencias.Add(licencia);
+            PersistUnlocked();
+        }
     }
 
-    public Licencia? UltimaLicencia(Guid clienteId) =>
-        _data.Licencias
-            .Where(l => l.ClienteId == clienteId)
-            .OrderByDescending(l => l.FechaEmision)
-            .FirstOrDefault();
+    public Licencia? UltimaLicencia(Guid clienteId)
+    {
+        lock (_gate)
+        {
+            return _data.Licencias
+                .Where(l => l.ClienteId == clienteId)
+                .OrderByDescending(l => l.FechaEmision)
+                .FirstOrDefault();
+        }
+    }
 
     public IEnumerable<HistorialLicenciaDto> ObtenerHistorial()
     {
@@ -272,6 +361,8 @@ public sealed class DataStore
     {
         public List<Cliente> Clientes { get; set; } = new();
         public List<Licencia> Licencias { get; set; } = new();
+        /// <summary>SHA-256 hex de claves revocadas (válido aunque se borre el registro).</summary>
+        public List<string> ClavesRevocadas { get; set; } = new();
     }
 }
 

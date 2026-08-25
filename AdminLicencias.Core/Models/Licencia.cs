@@ -33,17 +33,26 @@ public class Licencia
     /// <summary>Abono mensual según módulos contratados.</summary>
     public decimal AbonoMensual { get; set; }
 
-    public string VersionSchpos { get; set; } = "2.1.9";
+    public string VersionSchpos { get; set; } = "2.4.0";
     public string Observaciones { get; set; } = "";
     public bool EsRenovacion { get; set; }
     public Guid? LicenciaAnteriorId { get; set; }
     public string Plan { get; set; } = "lite";
+
+    /// <summary>Marca administrativa de revoke (además de blacklist por huella).</summary>
+    public bool Revocada { get; set; }
+
+    public DateTime? FechaRevocacion { get; set; }
+
+    /// <summary>SHA-256 hex de la LicenseKey al emitir/revocar.</summary>
+    public string HuellaClave { get; set; } = "";
 
     [JsonIgnore]
     public EstadoLicencia Estado
     {
         get
         {
+            if (Revocada) return EstadoLicencia.Revocada;
             if (FechaVencimiento < DateTime.Today) return EstadoLicencia.Vencida;
             if ((FechaVencimiento - DateTime.Today).TotalDays <= 30) return EstadoLicencia.PorVencer;
             return EstadoLicencia.Activa;

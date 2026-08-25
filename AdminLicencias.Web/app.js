@@ -1,4 +1,4 @@
-const STORAGE_KEY = "schpos-license-panel-v1";
+const STORAGE_KEY = "schpos-license-panel-v2";
 const DEFAULT_API_BASE = "https://licencias.schpos.com.ar";
 
 const GRUPO_TITULOS = {
@@ -16,6 +16,7 @@ let clientesCache = [];
 let modulosCatalog = [];
 let syncingDates = false;
 let selectedClienteId = null;
+let sessionUser = null;
 
 function loadConfig() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
@@ -23,7 +24,11 @@ function loadConfig() {
 }
 
 function saveConfig(partial) {
-  const cfg = { ...loadConfig(), ...partial };
+  const prev = loadConfig();
+  // Migración: nunca persistir API keys
+  const { adminApiKey, ...safePrev } = prev;
+  const cfg = { ...safePrev, ...partial };
+  delete cfg.adminApiKey;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
   return cfg;
 }
@@ -32,8 +37,8 @@ function getApiBase() {
   return (loadConfig().apiBaseUrl || DEFAULT_API_BASE).replace(/\/+$/, "");
 }
 
-function getAdminApiKey() {
-  return loadConfig().adminApiKey || "";
+function getUserIdentifier() {
+  return sessionUser || loadConfig().userIdentifier || "";
 }
 
 function showToast(message) {
@@ -69,7 +74,7 @@ function badgeEstado(estado) {
   let cls = "bg-secondary";
   if (key === "activa") cls = "badge-estado-activa";
   else if (key === "porvencer" || key === "por_vencer") cls = "badge-estado-porvencer";
-  else if (key === "vencida") cls = "badge-estado-vencida";
+  else if (key === "vencida" || key === "revocada") cls = "badge-estado-vencida";
   return `<span class="badge ${cls}">${escapeHtml(estado || "—")}</span>`;
 }
 
@@ -112,10 +117,6 @@ function isValidCuit(value) {
   return cuit.length === 11;
 }
 
-function getUserIdentifier() {
-  return loadConfig().userIdentifier || "";
-}
-
 function formatDateTime(value) {
   if (!value) return "—";
   const d = new Date(value);
@@ -129,23 +130,35 @@ function formatDateTime(value) {
   });
 }
 
+function showApp(user) {
+  sessionUser = user;
+  $("loginGate").classList.add("app-hidden");
+  $("appShell").classList.remove("app-hidden");
+  if ($("chipUsuario")) $("chipUsuario").textContent = user;
+  if ($("loginUser")) $("loginUser").value = user;
+  if ($("userIdentifier")) $("userIdentifier").value = user;
+}
+
+function showLogin(message) {
+  sessionUser = null;
+  $("appShell").classList.add("app-hidden");
+  $("loginGate").classList.remove("app-hidden");
+  const err = $("loginError");
+  if (message) {
+    err.textContent = message;
+    err.classList.add("show");
+  } else {
+    err.textContent = "";
+    err.classList.remove("show");
+  }
+}
+
 async function apiFetch(path, options = {}) {
-  const apiKey = getAdminApiKey();
-  if (!apiKey) {
-    throw new Error("Configurá tu API Key de administración en el engranaje superior.");
-  }
-
-  const userIdentifier = getUserIdentifier();
-  if (!userIdentifier) {
-    throw new Error("Configurá tu nombre/dispositivo en el engranaje superior (requerido para auditoría).");
-  }
-
   const response = await fetch(`${getApiBase()}${path}`, {
     ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      "X-Api-Key": apiKey,
-      "X-User-Identifier": userIdentifier,
       ...(options.headers || {})
     }
   });
@@ -155,6 +168,11 @@ async function apiFetch(path, options = {}) {
   if (text) {
     try { payload = JSON.parse(text); }
     catch { payload = { raw: text }; }
+  }
+
+  if (response.status === 401 && !path.startsWith("/api/auth/")) {
+    showLogin("Sesión expirada. Volvé a ingresar.");
+    throw new Error("Sesión expirada.");
   }
 
   if (!response.ok) {
@@ -169,6 +187,74 @@ async function apiFetch(path, options = {}) {
 
   if (response.status === 204) return null;
   return payload;
+}
+
+async function tryRestoreSession() {
+  try {
+    const me = await apiFetch("/api/auth/me");
+    if (me?.authenticated && me.userIdentifier) {
+      showApp(me.userIdentifier);
+      return true;
+    }
+  } catch {
+    /* sin sesión */
+  }
+  return false;
+}
+
+async function onLoginSubmit(e) {
+  e.preventDefault();
+  const user = ($("loginUser").value || "").trim();
+  const key = ($("loginApiKey").value || "").trim();
+  const err = $("loginError");
+  err.classList.remove("show");
+
+  if (!user || !key) {
+    err.textContent = "Completá identificador y API key.";
+    err.classList.add("show");
+    return;
+  }
+
+  try {
+    $("btnLogin").disabled = true;
+    await fetch(`${getApiBase()}/api/auth/login`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ adminApiKey: key, userIdentifier: user })
+    }).then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "No se pudo iniciar sesión.");
+      return data;
+    });
+
+    saveConfig({ userIdentifier: user });
+    $("loginApiKey").value = "";
+    showApp(user);
+    await afterLoginLoad();
+  } catch (ex) {
+    err.textContent = ex.message || "Login fallido.";
+    err.classList.add("show");
+  } finally {
+    $("btnLogin").disabled = false;
+  }
+}
+
+async function onLogout() {
+  try {
+    await fetch(`${getApiBase()}/api/auth/logout`, {
+      method: "POST",
+      credentials: "include"
+    });
+  } catch { /* ignore */ }
+  showLogin();
+}
+
+async function afterLoginLoad() {
+  await Promise.all([
+    loadModulosCatalog().catch(() => {}),
+    loadDashboard().catch(() => {})
+  ]);
 }
 
 function initDateFields() {
@@ -287,7 +373,9 @@ function applyPresetLite() {
 }
 
 function applyPresetPro() {
-  const pro = modulosCatalog.map((m) => m.codigo);
+  const pro = modulosCatalog
+    .filter((m) => m.grupo === "lite_base" || m.grupo === "modulo_adicional")
+    .map((m) => m.codigo);
   setModulosChecked(pro);
 }
 
@@ -613,7 +701,7 @@ async function onGenerateSubmit(event) {
     fechaVencimiento: $("fechaVencimiento").value,
     montoLicencia: formSnapshot.montoLicencia,
     abonoMensual: formSnapshot.abonoMensual,
-    versionSchpos: $("versionSchpos").value.trim() || "2.1.9",
+    versionSchpos: $("versionSchpos").value.trim() || "2.4.0",
     esRenovacion: $("esRenovacion").checked,
     observaciones: $("observaciones").value.trim()
   };
@@ -762,28 +850,18 @@ function exportHistorialCsv() {
 function initConfigModal() {
   const cfg = loadConfig();
   $("apiBaseUrl").value = cfg.apiBaseUrl || DEFAULT_API_BASE;
-  $("adminApiKey").value = cfg.adminApiKey || "";
-  $("userIdentifier").value = cfg.userIdentifier || "";
+  $("userIdentifier").value = cfg.userIdentifier || sessionUser || "";
+  if ($("loginUser") && !$("loginUser").value)
+    $("loginUser").value = cfg.userIdentifier || "";
 }
 
 function onSaveConfig() {
-  const userIdentifier = $("userIdentifier").value.trim();
-  if (!userIdentifier) {
-    showToast("El nombre/dispositivo es obligatorio.");
-    return;
-  }
-  if (!$("adminApiKey").value.trim()) {
-    showToast("La API Key es obligatoria.");
-    return;
-  }
-
   saveConfig({
     apiBaseUrl: $("apiBaseUrl").value.trim() || DEFAULT_API_BASE,
-    adminApiKey: $("adminApiKey").value.trim(),
-    userIdentifier
+    userIdentifier: $("userIdentifier").value.trim() || sessionUser || ""
   });
   bootstrap.Modal.getInstance($("configModal")).hide();
-  showToast("Configuración guardada.");
+  showToast("Ajustes guardados.");
 }
 
 function getFilteredAuditoria() {
@@ -906,9 +984,12 @@ function resetGenerateForm() {
   $("resultadoVacio").classList.remove("d-none");
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   initDateFields();
   initConfigModal();
+
+  $("formLogin")?.addEventListener("submit", onLoginSubmit);
+  $("btnLogout")?.addEventListener("click", () => onLogout());
 
   $("dias").addEventListener("input", syncFromDias);
   $("fechaVencimiento").addEventListener("change", syncFromFecha);
@@ -976,10 +1057,10 @@ document.addEventListener("DOMContentLoaded", () => {
     loadActualizaciones().catch((err) => showToast(err.message))
   );
 
-  if (!getAdminApiKey() || !getUserIdentifier()) {
-    setTimeout(() => bootstrap.Modal.getOrCreateInstance($("configModal")).show(), 400);
-  } else {
-    loadModulosCatalog().catch(() => {});
-    loadDashboard().catch(() => {});
-  }
+  // Limpiar API keys viejas del storage
+  saveConfig({});
+
+  const ok = await tryRestoreSession();
+  if (ok) await afterLoginLoad();
+  else showLogin();
 });

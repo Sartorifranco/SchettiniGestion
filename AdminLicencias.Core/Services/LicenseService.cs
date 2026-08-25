@@ -13,9 +13,11 @@ public sealed class LicenseService
 
     public LicenseService(LicensingOptions options)
     {
-        _secretKey = string.IsNullOrWhiteSpace(options.SecretKey)
-            ? "Soctech_Sistemas_Seguridad_2025!"
-            : options.SecretKey;
+        if (string.IsNullOrWhiteSpace(options.SecretKey))
+            throw new InvalidOperationException(
+                "Licensing:SecretKey no configurada. Defina Licensing__SecretKey en el entorno (debe coincidir con SCHPOS).");
+
+        _secretKey = options.SecretKey.Trim();
     }
 
     public string GenerarClave(string cuitCliente, string hwid, DateTime fechaVencimiento, List<string> modulos)
@@ -45,8 +47,26 @@ public sealed class LicenseService
         }
     }
 
-    public LicenseValidationResult Validar(string licenseKeyBase64, string hardwareId)
+    /// <summary>Huella SHA-256 de la clave (para blacklist de revoke sin guardar la clave en claro en listados).</summary>
+    public static string HuellaClave(string? licenseKeyBase64)
     {
+        if (string.IsNullOrWhiteSpace(licenseKeyBase64)) return "";
+        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(licenseKeyBase64.Trim()));
+        return Convert.ToHexString(hash);
+    }
+
+    public LicenseValidationResult Validar(string licenseKeyBase64, string hardwareId, bool estaRevocada = false)
+    {
+        if (estaRevocada)
+        {
+            return new LicenseValidationResult
+            {
+                Valida = false,
+                Mensaje = "Licencia revocada por el administrador.",
+                Estado = "revocada"
+            };
+        }
+
         var payload = DesencriptarClave(licenseKeyBase64);
         if (payload == null)
         {
@@ -117,6 +137,8 @@ public sealed class LicenseService
 
     private string Encriptar(string plainText)
     {
+        // IV fijo histórico para compatibilidad con licencias ya emitidas y SCHPOS.
+        // No rotar sin un plan de reemisión dual-key.
         byte[] iv = new byte[16];
         using var aes = Aes.Create();
         aes.Key = ObtenerKeyBytes();
@@ -149,6 +171,7 @@ public sealed class LicenseService
 
     private byte[] ObtenerKeyBytes()
     {
+        // Misma derivación que SCHPOS LicenseManager: UTF-8 pad/trunc a 32 bytes con ceros.
         byte[] keyBytes = new byte[32];
         byte[] secretBytes = Encoding.UTF8.GetBytes(_secretKey);
         Array.Copy(secretBytes, keyBytes, Math.Min(keyBytes.Length, secretBytes.Length));

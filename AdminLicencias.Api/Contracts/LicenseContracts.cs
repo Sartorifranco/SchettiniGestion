@@ -14,7 +14,7 @@ public sealed class GenerateLicenseRequest
     public decimal MontoLicencia { get; set; }
     /// <summary>Abono mensual según módulos contratados.</summary>
     public decimal AbonoMensual { get; set; }
-    public string VersionSchpos { get; set; } = "2.0.8";
+    public string VersionSchpos { get; set; } = "2.4.0";
     public bool EsRenovacion { get; set; }
     public string Observaciones { get; set; } = "";
 }

@@ -32,6 +32,7 @@ builder.Services.AddDataProtection();
 builder.Services.AddSingleton<AdminSessionService>();
 builder.Services.AddAdminLicenciasCore();
 builder.Services.AddSingleton<AuditLogService>();
+builder.Services.AddCors();
 
 builder.Services.AddRateLimiter(options =>
 {

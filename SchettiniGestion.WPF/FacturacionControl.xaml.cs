@@ -45,6 +45,8 @@ namespace SchettiniGestion.WPF
         private DataRow _productoSeleccionado;
         private bool _ignorarPerdidaFoco = false;
         private bool _cargandoListas = false;
+        private int? _listaIdAntesDeCliente;
+        private bool _listaForzadaPorCliente;
         private DispatcherTimer _timerVerificacionMP;
         private string _referenciaPagoMP = "";
         private string _ordenIdMP = "";
@@ -54,6 +56,8 @@ namespace SchettiniGestion.WPF
         private List<CobranzaItem> _parcelas_MP = null;
         private bool _pagoPointAprobado = false;
         private List<CobranzaItem> _parcelasPoint = null;
+        private int? _presupuestoOrigenId;
+        private readonly HashSet<int> _avisosStockMinimo = new HashSet<int>();
         private int _ultimoDocumentoId;
         private string _ultimoTipoDocumento = "Factura";
         private FacturaItem _itemCarritoSeleccionado;
@@ -202,11 +206,58 @@ namespace SchettiniGestion.WPF
                 if (tabFacturacion != null) tabFacturacion.SelectedIndex = 0;
             }
 
+            ConsumirCargaPendiente();
             ActualizarUiSegunTipoComprobante();
             btnVistaCatalogoLista_Click(null, null);
             AplicarLayoutResponsivo();
             ActualizarBloqueoAperturaCaja();
             ActualizarIndicadorModoBusqueda();
+        }
+
+        private void ConsumirCargaPendiente()
+        {
+            if (!PosCargaPendiente.HayCarga) return;
+
+            var items = PosCargaPendiente.Items;
+            int clienteId = PosCargaPendiente.ClienteID;
+            _presupuestoOrigenId = PosCargaPendiente.PresupuestoID;
+            PosCargaPendiente.Limpiar();
+
+            CarritoDeVenta.Clear();
+            foreach (var it in items)
+                CarritoDeVenta.Add(it);
+
+            if (clienteId > 0)
+            {
+                var cli = DatabaseService.BuscarClientePorID(clienteId);
+                if (cli != null)
+                {
+                    _clienteSeleccionado = cli;
+                    lblClienteSeleccionado.Text = cli["RazonSocial"]?.ToString() ?? "";
+                    txtBuscarCliente.Text = cli["RazonSocial"]?.ToString() ?? "";
+                    ActualizarLetraComprobanteVisible();
+                }
+            }
+
+            RefrescarVistaCarrito();
+            ActualizarTotal();
+            CustomerScreenService.Actualizar(CarritoDeVenta.ToList(), CarritoDeVenta.Sum(x => x.Subtotal));
+        }
+
+        private static void AplicarRecargoMedioPagoAlCarrito(decimal recargoPct, IEnumerable<FacturaItem> items)
+        {
+            if (recargoPct == 0m || items == null) return;
+            foreach (var item in items)
+            {
+                if (item == null || item.Codigo == "VAR") continue;
+                decimal factor = (1 + item.RecargoPorcentaje / 100m) * (1 + recargoPct / 100m);
+                item.RecargoPorcentaje = Math.Round((factor - 1m) * 100m, 4, MidpointRounding.AwayFromZero);
+            }
+        }
+
+        private void AplicarRecargoMedioPagoAlCarrito(decimal recargoPct)
+        {
+            AplicarRecargoMedioPagoAlCarrito(recargoPct, CarritoDeVenta);
         }
 
         private void FacturacionControl_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -1107,6 +1158,7 @@ namespace SchettiniGestion.WPF
                 };
                 CarritoDeVenta.Add(item);
             }
+            DataRow prodAviso = _productoSeleccionado;
             RefrescarVistaCarrito();
             popupProducto.IsOpen = false;
             LimpiarProducto();
@@ -1114,6 +1166,7 @@ namespace SchettiniGestion.WPF
             MarcarItemCarrito(CarritoDeVenta.LastOrDefault(i => i.EsValido));
             if (item != null && item.DescuentoPromocionAutomatica)
                 MostrarAvisoPromo(item.PromoNombre, item.DescuentoPorcentaje);
+            AvisarStockMinimoSiCorresponde(prodAviso, item);
         }
 
         private DispatcherTimer _timerAvisoPromo;
@@ -1299,7 +1352,15 @@ namespace SchettiniGestion.WPF
                 if (respuesta.Exito)
                 {
                     _ordenIdMP = respuesta.OrdenId;
-                    CustomerScreenService.PantallaQR(respuesta.QRData, total);
+                    string modo = DatabaseService.NormalizarModoQrMp(respuesta.Modo);
+                    bool mostrarQrPantalla = modo != DatabaseService.ModosQrMercadoPago.Impreso
+                        && !string.IsNullOrWhiteSpace(respuesta.QRData);
+                    bool usarQrImpreso = modo != DatabaseService.ModosQrMercadoPago.Pantalla;
+
+                    if (mostrarQrPantalla)
+                        CustomerScreenService.PantallaQR(respuesta.QRData, total);
+                    else if (usarQrImpreso)
+                        CustomerScreenService.PantallaQREstatico(total);
 
                     if (_timerVerificacionMP == null)
                     {
@@ -1308,6 +1369,20 @@ namespace SchettiniGestion.WPF
                         _timerVerificacionMP.Tick += TimerVerificacionMP_Tick;
                     }
                     _timerVerificacionMP.Start();
+
+                    if (modo == DatabaseService.ModosQrMercadoPago.Pantalla && !CustomerScreenService.HayVisorActivo())
+                    {
+                        CustomMessageBox.Show(
+                            "No hay pantalla cliente para mostrar el QR.\n\n" +
+                            "En Configuración → Mercado Pago QR elegí «Impreso» o «Ambos» e imprimí el QR de la caja, o conectá un segundo monitor.",
+                            "QR en pantalla", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                    else if (usarQrImpreso && (!mostrarQrPantalla || !CustomerScreenService.HayVisorActivo()))
+                    {
+                        CustomMessageBox.Show(
+                            "Orden lista.\n\nDecile al cliente: ya podés escanear el QR de la caja.",
+                            "Mercado Pago QR", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
                 }
                 else
                 {
@@ -1343,7 +1418,13 @@ namespace SchettiniGestion.WPF
                     int mpMedioId   = ObtenerMedioPagoIdMercadoPago();
                     _parcelas_MP    = new List<CobranzaItem>
                     {
-                        new CobranzaItem { MedioPagoID = mpMedioId, nombreMedio = "Mercado Pago QR", monto = totalMP }
+                        new CobranzaItem
+                        {
+                            MedioPagoID = mpMedioId,
+                            nombreMedio = "Mercado Pago QR",
+                            monto = totalMP,
+                            OperacionExternaID = string.IsNullOrWhiteSpace(info.IdOperacion) ? _referenciaPagoMP : info.IdOperacion
+                        }
                     };
                     _pagoMPAprobado = true;
 
@@ -1648,6 +1729,12 @@ namespace SchettiniGestion.WPF
                     }
                     cobranzasConfirmadas = cobroModal.Cobranzas;
                     cobroConfirmado = cobranzasConfirmadas != null && cobranzasConfirmadas.Count > 0;
+                    if (cobroModal.RecargoPorcentajeAplicado != 0m)
+                    {
+                        AplicarRecargoMedioPagoAlCarrito(cobroModal.RecargoPorcentajeAplicado);
+                        total = CarritoDeVenta.Sum(x => x.Subtotal);
+                        ActualizarTotal();
+                    }
                 }
 
                 // Aviso ARCA después del cobro (no interrumpe el flujo antes de cobrar)
@@ -1730,6 +1817,8 @@ namespace SchettiniGestion.WPF
                     string msgExito = "Venta Guardada.";
                     if (!string.IsNullOrEmpty(cae)) msgExito += "\n¡Factura Electrónica Aprobada!";
                     OfrecerImprimirComprobante(fid, PrintService.ImprimirFactura, msgExito, tipoCompTexto);
+                    if (_presupuestoOrigenId.HasValue)
+                        DatabaseService.MarcarPresupuestoConvertido(_presupuestoOrigenId.Value);
                     await Task.Delay(2000);
                     LimpiarFormulario();
                 }
@@ -1886,9 +1975,27 @@ namespace SchettiniGestion.WPF
             ActualizarTotal();
             CargarClientePorDefecto();
             _referenciaPagoMP = "";
+            _presupuestoOrigenId = null;
+            _avisosStockMinimo.Clear();
             CancelarModoQR();
             LimpiarProducto();
             ActualizarUiSegunTipoComprobante();
+        }
+
+        private void AvisarStockMinimoSiCorresponde(DataRow prod, FacturaItem item)
+        {
+            if (prod == null || item == null) return;
+            if (!prod.Table.Columns.Contains("StockMinimo") || prod["StockMinimo"] == DBNull.Value) return;
+            decimal min = Convert.ToDecimal(prod["StockMinimo"]);
+            if (min <= 0) return;
+            decimal stock = prod.Table.Columns.Contains("StockActual") && prod["StockActual"] != DBNull.Value
+                ? Convert.ToDecimal(prod["StockActual"]) : 0m;
+            decimal queda = stock - item.Cantidad;
+            if (queda > min) return;
+            if (!_avisosStockMinimo.Add(item.ProductoID)) return;
+            CustomMessageBox.Show(
+                $"{item.Descripcion} queda con {queda:N0} unidades (mínimo {min:N0}).",
+                "Stock bajo", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void LimpiarProducto()
@@ -2234,6 +2341,7 @@ namespace SchettiniGestion.WPF
                 lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
                 txtBuscarCliente.Text = "";
             }
+            AplicarListaDelCliente(_clienteSeleccionado);
             ActualizarLetraComprobanteVisible();
         }
         private void RecalcularCarritoConNuevaLista()
@@ -2322,8 +2430,47 @@ namespace SchettiniGestion.WPF
             lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
             _ignorarPerdidaFoco = false;
             popupCliente.IsOpen = false;
+            AplicarListaDelCliente(_clienteSeleccionado);
             ActualizarLetraComprobanteVisible();
             txtBuscarProducto.Focus();
+        }
+
+        private void AplicarListaDelCliente(DataRow cliente)
+        {
+            int? listaCliente = null;
+            if (cliente != null && cliente.Table.Columns.Contains("ListaPrecioID") && cliente["ListaPrecioID"] != DBNull.Value)
+            {
+                int lid = Convert.ToInt32(cliente["ListaPrecioID"]);
+                if (lid > 0) listaCliente = lid;
+            }
+
+            if (listaCliente.HasValue)
+            {
+                if (!_listaForzadaPorCliente)
+                    _listaIdAntesDeCliente = ObtenerListaIdSeleccionada();
+                _cargandoListas = true;
+                try { cmbListaPrecios.SelectedValue = listaCliente.Value; }
+                catch { }
+                finally { _cargandoListas = false; }
+                _listaForzadaPorCliente = true;
+                RecalcularCarritoConNuevaLista();
+                return;
+            }
+
+            if (_listaForzadaPorCliente)
+            {
+                _cargandoListas = true;
+                try
+                {
+                    if (_listaIdAntesDeCliente.HasValue)
+                        cmbListaPrecios.SelectedValue = _listaIdAntesDeCliente.Value;
+                }
+                catch { }
+                finally { _cargandoListas = false; }
+                _listaForzadaPorCliente = false;
+                _listaIdAntesDeCliente = null;
+                RecalcularCarritoConNuevaLista();
+            }
         }
 
         private void SeleccionarProductoSugerencia(DataRowView row)
@@ -2470,6 +2617,7 @@ namespace SchettiniGestion.WPF
                     lblClienteSeleccionado.Text = _clienteSeleccionado["RazonSocial"].ToString();
                     txtBuscarCliente.Text = _clienteSeleccionado["RazonSocial"].ToString();
                     popupCliente.IsOpen = false;
+                    AplicarListaDelCliente(_clienteSeleccionado);
                     ActualizarLetraComprobanteVisible();
                     txtBuscarProducto.Focus();
                 }

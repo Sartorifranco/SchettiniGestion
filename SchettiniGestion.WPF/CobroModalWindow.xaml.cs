@@ -28,6 +28,7 @@ namespace SchettiniGestion.WPF
     {
         public int MedioID { get; set; }
         public string Nombre { get; set; }
+        public decimal RecargoDescuentoPct { get; set; }
         public override string ToString() => Nombre ?? string.Empty;
     }
 
@@ -39,6 +40,9 @@ namespace SchettiniGestion.WPF
         public bool SolicitoMercadoPagoQR { get; private set; }
         /// <summary>El usuario eligió enviar el cobro al Point Smart.</summary>
         public bool SolicitoMercadoPagoPoint { get; private set; }
+
+        /// <summary>Recargo (+) o descuento (−) del medio usado en cobro rápido. 0 si no aplica.</summary>
+        public decimal RecargoPorcentajeAplicado { get; private set; }
 
         private readonly decimal _total;
         private readonly ObservableCollection<CobranzaItem> _cobros = new ObservableCollection<CobranzaItem>();
@@ -78,7 +82,10 @@ namespace SchettiniGestion.WPF
                         lista.Add(new MedioPagoOpcion
                         {
                             MedioID = Convert.ToInt32(row["MedioID"]),
-                            Nombre = row["Nombre"]?.ToString() ?? "Medio"
+                            Nombre = row["Nombre"]?.ToString() ?? "Medio",
+                            RecargoDescuentoPct = row.Table.Columns.Contains("RecargoDescuentoPct") && row["RecargoDescuentoPct"] != DBNull.Value
+                                ? Convert.ToDecimal(row["RecargoDescuentoPct"])
+                                : 0m
                         });
                     }
                 }
@@ -122,7 +129,7 @@ namespace SchettiniGestion.WPF
             {
                 var btn = new Button
                 {
-                    Content = medio.Nombre,
+                    Content = EtiquetaMedio(medio),
                     Tag = medio,
                     MinWidth = 150,
                     MinHeight = 56,
@@ -143,6 +150,14 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        private static string EtiquetaMedio(MedioPagoOpcion medio)
+        {
+            if (medio == null) return "";
+            if (medio.RecargoDescuentoPct == 0m) return medio.Nombre;
+            string signo = medio.RecargoDescuentoPct > 0 ? "+" : "";
+            return $"{medio.Nombre} ({signo}{medio.RecargoDescuentoPct:0.##}%)";
+        }
+
         private static int PrioridadMedio(string nombre)
         {
             string n = (nombre ?? "").ToLowerInvariant();
@@ -158,13 +173,29 @@ namespace SchettiniGestion.WPF
         private void CobrarRapidoYCerrar(MedioPagoOpcion medio)
         {
             if (medio == null || _total <= 0) return;
+            decimal pct = medio.RecargoDescuentoPct;
+            decimal monto = _total;
+            if (pct != 0m)
+            {
+                monto = Math.Round(_total * (1 + pct / 100m), 2, MidpointRounding.AwayFromZero);
+                string tipo = pct > 0 ? "un recargo" : "un descuento";
+                string signo = pct > 0 ? "+" : "";
+                if (CustomMessageBox.Show(
+                        $"{medio.Nombre} aplica {tipo} del {signo}{pct:0.##}%.\n\n" +
+                        $"Total: {_total:C2}  →  {monto:C2}\n\n¿Cobrar?",
+                        "Ajuste por medio de pago",
+                        MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return;
+            }
+
+            RecargoPorcentajeAplicado = pct;
             Cobranzas = new List<CobranzaItem>
             {
                 new CobranzaItem
                 {
                     MedioPagoID = medio.MedioID,
                     nombreMedio = medio.Nombre,
-                    monto = _total
+                    monto = monto
                 }
             };
             DialogResult = true;

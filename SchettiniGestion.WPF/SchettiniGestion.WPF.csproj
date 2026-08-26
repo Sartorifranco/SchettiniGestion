@@ -383,6 +383,13 @@
     <Compile Include="GestionPermisos.xaml.cs">
       <DependentUpon>GestionPermisos.xaml</DependentUpon>
     </Compile>
+    <Compile Include="PosCargaPendiente.cs" />
+    <Compile Include="AsignacionMasivaListaWindow.xaml.cs">
+      <DependentUpon>AsignacionMasivaListaWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="QrCajaPreviewWindow.xaml.cs">
+      <DependentUpon>QrCajaPreviewWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ListasPreciosControl.xaml.cs">
       <DependentUpon>ListasPreciosControl.xaml</DependentUpon>
     </Compile>
@@ -510,6 +517,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ProductoModalWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AsignacionMasivaListaWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="QrCajaPreviewWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -67,7 +67,9 @@
             <!-- KPIs operativos -->
             <UniformGrid Columns="3" Margin="0,0,0,16">
                 <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
-                        BorderThickness="1" CornerRadius="10" Margin="0,0,10,0" Padding="16">
+                        BorderThickness="1" CornerRadius="10" Margin="0,0,10,0" Padding="16"
+                        Cursor="Hand" MouseLeftButtonUp="bdrStockAlerta_MouseLeftButtonUp"
+                        ToolTip="Abrir stock para reponer">
                     <StackPanel>
                         <TextBlock Text="STOCK EN ALERTA" Style="{StaticResource LabelStyle}" Foreground="{DynamicResource TextSecondary}"/>
                         <TextBlock x:Name="lblStockBajo" Text="0" FontSize="24" FontWeight="Bold"
@@ -162,7 +164,9 @@
                 <!-- Alertas stock -->
                 <Border Grid.Column="4" Background="{DynamicResource SurfaceDark}"
                         BorderBrush="{DynamicResource BorderColor}" BorderThickness="1"
-                        CornerRadius="10" Padding="14" MinHeight="280">
+                        CornerRadius="10" Padding="14" MinHeight="280"
+                        Cursor="Hand" MouseLeftButtonUp="bdrStockAlerta_MouseLeftButtonUp"
+                        ToolTip="Abrir stock">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>

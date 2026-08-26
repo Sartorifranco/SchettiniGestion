@@ -42,6 +42,8 @@ namespace SchettiniGestion.WPF
 
                 string accessToken = config["MPAccessToken"].ToString();
                 string posId = config["MPPosId"].ToString();
+                string modoApp = DatabaseService.ObtenerModoQrMercadoPago();
+                string modoApi = ModoQrAApi(modoApp);
 
                 if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(posId))
                     return new RespuestaOrdenMP { Exito = false, Error = "Faltan credenciales de MP." };
@@ -56,7 +58,7 @@ namespace SchettiniGestion.WPF
                     total_amount = monto,
                     external_reference = externalReference,
                     description = tituloVenta,
-                    config = new { qr = new { external_pos_id = posId, mode = "dynamic" } },
+                    config = new { qr = new { external_pos_id = posId, mode = modoApi } },
                     transactions = new { payments = new[] { new { amount = monto } } }
                 };
 
@@ -73,11 +75,14 @@ namespace SchettiniGestion.WPF
                 if (response.IsSuccessStatusCode)
                 {
                     dynamic json = JsonConvert.DeserializeObject(responseBody);
+                    string qrData = null;
+                    try { qrData = json.type_response?.qr_data; } catch { }
                     return new RespuestaOrdenMP
                     {
                         Exito = true,
-                        QRData = json.type_response.qr_data,
-                        OrdenId = json.id
+                        QRData = qrData,
+                        OrdenId = json.id,
+                        Modo = modoApp
                     };
                 }
                 else
@@ -89,6 +94,14 @@ namespace SchettiniGestion.WPF
             {
                 return new RespuestaOrdenMP { Exito = false, Error = "Excepción: " + ex.Message };
             }
+        }
+
+        public static string ModoQrAApi(string modoApp)
+        {
+            string m = DatabaseService.NormalizarModoQrMp(modoApp);
+            if (m == DatabaseService.ModosQrMercadoPago.Pantalla) return "dynamic";
+            if (m == DatabaseService.ModosQrMercadoPago.Impreso) return "static";
+            return "hybrid";
         }
 
         // -------------------------------------------------------------------------
@@ -293,6 +306,99 @@ namespace SchettiniGestion.WPF
                 return "EXCEPCION: " + ex.Message;
             }
         }
+
+        /// <summary>Descarga el QR estático asociado a la caja (POS) de Mercado Pago.</summary>
+        public static async Task<ImagenQrCajaResultado> ObtenerImagenQrCaja(string accessToken, string posId)
+        {
+            var resultado = new ImagenQrCajaResultado();
+            try
+            {
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                if (string.IsNullOrWhiteSpace(accessToken) || string.IsNullOrWhiteSpace(posId))
+                {
+                    resultado.Error = "Faltan Access Token o Pos ID.";
+                    return resultado;
+                }
+
+                using (var http = new HttpClient())
+                {
+                    http.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+                    var response = await http.GetAsync("https://api.mercadopago.com/pos");
+                    string jsonStr = await response.Content.ReadAsStringAsync();
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        resultado.Error = "Error al listar cajas: " + jsonStr;
+                        return resultado;
+                    }
+
+                    dynamic data = JsonConvert.DeserializeObject(jsonStr);
+                    var lista = data.results ?? data;
+                    string urlImagen = null;
+                    if (lista != null)
+                    {
+                        foreach (var caja in lista)
+                        {
+                            string idExterno = caja.external_id?.ToString();
+                            if (!string.Equals(idExterno, posId, StringComparison.OrdinalIgnoreCase))
+                                continue;
+                            urlImagen = caja.qr?.template_image?.ToString()
+                                ?? caja.qr?.image?.ToString()
+                                ?? caja.qr_code?.ToString();
+                            break;
+                        }
+                    }
+
+                    if (string.IsNullOrWhiteSpace(urlImagen) && lista != null)
+                    {
+                        foreach (var caja in lista)
+                        {
+                            urlImagen = caja.qr?.template_image?.ToString() ?? caja.qr?.image?.ToString();
+                            if (!string.IsNullOrWhiteSpace(urlImagen))
+                            {
+                                posId = caja.external_id?.ToString() ?? posId;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (string.IsNullOrWhiteSpace(urlImagen))
+                    {
+                        resultado.Error = "La caja no tiene un QR estático. Creá o buscá la caja SCH01 y volvé a intentar.";
+                        return resultado;
+                    }
+
+                    byte[] png;
+                    if (urlImagen.StartsWith("data:image", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int coma = urlImagen.IndexOf(',');
+                        png = Convert.FromBase64String(coma >= 0 ? urlImagen.Substring(coma + 1) : urlImagen);
+                    }
+                    else
+                    {
+                        png = await http.GetByteArrayAsync(urlImagen);
+                    }
+
+                    resultado.Exito = png != null && png.Length > 0;
+                    resultado.Png = png;
+                    resultado.PosId = posId;
+                    if (!resultado.Exito) resultado.Error = "No se pudo descargar la imagen del QR.";
+                    return resultado;
+                }
+            }
+            catch (Exception ex)
+            {
+                resultado.Error = ex.Message;
+                return resultado;
+            }
+        }
+    }
+
+    public class ImagenQrCajaResultado
+    {
+        public bool Exito { get; set; }
+        public byte[] Png { get; set; }
+        public string PosId { get; set; }
+        public string Error { get; set; }
     }
 
     public class RespuestaOrdenMP
@@ -301,5 +407,6 @@ namespace SchettiniGestion.WPF
         public string QRData { get; set; }
         public string OrdenId { get; set; }
         public string Error { get; set; }
+        public string Modo { get; set; }
     }
 }

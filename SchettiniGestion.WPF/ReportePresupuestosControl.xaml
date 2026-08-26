@@ -60,12 +60,13 @@
                     <DataGridTextColumn Header="ESTADO" Binding="{Binding Estado}" Width="120"/>
                     <DataGridTextColumn Header="TOTAL" Binding="{Binding Total, StringFormat=C2}" Width="120" FontWeight="Bold" Foreground="{StaticResource SuccessColor}"/>
 
-                    <DataGridTemplateColumn Width="140">
+                    <DataGridTemplateColumn Width="190">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <Button Content="👁️" ToolTip="Ver Detalle" Style="{StaticResource SecondaryButtonStyle}" Padding="0" Height="30" Width="40" Click="btnVer_Click" Margin="0,0,5,0"/>
                                     <Button Content="🖨️" ToolTip="Imprimir / PDF" Style="{StaticResource SecondaryButtonStyle}" Padding="0" Height="30" Width="40" Click="btnImprimir_Click" Margin="0,0,5,0"/>
+                                    <Button Content="🛒" ToolTip="Pasar a venta" Style="{StaticResource SecondaryButtonStyle}" Padding="0" Height="30" Width="40" Click="btnPasarAVenta_Click" Margin="0,0,5,0"/>
                                     <Button Content="🗑️" ToolTip="Eliminar" Style="{StaticResource DeleteButtonStyle}" Padding="0" Height="30" Width="40" Click="btnEliminar_Click"/>
                                 </StackPanel>
                             </DataTemplate>

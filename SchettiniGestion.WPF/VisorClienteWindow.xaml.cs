@@ -523,10 +523,24 @@ namespace SchettiniGestion.WPF
         {
             OcultarPanelesContenido();
             GridQR.Visibility = Visibility.Visible;
+            lblTituloQR.Text = "Escaneá el QR para pagar";
+            bordeQR.Visibility = Visibility.Visible;
             lblTotalQR.Text = $"$ {monto:N2}";
             lblEstadoQR.Text = "Escanee el código con su celular";
             lblEstadoQR.Foreground = Brushes.White;
             GenerarQREnPantalla(dataQR);
+        }
+
+        public void MostrarQREstatico(decimal monto)
+        {
+            OcultarPanelesContenido();
+            GridQR.Visibility = Visibility.Visible;
+            lblTituloQR.Text = "Escaneá el QR de la caja";
+            bordeQR.Visibility = Visibility.Collapsed;
+            imgQR.Source = null;
+            lblTotalQR.Text = $"$ {monto:N2}";
+            lblEstadoQR.Text = "El monto ya está listo en el código impreso";
+            lblEstadoQR.Foreground = Brushes.White;
         }
 
         public void ActualizarEstadoQR(string mensaje, Brush color)

@@ -22,8 +22,35 @@ namespace SchettiniGestion.WPF
 
         private void ClientesControl_Loaded(object sender, RoutedEventArgs e)
         {
+            CargarComboListasPrecio();
             CargarClientes();
             LimpiarCampos();
+        }
+
+        private void CargarComboListasPrecio()
+        {
+            var items = new List<ComboLookupItem>
+            {
+                new ComboLookupItem { Id = 0, Nombre = "(Usar lista del POS)" }
+            };
+            try
+            {
+                var dt = DatabaseService.GetListasPrecios();
+                if (dt != null)
+                {
+                    foreach (DataRow r in dt.Rows)
+                    {
+                        items.Add(new ComboLookupItem
+                        {
+                            Id = Convert.ToInt32(r["ListaID"]),
+                            Nombre = r["Nombre"]?.ToString() ?? ""
+                        });
+                    }
+                }
+            }
+            catch { }
+            cmbListaPrecio.ItemsSource = items;
+            cmbListaPrecio.SelectedValue = 0;
         }
 
         private void CargarClientes()
@@ -113,6 +140,7 @@ namespace SchettiniGestion.WPF
             chkPermiteCtaCte.IsChecked = false;
             txtMontoLimiteCtaCte.Text = "";
             txtMontoLimiteCtaCte.IsEnabled = false;
+            if (cmbListaPrecio != null) cmbListaPrecio.SelectedValue = 0;
             btnEliminar.IsEnabled = false;
             txtCuit.Focus();
         }
@@ -167,7 +195,14 @@ namespace SchettiniGestion.WPF
             if (permiteCtaCte && decimal.TryParse(txtMontoLimiteCtaCte.Text?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal ml))
                 montoLimite = ml;
 
-            if (DatabaseService.GuardarCliente(_clienteIdSeleccionado, txtCuit.Text.Trim(), txtRazonSocial.Text.Trim(), condIva, txtDireccion.Text.Trim(), txtTelefono.Text.Trim(), txtEmail.Text.Trim(), permiteCtaCte, montoLimite))
+            int? listaPrecioId = null;
+            if (cmbListaPrecio?.SelectedValue != null)
+            {
+                int lid = Convert.ToInt32(cmbListaPrecio.SelectedValue);
+                if (lid > 0) listaPrecioId = lid;
+            }
+
+            if (DatabaseService.GuardarCliente(_clienteIdSeleccionado, txtCuit.Text.Trim(), txtRazonSocial.Text.Trim(), condIva, txtDireccion.Text.Trim(), txtTelefono.Text.Trim(), txtEmail.Text.Trim(), permiteCtaCte, montoLimite, listaPrecioId))
             {
                 CustomMessageBox.Show("Cliente guardado.");
                 CargarClientes();
@@ -204,10 +239,11 @@ namespace SchettiniGestion.WPF
                 txtTelefono.Text = item.Telefono ?? "";
                 txtDireccion.Text = "";
                 txtEmail.Text = item.Email ?? "";
-                chkPermiteCtaCte.IsChecked = false;
-                txtMontoLimiteCtaCte.Text = "";
-                txtMontoLimiteCtaCte.IsEnabled = false;
-                btnEliminar.IsEnabled = true;
+            chkPermiteCtaCte.IsChecked = false;
+            txtMontoLimiteCtaCte.Text = "";
+            txtMontoLimiteCtaCte.IsEnabled = false;
+            if (cmbListaPrecio != null) cmbListaPrecio.SelectedValue = 0;
+            btnEliminar.IsEnabled = true;
                 return;
             }
 
@@ -220,6 +256,13 @@ namespace SchettiniGestion.WPF
             chkPermiteCtaCte.IsChecked = row.Table.Columns.Contains("PermiteCuentaCorriente") && row["PermiteCuentaCorriente"] != DBNull.Value && Convert.ToBoolean(row["PermiteCuentaCorriente"]);
             txtMontoLimiteCtaCte.Text = ValorCol(row, "MontoLimiteCtaCte");
             txtMontoLimiteCtaCte.IsEnabled = chkPermiteCtaCte.IsChecked == true;
+            if (cmbListaPrecio != null)
+            {
+                int listaId = 0;
+                if (row.Table.Columns.Contains("ListaPrecioID") && row["ListaPrecioID"] != DBNull.Value)
+                    int.TryParse(row["ListaPrecioID"].ToString(), out listaId);
+                cmbListaPrecio.SelectedValue = listaId;
+            }
             btnEliminar.IsEnabled = true;
         }
 

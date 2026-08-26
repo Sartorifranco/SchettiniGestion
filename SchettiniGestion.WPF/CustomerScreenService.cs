@@ -111,6 +111,17 @@ namespace SchettiniGestion.WPF
             if (_visor != null && _visor.IsLoaded) _visor.MostrarQR(qrData, monto);
         }
 
+        public static void PantallaQREstatico(decimal monto)
+        {
+            if (!VisorEstaHabilitado()) return;
+            if (_visor != null && _visor.IsLoaded) _visor.MostrarQREstatico(monto);
+        }
+
+        public static bool HayVisorActivo()
+        {
+            return VisorEstaHabilitado() && _visor != null && _visor.IsLoaded && _visor.IsVisible;
+        }
+
         public static void PantallaPoint(decimal monto, string mensaje)
         {
             if (!VisorEstaHabilitado()) return;

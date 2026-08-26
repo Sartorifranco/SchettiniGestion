@@ -3,6 +3,7 @@ using System.Data;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using SchettiniGestion;
 
@@ -20,6 +21,12 @@ namespace SchettiniGestion.WPF
         private void InicioControl_Loaded(object sender, RoutedEventArgs e) => CargarIndicadores();
 
         private void btnActualizar_Click(object sender, RoutedEventArgs e) => CargarIndicadores();
+
+        private void bdrStockAlerta_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (Application.Current.MainWindow is PrincipalWindow p)
+                p.AbrirModuloStock();
+        }
 
         private void CargarIndicadores()
         {

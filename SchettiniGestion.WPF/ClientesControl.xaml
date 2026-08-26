@@ -53,6 +53,12 @@
                         <CheckBox x:Name="chkPermiteCtaCte" Content="Permite cuenta corriente" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10" Checked="chkPermiteCtaCte_Changed" Unchecked="chkPermiteCtaCte_Changed"/>
                         <TextBlock Text="MONTO LÍMITE CTA. CTE." Style="{DynamicResource LabelStyle}"/>
                         <TextBox x:Name="txtMontoLimiteCtaCte" Style="{DynamicResource ModernTextBox}" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="LISTA DE PRECIOS" Style="{DynamicResource LabelStyle}"/>
+                        <ComboBox x:Name="cmbListaPrecio" Style="{DynamicResource ModuleComboBoxStyle}"
+                                  DisplayMemberPath="Nombre" SelectedValuePath="Id" Margin="0,0,0,15"/>
+                        <TextBlock Text="Si el cliente tiene una lista (ej. mayorista), el POS la aplica al seleccionarlo."
+                                   Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
                     </StackPanel>
                 </ScrollViewer>
 

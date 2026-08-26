@@ -259,9 +259,38 @@ namespace SchettiniGestion.WPF
                 if (presupuestoId > 0)
                 {
                     CustomMessageBox.Show("Presupuesto guardado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                    if (CustomMessageBox.Show("¿Pasar este presupuesto a una venta ahora?", "Pasar a venta", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                    {
+                        if (Application.Current.MainWindow is PrincipalWindow p)
+                            p.AbrirVentasDesdePresupuesto(presupuestoId);
+                        return;
+                    }
                     LimpiarFormulario();
-                    // Aquí iría la lógica de impresión (impresora NO fiscal)
                 }
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show($"Error: {ex.Message}");
+            }
+        }
+
+        private void btnPasarAVenta_Click(object sender, RoutedEventArgs e)
+        {
+            if (Carrito.Count == 0) { CustomMessageBox.Show("Agregue productos."); return; }
+            if (_clienteSeleccionado == null) { CustomMessageBox.Show("Seleccione cliente."); return; }
+            try
+            {
+                int presupuestoId = DatabaseService.GuardarPresupuesto(
+                    Convert.ToInt32(_clienteSeleccionado["ClienteID"]),
+                    Carrito.Sum(x => x.Subtotal),
+                    Carrito.ToList());
+                if (presupuestoId <= 0)
+                {
+                    CustomMessageBox.Show("No se pudo guardar el presupuesto.");
+                    return;
+                }
+                if (Application.Current.MainWindow is PrincipalWindow p)
+                    p.AbrirVentasDesdePresupuesto(presupuestoId);
             }
             catch (Exception ex)
             {

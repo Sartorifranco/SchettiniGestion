@@ -160,9 +160,12 @@ namespace SchettiniGestion.WPF
 
             decimal porcentaje = tipo == DatabaseService.TiposListaPrecio.PrecioFijo ? 0 : (numPorcentaje.Value ?? 0);
 
+            bool esNueva = _listaID == 0;
             if (DatabaseService.GuardarListaPrecio(_listaID, txtNombreLista.Text.Trim(), porcentaje, tipo, listaRelId, redondeo))
             {
-                CustomMessageBox.Show("Guardado.");
+                CustomMessageBox.Show(esNueva
+                    ? "Lista creada y asignada a todos los productos.\nSi algún ítem no debe usarla, desmarcalo en Asignar a productos."
+                    : "Guardado.");
                 CargarListas();
                 Limpiar();
             }
@@ -186,6 +189,22 @@ namespace SchettiniGestion.WPF
                 btnGuardar.Content = "Modificar";
                 ActualizarVisibilidadTipo();
             }
+        }
+
+        private void btnAsignarProductos_Click(object sender, RoutedEventArgs e)
+        {
+            int listaId = _listaID;
+            if (listaId <= 0 && dgvListas.SelectedItem is DataRowView row)
+                listaId = Convert.ToInt32(row["ListaID"]);
+            if (listaId <= 0)
+            {
+                CustomMessageBox.Show("Seleccione una lista existente o guárdela primero.");
+                return;
+            }
+
+            var win = new AsignacionMasivaListaWindow(listaId);
+            win.Owner = Window.GetWindow(this);
+            win.ShowDialog();
         }
 
         private void btnEliminar_Click(object sender, RoutedEventArgs e)

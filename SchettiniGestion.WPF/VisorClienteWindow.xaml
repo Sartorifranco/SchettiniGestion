@@ -144,9 +144,9 @@
                                Width="230" Height="86" Stretch="Uniform"
                                HorizontalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
                     </Border>
-                    <TextBlock Text="Escaneá el QR para pagar" Foreground="White" FontSize="36" FontWeight="Bold"
+                    <TextBlock x:Name="lblTituloQR" Text="Escaneá el QR para pagar" Foreground="White" FontSize="36" FontWeight="Bold"
                                HorizontalAlignment="Center" Margin="0,0,0,20" TextWrapping="Wrap" TextAlignment="Center"/>
-                    <Border Background="White" Padding="16" CornerRadius="16" HorizontalAlignment="Center" Width="300" Height="300">
+                    <Border x:Name="bordeQR" Background="White" Padding="16" CornerRadius="16" HorizontalAlignment="Center" Width="300" Height="300">
                         <Border.Effect>
                             <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.3"/>
                         </Border.Effect>

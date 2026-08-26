@@ -682,6 +682,12 @@ namespace SchettiniGestion.WPF
                     @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Clientes' AND COLUMN_NAME='MontoLimiteCtaCte')
                       ALTER TABLE Clientes ADD MontoLimiteCtaCte DECIMAL(18,2) NULL;",
 
+                    @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Clientes' AND COLUMN_NAME='ListaPrecioID')
+                      ALTER TABLE Clientes ADD ListaPrecioID INT NULL;",
+
+                    @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='MPQrModo')
+                      ALTER TABLE Configuracion ADD MPQrModo NVARCHAR(20) NOT NULL DEFAULT 'ambos';",
+
                     @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Proveedores' AND COLUMN_NAME='SaldoDeuda')
                       ALTER TABLE Proveedores ADD SaldoDeuda DECIMAL(18,2) NOT NULL DEFAULT 0;",
 

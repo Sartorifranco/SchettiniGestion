@@ -293,6 +293,32 @@ namespace SchettiniGestion.WPF
             mainContentArea.Content = new FacturacionControl();
         }
 
+        public void AbrirModuloVentas() => btnVentasFacturacion_Click(btnVentasFacturacion, new RoutedEventArgs());
+
+        public void AbrirModuloStock() => btnGestionStock_Click(btnGestionStock, new RoutedEventArgs());
+
+        public void AbrirVentasDesdePresupuesto(int presupuestoId)
+        {
+            if (!PuedeModulo(DatabaseService.PERMISO_VENTAS))
+            {
+                MessageBox.Show("No tiene permiso para ventas.", "Acceso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            if (!DatabaseService.TryCargarPresupuestoParaVenta(presupuestoId, out int clienteId, out string estado, out var items))
+            {
+                MessageBox.Show("No se pudo cargar el presupuesto (sin ítems o no existe).", "Presupuesto", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (string.Equals(estado, "Convertido", StringComparison.OrdinalIgnoreCase)
+                && MessageBox.Show("Este presupuesto ya fue pasado a venta. ¿Cargarlo igual en el POS?", "Presupuesto", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            PosCargaPendiente.Items = items;
+            PosCargaPendiente.ClienteID = clienteId;
+            PosCargaPendiente.PresupuestoID = presupuestoId;
+            AbrirModuloVentas();
+        }
+
         private void productosMenuItem_Click(object sender, RoutedEventArgs e) => btnProductos_Click(sender, e);
 
         private void btnEtiquetas_Click(object sender, RoutedEventArgs e)

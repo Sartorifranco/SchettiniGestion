@@ -174,6 +174,8 @@ namespace SchettiniGestion.WPF
                 if (dr.Table.Columns.Contains("MPPosId"))
                     txtMPPosId.Text = dr["MPPosId"].ToString();
 
+                SeleccionarModoQrMp(DatabaseService.ObtenerModoQrMercadoPago());
+
                 if (dr.Table.Columns.Contains("MPPointTerminalId"))
                     _mpPointTerminalIdGuardada = dr["MPPointTerminalId"]?.ToString() ?? "";
                 if (!string.IsNullOrWhiteSpace(_mpPointTerminalIdGuardada))
@@ -751,6 +753,63 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        private static void SeleccionarComboTag(ComboBox cb, string tag)
+        {
+            if (cb == null) return;
+            for (int i = 0; i < cb.Items.Count; i++)
+            {
+                if ((cb.Items[i] as ComboBoxItem)?.Tag?.ToString() == tag)
+                {
+                    cb.SelectedIndex = i;
+                    return;
+                }
+            }
+            cb.SelectedIndex = cb.Items.Count > 0 ? cb.Items.Count - 1 : -1;
+        }
+
+        private void SeleccionarModoQrMp(string modo)
+        {
+            SeleccionarComboTag(cmbMPQrModo, DatabaseService.NormalizarModoQrMp(modo));
+        }
+
+        private string ObtenerModoQrMpSeleccionado()
+        {
+            return DatabaseService.NormalizarModoQrMp((cmbMPQrModo?.SelectedItem as ComboBoxItem)?.Tag?.ToString());
+        }
+
+        private async void btnDescargarQrCaja_Click(object sender, RoutedEventArgs e)
+        {
+            string token = txtMPToken.Text?.Trim() ?? "";
+            string posId = txtMPPosId.Text?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(posId))
+            {
+                ModernMessageBox.Show("Completá el Access Token y el Pos ID (o creá la caja SCH01) antes de descargar el QR.");
+                return;
+            }
+
+            btnDescargarQrCaja.IsEnabled = false;
+            try
+            {
+                var img = await MercadoPagoService.ObtenerImagenQrCaja(token, posId);
+                if (!img.Exito)
+                {
+                    ModernMessageBox.Show(img.Error ?? "No se pudo obtener el QR de la caja.");
+                    return;
+                }
+                var win = new QrCajaPreviewWindow(img.Png, img.PosId ?? posId);
+                win.Owner = Window.GetWindow(this);
+                win.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show("Error al descargar el QR: " + ex.Message);
+            }
+            finally
+            {
+                btnDescargarQrCaja.IsEnabled = true;
+            }
+        }
+
         private async void btnBuscarTerminalesPoint_Click(object sender, RoutedEventArgs e)
         {
             string token = txtMPToken.Text?.Trim() ?? "";
@@ -881,7 +940,8 @@ namespace SchettiniGestion.WPF
                     usaAperturaCaja: chkUsaAperturaCaja?.IsChecked == true,
                     condicionIVAEmpresa: ObtenerCondicionIVAEmpresaSeleccionada(),
                     mpPointTerminalId: (cmbMPPointTerminal?.SelectedValue?.ToString() ?? _mpPointTerminalIdGuardada).Trim(),
-                    mpPointAutomatico: chkMPPointAutomatico?.IsChecked == true);
+                    mpPointAutomatico: chkMPPointAutomatico?.IsChecked == true,
+                    mpQrModo: ObtenerModoQrMpSeleccionado());
 
                 if (exito)
                 {

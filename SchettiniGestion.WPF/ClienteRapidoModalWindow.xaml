@@ -4,7 +4,7 @@
 
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 
-        Title="Nuevo Cliente Rápido" Width="500" Height="420"
+        Title="Nuevo Cliente Rápido" Width="500" Height="500"
 
         WindowStartupLocation="CenterOwner"
 
@@ -101,6 +101,12 @@
                 <TextBlock Text="Dirección" Style="{StaticResource ModalCaptionTextStyle}" Margin="0,0,0,4"/>
 
                 <TextBox x:Name="txtDireccion" Style="{StaticResource ModuleTextBoxStyle}" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Lista de precios" Style="{StaticResource ModalCaptionTextStyle}" Margin="0,0,0,4"/>
+                <ComboBox x:Name="cmbListaPrecio" Style="{StaticResource ModuleComboBoxStyle}"
+                          DisplayMemberPath="Nombre" SelectedValuePath="Id" Margin="0,0,0,4"/>
+                <TextBlock Text="Opcional. Si el cliente es mayorista, elegí su lista: el POS la aplica al seleccionarlo."
+                           Foreground="{DynamicResource TextSecondary}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
 
             </StackPanel>
 

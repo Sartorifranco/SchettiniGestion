@@ -64,7 +64,10 @@
 
                 <StackPanel Grid.Row="0" Grid.Column="3" VerticalAlignment="Bottom" Orientation="Horizontal" Margin="0,0,0,12">
                     <Button x:Name="btnNuevo" Content="Nuevo" Style="{StaticResource ActionButtonStyle}" Width="90" Click="btnNuevo_Click" Margin="0,0,10,0"/>
-                    <Button x:Name="btnGuardar" Content="Guardar" Style="{StaticResource SuccessButtonStyle}" Width="90" Click="btnGuardar_Click"/>
+                    <Button x:Name="btnGuardar" Content="Guardar" Style="{StaticResource SuccessButtonStyle}" Width="90" Click="btnGuardar_Click" Margin="0,0,10,0"/>
+                    <Button x:Name="btnAsignarProductos" Content="Asignar a productos" Style="{StaticResource ActionButtonStyle}"
+                            MinWidth="160" Click="btnAsignarProductos_Click"
+                            ToolTip="Aplicar esta lista a todos los productos, a una marca o a una categoría, y desmarcar excepciones."/>
                 </StackPanel>
 
                 <StackPanel x:Name="pnlPorcentaje" Grid.Row="1" Grid.Column="0" Margin="0,0,12,0">

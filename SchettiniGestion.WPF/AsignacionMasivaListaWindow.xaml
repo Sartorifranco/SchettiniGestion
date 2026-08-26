@@ -1,0 +1,101 @@
+<Window x:Class="SchettiniGestion.WPF.AsignacionMasivaListaWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Asignar lista a productos" Width="920" Height="640"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource ModuleBackgroundBrush}"
+        Loaded="Window_Loaded">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,14">
+            <TextBlock Text="Asignar lista a productos" FontSize="22" FontWeight="Bold"
+                       Foreground="{DynamicResource HeaderForegroundBrush}"/>
+            <TextBlock TextWrapping="Wrap" Margin="0,6,0,0" FontSize="12"
+                       Foreground="{DynamicResource TextSecondary}"
+                       Text="Elegí el alcance, desmarcá las excepciones y aplicá. Los productos desmarcados quedan fuera de esta lista."/>
+        </StackPanel>
+
+        <Border Grid.Row="1" Background="{DynamicResource PanelBackgroundBrush}" CornerRadius="6" Padding="16" Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Lista" Style="{StaticResource ModuleLabelStyle}"/>
+                    <ComboBox x:Name="cmbLista" Style="{StaticResource ModuleComboBoxStyle}"
+                              DisplayMemberPath="Nombre" SelectedValuePath="ListaID"
+                              SelectionChanged="cmbLista_SelectionChanged"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Aplicar a" Style="{StaticResource ModuleLabelStyle}"/>
+                    <ComboBox x:Name="cmbAlcance" Style="{StaticResource ModuleComboBoxStyle}"
+                              SelectionChanged="cmbAlcance_SelectionChanged">
+                        <ComboBoxItem Content="Todos los productos" Tag="todos" IsSelected="True"/>
+                        <ComboBoxItem Content="Una marca" Tag="marca"/>
+                        <ComboBoxItem Content="Una categoría" Tag="categoria"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <StackPanel x:Name="pnlFiltro" Grid.Column="4" Visibility="Collapsed">
+                    <TextBlock x:Name="lblFiltro" Text="Marca / categoría" Style="{StaticResource ModuleLabelStyle}"/>
+                    <ComboBox x:Name="cmbFiltro" Style="{StaticResource ModuleComboBoxStyle}"/>
+                </StackPanel>
+
+                <Button Grid.Column="6" Content="Cargar" Style="{StaticResource ActionButtonStyle}"
+                        VerticalAlignment="Bottom" MinWidth="100" Click="btnCargar_Click"/>
+            </Grid>
+        </Border>
+
+        <DataGrid x:Name="dgvProductos" Grid.Row="2" Style="{StaticResource ModuleDataGridStyle}"
+                  AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                  HeadersVisibility="Column">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Incluir" Width="70">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding Incluir, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="110" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*" MinWidth="180" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Marca" Binding="{Binding Marca}" Width="130" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Categoría" Binding="{Binding Categoria}" Width="130" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Ya tenía lista" Binding="{Binding YaAsignadoTexto}" Width="110" IsReadOnly="True"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Grid Grid.Row="3" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="Marcar todos" Style="{StaticResource SecondaryButtonStyle}" Click="btnMarcarTodos_Click" Margin="0,0,8,0"/>
+                <Button Content="Desmarcar todos" Style="{StaticResource SecondaryButtonStyle}" Click="btnDesmarcarTodos_Click" Margin="0,0,12,0"/>
+                <TextBlock x:Name="lblResumen" VerticalAlignment="Center" FontSize="13"
+                           Foreground="{DynamicResource TextSecondary}" Text="Cargá un conjunto de productos para empezar."/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="Cancelar" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="btnCancelar_Click"/>
+                <Button Content="Aplicar asignación" Style="{StaticResource SuccessButtonStyle}" MinWidth="160" Click="btnAplicar_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

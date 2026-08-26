@@ -63,6 +63,11 @@
                             MinHeight="48" FontSize="16" Margin="0,16,0,0"
                             Click="btnGuardarPresupuesto_Click"/>
 
+                    <Button x:Name="btnPasarAVenta" Content="Pasar a venta" 
+                            Style="{StaticResource ButtonStyle}" 
+                            MinHeight="44" FontSize="15" Margin="0,10,0,0"
+                            Click="btnPasarAVenta_Click"/>
+
                     <Button x:Name="btnCancelar" Content="Limpiar" 
                             Style="{StaticResource DeleteButtonStyle}" 
                             MinHeight="40" FontSize="14" Margin="0,10,0,0"

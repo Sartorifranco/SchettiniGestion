@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Windows;
 using SchettiniGestion;
 
@@ -10,6 +13,7 @@ namespace SchettiniGestion.WPF
         public ClienteRapidoModalWindow()
         {
             InitializeComponent();
+            Loaded += (s, e) => CargarComboListas();
         }
 
         public ClienteRapidoModalWindow(string textoInicial) : this()
@@ -31,6 +35,33 @@ namespace SchettiniGestion.WPF
         }
 
         public ClienteRapidoModalWindow(object p1, object p2) : this() { }
+
+        private void CargarComboListas()
+        {
+            if (cmbListaPrecio == null) return;
+            var items = new List<ComboLookupItem>
+            {
+                new ComboLookupItem { Id = 0, Nombre = "(Usar lista del POS)" }
+            };
+            try
+            {
+                var dt = DatabaseService.GetListasPrecios();
+                if (dt != null)
+                {
+                    foreach (DataRow r in dt.Rows)
+                    {
+                        items.Add(new ComboLookupItem
+                        {
+                            Id = Convert.ToInt32(r["ListaID"]),
+                            Nombre = r["Nombre"]?.ToString() ?? ""
+                        });
+                    }
+                }
+            }
+            catch { }
+            cmbListaPrecio.ItemsSource = items;
+            cmbListaPrecio.SelectedValue = 0;
+        }
 
         private void btnGuardar_Click(object sender, RoutedEventArgs e)
         {
@@ -59,8 +90,14 @@ namespace SchettiniGestion.WPF
             string telefono = txtTelefono.Text.Trim();
             string email = txtEmail.Text.Trim();
             string direccion = txtDireccion.Text.Trim();
+            int? listaPrecioId = null;
+            if (cmbListaPrecio?.SelectedValue != null)
+            {
+                int lid = Convert.ToInt32(cmbListaPrecio.SelectedValue);
+                if (lid > 0) listaPrecioId = lid;
+            }
 
-            bool ok = DatabaseService.GuardarCliente(0, cuit, razonSocial, condIva, direccion, telefono, email, false, null);
+            bool ok = DatabaseService.GuardarCliente(0, cuit, razonSocial, condIva, direccion, telefono, email, false, null, listaPrecioId);
             if (!ok)
             {
                 CustomMessageBox.Show("Error al guardar el cliente. Verifique los datos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);

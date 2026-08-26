@@ -669,7 +669,11 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Accione
     Usuario NVARCHAR(50) NOT NULL,
     Accion NVARCHAR(100) NOT NULL,
     Detalle NVARCHAR(MAX) NULL
-  );", c))
+  );
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Clientes' AND COLUMN_NAME='ListaPrecioID')
+  ALTER TABLE Clientes ADD ListaPrecioID INT NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='MPQrModo')
+  ALTER TABLE Configuracion ADD MPQrModo NVARCHAR(20) NOT NULL DEFAULT 'ambos';", c))
                         cmd.ExecuteNonQuery();
                     _columnasMigracionLiteOk = true;
                 }
@@ -1682,16 +1686,17 @@ ORDER BY RazonSocial";
             catch { return false; }
         }
 
-        public static bool GuardarCliente(int id, string cuit, string razonSocial, string condIva, string direccion, string telefono, string email, bool permiteCtaCte, decimal? montoLimite)
+        public static bool GuardarCliente(int id, string cuit, string razonSocial, string condIva, string direccion, string telefono, string email, bool permiteCtaCte, decimal? montoLimite, int? listaPrecioId = null)
         {
             try
             {
                 using (var conn = new SqlConnection(_connectionString))
                 {
                     conn.Open();
+                    AsegurarMigracionLite(conn);
                     string sql = id == 0
-                        ? "INSERT INTO Clientes (CUIT,RazonSocial,CondicionIVA,Direccion,Telefono,Email,PermiteCuentaCorriente,MontoLimiteCtaCte) VALUES (@c,@r,@i,@d,@t,@e,@pcc,@ml)"
-                        : "UPDATE Clientes SET CUIT=@c,RazonSocial=@r,CondicionIVA=@i,Direccion=@d,Telefono=@t,Email=@e,PermiteCuentaCorriente=@pcc,MontoLimiteCtaCte=@ml WHERE ClienteID=@id";
+                        ? "INSERT INTO Clientes (CUIT,RazonSocial,CondicionIVA,Direccion,Telefono,Email,PermiteCuentaCorriente,MontoLimiteCtaCte,ListaPrecioID) VALUES (@c,@r,@i,@d,@t,@e,@pcc,@ml,@lid)"
+                        : "UPDATE Clientes SET CUIT=@c,RazonSocial=@r,CondicionIVA=@i,Direccion=@d,Telefono=@t,Email=@e,PermiteCuentaCorriente=@pcc,MontoLimiteCtaCte=@ml,ListaPrecioID=@lid WHERE ClienteID=@id";
                     using (var cmd = new SqlCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@c", cuit ?? "");
@@ -1702,6 +1707,7 @@ ORDER BY RazonSocial";
                         cmd.Parameters.AddWithValue("@e", email ?? "");
                         cmd.Parameters.AddWithValue("@pcc", permiteCtaCte);
                         cmd.Parameters.AddWithValue("@ml", (object)montoLimite ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@lid", listaPrecioId.HasValue && listaPrecioId.Value > 0 ? (object)listaPrecioId.Value : DBNull.Value);
                         if (id > 0) cmd.Parameters.AddWithValue("@id", id);
                         cmd.ExecuteNonQuery();
                         return true;
@@ -3916,21 +3922,48 @@ ORDER BY p.Descripcion";
                         return false;
                     }
 
-                    string sql = id == 0
-                        ? @"INSERT INTO ListasPrecios (Nombre, Porcentaje, TipoLista, ListaRelacionadaID, TipoRedondeo)
-                            VALUES (@n, @p, @tipo, @rel, @red)"
-                        : @"UPDATE ListasPrecios SET Nombre=@n, Porcentaje=@p, TipoLista=@tipo,
-                            ListaRelacionadaID=@rel, TipoRedondeo=@red WHERE ListaID=@id";
-                    using (var cmd = new SqlCommand(sql, c))
+                    using (var tr = c.BeginTransaction())
                     {
-                        cmd.Parameters.AddWithValue("@n", nombre);
-                        cmd.Parameters.AddWithValue("@p", porcentaje);
-                        cmd.Parameters.AddWithValue("@tipo", tipo);
-                        cmd.Parameters.AddWithValue("@rel", (object)listaRelacionadaId ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@red", redondeo);
-                        cmd.Parameters.AddWithValue("@id", id);
-                        cmd.ExecuteNonQuery();
-                        return true;
+                        try
+                        {
+                            if (id == 0)
+                            {
+                                using (var cmd = new SqlCommand(@"
+INSERT INTO ListasPrecios (Nombre, Porcentaje, TipoLista, ListaRelacionadaID, TipoRedondeo)
+OUTPUT INSERTED.ListaID
+VALUES (@n, @p, @tipo, @rel, @red)", c, tr))
+                                {
+                                    cmd.Parameters.AddWithValue("@n", nombre);
+                                    cmd.Parameters.AddWithValue("@p", porcentaje);
+                                    cmd.Parameters.AddWithValue("@tipo", tipo);
+                                    cmd.Parameters.AddWithValue("@rel", (object)listaRelacionadaId ?? DBNull.Value);
+                                    cmd.Parameters.AddWithValue("@red", redondeo);
+                                    int nuevoId = Convert.ToInt32(cmd.ExecuteScalar());
+                                    AsignarListaATodosLosProductosEnConexion(c, tr, nuevoId);
+                                }
+                            }
+                            else
+                            {
+                                using (var cmd = new SqlCommand(@"UPDATE ListasPrecios SET Nombre=@n, Porcentaje=@p, TipoLista=@tipo,
+                            ListaRelacionadaID=@rel, TipoRedondeo=@red WHERE ListaID=@id", c, tr))
+                                {
+                                    cmd.Parameters.AddWithValue("@n", nombre);
+                                    cmd.Parameters.AddWithValue("@p", porcentaje);
+                                    cmd.Parameters.AddWithValue("@tipo", tipo);
+                                    cmd.Parameters.AddWithValue("@rel", (object)listaRelacionadaId ?? DBNull.Value);
+                                    cmd.Parameters.AddWithValue("@red", redondeo);
+                                    cmd.Parameters.AddWithValue("@id", id);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+                            tr.Commit();
+                            return true;
+                        }
+                        catch
+                        {
+                            try { tr.Rollback(); } catch { }
+                            throw;
+                        }
                     }
                 }
             }
@@ -3939,6 +3972,200 @@ ORDER BY p.Descripcion";
                 NotificarError(ex.Message);
                 return false;
             }
+        }
+
+        private static void AsignarListaATodosLosProductosEnConexion(SqlConnection c, SqlTransaction tr, int listaId)
+        {
+            using (var cmd = new SqlCommand(@"
+INSERT INTO ProductosListas (ProductoID, ListaID, PrecioFijo)
+SELECT p.ProductoID, @lid, NULL
+FROM Productos p
+WHERE NOT EXISTS (
+    SELECT 1 FROM ProductosListas pl WHERE pl.ProductoID = p.ProductoID AND pl.ListaID = @lid
+)", c, tr))
+            {
+                cmd.Parameters.AddWithValue("@lid", listaId);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static List<string> GetMarcasProductos()
+        {
+            var list = new List<string>();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    using (var cmd = new SqlCommand(@"
+SELECT DISTINCT LTRIM(RTRIM(ISNULL(Marca, N''))) AS Marca
+FROM Productos
+WHERE LTRIM(RTRIM(ISNULL(Marca, N''))) <> N''
+ORDER BY Marca", c))
+                    using (var rd = cmd.ExecuteReader())
+                    {
+                        while (rd.Read())
+                            list.Add(rd["Marca"]?.ToString() ?? "");
+                    }
+                }
+            }
+            catch { }
+            return list;
+        }
+
+        public static List<string> GetCategoriasProductos()
+        {
+            var list = new List<string>();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    using (var cmd = new SqlCommand(@"
+SELECT DISTINCT LTRIM(RTRIM(ISNULL(Categoria, N''))) AS Categoria
+FROM Productos
+WHERE LTRIM(RTRIM(ISNULL(Categoria, N''))) <> N''
+ORDER BY Categoria", c))
+                    using (var rd = cmd.ExecuteReader())
+                    {
+                        while (rd.Read())
+                            list.Add(rd["Categoria"]?.ToString() ?? "");
+                    }
+                }
+            }
+            catch { }
+            return list;
+        }
+
+        public static List<ProductoAsignacionListaItem> GetProductosParaAsignacionLista(int listaId, string ambito, string filtro)
+        {
+            var list = new List<ProductoAsignacionListaItem>();
+            ambito = (ambito ?? "todos").Trim().ToLowerInvariant();
+            filtro = (filtro ?? "").Trim();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    string where = "1=1";
+                    if (ambito == "marca" && !string.IsNullOrWhiteSpace(filtro))
+                        where = "LTRIM(RTRIM(ISNULL(p.Marca, N''))) = @f";
+                    else if (ambito == "categoria" && !string.IsNullOrWhiteSpace(filtro))
+                        where = "LTRIM(RTRIM(ISNULL(p.Categoria, N''))) = @f";
+
+                    string sql = $@"
+SELECT p.ProductoID,
+       LTRIM(RTRIM(ISNULL(p.Codigo, N''))) AS Codigo,
+       LTRIM(RTRIM(ISNULL(p.Descripcion, N''))) AS Descripcion,
+       LTRIM(RTRIM(ISNULL(p.Marca, N''))) AS Marca,
+       LTRIM(RTRIM(ISNULL(p.Categoria, N''))) AS Categoria,
+       CASE WHEN pl.ListaID IS NULL THEN 0 ELSE 1 END AS YaAsignado
+FROM Productos p
+LEFT JOIN ProductosListas pl ON pl.ProductoID = p.ProductoID AND pl.ListaID = @lid
+WHERE {where}
+ORDER BY p.Descripcion";
+                    using (var cmd = new SqlCommand(sql, c))
+                    {
+                        cmd.Parameters.AddWithValue("@lid", listaId);
+                        if (where.Contains("@f"))
+                            cmd.Parameters.AddWithValue("@f", filtro);
+                        using (var rd = cmd.ExecuteReader())
+                        {
+                            while (rd.Read())
+                            {
+                                bool ya = Convert.ToInt32(rd["YaAsignado"]) == 1;
+                                list.Add(new ProductoAsignacionListaItem
+                                {
+                                    Incluir = true,
+                                    ProductoID = Convert.ToInt32(rd["ProductoID"]),
+                                    Codigo = rd["Codigo"]?.ToString() ?? "",
+                                    Descripcion = rd["Descripcion"]?.ToString() ?? "",
+                                    Marca = rd["Marca"]?.ToString() ?? "",
+                                    Categoria = rd["Categoria"]?.ToString() ?? "",
+                                    YaAsignado = ya
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            return list;
+        }
+
+        /// <summary>
+        /// Dentro del conjunto cargado: asigna la lista a los IDs incluidos y la quita de los excluidos.
+        /// No toca productos que no están en ninguno de los dos conjuntos.
+        /// </summary>
+        public static int SincronizarAsignacionLista(int listaId, IList<int> incluirIds, IList<int> excluirIds)
+        {
+            if (listaId <= 0) return 0;
+            int afectados = 0;
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    AsegurarMigracionLite(c);
+                    using (var tr = c.BeginTransaction())
+                    {
+                        try
+                        {
+                            if (incluirIds != null)
+                            {
+                                foreach (int pid in incluirIds.Distinct())
+                                {
+                                    using (var cmd = new SqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM ProductosListas WHERE ProductoID=@pid AND ListaID=@lid)
+    INSERT INTO ProductosListas (ProductoID, ListaID, PrecioFijo) VALUES (@pid, @lid, NULL)", c, tr))
+                                    {
+                                        cmd.Parameters.AddWithValue("@pid", pid);
+                                        cmd.Parameters.AddWithValue("@lid", listaId);
+                                        afectados += cmd.ExecuteNonQuery();
+                                    }
+                                }
+                            }
+                            if (excluirIds != null)
+                            {
+                                foreach (int pid in excluirIds.Distinct())
+                                {
+                                    using (var cmd = new SqlCommand(
+                                        "DELETE FROM ProductosListas WHERE ProductoID=@pid AND ListaID=@lid", c, tr))
+                                    {
+                                        cmd.Parameters.AddWithValue("@pid", pid);
+                                        cmd.Parameters.AddWithValue("@lid", listaId);
+                                        afectados += cmd.ExecuteNonQuery();
+                                    }
+                                }
+                            }
+                            tr.Commit();
+                        }
+                        catch
+                        {
+                            try { tr.Rollback(); } catch { }
+                            throw;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificarError(ex.Message);
+                return -1;
+            }
+            return afectados;
+        }
+
+        public class ProductoAsignacionListaItem
+        {
+            public bool Incluir { get; set; }
+            public int ProductoID { get; set; }
+            public string Codigo { get; set; }
+            public string Descripcion { get; set; }
+            public string Marca { get; set; }
+            public string Categoria { get; set; }
+            public bool YaAsignado { get; set; }
         }
 
         public static bool EliminarListaPrecio(int id)
@@ -3953,6 +4180,9 @@ ORDER BY p.Descripcion";
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
+                    AsegurarMigracionLite(c);
+                    new SqlCommand($"UPDATE Clientes SET ListaPrecioID=NULL WHERE ListaPrecioID={id}", c).ExecuteNonQuery();
+                    new SqlCommand($"UPDATE Configuracion SET PosListaPrecioID=NULL WHERE PosListaPrecioID={id}", c).ExecuteNonQuery();
                     new SqlCommand($"DELETE FROM ProductosListas WHERE ListaID={id}", c).ExecuteNonQuery();
                     new SqlCommand($"DELETE FROM ListasPrecios WHERE ListaID={id}", c).ExecuteNonQuery();
                     return true;
@@ -4937,6 +5167,74 @@ ORDER BY Fecha DESC";
             return dt;
         }
 
+        public static bool TryCargarPresupuestoParaVenta(int presupuestoId, out int clienteId, out string estado, out List<FacturaItem> items)
+        {
+            clienteId = 0;
+            estado = "";
+            items = new List<FacturaItem>();
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    using (var cmd = new SqlCommand("SELECT ClienteID, ISNULL(Estado, N'') AS Estado FROM Presupuestos WHERE PresupuestoID=@id", c))
+                    {
+                        cmd.Parameters.AddWithValue("@id", presupuestoId);
+                        using (var rd = cmd.ExecuteReader())
+                        {
+                            if (!rd.Read()) return false;
+                            clienteId = rd["ClienteID"] != DBNull.Value ? Convert.ToInt32(rd["ClienteID"]) : 0;
+                            estado = rd["Estado"]?.ToString() ?? "";
+                        }
+                    }
+                    using (var cmd = new SqlCommand(@"
+SELECT pd.ProductoID, pd.Cantidad, pd.PrecioUnitario,
+       ISNULL(p.Codigo, N'') AS Codigo,
+       ISNULL(p.Descripcion, N'') AS Descripcion
+FROM PresupuestoDetalle pd
+LEFT JOIN Productos p ON p.ProductoID = pd.ProductoID
+WHERE pd.PresupuestoID=@id", c))
+                    {
+                        cmd.Parameters.AddWithValue("@id", presupuestoId);
+                        using (var rd = cmd.ExecuteReader())
+                        {
+                            while (rd.Read())
+                            {
+                                items.Add(new FacturaItem
+                                {
+                                    ProductoID = rd["ProductoID"] != DBNull.Value ? Convert.ToInt32(rd["ProductoID"]) : 0,
+                                    Codigo = rd["Codigo"]?.ToString() ?? "",
+                                    Descripcion = rd["Descripcion"]?.ToString() ?? "",
+                                    Cantidad = rd["Cantidad"] != DBNull.Value ? Convert.ToInt32(rd["Cantidad"]) : 1,
+                                    PrecioUnitario = rd["PrecioUnitario"] != DBNull.Value ? Convert.ToDecimal(rd["PrecioUnitario"]) : 0m
+                                });
+                            }
+                        }
+                    }
+                }
+                return items.Count > 0;
+            }
+            catch { return false; }
+        }
+
+        public static bool MarcarPresupuestoConvertido(int presupuestoId)
+        {
+            try
+            {
+                using (var c = new SqlConnection(_connectionString))
+                {
+                    c.Open();
+                    using (var cmd = new SqlCommand(
+                        "UPDATE Presupuestos SET Estado=N'Convertido' WHERE PresupuestoID=@id", c))
+                    {
+                        cmd.Parameters.AddWithValue("@id", presupuestoId);
+                        return cmd.ExecuteNonQuery() > 0;
+                    }
+                }
+            }
+            catch { return false; }
+        }
+
         public static DataTable GetPresupuestoDetalle(int pid)
         {
             var dt = new DataTable();
@@ -5586,7 +5884,8 @@ ORDER BY Fecha DESC";
             bool usaAperturaCaja = false,
             string condicionIVAEmpresa = "",
             string mpPointTerminalId = "",
-            bool mpPointAutomatico = false)
+            bool mpPointAutomatico = false,
+            string mpQrModo = "ambos")
         {
             certPassword = certPassword ?? "";
             bool omitirColumnaPwd = conservarPasswordAfipSiContraseniaVacia && string.IsNullOrWhiteSpace(certPassword);
@@ -5603,13 +5902,13 @@ ORDER BY Fecha DESC";
                         ? @"UPDATE Configuracion SET
   NombreFantasia=@nf, RazonSocial=@rs, CUIT=@cuit, Direccion=@dir, Telefono=@tel, Email=@email,
   LogoPath=@logo, CertificadoPath=@cert, PuntoVenta=@pv,
-  MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, MPPointTerminalId=@mptid, MPPointAutomatico=@mpauto, TipoCambioUSD=@tc, AfipProduccion=@afip,
+  MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, MPPointTerminalId=@mptid, MPPointAutomatico=@mpauto, MPQrModo=@mqr, TipoCambioUSD=@tc, AfipProduccion=@afip,
   LogoEnTicket=@let, LogoEnA4=@lea, UsaAperturaCaja=@uac, CondicionIVAEmpresa=@civa
 WHERE ID = 1"
                         : @"UPDATE Configuracion SET
   NombreFantasia=@nf, RazonSocial=@rs, CUIT=@cuit, Direccion=@dir, Telefono=@tel, Email=@email,
   LogoPath=@logo, CertificadoPath=@cert, PasswordAfip=@pwd, PuntoVenta=@pv,
-  MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, MPPointTerminalId=@mptid, MPPointAutomatico=@mpauto, TipoCambioUSD=@tc, AfipProduccion=@afip,
+  MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, MPPointTerminalId=@mptid, MPPointAutomatico=@mpauto, MPQrModo=@mqr, TipoCambioUSD=@tc, AfipProduccion=@afip,
   LogoEnTicket=@let, LogoEnA4=@lea, UsaAperturaCaja=@uac, CondicionIVAEmpresa=@civa
 WHERE ID = 1";
 
@@ -5631,6 +5930,7 @@ WHERE ID = 1";
                         update.Parameters.AddWithValue("@mpp", mpPosId ?? "");
                         update.Parameters.AddWithValue("@mptid", mpPointTerminalId ?? "");
                         update.Parameters.AddWithValue("@mpauto", mpPointAutomatico);
+                        update.Parameters.AddWithValue("@mqr", NormalizarModoQrMp(mpQrModo));
                         update.Parameters.AddWithValue("@tc", (object)tipoCambioUSD ?? DBNull.Value);
                         update.Parameters.AddWithValue("@afip", afipProduccion);
                         update.Parameters.AddWithValue("@let", logoEnTicket);
@@ -5645,9 +5945,9 @@ WHERE ID = 1";
                     using (var insert = new SqlCommand(@"
 INSERT INTO Configuracion (
   NombreFantasia,RazonSocial,CUIT,Direccion,Telefono,Email,LogoPath,CertificadoPath,PasswordAfip,PuntoVenta,
-  MPAccessToken,MPUserId,MPPosId,MPPointTerminalId,MPPointAutomatico,TipoCambioUSD,AfipProduccion,LogoEnTicket,LogoEnA4,UsaAperturaCaja,CondicionIVAEmpresa
+  MPAccessToken,MPUserId,MPPosId,MPPointTerminalId,MPPointAutomatico,MPQrModo,TipoCambioUSD,AfipProduccion,LogoEnTicket,LogoEnA4,UsaAperturaCaja,CondicionIVAEmpresa
 ) VALUES (
-  @nf,@rs,@cuit,@dir,@tel,@email,@logo,@cert,@pwd,@pv,@mpt,@mpu,@mpp,@mptid,@mpauto,@tc,@afip,@let,@lea,@uac,@civa)", c))
+  @nf,@rs,@cuit,@dir,@tel,@email,@logo,@cert,@pwd,@pv,@mpt,@mpu,@mpp,@mptid,@mpauto,@mqr,@tc,@afip,@let,@lea,@uac,@civa)", c))
                     {
                         insert.Parameters.AddWithValue("@nf", nombreFantasia ?? "");
                         insert.Parameters.AddWithValue("@rs", razonSocial ?? "");
@@ -5664,6 +5964,7 @@ INSERT INTO Configuracion (
                         insert.Parameters.AddWithValue("@mpp", mpPosId ?? "");
                         insert.Parameters.AddWithValue("@mptid", mpPointTerminalId ?? "");
                         insert.Parameters.AddWithValue("@mpauto", mpPointAutomatico);
+                        insert.Parameters.AddWithValue("@mqr", NormalizarModoQrMp(mpQrModo));
                         insert.Parameters.AddWithValue("@tc", (object)tipoCambioUSD ?? DBNull.Value);
                         insert.Parameters.AddWithValue("@afip", afipProduccion);
                         insert.Parameters.AddWithValue("@let", logoEnTicket);
@@ -5676,6 +5977,33 @@ INSERT INTO Configuracion (
                 }
             }
             catch { return false; }
+        }
+
+        public static class ModosQrMercadoPago
+        {
+            public const string Pantalla = "pantalla";
+            public const string Impreso = "impreso";
+            public const string Ambos = "ambos";
+        }
+
+        public static string NormalizarModoQrMp(string modo)
+        {
+            string m = (modo ?? "").Trim().ToLowerInvariant();
+            if (m == ModosQrMercadoPago.Pantalla || m == ModosQrMercadoPago.Impreso)
+                return m;
+            return ModosQrMercadoPago.Ambos;
+        }
+
+        public static string ObtenerModoQrMercadoPago()
+        {
+            try
+            {
+                var dr = GetConfiguracion();
+                if (dr == null || !dr.Table.Columns.Contains("MPQrModo"))
+                    return ModosQrMercadoPago.Ambos;
+                return NormalizarModoQrMp(dr["MPQrModo"]?.ToString());
+            }
+            catch { return ModosQrMercadoPago.Ambos; }
         }
 
         /// <summary>Persiste rutas del par .key / .crt generado por el asistente de activación ARCA.</summary>

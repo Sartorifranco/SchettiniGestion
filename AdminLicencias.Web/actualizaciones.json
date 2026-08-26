@@ -1,7 +1,20 @@
 {
-  "versionActual": "2.4.0",
-  "instalador": "SCHPOS-Setup-2.4.0.exe",
+  "versionActual": "2.4.1",
+  "instalador": "SCHPOS-Setup-2.4.1.exe",
   "notas": [
+    {
+      "version": "2.4.1",
+      "fecha": "2026-08-25",
+      "titulo": "Listas de precios, QR de caja y cobro más simple",
+      "items": [
+        "Al crear una lista de precios se asigna sola a todos los productos. Asignación masiva por marca o categoría, con excepciones.",
+        "Lista de precios por cliente: al elegir un mayorista en el POS se aplica sola.",
+        "Mercado Pago QR: modo Pantalla, Impreso o Ambos, y se puede descargar/imprimir el QR fijo de la caja.",
+        "Recargo o descuento según el medio de pago en el cobro rápido (se configura en Medios de pago).",
+        "Presupuesto se puede pasar a venta. Alerta de stock mínimo al vender y desde Inicio.",
+        "El cobro QR guarda el ID de operación de Mercado Pago."
+      ]
+    },
     {
       "version": "2.4.0",
       "fecha": "2026-08-25",

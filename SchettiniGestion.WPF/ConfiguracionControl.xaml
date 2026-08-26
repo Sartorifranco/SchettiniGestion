@@ -384,6 +384,19 @@
                                            Text="Use 'Crear' para generar una caja compatible (SCH01)."/>
                             </StackPanel>
                         </Grid>
+
+                        <TextBlock Text="Cómo muestra el QR al cobrar:" Style="{StaticResource ModuleLabelStyle}" Margin="0,12,0,0"/>
+                        <ComboBox x:Name="cmbMPQrModo" Style="{StaticResource ModuleComboBoxStyle}" Margin="0,0,0,4">
+                            <ComboBoxItem Content="Pantalla — QR dinámico en el visor del cliente" Tag="pantalla"/>
+                            <ComboBoxItem Content="Impreso — QR fijo de la caja (sin segundo monitor)" Tag="impreso"/>
+                            <ComboBoxItem Content="Ambos — visor + QR impreso (recomendado)" Tag="ambos" IsSelected="True"/>
+                        </ComboBox>
+                        <TextBlock Style="{StaticResource FieldHintTextStyle}" TextWrapping="Wrap"
+                                   Text="En «Impreso» o «Ambos» el cajero asigna el monto y el cliente escanea el QR de papel. El total aparece en el celular."/>
+                        <Button x:Name="btnDescargarQrCaja" Content="🖨 Descargar / imprimir QR de la caja"
+                                Style="{StaticResource SecondaryButtonStyle}" HorizontalAlignment="Left"
+                                Margin="0,10,0,0" Click="btnDescargarQrCaja_Click"
+                                ToolTip="Descarga el QR estático de Mercado Pago para imprimirlo y dejarlo en el mostrador."/>
                         <Button Content="💾 Guardar cambios de esta sección" Style="{StaticResource SecondaryButtonStyle}"
                                 HorizontalAlignment="Right" Margin="0,14,0,0" Click="btnGuardar_Click"/>
                         </StackPanel>
@@ -938,7 +951,8 @@
                 <Border Style="{StaticResource ConfigSectionCard}">
                     <StackPanel>
                         <TextBlock Text="Medios de pago" Style="{StaticResource ConfigSectionTitle}"/>
-                        <TextBlock Text="Configure los medios de pago disponibles para cobros." Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,14"/>
+                        <TextBlock Text="Configure los medios de pago. El recargo o descuento (%) se aplica en el cobro rápido del POS (positivo = recargo, negativo = descuento)."
+                                   Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,14" TextWrapping="Wrap"/>
                         <DataGrid x:Name="dgvMediosPago" AutoGenerateColumns="False" CanUserAddRows="False"
                                   CanUserReorderColumns="True" CanUserResizeColumns="True"
                                   Height="300" Margin="0,0,0,10"
@@ -956,7 +970,7 @@
                                 </Style>
                             </DataGrid.Resources>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="ID" Binding="{Binding MedioPagoID}" Width="50" MinWidth="50" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="ID" Binding="{Binding MedioID}" Width="50" MinWidth="50" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="2*" MinWidth="140"/>
                                 <DataGridTemplateColumn Header="Activo" Width="72" MinWidth="72" CanUserResize="True">
                                     <DataGridTemplateColumn.HeaderStyle>
@@ -985,6 +999,17 @@
                                             <Setter Property="VerticalContentAlignment" Value="Center"/>
                                         </Style>
                                     </DataGridTextColumn.EditingElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Recargo %" Binding="{Binding RecargoDescuentoPct}" Width="90" MinWidth="80">
+                                    <DataGridTextColumn.HeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource MedioPagoHeaderCentered}"/>
+                                    </DataGridTextColumn.HeaderStyle>
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter Property="Padding" Value="0,0,8,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
                                 <DataGridTemplateColumn Header="Acción" Width="100" MinWidth="100" CanUserResize="True">
                                     <DataGridTemplateColumn.HeaderStyle>

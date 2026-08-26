@@ -106,6 +106,16 @@ namespace SchettiniGestion.WPF
             }
         }
 
+        private void btnPasarAVenta_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.DataContext is DataRowView row)
+            {
+                int id = Convert.ToInt32(row["PresupuestoID"]);
+                if (Application.Current.MainWindow is PrincipalWindow p)
+                    p.AbrirVentasDesdePresupuesto(id);
+            }
+        }
+
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.DataContext is DataRowView row)

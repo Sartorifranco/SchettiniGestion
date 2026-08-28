@@ -54,7 +54,7 @@
 
                             <TextBlock Text="Activación de Licencia" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
 
-                            <TextBlock Text="Ingrese su clave de licencia para activar el sistema" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
+                            <TextBlock Text="Pegá la clave que te dio quien instaló el sistema" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
 
                         </StackPanel>
 
@@ -126,7 +126,7 @@
 
 
 
-                <TextBlock Text="ID de Máquina (envíe este código para obtener su licencia):" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
+                <TextBlock Text="ID de máquina (lo usa quien instala SCHPOS para emitir la licencia):" FontSize="11" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,4"/>
 
                 <Grid Margin="0,0,0,14">
 
@@ -206,7 +206,7 @@
 
                     <TextBlock Grid.Column="0" VerticalAlignment="Center" FontSize="10" Foreground="{DynamicResource TextSecondary}"
 
-                               Text="© SCHPOS — Soporte: info@schettini.com.ar"/>
+                               Text="© SCHPOS"/>
 
                     <Button Grid.Column="1" Content="Cancelar" Style="{StaticResource SecondaryButtonStyle}"
 

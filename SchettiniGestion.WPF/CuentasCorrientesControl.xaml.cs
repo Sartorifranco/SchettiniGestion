@@ -154,6 +154,7 @@ namespace SchettiniGestion.WPF
 
             if (exito)
             {
+                CajonEfectivoService.Abrir();
                 CustomMessageBox.Show("Movimiento registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 popupPago.Visibility = Visibility.Collapsed;
 

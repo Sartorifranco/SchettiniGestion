@@ -84,6 +84,7 @@ namespace SchettiniGestion.WPF
 
             if (DatabaseService.RegistrarMovimientoCaja(concepto, tipo, monto))
             {
+                CajonEfectivoService.Abrir();
                 CustomMessageBox.Show("Movimiento registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 ActualizarPantalla();
             }

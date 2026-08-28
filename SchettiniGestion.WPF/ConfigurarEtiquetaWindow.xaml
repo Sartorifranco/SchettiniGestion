@@ -1,0 +1,363 @@
+<Window x:Class="SchettiniGestion.WPF.ConfigurarEtiquetaWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Configurar etiquetas"
+        Width="920" Height="720"
+        MinWidth="760" MinHeight="560"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent">
+
+    <Window.Resources>
+        <Style x:Key="EtiquetaCfgTabItemStyle" TargetType="TabItem">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="Padding" Value="16,11"/>
+            <Setter Property="Margin" Value="3,4"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="bdr" Background="Transparent" CornerRadius="8"
+                                Padding="{TemplateBinding Padding}" Margin="{TemplateBinding Margin}">
+                            <ContentPresenter ContentSource="Header"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="bdr" Property="Background" Value="{DynamicResource SurfaceDark}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="EtiquetaCfgTabControlStyle" TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="12"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0"
+                                    Background="{DynamicResource CardBackgroundBrush}"
+                                    BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="8,4">
+                                <TabPanel IsItemsHost="True" Background="Transparent"/>
+                            </Border>
+                            <Border Grid.Row="2"
+                                    Background="{DynamicResource CardBackgroundBrush}"
+                                    BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="20,18">
+                                <ContentPresenter ContentSource="SelectedContent"/>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="EtiquetaCfgCheckStyle" TargetType="CheckBox">
+            <Setter Property="MinHeight" Value="44"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+
+        <Style x:Key="EtiquetaCfgFieldStyle" TargetType="StackPanel">
+            <Setter Property="Margin" Value="0,0,16,14"/>
+            <Setter Property="MinWidth" Value="150"/>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="{DynamicResource PanelBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderColor}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="20">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Encabezado -->
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Configurar etiquetas" FontSize="22" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimary}"/>
+                    <TextBlock x:Name="txtImpresora" Margin="0,4,0,0" TextWrapping="Wrap"
+                               FontSize="12.5" Foreground="{DynamicResource TextSecondary}"/>
+                </StackPanel>
+                <Button Grid.Column="1" Content="✕" Width="44" Height="44"
+                        Style="{StaticResource SecondaryButtonStyle}" FontSize="16"
+                        Click="btnCancelar_Click"/>
+            </Grid>
+
+            <TabControl Grid.Row="1" Style="{StaticResource EtiquetaCfgTabControlStyle}">
+                <TabControl.Resources>
+                    <Style TargetType="TabItem" BasedOn="{StaticResource EtiquetaCfgTabItemStyle}"/>
+                </TabControl.Resources>
+
+                <!-- Tamaño -->
+                <TabItem Header="Tamaño y orientación">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="18"/>
+                            <ColumnDefinition Width="280"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                      Padding="0,0,10,0" CanContentScroll="False">
+                        <StackPanel>
+                            <TextBlock Text="Tipo de etiqueta" Style="{StaticResource ModuleLabelStyle}"/>
+                            <ComboBox x:Name="cmbPreset" Style="{StaticResource ModuleComboBoxStyle}"
+                                      SelectionChanged="cmbPreset_SelectionChanged" Margin="0,0,0,14"/>
+
+                            <TextBlock Text="Medida física del rollo (ancho × alto, mm)"
+                                       Style="{StaticResource ModuleLabelStyle}"/>
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="24"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="txtAncho" Style="{StaticResource ModuleTextBoxStyle}"
+                                         TextChanged="Medida_TextChanged"/>
+                                <TextBlock Grid.Column="1" Text="×" FontSize="18"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextSecondary}"/>
+                                <TextBox x:Name="txtAlto" Grid.Column="2" Style="{StaticResource ModuleTextBoxStyle}"
+                                         TextChanged="Medida_TextChanged"/>
+                                <Button Grid.Column="3" Content="⇄ Intercambiar"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Margin="10,0,0,0" MinHeight="44" Padding="14,8"
+                                        Click="btnIntercambiar_Click"/>
+                            </Grid>
+
+                            <TextBlock Text="Cómo leer el contenido" Style="{StaticResource ModuleLabelStyle}"/>
+                            <ComboBox x:Name="cmbOrientacion" Style="{StaticResource ModuleComboBoxStyle}"
+                                      SelectionChanged="cmbOrientacion_SelectionChanged" Margin="0,0,0,14">
+                                <ComboBoxItem Content="Sin girar (recomendado)"/>
+                                <ComboBoxItem Content="Girado 90°"/>
+                            </ComboBox>
+
+                            <TextBlock Text="Modo de impresión" Style="{StaticResource ModuleLabelStyle}"/>
+                            <ComboBox x:Name="cmbModo" Style="{StaticResource ModuleComboBoxStyle}"
+                                      SelectionChanged="cmbModo_SelectionChanged" Margin="0,0,0,6">
+                                <ComboBoxItem Content="Rollo"/>
+                                <ComboBoxItem Content="A4"/>
+                                <ComboBoxItem Content="Cartel"/>
+                                <ComboBoxItem Content="Gondola"/>
+                            </ComboBox>
+                            <TextBlock x:Name="txtAyudaModo" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,8"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       Text="Rollo = térmica de etiquetas. A4 = hoja con grilla. Cartel/Góndola = formatos grandes en A4."/>
+                            <Button Content="¿Qué modo debo usar?"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Margin="0,0,0,14" MinHeight="40" Padding="12,8"
+                                    HorizontalAlignment="Left"
+                                    Click="btnAyudaModo_Click"/>
+
+                            <TextBlock x:Name="txtHintAutoCorte" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,8"
+                                       Foreground="{DynamicResource TextSecondary}"
+                                       Visibility="Collapsed"
+                                       Text="El tilde «Auto-corte al terminar» aparece al pasar el modo a Rollo. Góndola, cartel y A4 salen en hoja y no usan cuchilla de rollo."/>
+
+                            <StackPanel x:Name="pnlAutoCorte">
+                                <CheckBox x:Name="chkAutoCorte"
+                                          Content="Auto-corte al terminar (rollo)"
+                                          Style="{StaticResource EtiquetaCfgCheckStyle}"
+                                          Checked="chkAutoCorte_Changed"
+                                          Unchecked="chkAutoCorte_Changed"/>
+                                <TextBlock Text="Protocolo del cortador" Style="{StaticResource ModuleLabelStyle}"/>
+                                <ComboBox x:Name="cmbProtocoloCorte" Style="{StaticResource ModuleComboBoxStyle}"
+                                          Margin="0,0,0,8">
+                                    <ComboBoxItem Content="Automático (por nombre de impresora)" Tag="Auto"/>
+                                    <ComboBoxItem Content="ESC/POS — Epson, Rongta, Xprinter…" Tag="ESCPOS"/>
+                                    <ComboBoxItem Content="TSPL — TSC, Argox, Godex…" Tag="TSPL"/>
+                                    <ComboBoxItem Content="ZPL — Zebra" Tag="ZPL"/>
+                                    <ComboBoxItem Content="EPL — Zebra / Eltron antiguas" Tag="EPL"/>
+                                </ComboBox>
+                                <TextBlock TextWrapping="Wrap" FontSize="12"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Text="Envía el corte al final del trabajo en Rollo. La impresora debe tener cuchilla. Si no corta, cambiá el protocolo o activá el cutter en el driver de Windows."/>
+                                <Button Content="¿Cómo funciona el auto-corte?"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Margin="0,10,0,8" MinHeight="40" Padding="12,8"
+                                        HorizontalAlignment="Left"
+                                        Click="btnAyudaAutoCorte_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                        </ScrollViewer>
+
+                        <Border Grid.Column="2"
+                                Background="{DynamicResource SurfaceDark}"
+                                BorderBrush="{DynamicResource BorderColor}"
+                                BorderThickness="1" CornerRadius="10" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Vista previa" FontSize="15" FontWeight="Bold"
+                                           Foreground="{DynamicResource TextPrimary}"/>
+                                <TextBlock x:Name="txtMedidaPreview" Margin="0,4,0,14" TextWrapping="Wrap"
+                                           FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+                                <Grid Height="220">
+                                    <Border x:Name="previewEtiqueta" Background="White" CornerRadius="4"
+                                            BorderBrush="#3498DB" BorderThickness="2.5"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <StackPanel x:Name="previewContenido"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="Producto" Foreground="Black" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" FontSize="11"/>
+                                            <TextBlock Text="▮▮▮▮▮▮▮▮▮▮" Foreground="Black" FontSize="13"
+                                                       HorizontalAlignment="Center" Margin="0,4"/>
+                                            <TextBlock Text="$ 1.234,50" Foreground="Black" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" FontSize="11"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                                <TextBlock TextWrapping="Wrap" FontSize="11.5" Margin="0,10,0,0"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Text="La orientación sólo gira el contenido. El tamaño físico siempre debe coincidir con el rollo."/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </TabItem>
+
+                <!-- Contenido -->
+                <TabItem Header="Contenido">
+                    <StackPanel>
+                        <TextBlock Text="Datos que aparecerán en cada etiqueta"
+                                   FontSize="16" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,14"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,16"
+                                   Foreground="{DynamicResource TextSecondary}"
+                                   Text="Marcá al menos un dato. Estos valores se usan tanto en rollo como en A4, cartel y góndola."/>
+
+                        <WrapPanel>
+                            <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,12,12" MinWidth="220">
+                                <CheckBox x:Name="chkNombre" Content="Nombre del producto"
+                                          Style="{StaticResource EtiquetaCfgCheckStyle}" Margin="0"/>
+                            </Border>
+                            <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,12,12" MinWidth="220">
+                                <CheckBox x:Name="chkDescripcion" Content="Descripción adicional"
+                                          Style="{StaticResource EtiquetaCfgCheckStyle}" Margin="0"/>
+                            </Border>
+                            <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,12,12" MinWidth="220">
+                                <CheckBox x:Name="chkPrecio" Content="Precio"
+                                          Style="{StaticResource EtiquetaCfgCheckStyle}" Margin="0"/>
+                            </Border>
+                            <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,12,12" MinWidth="220">
+                                <CheckBox x:Name="chkCodigo" Content="Código interno"
+                                          Style="{StaticResource EtiquetaCfgCheckStyle}" Margin="0"/>
+                            </Border>
+                            <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,12,12" MinWidth="220">
+                                <CheckBox x:Name="chkBarras" Content="Código de barras"
+                                          Style="{StaticResource EtiquetaCfgCheckStyle}" Margin="0"/>
+                            </Border>
+                            <Border Background="{DynamicResource SurfaceDark}" BorderBrush="{DynamicResource BorderColor}"
+                                    BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,12,12" MinWidth="220">
+                                <CheckBox x:Name="chkMarca" Content="Marca"
+                                          Style="{StaticResource EtiquetaCfgCheckStyle}" Margin="0"/>
+                            </Border>
+                        </WrapPanel>
+                    </StackPanel>
+                </TabItem>
+
+                <!-- A4 -->
+                <TabItem Header="Hoja A4">
+                    <StackPanel>
+                        <TextBlock Text="Diseño en hoja A4"
+                                   FontSize="16" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,16"
+                                   Foreground="{DynamicResource TextSecondary}"
+                                   Text="Estos valores sólo se usan cuando el modo de impresión es A4. En rollo se ignoran."/>
+
+                        <WrapPanel>
+                            <StackPanel Style="{StaticResource EtiquetaCfgFieldStyle}">
+                                <TextBlock Text="Columnas" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtColumnas" Style="{StaticResource ModuleTextBoxStyle}" Width="120"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaCfgFieldStyle}">
+                                <TextBlock Text="Sep. horizontal (mm)" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtGapH" Style="{StaticResource ModuleTextBoxStyle}" Width="120"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaCfgFieldStyle}">
+                                <TextBlock Text="Sep. vertical (mm)" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtGapV" Style="{StaticResource ModuleTextBoxStyle}" Width="120"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaCfgFieldStyle}">
+                                <TextBlock Text="Margen izquierdo (mm)" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtMargenIzq" Style="{StaticResource ModuleTextBoxStyle}" Width="120"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaCfgFieldStyle}">
+                                <TextBlock Text="Margen superior (mm)" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtMargenSup" Style="{StaticResource ModuleTextBoxStyle}" Width="120"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaCfgFieldStyle}">
+                                <TextBlock Text="Margen derecho (mm)" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtMargenDer" Style="{StaticResource ModuleTextBoxStyle}" Width="120"/>
+                            </StackPanel>
+                            <StackPanel Style="{StaticResource EtiquetaCfgFieldStyle}">
+                                <TextBlock Text="Margen inferior (mm)" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtMargenInf" Style="{StaticResource ModuleTextBoxStyle}" Width="120"/>
+                            </StackPanel>
+                        </WrapPanel>
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
+
+            <!-- Pie -->
+            <Border Grid.Row="2" Margin="0,16,0,0" Padding="0,14,0,0"
+                    BorderBrush="{DynamicResource BorderColor}" BorderThickness="0,1,0,0">
+                <DockPanel LastChildFill="False">
+                    <Button DockPanel.Dock="Left" Content="🖨️ Probar impresión"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            MinHeight="48" Padding="18,10"
+                            Click="btnGuardarProbar_Click"/>
+                    <Button DockPanel.Dock="Right" Content="💾 Guardar configuración"
+                            Style="{StaticResource ButtonStyle}"
+                            MinHeight="48" Padding="20,10" FontWeight="SemiBold"
+                            Click="btnGuardar_Click"/>
+                    <Button DockPanel.Dock="Right" Content="Cancelar"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            MinHeight="48" Padding="18,10" Margin="0,0,10,0"
+                            Click="btnCancelar_Click"/>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

@@ -163,6 +163,7 @@ namespace SchettiniGestion.WPF
 
             if (DatabaseService.AbrirCaja(monto, null))
             {
+                CajonEfectivoService.Abrir();
                 CustomMessageBox.Show(
                     $"Caja abierta.\nFondo fijo: {monto:C2}\nYa podés vender.",
                     "Apertura registrada",
@@ -1813,6 +1814,7 @@ namespace SchettiniGestion.WPF
                     _pagoMPAprobado = false;
                     _parcelas_MP = null;
                     RegistrarUltimoComprobante(fid, tipoCompTexto);
+                    CajonEfectivoService.AbrirSiHayEfectivo(cobranzasConfirmadas);
                     CustomerScreenService.PantallaGracias();
                     string msgExito = "Venta Guardada.";
                     if (!string.IsNullOrEmpty(cae)) msgExito += "\n¡Factura Electrónica Aprobada!";

@@ -147,43 +147,12 @@
                 <TextBlock Text="Usuario del sistema (ej. cajero o admin)." FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,14" Opacity="0.9"/>
 
                 <TextBlock Text="CONTRASEÑA" Style="{StaticResource LabelStyle}"/>
-                <PasswordBox x:Name="txtPassword" Style="{StaticResource PasswordBoxStyle}" Height="45" FontSize="16" Margin="0,0,0,6" KeyDown="txtPassword_KeyDown"/>
-                <TextBlock Text="La preferencia del teclado táctil se guarda aunque cierre el sistema." FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,20" Opacity="0.9"/>
+                <PasswordBox x:Name="txtPassword" Style="{StaticResource PasswordBoxStyle}" Height="45" FontSize="16" Margin="0,0,0,20" KeyDown="txtPassword_KeyDown"/>
 
                 <Button x:Name="btnIngresar" Content="INGRESAR ➔" Click="btnIngresar_Click" Style="{StaticResource ButtonStyle}" Height="50" FontSize="16" Margin="0,0,0,12"/>
 
                 <Button x:Name="btnSalir" Content="Salir del Sistema" Click="btnSalir_Click" Style="{StaticResource SecondaryButtonStyle}" Height="40"/>
             </StackPanel>
-
-            <Button x:Name="btnTecladoLogin" Click="btnTecladoLogin_Click"
-                    HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="18"
-                    MinHeight="44" MinWidth="120" Padding="12,8"
-                    Cursor="Hand" Background="#1E293B"
-                    BorderBrush="#334155" BorderThickness="1"
-                    Foreground="{StaticResource TextSecondary}"
-                    ToolTip="Activar o apagar el teclado táctil. La elección se recuerda al reiniciar.">
-                <Button.Template>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="bd" Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#334155"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Button.Template>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="⌨" FontSize="15" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="txtLabelTecladoLogin" Text="Teclado OFF" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
 
             <Button Content="✕" Click="btnSalir_Click" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="15"
                     Style="{StaticResource SecondaryButtonStyle}" Width="30" Height="30"/>

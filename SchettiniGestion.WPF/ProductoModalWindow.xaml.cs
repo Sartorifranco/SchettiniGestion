@@ -845,7 +845,7 @@ namespace SchettiniGestion.WPF
         {
             if (btnEliminar == null || _productoId == 0) return;
             bool activo = chkActivo?.IsChecked != false;
-            if (SesionUsuario.EsUsuarioTecnico)
+            if (SesionUsuario.EsUsuarioPrivilegiado)
             {
                 btnEliminar.Content = "Eliminar";
                 btnEliminar.ToolTip = "Eliminación física reservada para usuario técnico.";
@@ -861,7 +861,7 @@ namespace SchettiniGestion.WPF
 
         private void btnEliminar_Click(object sender, RoutedEventArgs e)
         {
-            if (SesionUsuario.EsUsuarioTecnico)
+            if (SesionUsuario.EsUsuarioPrivilegiado)
             {
                 if (ModernMessageBox.Show("¿Eliminar definitivamente este producto? Esta acción es solo para soporte técnico.", "Confirmar eliminación técnica", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
                     return;

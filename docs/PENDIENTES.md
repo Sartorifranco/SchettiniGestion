@@ -1,8 +1,16 @@
-# Pendientes SCHPOS (después de 2.4.1)
+# Pendientes SCHPOS (después de 2.4.2)
 
 Lista de lo que quedó afuera a propósito: o tiene riesgo (plata / fiscal / homologación) o es un módulo nuevo. Abordar en el próximo ciclo.
 
-Instalador de esta entrega: `Instalador\Output\SCHPOS-Setup-2.4.1.exe`
+Instalador de esta entrega: `Instalador\Output\SCHPOS-Setup-2.4.2.exe`
+
+## Qué salió en 2.4.2 (no rehacer)
+
+- Cajón de efectivo por pulso ESC/POS en la impresora de tickets (cobro efectivo, turno, movimientos de caja).
+- Popup Configurar etiqueta restaurado; auto-corte solo en modo Rollo.
+- Corte de papel en ticket 80/58 mm.
+- Candado fiscal: admin edita fantasía/slogan/logo; CUIT/ARCA solo técnico o super admin.
+- Licencia: el local puede pegar una clave que ya le dieron. Usuarios `9999` y `schadmin` ocultos.
 
 ## Qué salió en 2.4.1 (no rehacer)
 
@@ -11,6 +19,7 @@ Instalador de esta entrega: `Instalador\Output\SCHPOS-Setup-2.4.1.exe`
 - Recargo o descuento por medio de pago en cobro rápido (el % se carga en Medios de pago).
 - Pasar presupuesto a venta (se respetan los precios cotizados).
 - Aviso de stock mínimo al vender y atajo desde Inicio.
+- Teclado virtual de SCHPOS eliminado: en táctil se usa el teclado nativo de Windows.
 
 ## Cobro con tarjeta / posnet
 

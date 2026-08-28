@@ -50,12 +50,11 @@ namespace SchettiniGestion.WPF
             ConfigurarUiTecnica();
             CargarUsuarios();
             CargarRoles();
-            Limpiar();
         }
 
         private void ConfigurarUiTecnica()
         {
-            bool tecnico = SesionUsuario.EsUsuarioTecnico;
+            bool tecnico = SesionUsuario.EsUsuarioPrivilegiado;
             if (tabTecnico != null)
                 tabTecnico.Visibility = tecnico ? Visibility.Visible : Visibility.Collapsed;
             if (cmbTechTabla != null)
@@ -131,16 +130,11 @@ namespace SchettiniGestion.WPF
                 // Obtenemos la lista actualizada de roles (incluyendo los nuevos creados en GestiónPermisos)
                 List<Rol> roles = DatabaseService.GetRoles();
 
-                cmbRolesUsuario.ItemsSource = null;
                 cmbRolesPermisos.ItemsSource = null;
-                cmbRolesUsuario.ItemsSource = roles;
                 cmbRolesPermisos.ItemsSource = roles;
 
                 if (roles.Count > 0)
-                {
-                    cmbRolesUsuario.SelectedIndex = -1;
                     cmbRolesPermisos.SelectedIndex = -1;
-                }
             }
             catch (Exception ex)
             {
@@ -148,97 +142,95 @@ namespace SchettiniGestion.WPF
             }
         }
 
-        private void Limpiar()
-        {
-            _usuarioIdSeleccionado = 0;
-            txtNombreUsuario.Text = "";
-            txtNombrePersonal.Text = "";
-            txtPassword.Password = "";
-            cmbRolesUsuario.SelectedIndex = -1;
-            foreach (var p in PermisosRolActual) p.Habilitado = false;
-            btnEliminar.IsEnabled = false;
-            txtNombreUsuario.Focus();
-        }
-
         private void btnNuevo_Click(object sender, RoutedEventArgs e)
         {
-            Limpiar();
+            AbrirModalUsuario(0, "", "", 0);
         }
 
-        private void btnGuardarUsuario_Click(object sender, RoutedEventArgs e)
+        private void btnEditarFila_Click(object sender, RoutedEventArgs e)
         {
-            bool esNuevo = _usuarioIdSeleccionado == 0;
+            var row = FilaDeBoton(sender);
+            if (row == null) return;
+            SeleccionarFila(row);
+            AbrirModalUsuario(
+                Convert.ToInt32(row["UsuarioID"]),
+                row["NombreUsuario"]?.ToString() ?? "",
+                row.Row.Table.Columns.Contains("NombrePersonal") ? row["NombrePersonal"]?.ToString() ?? "" : "",
+                row["RolID"] != DBNull.Value ? Convert.ToInt32(row["RolID"]) : 0);
+        }
 
-            if (string.IsNullOrWhiteSpace(txtNombreUsuario.Text) || string.IsNullOrWhiteSpace(txtNombrePersonal.Text) || cmbRolesUsuario.SelectedItem == null)
+        private void btnEliminarFila_Click(object sender, RoutedEventArgs e)
+        {
+            var row = FilaDeBoton(sender);
+            if (row == null) return;
+            SeleccionarFila(row);
+            EliminarUsuarioFila(row);
+        }
+
+        private static System.Data.DataRowView FilaDeBoton(object sender)
+        {
+            var fe = sender as FrameworkElement;
+            return fe?.DataContext as System.Data.DataRowView;
+        }
+
+        private void AbrirModalUsuario(int usuarioId, string nombreUsuario, string nombrePersonal, int rolId)
+        {
+            var win = new UsuarioModalWindow(usuarioId, nombreUsuario, nombrePersonal, rolId)
             {
-                CustomMessageBox.Show("Complete Nombre de Usuario, Nombre del Personal y Rol.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Owner = Window.GetWindow(this)
+            };
+            if (win.ShowDialog() == true)
+                CargarUsuarios();
+        }
+
+        private void EliminarUsuarioFila(System.Data.DataRowView row)
+        {
+            int id = Convert.ToInt32(row["UsuarioID"]);
+            string nombre = (row["NombreUsuario"]?.ToString() ?? "").Trim();
+            if (string.Equals(nombre, "admin", StringComparison.OrdinalIgnoreCase))
+            {
+                CustomMessageBox.Show("No se puede eliminar al usuario administrador del local.", "Prohibido",
+                    MessageBoxButton.OK, MessageBoxImage.Stop);
                 return;
             }
-            if (esNuevo && string.IsNullOrWhiteSpace(txtPassword.Password))
+
+            string mostrar = nombre;
+            if (row.Row.Table.Columns.Contains("NombrePersonal") && row["NombrePersonal"] != DBNull.Value)
             {
-                CustomMessageBox.Show("Ingrese una contraseña para el nuevo usuario.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                string personal = row["NombrePersonal"].ToString().Trim();
+                if (!string.IsNullOrEmpty(personal))
+                    mostrar = personal;
+            }
+
+            var rta = CustomMessageBox.Show(
+                $"¿Eliminar usuario {mostrar}?",
+                "Eliminar usuario",
+                MessageBoxButton.OKCancel,
+                MessageBoxImage.Warning);
+            if (rta != MessageBoxResult.Yes && rta != MessageBoxResult.OK)
                 return;
-            }
 
-            try
+            if (DatabaseService.EliminarUsuario(id))
             {
-                Rol rolSeleccionado = (Rol)cmbRolesUsuario.SelectedItem;
-                // Al editar: si la contraseña quedó en blanco, se conserva la existente
-                string hash = string.IsNullOrWhiteSpace(txtPassword.Password) ? "" : PasswordHasher.HashPassword(txtPassword.Password);
-
-                bool exito = DatabaseService.GuardarUsuarioConHash(
-                    _usuarioIdSeleccionado,
-                    txtNombreUsuario.Text.Trim(),
-                    hash,
-                    rolSeleccionado.RolId,
-                    rolSeleccionado.Nombre,
-                    txtNombrePersonal.Text.Trim());
-
-                if (exito)
-                {
-                    CustomMessageBox.Show("Usuario guardado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                    CargarUsuarios();
-                    Limpiar();
-                }
-                else
-                {
-                    CustomMessageBox.Show("Error al guardar en base de datos.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                _usuarioIdSeleccionado = 0;
+                CargarUsuarios();
             }
-            catch (Exception ex)
+            else
             {
-                CustomMessageBox.Show("Error crítico: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CustomMessageBox.Show("No se pudo eliminar el usuario.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void btnEliminar_Click(object sender, RoutedEventArgs e)
+        private void SeleccionarFila(System.Data.DataRowView row)
         {
-            if (_usuarioIdSeleccionado == 0) return;
-
-            // Evitar que se borre a sí mismo o al admin principal si se llama 'admin'
-            if (txtNombreUsuario.Text.ToLower() == "admin")
-            {
-                CustomMessageBox.Show("No se puede eliminar al super-administrador.", "Prohibido", MessageBoxButton.OK, MessageBoxImage.Stop);
-                return;
-            }
-
-            if (CustomMessageBox.Show($"¿Eliminar el usuario '{txtNombreUsuario.Text}'?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
-            {
-                if (DatabaseService.EliminarUsuario(_usuarioIdSeleccionado))
-                {
-                    CargarUsuarios();
-                    Limpiar();
-                }
-                else
-                {
-                    CustomMessageBox.Show("No se pudo eliminar el usuario.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
+            dgvUsuarios.SelectedItem = row;
+            _usuarioIdSeleccionado = Convert.ToInt32(row["UsuarioID"]);
         }
 
         private void btnTechResetPassword_Click(object sender, RoutedEventArgs e)
         {
-            if (!SesionUsuario.EsUsuarioTecnico) return;
+            if (!SesionUsuario.EsUsuarioPrivilegiado) return;
             if (_usuarioIdSeleccionado <= 0)
             {
                 CustomMessageBox.Show("Seleccione un usuario de la grilla.", "Soporte técnico", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -264,7 +256,7 @@ namespace SchettiniGestion.WPF
 
         private void btnTechHardDelete_Click(object sender, RoutedEventArgs e)
         {
-            if (!SesionUsuario.EsUsuarioTecnico) return;
+            if (!SesionUsuario.EsUsuarioPrivilegiado) return;
             string tabla = cmbTechTabla.SelectedItem?.ToString();
             if (!int.TryParse(txtTechId.Text?.Trim(), out int id) || id <= 0)
             {
@@ -290,7 +282,7 @@ namespace SchettiniGestion.WPF
 
         private void btnTechActivarFuncion_Click(object sender, RoutedEventArgs e)
         {
-            if (!SesionUsuario.EsUsuarioTecnico) return;
+            if (!SesionUsuario.EsUsuarioPrivilegiado) return;
             string funcion = txtTechFuncion.Text?.Trim();
             if (string.IsNullOrWhiteSpace(funcion))
             {
@@ -312,7 +304,7 @@ namespace SchettiniGestion.WPF
 
         private void CargarAuditoriaTecnica()
         {
-            if (!SesionUsuario.EsUsuarioTecnico || dgvAccionesTecnicas == null) return;
+            if (!SesionUsuario.EsUsuarioPrivilegiado || dgvAccionesTecnicas == null) return;
             dgvAccionesTecnicas.ItemsSource = DatabaseService.GetAccionesTecnicas().DefaultView;
         }
 
@@ -344,7 +336,6 @@ namespace SchettiniGestion.WPF
                 if (string.Equals(r.Nombre, nombre, StringComparison.OrdinalIgnoreCase))
                 {
                     cmbRolesPermisos.SelectedItem = r;
-                    cmbRolesUsuario.SelectedItem = r;
                     break;
                 }
             }
@@ -358,30 +349,20 @@ namespace SchettiniGestion.WPF
             if (dgvUsuarios.SelectedItem is DataRowView row)
             {
                 _usuarioIdSeleccionado = Convert.ToInt32(row["UsuarioID"]);
-                txtNombreUsuario.Text = row["NombreUsuario"].ToString();
-                if (row.Row.Table.Columns.Contains("NombrePersonal") && row["NombrePersonal"] != DBNull.Value)
-                    txtNombrePersonal.Text = row["NombrePersonal"].ToString();
-                else
-                    txtNombrePersonal.Text = "";
-                txtPassword.Password = ""; // Por seguridad, no traemos el Hash
 
-                // Seleccionar el rol correspondiente en el ComboBox
                 int rolId = 0;
                 if (row["RolID"] != DBNull.Value)
                     rolId = Convert.ToInt32(row["RolID"]);
 
-                foreach (Rol r in cmbRolesUsuario.Items)
+                foreach (Rol r in cmbRolesPermisos.Items)
                 {
                     if (r.RolId == rolId)
                     {
-                        cmbRolesUsuario.SelectedItem = r;
                         cmbRolesPermisos.SelectedItem = r;
                         CargarPermisosRolSeleccionado();
                         break;
                     }
                 }
-
-                btnEliminar.IsEnabled = true;
             }
         }
 

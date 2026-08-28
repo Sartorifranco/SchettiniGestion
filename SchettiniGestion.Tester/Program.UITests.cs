@@ -214,14 +214,10 @@ namespace SchettiniGestion.Tester
 
                     CerrarModalesInformativosSiHay(app, automation, principal);
 
-                    Registrar("ℹ️ UI: Cabecera — Combo «Pantalla» y botón «Teclado» no se alteran (evitar OSK y diálogos opcionales); solo se verifica presencia.");
+                    Registrar("ℹ️ UI: Cabecera — Combo «Pantalla»; el teclado propio de SCHPOS ya no existe (se usa el nativo de Windows).");
                     var hayComboPantalla = principal.FindFirstDescendant(automation.ConditionFactory.ByAutomationId("cmbModoPantalla")) != null
                         || principal.FindFirstDescendant(automation.ConditionFactory.ByControlType(ControlType.ComboBox)) != null;
-                    var btnTecladoUi = principal.FindFirstDescendant(automation.ConditionFactory.ByAutomationId("btnTeclado"));
-                    var hayTeclado = btnTecladoUi != null || principal.FindAllDescendants(automation.ConditionFactory.ByControlType(ControlType.Button))
-                        .Any(b => (b.Name ?? "").IndexOf("Teclado", StringComparison.OrdinalIgnoreCase) >= 0);
                     Registrar(hayComboPantalla ? "✅ UI: Combo de modo de pantalla visible en UIA." : "⚠️ UI: No se detectó ComboBox de modo de pantalla en UIA.");
-                    Registrar(hayTeclado ? "✅ UI: Botón Teclado localizado (AutomationId o nombre; no se invoca OSK)." : "⚠️ UI: Botón Teclado no encontrado en UIA.");
 
                     RegistrarAuditoriaSuperficie(automation, principal, "SHELL — Tras login (Inicio por defecto)",
                         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Reporte_QA_UI_00_shell_inicial.png"));

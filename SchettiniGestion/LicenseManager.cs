@@ -227,14 +227,14 @@ namespace SchettiniGestion
 
             if (!cargada)
             {
-                UltimoMensajeError = "No hay licencia activa. Pegue la clave que le envió el proveedor o cargue el archivo licencia.key.";
+                UltimoMensajeError = "No hay licencia activa. Pegá la clave que te dio el soporte técnico o cargá el archivo licencia.key.";
                 return false;
             }
 
             // Comparar por día de calendario (la clave guarda medianoche del día de vencimiento).
             if (DateTime.Now.Date > _licenciaActual.FechaExpiracion.Date)
             {
-                UltimoMensajeError = "Licencia expirada. Solicite una renovación al proveedor.";
+                UltimoMensajeError = "Licencia expirada. Pedile la renovación al soporte técnico.";
                 return false;
             }
 
@@ -246,7 +246,7 @@ namespace SchettiniGestion
                 if (!string.Equals(hwActual, _licenciaActual.HardwareID.Trim(),
                                    StringComparison.OrdinalIgnoreCase))
                 {
-                    UltimoMensajeError = "Esta licencia no es válida para este equipo. Contacte al proveedor para reactivar.";
+                    UltimoMensajeError = "Esta licencia no es válida para este equipo. Pedile al soporte técnico que emita una clave para esta PC.";
                     return false;
                 }
             }
@@ -329,6 +329,21 @@ namespace SchettiniGestion
             if (_licenciaActual == null)
                 CargarLicencia();
             return _licenciaActual?.FechaExpiracion.ToShortDateString() ?? "-";
+        }
+
+        /// <summary>Texto corto de extras activos para mostrar en Configuración → Licencia.</summary>
+        public static string ObtenerResumenExtrasHabilitados()
+        {
+            var partes = new List<string>();
+            if (TieneConexionRed()) partes.Add("Red");
+            if (TieneAfip()) partes.Add("ARCA");
+            if (TieneEtiquetas()) partes.Add("Etiquetas");
+            if (TieneVisorCliente()) partes.Add("Visor cliente");
+            if (TieneMercadoPagoQr()) partes.Add("MP QR");
+            if (TieneMercadoPagoPoint()) partes.Add("MP Point");
+            if (TieneSoporte()) partes.Add("Soporte");
+            if (TieneEstadisticas()) partes.Add("Estadísticas");
+            return partes.Count == 0 ? "Ninguno (solo el paquete base)" : string.Join(" · ", partes);
         }
     }
 }

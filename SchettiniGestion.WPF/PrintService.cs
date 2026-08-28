@@ -373,8 +373,8 @@ namespace SchettiniGestion.WPF
                     y += 5;
                     g.DrawString("TOTAL RECAUDADO:", fT, WinDrawing.Brushes.Black, 0, y); y += 25;
                     DibujarTextoCentrado(g, totalFinal.ToString("C2"), fB, w, ref y);
-                    y += 20;
-                    DibujarTextoCentrado(g, ".", fN, w, ref y);
+                    y += 40;
+                    DibujarTextoCentrado(g, " ", fN, w, ref y);
                 };
 
                 var (impresoraTicket, _) = DatabaseService.GetImpresoras();
@@ -595,6 +595,9 @@ namespace SchettiniGestion.WPF
             void AgregarLinea(string texto) { if (!string.IsNullOrWhiteSpace(texto)) { if (pInfo.Inlines.Count > 0) pInfo.Inlines.Add(new LineBreak()); pInfo.Inlines.Add(new Run(texto)); } }
             if (!string.IsNullOrWhiteSpace(nombreFantasia) && !nombreFantasia.Equals(razonSocial, StringComparison.OrdinalIgnoreCase))
                 AgregarLinea(nombreFantasia);
+            string slogan = DatabaseService.ObtenerSloganTicket(conf);
+            if (!string.IsNullOrWhiteSpace(slogan))
+                AgregarLinea(slogan);
             if (!string.IsNullOrWhiteSpace(cuit))   AgregarLinea($"CUIT: {cuit}");
             if (!string.IsNullOrWhiteSpace(condicionIva)) AgregarLinea($"IVA: {condicionIva}");
             if (!string.IsNullOrWhiteSpace(dir))    AgregarLinea($"Domicilio: {dir}");
@@ -901,6 +904,7 @@ namespace SchettiniGestion.WPF
 
         private static void ImprimirDocumentoTicket(WinPrinting.PrintDocument doc, string impresoraTicket)
         {
+            string impresoraUsada = null;
             if (!string.IsNullOrWhiteSpace(impresoraTicket))
             {
                 bool valida = false;
@@ -908,7 +912,7 @@ namespace SchettiniGestion.WPF
                 {
                     if (string.Equals(p, impresoraTicket, StringComparison.OrdinalIgnoreCase)
                         || p.IndexOf(impresoraTicket, StringComparison.OrdinalIgnoreCase) >= 0)
-                    { valida = true; break; }
+                    { valida = true; impresoraUsada = p; break; }
                 }
                 if (!valida)
                 {
@@ -918,21 +922,69 @@ namespace SchettiniGestion.WPF
                     var pd = new System.Windows.Forms.PrintDialog();
                     pd.Document = doc;
                     if (pd.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+                    AplicarPapelTicket(doc);
                     doc.Print();
+                    TicketRawPrinter.EnviarCorte(doc.PrinterSettings.PrinterName);
                     return;
                 }
-                doc.PrinterSettings.PrinterName = impresoraTicket;
+                doc.PrinterSettings.PrinterName = impresoraUsada ?? impresoraTicket;
+                AplicarPapelTicket(doc);
                 doc.Print();
+                TicketRawPrinter.EnviarCorte(doc.PrinterSettings.PrinterName);
             }
             else
             {
                 var pd = new System.Windows.Forms.PrintDialog();
                 pd.Document = doc;
-                if (pd.ShowDialog() == System.Windows.Forms.DialogResult.OK) doc.Print();
+                if (pd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    AplicarPapelTicket(doc);
+                    doc.Print();
+                    TicketRawPrinter.EnviarCorte(doc.PrinterSettings.PrinterName);
+                }
             }
         }
 
-        public static void ImprimirPaginaDePrueba(string nombreImpresora, string tipo)
+        /// <summary>
+        /// Usa papel continuo 80/58 mm si el driver lo publica; si no, un tamaño custom de ticket.
+        /// Evita imprimir el ticket como si fuera A4 (en esa modalidad muchos drivers no cortan).
+        /// </summary>
+        private static void AplicarPapelTicket(WinPrinting.PrintDocument doc)
+        {
+            int mm = 80;
+            try { mm = DatabaseService.GetOpcionesImpresionTicket().AnchoMm; } catch { mm = 80; }
+            if (mm != 58) mm = 80;
+
+            int anchoHi = (int)Math.Round(mm / 25.4 * 100.0);
+            WinPrinting.PaperSize elegido = null;
+            try
+            {
+                foreach (WinPrinting.PaperSize ps in doc.PrinterSettings.PaperSizes)
+                {
+                    string nom = ps.PaperName ?? "";
+                    bool nombreOk = nom.IndexOf(mm == 58 ? "58" : "80", StringComparison.OrdinalIgnoreCase) >= 0
+                        || nom.IndexOf("Receipt", StringComparison.OrdinalIgnoreCase) >= 0
+                        || nom.IndexOf("Roll", StringComparison.OrdinalIgnoreCase) >= 0
+                        || nom.IndexOf("Ticket", StringComparison.OrdinalIgnoreCase) >= 0;
+                    bool anchoOk = Math.Abs(ps.Width - anchoHi) <= 25;
+                    if (nombreOk || anchoOk)
+                    {
+                        elegido = ps;
+                        if (nombreOk && anchoOk) break;
+                    }
+                }
+            }
+            catch { }
+
+            if (elegido != null)
+                doc.DefaultPageSettings.PaperSize = elegido;
+            else
+                doc.DefaultPageSettings.PaperSize = new WinPrinting.PaperSize("SCHPOS Ticket " + mm + "mm", anchoHi, 1169);
+
+            doc.DefaultPageSettings.Margins = new WinPrinting.Margins(0, 0, 0, 8);
+        }
+
+        public static void ImprimirPaginaDePrueba(string nombreImpresora, string tipo, OpcionesEtiqueta opcionesEtiqueta = null)
         {
             try
             {
@@ -952,7 +1004,7 @@ namespace SchettiniGestion.WPF
 
                 if (string.Equals(tipo, "Etiqueta", StringComparison.OrdinalIgnoreCase))
                 {
-                    var opEtiq = DatabaseService.GetOpcionesEtiqueta();
+                    var opEtiq = opcionesEtiqueta ?? DatabaseService.GetOpcionesEtiqueta();
                     bool horizontalPrueba = string.Equals(opEtiq.Orientacion, "Horizontal", StringComparison.OrdinalIgnoreCase);
                     if (horizontalPrueba)
                         AplicarTamanoEtiqueta(doc, opEtiq.AltoMm, opEtiq.AnchoMm);
@@ -977,10 +1029,14 @@ namespace SchettiniGestion.WPF
                         e.HasMorePages = false;
                     };
                     doc.Print();
+                    EtiquetaCorteHelper.IntentarCorteTrasImpresion(nombreImpresora, opEtiq);
                     MessageBox.Show($"Etiqueta de prueba ({opEtiq.AnchoMm}×{opEtiq.AltoMm} mm) enviada a:\n{nombreImpresora}",
                         "Prueba de impresión", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
+
+                if (tipo == "Ticket")
+                    AplicarPapelTicket(doc);
 
                 doc.PrintPage += (s, e) =>
                 {
@@ -1020,6 +1076,7 @@ namespace SchettiniGestion.WPF
                         }
 
                         DibujarTextoCentrado(g, razonSocial.ToUpper(), fT, w, ref y);
+                        DibujarSloganTicket(g, DatabaseService.ObtenerSloganTicket(conf), fS, w, ref y);
                         if (!string.IsNullOrWhiteSpace(dir)) DibujarTextoCentrado(g, dir, fS, w, ref y);
                         if (!string.IsNullOrWhiteSpace(tel)) DibujarTextoCentrado(g, $"Tel: {tel}", fS, w, ref y);
                         if (!string.IsNullOrWhiteSpace(cuit)) DibujarTextoCentrado(g, $"CUIT: {cuit}", fS, w, ref y);
@@ -1063,6 +1120,12 @@ namespace SchettiniGestion.WPF
 
                     g.DrawString(razonSocial.ToUpper(), fTitulo, WinDrawing.Brushes.Black, x, yA4);
                     yA4 += g.MeasureString(razonSocial, fTitulo).Height + 2;
+                    string sloganA4 = DatabaseService.ObtenerSloganTicket(conf);
+                    if (!string.IsNullOrWhiteSpace(sloganA4))
+                    {
+                        g.DrawString(sloganA4, fDet, WinDrawing.Brushes.DimGray, x, yA4);
+                        yA4 += 14;
+                    }
                     if (!string.IsNullOrWhiteSpace(cuit))
                     {
                         g.DrawString($"CUIT: {cuit}", fDet, WinDrawing.Brushes.Black, x, yA4);
@@ -1108,6 +1171,8 @@ namespace SchettiniGestion.WPF
                     g.DrawString("SCHPOS — Configuración correcta", fSub, WinDrawing.Brushes.Black, x, yA4);
                 };
                 doc.Print();
+                if (tipo == "Ticket")
+                    TicketRawPrinter.EnviarCorte(nombreImpresora);
                 MessageBox.Show($"Página de prueba enviada a:\n{nombreImpresora}", "Prueba de impresión", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
             }
             catch (Exception ex) { MessageBox.Show("Error al imprimir prueba: " + ex.Message); }
@@ -1179,6 +1244,7 @@ namespace SchettiniGestion.WPF
             }
 
             DibujarTextoCentrado(g, fan.ToUpper(), fT, w, ref y);
+            DibujarSloganTicket(g, DatabaseService.ObtenerSloganTicket(conf), fSub, w, ref y);
 
             if (opciones.MostrarDireccion && !string.IsNullOrWhiteSpace(dir))   DibujarTextoCentrado(g, dir, fSub, w, ref y);
             if (opciones.MostrarTelefono && !string.IsNullOrWhiteSpace(tel))    DibujarTextoCentrado(g, $"Tel: {tel}", fSub, w, ref y);
@@ -1295,7 +1361,9 @@ namespace SchettiniGestion.WPF
                 y += 10;
                 DibujarTextoCentrado(g, "Gracias por su compra", fC, w, ref y);
             }
-            DibujarTextoCentrado(g, ".", fC, w, ref y);
+            // Papel extra para que la cuchilla no corte el QR ni el pie.
+            y += 36;
+            DibujarTextoCentrado(g, " ", fC, w, ref y);
         }
 
         private static void DibujarTextoDerecha(WinDrawing.Graphics g, string texto, WinDrawing.Font f, float w, float margen, ref float y, bool avanzarY)
@@ -1307,6 +1375,35 @@ namespace SchettiniGestion.WPF
 
         private static void DibujarLinea(WinDrawing.Graphics g, ref float y, float w) { y += 3; g.DrawLine(new WinDrawing.Pen(WinDrawing.Color.Black) { DashStyle = WinDrawing.Drawing2D.DashStyle.Dash }, 2, y, w - 2, y); y += 5; }
         private static void DibujarTextoCentrado(WinDrawing.Graphics g, string t, WinDrawing.Font f, float w, ref float y) { WinDrawing.SizeF s = g.MeasureString(t, f); g.DrawString(t, f, WinDrawing.Brushes.Black, (w - s.Width) / 2, y); y += s.Height; }
+
+        private static void DibujarSloganTicket(WinDrawing.Graphics g, string slogan, WinDrawing.Font f, float w, ref float y)
+        {
+            if (string.IsNullOrWhiteSpace(slogan) || g == null || f == null) return;
+            slogan = slogan.Trim();
+            float maxW = Math.Max(40f, w - 8f);
+            if (g.MeasureString(slogan, f).Width <= maxW)
+            {
+                DibujarTextoCentrado(g, slogan, f, w, ref y);
+                return;
+            }
+
+            var palabras = slogan.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var linea = "";
+            foreach (var p in palabras)
+            {
+                string prueba = string.IsNullOrEmpty(linea) ? p : linea + " " + p;
+                if (g.MeasureString(prueba, f).Width <= maxW)
+                {
+                    linea = prueba;
+                    continue;
+                }
+                if (!string.IsNullOrEmpty(linea))
+                    DibujarTextoCentrado(g, linea, f, w, ref y);
+                linea = p;
+            }
+            if (!string.IsNullOrEmpty(linea))
+                DibujarTextoCentrado(g, linea, f, w, ref y);
+        }
 
         #region ETIQUETAS
 
@@ -1374,7 +1471,9 @@ namespace SchettiniGestion.WPF
                     e.HasMorePages = idx < cola.Count;
                 };
 
-                ImprimirDocumentoTicket(doc, impresora);
+                string usada = ImprimirDocumentoEnImpresora(doc, impresora);
+                if (!string.IsNullOrWhiteSpace(usada))
+                    EtiquetaCorteHelper.IntentarCorteTrasImpresion(usada, opciones);
             }
             catch (Exception ex)
             {
@@ -1433,7 +1532,7 @@ namespace SchettiniGestion.WPF
                 e.HasMorePages = idx < cola.Count;
             };
 
-            ImprimirDocumentoTicket(doc, impresora);
+            ImprimirDocumentoEnImpresora(doc, impresora);
         }
 
         private static void ImprimirCartelesYGondolas(IList<EtiquetaPrintItem> cola, OpcionesEtiqueta op)
@@ -1454,7 +1553,46 @@ namespace SchettiniGestion.WPF
                 e.HasMorePages = idx < cola.Count;
             };
 
-            ImprimirDocumentoTicket(doc, impresora);
+            ImprimirDocumentoEnImpresora(doc, impresora);
+        }
+
+        /// <summary>
+        /// Imprime un documento GDI en la impresora indicada, sin papel de ticket ni corte ESC/POS de recibo.
+        /// Devuelve el nombre de impresora usada, o null si se canceló.
+        /// </summary>
+        private static string ImprimirDocumentoEnImpresora(WinPrinting.PrintDocument doc, string impresoraPreferida)
+        {
+            if (!string.IsNullOrWhiteSpace(impresoraPreferida))
+            {
+                string impresoraUsada = null;
+                foreach (string p in WinPrinting.PrinterSettings.InstalledPrinters)
+                {
+                    if (string.Equals(p, impresoraPreferida, StringComparison.OrdinalIgnoreCase)
+                        || p.IndexOf(impresoraPreferida, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        impresoraUsada = p;
+                        break;
+                    }
+                }
+                if (impresoraUsada == null)
+                {
+                    MessageBox.Show(
+                        $"La impresora configurada no está disponible:\n{impresoraPreferida}\n\nSeleccioná otra impresora.",
+                        "Impresora no encontrada", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    var pd = new System.Windows.Forms.PrintDialog { Document = doc };
+                    if (pd.ShowDialog() != System.Windows.Forms.DialogResult.OK) return null;
+                    doc.Print();
+                    return doc.PrinterSettings.PrinterName;
+                }
+                doc.PrinterSettings.PrinterName = impresoraUsada;
+                doc.Print();
+                return impresoraUsada;
+            }
+
+            var dlg = new System.Windows.Forms.PrintDialog { Document = doc };
+            if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return null;
+            doc.Print();
+            return doc.PrinterSettings.PrinterName;
         }
 
         private static void AplicarTamanoEtiqueta(WinPrinting.PrintDocument doc, int anchoMm, int altoMm)

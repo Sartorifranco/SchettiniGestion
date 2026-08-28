@@ -40,6 +40,8 @@ namespace SchettiniGestion.WPF
             AplicarVisibilidadSegunLicencia();
             CargarImpresoras();
             CargarBackupAuto();
+            AplicarCandadoIdentidadFiscal();
+            AplicarCandadoLicencia();
         }
 
         private void AplicarVisibilidadSegunLicencia()
@@ -130,6 +132,8 @@ namespace SchettiniGestion.WPF
             if (dr != null)
             {
                 txtNombreFantasia.Text = dr["NombreFantasia"].ToString();
+                if (txtSloganTicket != null)
+                    txtSloganTicket.Text = DatabaseService.ObtenerSloganTicket(dr);
                 txtRazonSocial.Text = dr["RazonSocial"].ToString();
                 txtCuit.Text = DatabaseService.ObtenerCuitEmpresaTextoBruto(dr);
                 EstablecerCondicionIVAEmpresa(dr.Table.Columns.Contains("CondicionIVAEmpresa") ? dr["CondicionIVAEmpresa"]?.ToString() : "");
@@ -226,6 +230,52 @@ namespace SchettiniGestion.WPF
                     txtVisorBannerIntervalo.Text = "8";
 
                 RefrescarListaArchivosVisor();
+            }
+            AplicarCandadoIdentidadFiscal();
+        }
+
+        private void AplicarCandadoIdentidadFiscal()
+        {
+            bool puede = SesionUsuario.PuedeEditarIdentidadFiscal;
+
+            if (txtRazonSocial != null) txtRazonSocial.IsReadOnly = !puede;
+            if (txtCuit != null) txtCuit.IsReadOnly = !puede;
+            if (txtDireccion != null) txtDireccion.IsReadOnly = !puede;
+            if (txtTelefono != null) txtTelefono.IsReadOnly = !puede;
+            if (txtEmail != null) txtEmail.IsReadOnly = !puede;
+            if (txtPuntoVenta != null) txtPuntoVenta.IsReadOnly = !puede;
+            if (cmbCondicionIVAEmpresa != null) cmbCondicionIVAEmpresa.IsEnabled = puede;
+            if (chkAfipProduccion != null) chkAfipProduccion.IsEnabled = puede;
+            if (txtPasswordAfip != null) txtPasswordAfip.IsEnabled = puede;
+            if (btnGenerarCsrAfip != null) btnGenerarCsrAfip.IsEnabled = puede;
+            if (btnSubirCertificadoAfip != null) btnSubirCertificadoAfip.IsEnabled = puede;
+            if (btnBuscarCertificado != null) btnBuscarCertificado.IsEnabled = puede;
+
+            if (txtAvisoDatosFiscales != null)
+            {
+                txtAvisoDatosFiscales.Text = puede
+                    ? "Estás con un usuario de soporte: podés editar los datos fiscales (CUIT, razón social, IVA, domicilio, teléfono, email y punto de venta) y los certificados ARCA. El nombre de fantasía, el mensaje del ticket y el logo también se pueden cambiar."
+                    : "CUIT, razón social, condición IVA, domicilio, teléfono, email y punto de venta identifican al negocio en los tickets y en la facturación electrónica. Si alguno de esos datos cambió, pedile a soporte técnico que lo actualice. El nombre de fantasía, el mensaje del ticket y el logo los podés modificar vos.";
+            }
+        }
+
+        private void AdvertirSoloSoporteFiscal()
+        {
+            ModernMessageBox.Show(
+                "Los datos fiscales y los certificados ARCA solo los puede modificar el soporte técnico.",
+                "Acceso restringido",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+
+        private void AplicarCandadoLicencia()
+        {
+            if (pnlCargaLicencia != null)
+                pnlCargaLicencia.Visibility = Visibility.Visible;
+            if (txtAvisoLicencia != null)
+            {
+                txtAvisoLicencia.Text =
+                    "El soporte técnico genera la clave con el ID de máquina de esta PC. Si ya te dieron una clave (renovación o un módulo extra), pegala acá y activá. Si venció y no tenés la clave nueva, avisá a quien te instaló SCHPOS.";
             }
         }
 
@@ -500,6 +550,11 @@ namespace SchettiniGestion.WPF
 
         private void btnBuscarCertificado_Click(object sender, RoutedEventArgs e)
         {
+            if (!SesionUsuario.PuedeEditarIdentidadFiscal)
+            {
+                AdvertirSoloSoporteFiscal();
+                return;
+            }
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Filter = "Certificados PFX|*.pfx";
             if (ofd.ShowDialog() == true)
@@ -567,14 +622,20 @@ namespace SchettiniGestion.WPF
             finally
             {
                 btnProbarConexionAfip.IsEnabled = true;
-                if (btnGenerarCsrAfip != null) btnGenerarCsrAfip.IsEnabled = true;
-                if (btnSubirCertificadoAfip != null) btnSubirCertificadoAfip.IsEnabled = true;
+                bool puedeFiscal = SesionUsuario.PuedeEditarIdentidadFiscal;
+                if (btnGenerarCsrAfip != null) btnGenerarCsrAfip.IsEnabled = puedeFiscal;
+                if (btnSubirCertificadoAfip != null) btnSubirCertificadoAfip.IsEnabled = puedeFiscal;
                 if (pbProbarConexionAfip != null) pbProbarConexionAfip.Visibility = Visibility.Collapsed;
             }
         }
 
         private void btnGenerarCsrAfip_Click(object sender, RoutedEventArgs e)
         {
+            if (!SesionUsuario.PuedeEditarIdentidadFiscal)
+            {
+                AdvertirSoloSoporteFiscal();
+                return;
+            }
             try
             {
                 string cuit = txtCuit.Text?.Trim() ?? "";
@@ -625,6 +686,11 @@ namespace SchettiniGestion.WPF
 
         private void btnSubirCertificadoAfip_Click(object sender, RoutedEventArgs e)
         {
+            if (!SesionUsuario.PuedeEditarIdentidadFiscal)
+            {
+                AdvertirSoloSoporteFiscal();
+                return;
+            }
             try
             {
                 var ofd = new OpenFileDialog
@@ -885,8 +951,9 @@ namespace SchettiniGestion.WPF
         {
             try
             {
+                bool puedeFiscal = SesionUsuario.PuedeEditarIdentidadFiscal;
                 string cuit = txtCuit.Text?.Trim() ?? "";
-                if (!string.IsNullOrWhiteSpace(cuit))
+                if (puedeFiscal && !string.IsNullOrWhiteSpace(cuit))
                 {
                     string cuitDigits = cuit.Replace("-", "").Replace(" ", "");
                     if (cuitDigits.Length != 11 || !cuitDigits.All(char.IsDigit))
@@ -900,7 +967,7 @@ namespace SchettiniGestion.WPF
                 // se permite guardar la configuración sin él (queda en 0 = sin asignar).
                 int pto = 0;
                 string ptoTexto = txtPuntoVenta.Text?.Trim() ?? "";
-                if (!string.IsNullOrWhiteSpace(ptoTexto))
+                if (puedeFiscal && !string.IsNullOrWhiteSpace(ptoTexto))
                 {
                     if (!int.TryParse(ptoTexto, out pto) || pto <= 0 || pto > 99999)
                     {
@@ -941,7 +1008,8 @@ namespace SchettiniGestion.WPF
                     condicionIVAEmpresa: ObtenerCondicionIVAEmpresaSeleccionada(),
                     mpPointTerminalId: (cmbMPPointTerminal?.SelectedValue?.ToString() ?? _mpPointTerminalIdGuardada).Trim(),
                     mpPointAutomatico: chkMPPointAutomatico?.IsChecked == true,
-                    mpQrModo: ObtenerModoQrMpSeleccionado());
+                    mpQrModo: ObtenerModoQrMpSeleccionado(),
+                    ticketSlogan: txtSloganTicket?.Text ?? "");
 
                 if (exito)
                 {
@@ -998,10 +1066,10 @@ namespace SchettiniGestion.WPF
         {
             if (pnlCredencialesSQL == null) return;
             bool usarWindows = chkUsarWindowsAuth.IsChecked == true;
-            pnlCredencialesSQL.Visibility = (!usarWindows && EsAdministrador()) ? Visibility.Visible : Visibility.Collapsed;
+            pnlCredencialesSQL.Visibility = (!usarWindows && EsUsuarioSoporte()) ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private bool EsAdministrador() => SesionUsuario.RolID == 1;
+        private bool EsUsuarioSoporte() => SesionUsuario.EsUsuarioPrivilegiado;
 
         private void AplicarVisibilidadCredencialesSQL()
         {
@@ -1037,9 +1105,9 @@ namespace SchettiniGestion.WPF
                 return;
             }
 
-            if (SesionUsuario.RolID != 1)
+            if (!SesionUsuario.EsUsuarioPrivilegiado)
             {
-                ModernMessageBox.Show("Solo un administrador puede cambiar la conexión a la base de datos.", "Acceso denegado",
+                ModernMessageBox.Show("Solo el soporte técnico puede cambiar la conexión a la base de datos.", "Acceso denegado",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -1090,29 +1158,64 @@ namespace SchettiniGestion.WPF
         {
             try
             {
-                string keyActual = DatabaseService.ObtenerStringLicencia();
-                txtLicenciaKey.Text = keyActual;
+                if (txtMachineIdLicencia != null)
+                    txtMachineIdLicencia.Text = LicenseManager.ObtenerHardwareId() ?? "";
+
+                if (lblExtrasLicencia != null)
+                    lblExtrasLicencia.Text = LicenseManager.ObtenerResumenExtrasHabilitados();
+
+                bool puedeCargar = true;
+                if (txtLicenciaKey != null)
+                    txtLicenciaKey.Text = puedeCargar ? (DatabaseService.ObtenerStringLicencia() ?? "") : "";
 
                 if (LicenseManager.ValidarLicencia())
                 {
-                    lblEstadoLicencia.Text = "Licencia Válida y Activa";
+                    lblEstadoLicencia.Text = "Licencia válida y activa";
                     lblEstadoLicencia.Foreground = System.Windows.Media.Brushes.LimeGreen;
                     lblVencimiento.Text = "Vence: " + LicenseManager.ObtenerFechaVencimiento();
                 }
                 else
                 {
-                    lblEstadoLicencia.Text = "Licencia Inválida o Expirada";
+                    lblEstadoLicencia.Text = "Licencia inválida o expirada";
                     lblEstadoLicencia.Foreground = System.Windows.Media.Brushes.Red;
                     lblVencimiento.Text = "-";
                 }
             }
             catch { }
+            AplicarCandadoLicencia();
+        }
+
+        private void btnCopiarMachineIdLicencia_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string id = txtMachineIdLicencia?.Text?.Trim() ?? "";
+                if (string.IsNullOrEmpty(id))
+                    id = LicenseManager.ObtenerHardwareId() ?? "";
+                if (string.IsNullOrEmpty(id)) return;
+                Clipboard.SetText(id);
+                ModernMessageBox.Show("ID de máquina copiado.", "Copiado", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ModernMessageBox.Show("No se pudo copiar: " + ex.Message);
+            }
         }
 
         private void btnActivarLicencia_Click(object sender, RoutedEventArgs e)
         {
-            string nuevaKey = txtLicenciaKey.Text.Trim();
+            string nuevaKey = txtLicenciaKey?.Text?.Trim() ?? "";
             if (string.IsNullOrEmpty(nuevaKey)) return;
+
+            string actual = DatabaseService.ObtenerStringLicencia() ?? "";
+            if (!string.IsNullOrWhiteSpace(actual)
+                && !string.Equals(actual.Trim(), nuevaKey, StringComparison.Ordinal)
+                && ModernMessageBox.Show(
+                    "Se va a reemplazar la licencia de esta PC.\n\n¿Continuamos?",
+                    "Cambiar licencia",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
 
             if (DatabaseService.GuardarNuevaLicencia(nuevaKey))
             {
@@ -1365,9 +1468,9 @@ namespace SchettiniGestion.WPF
 
         private void btnRestaurarBackup_Click(object sender, RoutedEventArgs e)
         {
-            if (SesionUsuario.RolID != 1)
+            if (!SesionUsuario.EsUsuarioPrivilegiado)
             {
-                ModernMessageBox.Show("Solo un administrador puede restaurar copias de seguridad.", "Acceso denegado",
+                ModernMessageBox.Show("Solo el soporte técnico puede restaurar copias de seguridad.", "Acceso denegado",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -1470,6 +1573,9 @@ namespace SchettiniGestion.WPF
 
                 if (chkPreguntarAntesImprimir != null)
                     chkPreguntarAntesImprimir.IsChecked = DatabaseService.GetPreguntarAntesImprimir();
+
+                if (chkAbrirCajonEfectivo != null)
+                    chkAbrirCajonEfectivo.IsChecked = DatabaseService.GetAbrirCajonEfectivo();
 
                 if (cmbDestinoImpresionVenta != null)
                 {
@@ -1651,7 +1757,8 @@ namespace SchettiniGestion.WPF
                 destinoImpresionVenta: destino,
                 carpetaArchivos: txtCarpetaArchivosComprobantes?.Text?.Trim(),
                 anchoTicketMm: opciones.AnchoMm,
-                logoEnTicket: opciones.MostrarLogo);
+                logoEnTicket: opciones.MostrarLogo,
+                abrirCajonEfectivo: chkAbrirCajonEfectivo?.IsChecked != false);
 
             ok = DatabaseService.GuardarConfigEtiquetas(etiquetas, opEtiq) && ok;
 
@@ -1670,6 +1777,26 @@ namespace SchettiniGestion.WPF
                 return;
             }
             PrintService.ImprimirPaginaDePrueba(nombre, "Ticket");
+        }
+
+        private void btnProbarCajon_Click(object sender, RoutedEventArgs e)
+        {
+            string nombre = cmbImpresoraTicket.SelectedItem?.ToString();
+            if (nombre == "(Preguntar cada vez)" || string.IsNullOrWhiteSpace(nombre))
+            {
+                ModernMessageBox.Show(
+                    "Seleccioná la impresora de tickets. El pulso del cajón sale por el puerto RJ11 de esa impresora.",
+                    "Cajón de efectivo", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            if (CajonEfectivoService.Probar(nombre))
+                ModernMessageBox.Show(
+                    "Se envió el pulso a la impresora.\n\nSi el cajón está enchufado al RJ11 de esa térmica, debería abrirse. Si no se mueve, revisá el cable o el tilde de auto-apertura del driver.",
+                    "Cajón de efectivo", MessageBoxButton.OK, MessageBoxImage.Information);
+            else
+                ModernMessageBox.Show(
+                    "No se pudo enviar el pulso. Comprobá que la impresora de tickets esté encendida y no sea PDF/XPS.",
+                    "Cajón de efectivo", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
         private void btnTestA4_Click(object sender, RoutedEventArgs e)

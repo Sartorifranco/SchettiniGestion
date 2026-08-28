@@ -52,7 +52,14 @@ namespace SchettiniGestion.WPF
             string cat = (cmbCategoria.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Content?.ToString() ?? "Otros";
             string medio = (cmbMedioPago.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Content?.ToString() ?? "Efectivo";
             bool ok = DatabaseService.GuardarGastoRapido(_gastoId, txtConcepto.Text.Trim(), cat, monto, medio);
-            if (ok) { _onGuardado?.Invoke(); DialogResult = true; Close(); }
+            if (ok)
+            {
+                if (_gastoId == 0 && CajonEfectivoService.EsEfectivo(medio))
+                    CajonEfectivoService.Abrir();
+                _onGuardado?.Invoke();
+                DialogResult = true;
+                Close();
+            }
             else MessageBox.Show("Error al guardar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 

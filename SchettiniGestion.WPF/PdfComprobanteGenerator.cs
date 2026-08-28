@@ -110,6 +110,13 @@ namespace SchettiniGestion.WPF
                 y += 14;
             }
 
+            string slogan = DatabaseService.ObtenerSloganTicket(conf);
+            if (!string.IsNullOrWhiteSpace(slogan))
+            {
+                gfx.DrawString(slogan, fEmpresaSub, XBrushes.DimGray, new XRect(infoX, y, cajaDocX - infoX - 8, 14), XStringFormats.TopLeft);
+                y += 14;
+            }
+
             if (!string.IsNullOrWhiteSpace(cuit))
             {
                 gfx.DrawString($"CUIT: {cuit}", fEmpresaDet, XBrushes.Black, infoX, y);

@@ -71,7 +71,6 @@ namespace SchettiniGestion.WPF
             AplicarPermisosLite();
             AplicarExtrasLicencia();
             SincronizarModoPantallaDesdeBase();
-            ActualizarBtnTeclado();
             InicializarMenuLateral();
             AplicarLayoutResponsivoVentana();
 
@@ -482,30 +481,6 @@ namespace SchettiniGestion.WPF
             mainContentArea.Content = new ConfiguracionControl();
         }
 
-        private void btnTeclado_Click(object sender, RoutedEventArgs e)
-        {
-            KeyboardService.Toggle();
-            ActualizarBtnTeclado();
-        }
-
-        private void ActualizarBtnTeclado()
-        {
-            if (btnTeclado == null) return;
-            bool on = KeyboardService.IsEnabled;
-            var iconBlock  = btnTeclado.FindName("txtIconoTeclado") as System.Windows.Controls.TextBlock;
-            var labelBlock = btnTeclado.FindName("txtLabelTeclado") as System.Windows.Controls.TextBlock;
-            if (iconBlock  != null) iconBlock.Text  = "⌨";
-            if (labelBlock != null) labelBlock.Text  = on ? "Teclado ON" : "Teclado OFF";
-
-            btnTeclado.BorderBrush = on
-                ? (System.Windows.Media.Brush)FindResource("VKAccentBar")
-                : (System.Windows.Media.Brush)FindResource("BorderColor");
-            btnTeclado.Opacity = on ? 1.0 : 0.55;
-            btnTeclado.ToolTip = on
-                ? "Teclado táctil activo. Se recuerda al reiniciar."
-                : "Teclado táctil apagado. Tocá para activarlo (se recuerda al reiniciar).";
-        }
-
         private void btnTema_Click(object sender, RoutedEventArgs e)
         {
             ThemeManager.ToggleTheme();
@@ -596,7 +571,6 @@ namespace SchettiniGestion.WPF
 
             double alturaBoton = compactoAlto ? 36 : 44;
             if (btnTema != null) btnTema.MinHeight = alturaBoton;
-            if (btnTeclado != null) btnTeclado.MinHeight = alturaBoton;
             if (cmbModoPantalla != null) cmbModoPantalla.MinHeight = alturaBoton;
         }
 

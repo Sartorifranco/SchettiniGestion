@@ -11,36 +11,10 @@ namespace SchettiniGestion.WPF
     public partial class PrimerUsoWindow : Window
     {
         private string _cadenaTesteada = null;
-        private double _originalTop    = double.NaN;
 
         public PrimerUsoWindow()
         {
             InitializeComponent();
-            Loaded   += (s, e) =>
-            {
-                KeyboardService.VisibilityChanged += OnKeyboardVisibilityChanged;
-                if (KeyboardService.IsEnabled && KeyboardService.KeyboardTop < double.MaxValue)
-                    OnKeyboardVisibilityChanged(true);
-            };
-            Unloaded += (s, e) => KeyboardService.VisibilityChanged -= OnKeyboardVisibilityChanged;
-        }
-
-        private void OnKeyboardVisibilityChanged(bool visible)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                if (visible)
-                {
-                    if (double.IsNaN(_originalTop)) _originalTop = Top;
-                    double kbTop = KeyboardService.KeyboardTop;
-                    Top = Math.Max(4, (kbTop - ActualHeight) / 2.0);
-                }
-                else if (!double.IsNaN(_originalTop))
-                {
-                    Top        = _originalTop;
-                    _originalTop = double.NaN;
-                }
-            });
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -497,7 +471,7 @@ Si los clientes no pueden conectar, verificá manualmente en ESTA PC:
     solo que el servicio de SQL Server esté corriendo)
 
 ------------------------------------------------------------
-¿Problemas?  Soporte: info@schettini.com.ar
+¿Problemas?  Contactá al soporte técnico que instaló SCHPOS.
 ------------------------------------------------------------
 ";
 

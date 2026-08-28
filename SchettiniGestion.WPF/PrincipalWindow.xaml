@@ -314,28 +314,6 @@
                                 </StackPanel>
                             </Button>
 
-                            <Button x:Name="btnTeclado"
-                                    Click="btnTeclado_Click"
-                                    MinHeight="44"
-                                    Padding="12,8"
-                                    Margin="0,0,16,0"
-                                    Cursor="Hand"
-                                    Background="{DynamicResource HoverBackground}"
-                                    BorderBrush="{DynamicResource VKAccentBar}"
-                                    BorderThickness="2"
-                                    Foreground="{DynamicResource TextPrimary}"
-                                    ToolTip="Activar / desactivar teclado táctil">
-                                <Button.Resources>
-                                    <Style TargetType="Border">
-                                        <Setter Property="CornerRadius" Value="10"/>
-                                    </Style>
-                                </Button.Resources>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock x:Name="txtIconoTeclado" Text="⌨" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="txtLabelTeclado" Text="Teclado ON" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                                </StackPanel>
-                            </Button>
-
                             <Ellipse Width="36" Height="36" Fill="{StaticResource PrimaryColor}" Margin="0,0,10,0" VerticalAlignment="Center"/>
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock x:Name="txtUsuarioLogueado"

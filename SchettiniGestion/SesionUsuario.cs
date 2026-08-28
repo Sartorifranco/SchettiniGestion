@@ -34,6 +34,18 @@ namespace SchettiniGestion
         /// </summary>
         public static bool EsUsuarioTecnico { get; private set; }
 
+        /// <summary>
+        /// Super administrador oculto de respaldo (login schadmin). Mismo poder que el técnico:
+        /// identidad fiscal, ARCA, herramientas de soporte y ACCESO_TOTAL.
+        /// </summary>
+        public static bool EsUsuarioSuperAdmin { get; private set; }
+
+        /// <summary>Técnico o super admin: pueden editar datos fiscales y usar herramientas de soporte.</summary>
+        public static bool EsUsuarioPrivilegiado => EsUsuarioTecnico || EsUsuarioSuperAdmin;
+
+        /// <summary>CUIT, razón social, IVA, domicilio, teléfono, email, punto de venta y certificados ARCA.</summary>
+        public static bool PuedeEditarIdentidadFiscal => EsUsuarioPrivilegiado;
+
         /// <summary>Nombre a persistir en ventas y movimientos: personal real o login si no hay.</summary>
         public static string NombreParaRegistro()
         {
@@ -59,6 +71,7 @@ namespace SchettiniGestion
             NombrePersonal = nombrePersonal;
             Permisos = new HashSet<string>(permisos);
             EsUsuarioTecnico = false;
+            EsUsuarioSuperAdmin = false;
         }
 
         public static void IniciarTecnico(string nombreUsuario, List<string> permisos)
@@ -71,6 +84,20 @@ namespace SchettiniGestion
             Permisos = new HashSet<string>(permisos ?? new List<string>());
             Permisos.Add("ACCESO_TOTAL");
             EsUsuarioTecnico = true;
+            EsUsuarioSuperAdmin = false;
+        }
+
+        public static void IniciarSuperAdmin(string nombreUsuario, List<string> permisos)
+        {
+            NombreUsuario = nombreUsuario;
+            RolID = 1;
+            NombreRol = "Super Administrador";
+            UsuarioID = -8888;
+            NombrePersonal = "Super Administrador";
+            Permisos = new HashSet<string>(permisos ?? new List<string>());
+            Permisos.Add("ACCESO_TOTAL");
+            EsUsuarioTecnico = false;
+            EsUsuarioSuperAdmin = true;
         }
 
         /// <summary>
@@ -85,7 +112,7 @@ namespace SchettiniGestion
                 return false; // Sesión no iniciada
             }
 
-            if (EsUsuarioTecnico)
+            if (EsUsuarioPrivilegiado)
                 return true;
 
             if (Permisos.Contains("ACCESO_TOTAL"))
@@ -105,6 +132,7 @@ namespace SchettiniGestion
             NombrePersonal = null;
             UsuarioID = 0;
             EsUsuarioTecnico = false;
+            EsUsuarioSuperAdmin = false;
             Permisos?.Clear();
             Permisos = null;
         }

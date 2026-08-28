@@ -107,6 +107,7 @@ namespace SchettiniGestion.WPF
                     cmd.ExecuteNonQuery();
                 }
 
+                CajonEfectivoService.Abrir();
                 CustomMessageBox.Show("Cierre de caja registrado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                 CargarResumen();
             }

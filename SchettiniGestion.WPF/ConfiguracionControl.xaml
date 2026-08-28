@@ -110,6 +110,9 @@
                         <Border Style="{StaticResource ConfigSectionCard}">
                             <StackPanel>
                                 <TextBlock Text="Datos de la Empresa" Style="{StaticResource ConfigSectionTitle}"/>
+                                <TextBlock x:Name="txtAvisoDatosFiscales" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,12"
+                                           Text="CUIT, razón social, condición IVA, domicilio, teléfono, email y punto de venta identifican al negocio en los tickets y en la facturación electrónica. Si alguno de esos datos cambió, pedile a soporte técnico que lo actualice. El nombre de fantasía, el mensaje del ticket y el logo los podés modificar vos."/>
 
                                 <Grid>
                             <Grid.ColumnDefinitions>
@@ -120,6 +123,12 @@
                             <StackPanel Grid.Column="0" Margin="0,0,10,0">
                                 <TextBlock Text="Nombre Fantasía:" Style="{StaticResource ModuleLabelStyle}"/>
                                 <TextBox x:Name="txtNombreFantasia" Style="{StaticResource ModuleTextBoxStyle}"/>
+
+                                <TextBlock Text="Mensaje en el ticket:" Style="{StaticResource ModuleLabelStyle}"/>
+                                <TextBox x:Name="txtSloganTicket" Style="{StaticResource ModuleTextBoxStyle}"
+                                         MaxLength="200"
+                                         ToolTip="Texto opcional que se imprime debajo del nombre de fantasía (por ejemplo un eslogan o un mensaje de agradecimiento)."/>
+                                <TextBlock Style="{StaticResource FieldHintTextStyle}" Text="Opcional. Se imprime debajo del nombre en el ticket."/>
 
                                 <TextBlock Text="Razón Social:" Style="{StaticResource ModuleLabelStyle}"/>
                                 <TextBox x:Name="txtRazonSocial" Style="{StaticResource ModuleTextBoxStyle}"/>
@@ -657,29 +666,49 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Header="🔑 Licencia">
+            <TabItem x:Name="tabItemLicencia" Header="🔑 Licencia">
                 <Border Style="{StaticResource ConfigSectionCard}" MaxWidth="640" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <StackPanel>
-                        <TextBlock Text="Activación de producto" Style="{StaticResource ConfigSectionTitle}"/>
+                        <TextBlock Text="Licencia de esta PC" Style="{StaticResource ConfigSectionTitle}"/>
+                        <TextBlock x:Name="txtAvisoLicencia" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,16"
+                                   Text="El soporte técnico genera la clave con el ID de máquina de esta PC. Si ya te dieron una clave (renovación o un módulo extra), pegala acá y activá. Si venció y no tenés la clave nueva, avisá a quien te instaló SCHPOS."/>
 
-                        <TextBlock Text="Estado Actual:" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,5"/>
-                        <TextBlock x:Name="lblEstadoLicencia" Text="Verificando..." Foreground="{DynamicResource SuccessColor}" FontSize="16" FontWeight="Bold" Margin="0,0,0,20"/>
+                        <TextBlock Text="Estado actual:" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,5"/>
+                        <TextBlock x:Name="lblEstadoLicencia" Text="Verificando..." Foreground="{DynamicResource SuccessColor}" FontSize="16" FontWeight="Bold" Margin="0,0,0,16"/>
 
                         <TextBlock Text="Vencimiento:" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,5"/>
-                        <TextBlock x:Name="lblVencimiento" Text="-" Foreground="{DynamicResource TextPrimary}" FontSize="16" Margin="0,0,0,20"/>
+                        <TextBlock x:Name="lblVencimiento" Text="-" Foreground="{DynamicResource TextPrimary}" FontSize="16" Margin="0,0,0,16"/>
 
-                        <TextBlock Text="Clave de Licencia (Pegar aquí):" Style="{StaticResource ModuleLabelStyle}"/>
-                        <TextBox x:Name="txtLicenciaKey" Style="{StaticResource ModuleTextBoxStyle}" Height="100" TextWrapping="Wrap" VerticalContentAlignment="Top" AcceptsReturn="True"/>
+                        <TextBlock Text="Extras habilitados:" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,5"/>
+                        <TextBlock x:Name="lblExtrasLicencia" Text="-" Foreground="{DynamicResource TextPrimary}" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
-                        <Button x:Name="btnActivarLicencia" Content="✅ VALIDAR Y ACTIVAR" 
-                                Click="btnActivarLicencia_Click"
-                                Background="#E0A800" Foreground="Black" FontWeight="Bold" Height="50" Margin="0,20,0,0">
-                            <Button.Resources>
-                                <Style TargetType="Border">
-                                    <Setter Property="CornerRadius" Value="5"/>
-                                </Style>
-                            </Button.Resources>
-                        </Button>
+                        <TextBlock Text="ID de máquina:" Style="{StaticResource ModuleLabelStyle}"/>
+                        <DockPanel LastChildFill="True" Margin="0,0,0,8">
+                            <Button x:Name="btnCopiarMachineIdLicencia" DockPanel.Dock="Right" Content="Copiar"
+                                    MinWidth="88" MinHeight="44" Margin="8,0,0,0"
+                                    Click="btnCopiarMachineIdLicencia_Click"
+                                    Style="{StaticResource SecondaryButtonStyle}"/>
+                            <TextBox x:Name="txtMachineIdLicencia" Style="{StaticResource ModuleTextBoxStyle}"
+                                     IsReadOnly="True" FontFamily="Consolas" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource FieldHintTextStyle}" Margin="0,0,0,16"
+                                   Text="Identifica esta PC. El soporte técnico lo usa para emitir o renovar la licencia."/>
+
+                        <StackPanel x:Name="pnlCargaLicencia">
+                            <TextBlock Text="Clave de licencia (pegar aquí):" Style="{StaticResource ModuleLabelStyle}"/>
+                            <TextBox x:Name="txtLicenciaKey" Style="{StaticResource ModuleTextBoxStyle}" Height="100" TextWrapping="Wrap" VerticalContentAlignment="Top" AcceptsReturn="True"/>
+
+                            <Button x:Name="btnActivarLicencia" Content="✅ VALIDAR Y ACTIVAR"
+                                    Click="btnActivarLicencia_Click"
+                                    Background="#E0A800" Foreground="Black" FontWeight="Bold" Height="50" Margin="0,20,0,0">
+                                <Button.Resources>
+                                    <Style TargetType="Border">
+                                        <Setter Property="CornerRadius" Value="5"/>
+                                    </Style>
+                                </Button.Resources>
+                            </Button>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </TabItem>
@@ -810,6 +839,19 @@
                                     Click="btnTestTicket_Click"/>
                         </Grid>
 
+                        <CheckBox x:Name="chkAbrirCajonEfectivo"
+                                  Content="Abrir el cajón de efectivo cuando corresponda"
+                                  IsChecked="True"
+                                  Foreground="{DynamicResource TextPrimary}"
+                                  Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,0,0,8"
+                                   Text="El cajón se enchufa al puerto RJ11 de la impresora de tickets. Se abre al cobrar en efectivo (también si el cobro es mixto), al abrir o cerrar el turno, y cuando entra o sale efectivo de caja. Si el local no tiene cajón, desmarcá esta opción."/>
+                        <Button x:Name="btnProbarCajon"
+                                Content="🔓 Probar cajón" Padding="14,10" Margin="0,0,0,20"
+                                HorizontalAlignment="Left"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Click="btnProbarCajon_Click"/>
+
                         <TextBlock Text="Impresora A4 (Facturas, Presupuestos, Remitos)" FontSize="15" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,6"/>
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,8"
@@ -860,6 +902,8 @@
                             <TextBox x:Name="txtEtiquetaAltoMm" Width="70" Height="40" FontSize="14"
                                      VerticalContentAlignment="Center" Text="25"/>
                         </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondary}" FontSize="12" Margin="0,10,0,0"
+                                   Text="El auto-corte del rollo se activa en Etiquetas → Configurar etiqueta, y solo en modo Rollo. SCHPOS manda el corte al terminar de imprimir; hay que elegir el protocolo de la marca (ESC/POS, TSPL, ZPL o EPL) y la impresora tiene que tener cuchilla. Góndola, cartel y A4 salen en hoja: no cortan rollo."/>
                                 <Button Content="💾 Guardar cambios de esta sección" Style="{StaticResource SecondaryButtonStyle}"
                                         HorizontalAlignment="Right" Margin="0,14,0,0" Click="btnGuardarImpresoras_Click"/>
                             </StackPanel>

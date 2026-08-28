@@ -1,7 +1,20 @@
 {
-  "versionActual": "2.4.1",
-  "instalador": "SCHPOS-Setup-2.4.1.exe",
+  "versionActual": "2.4.2",
+  "instalador": "SCHPOS-Setup-2.4.2.exe",
   "notas": [
+    {
+      "version": "2.4.2",
+      "fecha": "2026-08-28",
+      "titulo": "Cajón de efectivo, etiquetas y candado fiscal",
+      "items": [
+        "Cajón de efectivo: se abre al cobrar en efectivo (también mixto), al abrir o cerrar el turno y al mover efectivo. En Impresoras hay tilde y botón Probar cajón.",
+        "Etiquetas: volvió Configurar etiqueta. El auto-corte del rollo solo aplica en modo Rollo (ESC/POS, TSPL, ZPL o EPL).",
+        "Ticket térmico 80/58 mm: corte de papel al terminar el ticket.",
+        "El local (admin) edita nombre de fantasía, mensaje del ticket y logo. CUIT, razón social, IVA y ARCA los cambia solo soporte técnico.",
+        "admin puede pegar una clave de licencia que ya le dieron (pide confirmación si reemplaza una existente). Los logins 9999 y schadmin quedan ocultos, con herramientas técnicas.",
+        "Instalador SCHPOS-Setup-2.4.2.exe."
+      ]
+    },
     {
       "version": "2.4.1",
       "fecha": "2026-08-25",

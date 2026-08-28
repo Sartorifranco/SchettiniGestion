@@ -127,7 +127,6 @@ namespace SchettiniGestion.WPF
 
         private void btnTeclado_Click_LEGACY(object sender, RoutedEventArgs e)
         {
-            // Reemplazado por el teclado virtual integrado (KeyboardService)
         }
 
         private void Input_KeyDown(object sender, KeyEventArgs e)

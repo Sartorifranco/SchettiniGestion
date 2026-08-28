@@ -104,6 +104,7 @@ namespace SchettiniGestion.WPF
 
             if (DatabaseService.AbrirCaja(monto, txtObservaciones.Text))
             {
+                CajonEfectivoService.Abrir();
                 CustomMessageBox.Show(
                     $"Caja abierta correctamente.\nFondo fijo: {monto:C2}",
                     "Apertura registrada", MessageBoxButton.OK, MessageBoxImage.Information);

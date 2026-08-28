@@ -52,10 +52,8 @@ namespace SchettiniGestion.WPF
             ResponsiveWindowService.Initialize();
             ResponsiveModuleService.Initialize();
 
-            // Registrar teclado virtual inteligente (responde a cualquier TextBox/PasswordBox).
-            KeyboardService.Initialize();
-            KeyboardService.LoadSavedPreference();
             WindowEscapeService.Initialize();
+            TouchUxService.Initialize();
 
             this.DispatcherUnhandledException += App_DispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -687,6 +685,12 @@ namespace SchettiniGestion.WPF
 
                     @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='MPQrModo')
                       ALTER TABLE Configuracion ADD MPQrModo NVARCHAR(20) NOT NULL DEFAULT 'ambos';",
+
+                    @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='TicketSlogan')
+                      ALTER TABLE Configuracion ADD TicketSlogan NVARCHAR(200) NULL;",
+
+                    @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Configuracion' AND COLUMN_NAME='AbrirCajonEfectivo')
+                      ALTER TABLE Configuracion ADD AbrirCajonEfectivo BIT NOT NULL DEFAULT 1;",
 
                     @"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Proveedores' AND COLUMN_NAME='SaldoDeuda')
                       ALTER TABLE Proveedores ADD SaldoDeuda DECIMAL(18,2) NOT NULL DEFAULT 0;",

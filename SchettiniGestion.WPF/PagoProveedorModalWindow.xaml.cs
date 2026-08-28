@@ -81,7 +81,14 @@ namespace SchettiniGestion.WPF
             { MessageBox.Show("Ingrese un monto válido.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
             string medio = (cmbMedioPago.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Content?.ToString() ?? "Efectivo";
             bool ok = DatabaseService.GuardarPagoProveedor(_pagoId, _proveedorId, monto, medio, txtConcepto.Text.Trim(), txtNroComprobante.Text.Trim());
-            if (ok) { _onGuardado?.Invoke(); DialogResult = true; Close(); }
+            if (ok)
+            {
+                if (_pagoId == 0 && CajonEfectivoService.EsEfectivo(medio))
+                    CajonEfectivoService.Abrir();
+                _onGuardado?.Invoke();
+                DialogResult = true;
+                Close();
+            }
             else MessageBox.Show("Error al guardar.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 

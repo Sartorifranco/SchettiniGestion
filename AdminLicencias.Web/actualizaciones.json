@@ -1,7 +1,22 @@
 {
-  "versionActual": "2.4.2",
-  "instalador": "SCHPOS-Setup-2.4.2.exe",
+  "versionActual": "2.4.5",
+  "instalador": "SCHPOS-Setup-2.4.5.exe",
   "notas": [
+    {
+      "version": "2.4.5",
+      "fecha": "2026-08-31",
+      "titulo": "Tema azulado, menú completo, pausas, favoritos y cola ARCA",
+      "items": [
+        "Tema oscuro azulado (como el login). Pie de versión v2.4.5.",
+        "Menú: Proveedores, Compras e Informes. Estadísticas va dentro de Informes.",
+        "POS: Pausar F5 y Pausas F6 (quedan en la base si se corta la luz).",
+        "Favoritos del POS (estrellas, barra rápida, tope 24).",
+        "Cola ARCA: si falla el CAE después de cobrar, se guarda ticket interno y se reintenta solo.",
+        "Compras: importar foto (OCR) o PDF, con revisión antes de cargar. Configuración › OCR Compras.",
+        "Sigue 2.4.2: cajón, etiquetas, corte de ticket, candado fiscal y licencia pegable.",
+        "Instalador SCHPOS-Setup-2.4.5.exe."
+      ]
+    },
     {
       "version": "2.4.2",
       "fecha": "2026-08-28",
